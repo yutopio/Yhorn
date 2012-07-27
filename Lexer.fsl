@@ -1,0 +1,38 @@
+{
+module Lexer
+
+open System
+open Error
+open Parser
+
+(*** Some helper functions ***)
+let lexeme (lexbuf:Lexing.LexBuffer<_>) = new string(lexbuf.Lexeme)
+}
+
+let br = ['\r' '\n']
+let sp = [' ' '\t']
+let digit = ['0'-'9']
+let letter = ['a'-'z' 'A'-'Z']
+let nonEscChars = [^ '"' '\'' '\\' '0' 'n' 'r' 't']
+let identChar = letter | '_'
+let floatp = digit+ '.' digit*
+let floate = digit+ ('.' digit* )? ('e'| 'E') ['+' '-']? digit+
+let float = digit+ | floatp | floate
+
+rule token = parse
+    | sp+               { token lexbuf }
+    | br+               { token lexbuf }
+    | "<="              { LE }
+    | ">="              { GE }
+    | '<'               { LT }
+    | '>'               { GT }
+    | '='               { EQ }
+    | '+'               { PLUS }
+    | '-'               { MINUS }
+    | '&'               { AND }
+    | '|'               { OR }
+    | ';'               { SEMICOLON }
+    | identChar+        { IDENT(lexeme lexbuf) }
+    | float             { FLOAT(Single.Parse(lexeme lexbuf)) }
+    | eof               { EOF }
+    | _                 { unrecToken (lexeme lexbuf) }
