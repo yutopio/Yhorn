@@ -10,3 +10,7 @@ type formula =
     | Expr of expr
     | And of formula list
     | Or of formula list
+
+type formula2 =
+    | One of bool * Dictionary<string, float>
+    | Many of formula2 list
