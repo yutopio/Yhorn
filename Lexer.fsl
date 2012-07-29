@@ -4,6 +4,7 @@ module Lexer
 open System
 open Error
 open Parser
+open Types
 
 (*** Some helper functions ***)
 let lexeme (lexbuf:Lexing.LexBuffer<_>) = new string(lexbuf.Lexeme)
@@ -22,17 +23,20 @@ let float = digit+ | floatp | floate
 rule token = parse
     | sp+               { token lexbuf }
     | br+               { token lexbuf }
-    | "<="              { LE }
-    | ">="              { GE }
-    | '<'               { LT }
-    | '>'               { GT }
-    | '='               { EQ }
+    | "<="              { OP(5) }
+    | ">="              { OP(6) }
+    | "<>"              { OP(3) }
+    | '<'               { OP(1) }
+    | '>'               { OP(2) }
+    | '='               { OP(4) }
     | '+'               { PLUS }
     | '-'               { MINUS }
+    | '('               { LPAREN }
+    | ')'               { RPAREN }
     | '&'               { AND }
     | '|'               { OR }
     | ';'               { SEMICOLON }
     | identChar+        { IDENT(lexeme lexbuf) }
-    | float             { FLOAT(Single.Parse(lexeme lexbuf)) }
+    | float             { FLOAT(Double.Parse(lexeme lexbuf)) }
     | eof               { EOF }
     | _                 { unrecToken (lexeme lexbuf) }

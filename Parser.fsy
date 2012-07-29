@@ -2,21 +2,52 @@
 module Parser
 
 open Error
+open Types
 %}
 
 %token <string> IDENT
-%token <single> FLOAT
-%token LE GE LT GT EQ
+%token <float> FLOAT
+%token <int> OP
 %token PLUS MINUS
 %token AND OR
+%token LPAREN RPAREN
 %token SEMICOLON
 %token EOF
 
 %start inputUnit
-%type <unit> inputUnit
+%type <clauses * clauses> inputUnit
 
 %%
 
 inputUnit:
-    | EOF                       { () }
+    | clauses SEMICOLON clauses EOF { ($1, $3) }
+;
+
+clauses:
+    | clause                { Expr($1) }
+    | LPAREN clause RPAREN  { Expr($2) }
+    | clause AND clause     { And($1, $3) }
+    | clause OR clause      { Or($1, $3) }
+;
+
+clause:
+    | expr OP expr  { ($2, $1, $3) }
+;
+
+expr:
+    | term              { [$1] }
+    | expr PLUS term    { $1 @ [$3] }
+    | expr MINUS term   { let (a, b) = $3 in $1 @ [ (-a, b) ] }
+;
+
+term:
+    | num       { ($1, None) }
+    | num IDENT { ($1, Some $2) }
+    | IDENT     { (1., Some $1) }
+;
+
+num:
+    | FLOAT         { $1 }
+    | PLUS FLOAT    { $2 }
+    | MINUS FLOAT   { -($2) }
 ;
