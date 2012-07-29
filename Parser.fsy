@@ -3,6 +3,17 @@ module Parser
 
 open Error
 open Types
+
+let combineFormulae opAnd x y =
+    match (opAnd, x, y) with
+    | (true, And x, And y) -> And(x @ y)
+    | (true, And x, _) -> And(x @ [ y ])
+    | (true, _, And y) -> And(x :: y)
+    | (true, _, _) -> And [ x ; y ]
+    | (_, Or x, Or y) -> Or(x @ y)
+    | (_, Or x, _) -> Or(x @ [ y ])
+    | (_, _, Or y) -> Or(x :: y)
+    | _ -> Or [ x ; y ]
 %}
 
 %token <string> IDENT
@@ -15,22 +26,22 @@ open Types
 %token EOF
 
 %start inputUnit
-%type <clauses * clauses> inputUnit
+%type <formula * formula> inputUnit
 
 %%
 
 inputUnit:
-    | clauses SEMICOLON clauses EOF { ($1, $3) }
+    | formulae SEMICOLON formulae EOF { ($1, $3) }
 ;
 
-clauses:
-    | clause                { Expr($1) }
-    | LPAREN clause RPAREN  { Expr($2) }
-    | clause AND clause     { And($1, $3) }
-    | clause OR clause      { Or($1, $3) }
+formulae:
+    | formula                   { Expr($1) }
+    | LPAREN formulae RPAREN    { $2 }
+    | formulae AND formulae     { combineFormulae true $1 $3 }
+    | formulae OR formulae      { combineFormulae false $1 $3 }
 ;
 
-clause:
+formula:
     | expr OP expr  { ($2, $1, $3) }
 ;
 
