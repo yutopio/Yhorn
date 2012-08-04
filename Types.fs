@@ -14,3 +14,5 @@ type formula =
 type formula2 =
     | One of bool * Dictionary<string, float>
     | Many of formula2 list
+
+type nf = (bool * Dictionary<string, float>) list list
