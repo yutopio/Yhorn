@@ -11,10 +11,9 @@ type formula =
     | And of formula list
     | Or of formula list
 
-type coefMap = Dictionary<string, float>
-
+type coef = Dictionary<string, float>
+type expr2 = bool * coef
 type formula2 =
-    | One of bool * coefMap
+    | One of expr2
     | Many of formula2 list
-
-type nf = (bool * coefMap) list list
+type nf = expr2 list list

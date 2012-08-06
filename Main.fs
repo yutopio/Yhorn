@@ -3,8 +3,22 @@ module Main
 open System
 open System.Collections.Generic
 open System.Linq
+open System.Text
 open Parser
 open Types
+
+let mapIter f (dic:Dictionary<_,_>) =
+    Array.iter (fun k -> f k dic.[k]) (dic.Keys.ToArray()) in
+
+let print ((op, coef):expr2) =
+    let ret = new StringBuilder() in
+    let first = ref true in
+    mapIter (fun v c ->
+        if v = "" then () else
+        ((ret.AppendFormat((if c < 0. || !first then (if c = 1. then "{1}" else "{0}{1}") else if c = 1. then "+{1}" else "+{0}{1}"), c, v)); first := false)) coef;
+    ret.Append(if op then ">=" else ">");
+    ret.Append(-(coef.[""]));
+    Console.WriteLine(ret.ToString())
 
 // This procedure sums up all terms according to the variable and move to the
 // left-side of the expression. It also flips "<" and "<=" operators to ">" and
@@ -17,7 +31,8 @@ let normalizeExpr (op, t1, t2) =
         coefs.[key] <-
             if coefs.ContainsKey(key) then
                 coefs.[key] + sign * coef
-            else sign * coef
+            else sign * coef in
+    mapIter (fun k v -> if v = 0. then coefs.Remove(k); ()) coefs;
     List.iter (addCoef (if op % 2 = 0 then 1. else -1.)) t1;
     List.iter (addCoef (if op % 2 = 0 then -1. else 1.)) t2;
     (if op = 1 || op = 5 then op + 1 else op), coefs
@@ -54,6 +69,7 @@ let normalizeOperator formulae =
     | Or x -> normalizeGroupInternal false x []
 
 let eliminate matrix =
+    if Array.length !matrix = 0 then () else
     let rec eliminate matrix col row =
         // When the pivoting ends to the last column, end elimination.
         if col = Array.length (Array.get !matrix 0) then () else
@@ -89,10 +105,12 @@ let eliminate matrix =
         eliminate matrix (col + 1) row in
     eliminate matrix 0 0
 
-type conjGroup = (bool * coefMap) list
-let getInterpolant (a:conjGroup, b:conjGroup) =
-    let mapIter f (dic:Dictionary<_,_>) =
-        Array.iter (fun k -> f k dic.[k]) (dic.Keys.ToArray()) in
+let getInterpolant (a:expr2 list, b:expr2 list) =
+    (* DEBUG: Debug output *)
+    Console.WriteLine("==========");
+    List.iter print a;
+    Console.WriteLine("-----");
+    List.iter print b;
 
     (* Extract free variables that are used only in A *)
     let keyIDs = new Dictionary<string, int>() in
@@ -105,7 +123,7 @@ let getInterpolant (a:conjGroup, b:conjGroup) =
     let coefMat = ref (Array.init (keyIDs.Count) (
         fun _ -> Array.create (List.length a) 0.)) in
     let set var = if keyIDs.ContainsKey(var) then Array.set (Array.get !coefMat keyIDs.[var]) else fun _ _ -> () in
-    List.iteri (fun i (_, coefs:coefMap) -> mapIter (fun k v -> set k i v) coefs) a;
+    List.iteri (fun i (_, coefs:coef) -> mapIter (fun k v -> set k i v) coefs) a;
 
     (* Do Gaussian elimination *)
     let abs x = if x < 0. then -x else x
