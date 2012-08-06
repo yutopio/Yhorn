@@ -4,21 +4,32 @@ open System
 open System.Collections.Generic
 open System.Linq
 open System.Text
+open Microsoft.FSharp.Collections
 open Parser
 open Types
 
 let mapIter f (dic:Dictionary<_,_>) =
     Array.iter (fun k -> f k dic.[k]) (dic.Keys.ToArray()) in
 
-let print ((op, coef):expr2) =
+let abs x = if x < 0. then -x else x
+
+let printExpr2 ((op, coef):expr2) =
     let ret = new StringBuilder() in
     let first = ref true in
     mapIter (fun v c ->
         if v = "" then () else
-        ((ret.AppendFormat((if c < 0. || !first then (if c = 1. then "{1}" else "{0}{1}") else if c = 1. then "+{1}" else "+{0}{1}"), c, v)); first := false)) coef;
-    ret.Append(if op then ">=" else ">");
+        let cc = abs c in
+        if cc = 0. then () else
+        let format = (if c < 0. then "-" else if not (!first) then "+" else "") + (if cc <> 1. then "{0}" else "") + "{1}" in
+        (ret.AppendFormat(format, cc, v)); first := false) coef;
+    ret.Append(if op then " >= " else " > ");
     ret.Append(-(coef.[""]));
     Console.WriteLine(ret.ToString())
+
+let printMatrix matrix =
+    Array.iter (fun x ->
+        Array.iter (fun (x:float) -> Console.Write("{0}\t", x)) x;
+        Console.WriteLine()) matrix
 
 // This procedure sums up all terms according to the variable and move to the
 // left-side of the expression. It also flips "<" and "<=" operators to ">" and
@@ -108,9 +119,10 @@ let eliminate matrix =
 let getInterpolant (a:expr2 list, b:expr2 list) =
     (* DEBUG: Debug output *)
     Console.WriteLine("==========");
-    List.iter print a;
+    List.iter printExpr2 a;
     Console.WriteLine("-----");
-    List.iter print b;
+    List.iter printExpr2 b;
+    Console.WriteLine("-----");
 
     (* Extract free variables that are used only in A *)
     let keyIDs = new Dictionary<string, int>() in
@@ -125,8 +137,14 @@ let getInterpolant (a:expr2 list, b:expr2 list) =
     let set var = if keyIDs.ContainsKey(var) then Array.set (Array.get !coefMat keyIDs.[var]) else fun _ _ -> () in
     List.iteri (fun i (_, coefs:coef) -> mapIter (fun k v -> set k i v) coefs) a;
 
+    (* DEBUG: Matrix output *)
+    (Console.WriteLine("Removing vars:"));
+    mapIter (fun k v -> (Console.WriteLine("{0}: {1}", v, k))) keyIDs;
+    Console.WriteLine("-----");
+    printMatrix !coefMat;
+    Console.WriteLine("-----");
+
     (* Do Gaussian elimination *)
-    let abs x = if x < 0. then -x else x
     eliminate coefMat;
 
     (* TODO: Get the kernel for the matrix *)
