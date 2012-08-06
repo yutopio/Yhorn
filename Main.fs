@@ -6,8 +6,6 @@ open System.Linq
 open Parser
 open Types
 
-type coefMap = Dictionary<string, float>
-
 // This procedure sums up all terms according to the variable and move to the
 // left-side of the expression. It also flips "<" and "<=" operators to ">" and
 // ">=". Returns the operator number (2 >, 3 <>, 4 =, 6 >=) and the mapping from
@@ -91,24 +89,23 @@ let eliminate matrix =
         eliminate matrix (col + 1) row in
     eliminate matrix 0 0
 
-let processConjunction (coefs:coefMap list) =
-    let mapIter f (dic:coefMap) =
+type conjGroup = (bool * coefMap) list
+let getInterpolant (a:conjGroup, b:conjGroup) =
+    let mapIter f (dic:Dictionary<_,_>) =
         Array.iter (fun k -> f k dic.[k]) (dic.Keys.ToArray()) in
 
-    (* Assign indices for all variables *)
+    (* Extract free variables that are used only in A *)
     let keyIDs = new Dictionary<string, int>() in
-    List.iter (fun (coefs:coefMap) ->
-        let keyID = ref 0 in
-        mapIter (fun k _ ->
-            if not (keyIDs.ContainsKey(k) || k = "") then
-                (keyIDs.Add(k, !keyID); incr keyID)) coefs) coefs;
+    let keyOp f = List.iter (fun (_, coefs) -> mapIter (fun k _ -> f k) coefs) in
+    keyOp (fun k -> if not (keyIDs.ContainsKey(k) || k = "") then keyIDs.Add(k, 0)) a;
+    keyOp (fun k -> if keyIDs.ContainsKey(k) then ignore(keyIDs.Remove(k))) b;
+    let keyID = ref 0 in mapIter (fun k _ -> keyIDs.[k] <- !keyID; incr keyID) keyIDs;
 
     (* Create a transposed coefficient matrix *)
-    let coefMat = ref (Array.init (keyIDs.Count - 1) (
-        fun _ -> Array.create (coefs.Length) 0.)) in
-    let set var = Array.set (Array.get !coefMat keyIDs.[var])
-    List.iteri (fun i (coefs:coefMap) ->
-        mapIter (fun k v -> set k i v) coefs) coefs;
+    let coefMat = ref (Array.init (keyIDs.Count) (
+        fun _ -> Array.create (List.length a) 0.)) in
+    let set var = if keyIDs.ContainsKey(var) then Array.set (Array.get !coefMat keyIDs.[var]) else fun _ _ -> () in
+    List.iteri (fun i (_, coefs:coefMap) -> mapIter (fun k v -> set k i v) coefs) a;
 
     (* Do Gaussian elimination *)
     let abs x = if x < 0. then -x else x
@@ -133,4 +130,4 @@ let test = "x + y > 2 & y - 2z < 0 & 3x - z >= 5 ; 2x - y + 3z <= 0"
 let (g1, g2) = inputUnit Lexer.token (Lexing.LexBuffer<char>.FromString(test))
 let proc x = convertNormalForm (normalizeOperator x)
 let groups = directProduct (List.map proc [g1 ; g2])
-let _ = groups
+let _ = List.iter (fun (x:nf) -> getInterpolant (x.Item 0, x.Item 1)) groups
