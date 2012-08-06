@@ -117,22 +117,20 @@ let processConjunction (coefs:coefMap list) =
     (* TODO: Get the kernel for the matrix *)
     ()
 
-let permuteNormalForm input =
+let directProduct input =
     let ret = ref [] in
-    let rec inner input current =
-        match input with
+    let rec inner current = function
         | [] -> ret := current :: !ret
-        | x :: rest -> List.iter (fun x -> inner rest (current @ [x])) x in
-    inner input []; !ret
+        | x :: rest -> List.iter (fun x -> inner (current @ [x]) rest) x in
+    inner [] input; !ret
 
-let rec convertNormalForm group =
-    List.rev (List.fold (fun l x ->
-        match x with
-        | Many x -> (permuteNormalForm (convertNormalForm x)) @ l
+let rec convertNormalForm group : nf =
+    List.rev (List.fold (fun l -> function
+        | Many x -> (directProduct (convertNormalForm x)) @ l
         | One(x, y) -> [x,y] :: l) [] group)
 
 let test = "x + y > 2 & y - 2z < 0 & 3x - z >= 5 ; 2x - y + 3z <= 0"
 let (g1, g2) = inputUnit Lexer.token (Lexing.LexBuffer<char>.FromString(test))
-let norm = List.map normalizeOperator [g1 ; g2]
-let conv = List.map convertNormalForm norm
-let _ = conv
+let proc x = convertNormalForm (normalizeOperator x)
+let groups = directProduct (List.map proc [g1 ; g2])
+let _ = groups
