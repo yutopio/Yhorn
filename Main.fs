@@ -56,33 +56,40 @@ let normalizeOperator formulae =
     | Or x -> normalizeGroupInternal false x []
 
 let eliminate matrix =
-    let rec eliminate matrix col =
+    let rec eliminate matrix col row =
         // When the pivoting ends to the last column, end elimination.
         if col = Array.length (Array.get !matrix 0) then () else
 
-        // Choose the pivot row, which has the smallest absolute value in
+        // Choose the pivot row, which has the largest absolute value in
         // the current eliminating column.
-        // FIXME: Do not chose used row for a pivot again.
-        let (_, (i, t)) = Array.fold (fun (i, (j, y)) v ->
-            let z = Array.get v col in (i + 1, (
-            if z <> 0. && (j = -1 || abs y > abs z) then
-                (i, z) else (j, y)))) (0, (-1, 0.)) !matrix in
+        let (_, (i, t)) = Array.fold (fun (i, (j, y)) v -> (i + 1,
+            if i < row then (-1, 0.) else (* Do not reuse pivot row *)
+            let z = Array.get v col in (
+            if j = -1 || abs y < abs z then
+            (i, z) else (j, y)))) (0, (-1, 0.)) !matrix in
 
         // If no row has non-zero value in the column, it is skipped.
-        if i = -1 then () else
+        let row = if i = -1 then row else (
 
-        // Otherwise i-th row is chosen for the pivot.
-        let pivot = Array.get !matrix i in
-        matrix := Array.mapi (fun j v ->
-            if i = j then
-                Array.map (fun x -> x / t) v
-            else
-                let s = -(Array.get v col) / t in
-                Array.map2 (fun u v -> u + v * s) v pivot) !matrix;
+            // If the pivot row is not at diagonal position, switch.
+            (if i <> row then
+                let temp = Array.get !matrix i in
+                Array.set !matrix i (Array.get !matrix row);
+                Array.set !matrix row temp);
+
+            // Otherwise i-th row is chosen for the pivot.
+            let pivot = Array.get !matrix row in
+            (matrix := Array.mapi (fun j v ->
+                if row = j then
+                    Array.map (fun x -> x / t) v
+                else
+                    let s = -(Array.get v col) / t in
+                    Array.map2 (fun u v -> u + v * s) v pivot) !matrix);
+            row + 1) in
 
         // Recursively process all columns.
-        eliminate matrix (col + 1) in
-    eliminate matrix 0
+        eliminate matrix (col + 1) row in
+    eliminate matrix 0 0
 
 let processConjunction (coefs:coefMap list) =
     let mapIter f (dic:coefMap) =
