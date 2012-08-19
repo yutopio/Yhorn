@@ -148,23 +148,24 @@ let getInterpolant (a:expr2 list, b:expr2 list) =
     List.iter (printExpr2 "\t") b;
     Console.WriteLine();
 
-    let ab = a @ b in
+    let ab = List.toArray (a @ b) in
+    let abLen = Array.length ab in
 
     (* Assign indices for all variables *)
     let keyIDs = new Dictionary<string, int>() in
     let keyID = ref 0 in
-    List.iter (fun (_, coefs) ->
+    Array.iter (fun (_, coefs) ->
         mapIter (fun k _ ->
             if not (keyIDs.ContainsKey(k) || k = "") then
                 (keyIDs.Add(k, !keyID); incr keyID)) coefs) ab;
 
     (* Create a transposed coefficient matrix *)
     let coefMat = ref (Array.init (keyIDs.Count) (
-        fun _ -> Array.create (List.length ab) 0.)) in
+        fun _ -> Array.create abLen 0.)) in
     let set var =
         if var <> "" then Array.set (Array.get !coefMat keyIDs.[var])
         else fun _ _ -> () in
-    List.iteri (fun i (_, coef) -> mapIter (fun k v -> set k i v) coef) ab;
+    Array.iteri (fun i (_, coef) -> mapIter (fun k v -> set k i v) coef) ab;
 
     (* DEBUG: Debug output *)
     Console.WriteLine("Coefficient matrix:");
@@ -173,7 +174,7 @@ let getInterpolant (a:expr2 list, b:expr2 list) =
 
     (* DEBUG: Debug output *)
     Console.WriteLine("Constants:");
-    List.iter (fun (_, coef:coef) -> Console.Write("\t{0}", coef.[""])) ab;
+    Array.iter (fun (_, coef:coef) -> Console.Write("\t{0}", coef.[""])) ab;
     Console.WriteLine();
     Console.WriteLine();
 
@@ -187,6 +188,7 @@ let getInterpolant (a:expr2 list, b:expr2 list) =
 
     (* Get the kernel for the matrix *)
     let kernels = getNoyau !coefMat in
+    let kLen = List.length kernels in
 
     (* DEBUG: Debug output *)
     Console.WriteLine();
@@ -194,6 +196,23 @@ let getInterpolant (a:expr2 list, b:expr2 list) =
     List.iter (printVector "\t") kernels
     Console.WriteLine();
     Console.WriteLine("==========");
+
+    (* Calculate inner products of constants and kernel vectors *)
+    let prods = List.map (fun k -> Array.fold2 (
+        fun sum (_, coef:coef) x -> sum + (coef.[""]) * x) 0. ab k) kernels in
+
+    (* Build linear programming problem for OCaml Glpk *)
+    let zcoefs = Array.create kLen 1. in
+    let constrs = Array.init (abLen + 1) (fun i ->
+        List.toArray (List.map
+            (if i < abLen then fun (k:float []) -> k.[i] else
+                fun k -> Array.fold2 (fun sum (_, coef:coef) x ->
+                    sum + (coef.[""]) * x) 0. ab k
+            ) kernels)) in
+    let pbounds = Array.create (abLen + 1) (0., infinity) in
+    Array.set pbounds abLen (-infinity, 1e-5 (* epsilon *));
+    let xbounds = Array.create kLen (-infinity, infinity) in
+    ()
 
 let directProduct input =
     let ret = ref [] in
