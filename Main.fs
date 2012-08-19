@@ -26,11 +26,14 @@ let printExpr2 (offset:string) ((op, coef):expr2) =
     ret.Append(-(coef.[""]));
     Console.WriteLine(offset + ret.ToString())
 
-let printMatrix (offset:string) matrix =
+let printMatrix (offset:string) =
     Array.iter (fun x ->
         Console.Write(offset);
-        Array.iter (fun (x:float) -> Console.Write("{0}\t", x)) x;
-        Console.WriteLine()) matrix
+        Array.iter (fun (x:float) -> Console.Write("{0}\t", x.ToString("0.00"))) x;
+        Console.WriteLine())
+let printVector (offset:string) (x:float []) =
+    let elems = x.Select(fun (x:float) -> x.ToString("0.00")).ToArray() in
+    Console.WriteLine("{0}( {1} )", offset, String.Join("\t", elems))
 
 // This procedure sums up all terms according to the variable and move to the
 // left-side of the expression. It also flips ">" and ">=" operators to "<" and
@@ -83,10 +86,10 @@ let normalizeOperator formulae =
 (* Gaussian elimination routine *)
 let eliminate matrix =
     if Array.length !matrix = 0 then () else
-    let totalCols = Array.length (Array.get !matrix 0) in
-    let rec eliminate matrix col row =
+    let colLen = Array.length (Array.get !matrix 0) in
+    let rec eliminate matrix row col =
         // When the pivoting ends to the last column, end elimination.
-        if col = totalCols then () else
+        if col = colLen then () else
 
         // Choose the pivot row, which has the largest absolute value in
         // the current eliminating column.
@@ -115,16 +118,35 @@ let eliminate matrix =
             row + 1) in
 
         // Recursively process all columns.
-        eliminate matrix (col + 1) row in
+        eliminate matrix row (col + 1) in
     eliminate matrix 0 0
+
+let getNoyau matrix =
+    let rowLen = Array.length matrix in
+    if rowLen = 0 then [] else
+    let getRow = Array.get matrix in
+    let get row = Array.get (getRow row) in
+
+    let colLen = Array.length (getRow 0) in
+    let rec Internal matrix row col pivots ret =
+        if col = colLen then ret else
+
+        if row < rowLen & (get row col) = 1. then
+            Internal matrix (row + 1) (col + 1) (pivots @ [col]) ret
+        else (
+            let v = Array.create colLen 0. in
+            Array.set v col 1.;
+            List.iteri (fun i x -> Array.set v x (-(get i col))) pivots;
+            Internal matrix row (col + 1) pivots (ret @ [v])) in
+    Internal matrix 0 0 [] []
 
 let getInterpolant (a:expr2 list, b:expr2 list) =
     (* DEBUG: Debug output *)
-    Console.WriteLine("==========");
     Console.WriteLine("Expressions:");
     List.iter (printExpr2 "\t") a;
     Console.WriteLine("    --------------------");
     List.iter (printExpr2 "\t") b;
+    Console.WriteLine();
 
     let ab = a @ b in
 
@@ -145,26 +167,33 @@ let getInterpolant (a:expr2 list, b:expr2 list) =
     List.iteri (fun i (_, coef) -> mapIter (fun k v -> set k i v) coef) ab;
 
     (* DEBUG: Debug output *)
-    Console.WriteLine();
     Console.WriteLine("Coefficient matrix:");
     printMatrix "\t" !coefMat;
+    Console.WriteLine();
 
     (* DEBUG: Debug output *)
-    Console.WriteLine();
     Console.WriteLine("Constants:");
     List.iter (fun (_, coef:coef) -> Console.Write("\t{0}", coef.[""])) ab;
+    Console.WriteLine();
     Console.WriteLine();
 
     (* Do Gaussian elimination *)
     eliminate coefMat;
 
     (* DEBUG: Debug output *)
-    Console.WriteLine();
     Console.WriteLine("Eliminated:");
     printMatrix "\t" !coefMat;
+    Console.WriteLine();
 
-    (* TODO: Get the kernel for the matrix *)
-    ()
+    (* Get the kernel for the matrix *)
+    let kernels = getNoyau !coefMat in
+
+    (* DEBUG: Debug output *)
+    Console.WriteLine();
+    Console.WriteLine("Kernel vectors:");
+    List.iter (printVector "\t") kernels
+    Console.WriteLine();
+    Console.WriteLine("==========");
 
 let directProduct input =
     let ret = ref [] in
