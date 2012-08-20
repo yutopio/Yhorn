@@ -1,6 +1,4 @@
 %{
-module Parser
-
 open Error
 open Types
 
@@ -48,7 +46,7 @@ formula:
 expr:
     | term              { [$1] }
     | expr PLUS term    { $1 @ [$3] }
-    | expr MINUS term   { let (a, b) = $3 in $1 @ [ (-a, b) ] }
+    | expr MINUS term   { let (a, b) = $3 in $1 @ [ (-.a, b) ] }
 ;
 
 term:
@@ -60,5 +58,5 @@ term:
 num:
     | FLOAT         { $1 }
     | PLUS FLOAT    { $2 }
-    | MINUS FLOAT   { -($2) }
+    | MINUS FLOAT   { -.($2) }
 ;

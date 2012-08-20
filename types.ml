@@ -1,8 +1,12 @@
-module Types
 
-open System
-open System.Collections.Generic
-open Error
+open Map
+
+module String = struct
+  type t = string
+  let compare = compare
+end
+
+module M = Map.Make(String)
 
 type term = float * string
 type expr = int * term list * term list
@@ -11,7 +15,7 @@ type formula =
     | And of formula list
     | Or of formula list
 
-type coef = Dictionary<string, float>
+type coef = float M.t
 type expr2 = bool * coef
 type formula2 =
     | One of expr2

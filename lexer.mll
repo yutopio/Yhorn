@@ -1,13 +1,8 @@
 {
-module Lexer
-
-open System
+open Lexing
 open Error
-open Parser
 open Types
-
-(*** Some helper functions ***)
-let lexeme (lexbuf:Lexing.LexBuffer<_>) = new string(lexbuf.Lexeme)
+open Parser
 }
 
 let br = ['\r' '\n']
@@ -37,6 +32,6 @@ rule token = parse
     | '|'               { OR }
     | ';'               { SEMICOLON }
     | identChar+        { IDENT(lexeme lexbuf) }
-    | float             { FLOAT(Double.Parse(lexeme lexbuf)) }
+    | float             { FLOAT(float_of_string(lexeme lexbuf)) }
     | eof               { EOF }
     | _                 { unrecToken (lexeme lexbuf) }

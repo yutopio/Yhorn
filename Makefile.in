@@ -1,0 +1,196 @@
+##########################################################################
+#                                                                        #
+#  This software is free software; you can redistribute it and/or        #
+#  modify it under the terms of the GNU Library General Public           #
+#  License version 2.1, with the special exception on linking            #
+#  described in file LICENSE.                                            #
+#                                                                        #
+#  This software is distributed in the hope that it will be useful,      #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                  #
+#                                                                        #
+##########################################################################
+
+# Where to install the binaries
+DESTDIR	=
+prefix	=@prefix@
+exec_prefix=@exec_prefix@
+datarootdir=@datarootdir@
+BINDIR	=$(DESTDIR)@bindir@
+
+# Other variables set by ./configure
+OCAMLC   = @OCAMLC@
+OCAMLOPT = @OCAMLOPT@
+OCAMLDEP = @OCAMLDEP@ -slash
+OCAMLDOC = @OCAMLDOC@
+OCAMLLEX = @OCAMLLEX@
+OCAMLYACC= @OCAMLYACC@ -v
+OCAMLLIB = @OCAMLLIB@
+OCAMLBEST= @OCAMLBEST@
+OCAMLVERSION = @OCAMLVERSION@
+OCAMLWEB = @OCAMLWEB@
+OCAMLWIN32 = @OCAMLWIN32@
+OCAMLFIND = @OCAMLFIND@
+EXE = @EXE@
+LIBEXT = @LIBEXT@
+OBJEXT = @OBJEXT@
+
+# Others global variables
+SRCDIR	= .
+
+INCLUDES= -I $(SRCDIR)
+BFLAGS = $(INCLUDES) -g -dtypes
+OFLAGS = $(INCLUDES)
+
+# main target
+#############
+
+NAME=interpolation
+all: byte $(OCAMLBEST)
+
+# bytecode and native-code compilation
+######################################
+
+CMO = 	version error types parser lexer main
+CMO :=  $(patsubst %, $(SRCDIR)/%.cmo, $(CMO))
+
+CMX = $(CMO:.cmo=.cmx)
+CMA = interpolation.cma
+CMXA = interpolation.cmxa
+
+GENERATED = META version.ml parser.ml parser.mli lexer.ml
+
+$(CMX): OFLAGS += -for-pack Interpolation
+
+byte: $(CMA)
+opt: $(CMXA)
+
+interpolation.cma: interpolation.cmo
+	$(OCAMLC) $(INCLUDES) -a -g -o $@ $^
+
+interpolation.cmxa: interpolation.cmx
+	$(OCAMLOPT) $(INCLUDES) -a -o $@ $^
+
+interpolation.cmi: interpolation.cmo
+interpolation.o: interpolation.cmx
+
+interpolation.cmo: $(CMO)
+	$(OCAMLC) $(INCLUDES) -pack -g -o $@ $^
+
+interpolation.cmx: $(CMX)
+	$(OCAMLOPT) $(INCLUDES) -pack -o $@ $^
+
+VERSION=0.1
+
+version.ml: Makefile
+	rm -f $@
+	echo "let version = \""$(VERSION)"\"" > $@
+	echo "let date = \""`date`"\"" >> $@
+
+META: META.in Makefile
+	sed -e s/VERSION/$(VERSION)/ -e s/CMA/$(CMA)/ -e s/CMXA/$(CMXA)/ \
+		$@.in > $@
+
+# documentation
+###############
+
+DOCFILES=$(NAME).ps $(NAME).html
+
+NODOC	= parser lexer version
+NODOC	:= $(patsubst %, $(SRCDIR)/%.cmo, $(NODOC))
+DOC_CMO	= $(filter-out $(NODOC), $(CMO))
+DOC_SRC	= $(DOC_CMO:.cmo=.mli) $(DOC_CMO:.cmo=.ml)
+
+.PHONY: doc
+doc: $(DOC_CMO)
+	mkdir -p doc
+	rm -f doc/*
+	$(OCAMLDOC) -d doc -html $(DOC_SRC)
+
+wc:
+	ocamlwc -p $(SRCDIRC)/*.mli $(SRCDIRC)/*.ml
+
+# generic rules
+###############
+
+.SUFFIXES: .mli .ml .cmi .cmo .cmx .mll .mly
+
+.mli.cmi:
+	$(OCAMLC) -c $(BFLAGS) $<
+
+.ml.cmo:
+	$(OCAMLC) -c $(BFLAGS) $<
+
+.ml.o:
+	$(OCAMLOPT) -c $(OFLAGS) $<
+
+.ml.cmx:
+	$(OCAMLOPT) -c $(OFLAGS) $<
+
+.mll.ml:
+	$(OCAMLLEX) $<
+
+.mly.ml:
+	$(OCAMLYACC) -v $<
+
+.mly.mli:
+	$(OCAMLYACC) -v $<
+
+# Emacs tags
+############
+
+otags:
+	otags -r src
+
+tags:
+	find . -name "*.ml*" | sort -r | xargs \
+	etags "--regex=/let[ \t]+\([^ \t]+\)/\1/" \
+	      "--regex=/let[ \t]+rec[ \t]+\([^ \t]+\)/\1/" \
+	      "--regex=/and[ \t]+\([^ \t]+\)/\1/" \
+	      "--regex=/type[ \t]+\([^ \t]+\)/\1/" \
+              "--regex=/exception[ \t]+\([^ \t]+\)/\1/" \
+	      "--regex=/val[ \t]+\([^ \t]+\)/\1/" \
+	      "--regex=/module[ \t]+\([^ \t]+\)/\1/"
+
+# Makefile is rebuilt whenever Makefile.in or configure.in is modified
+######################################################################
+
+Makefile: Makefile.in config.status
+	if test -e $@; then chmod a+w $@; fi
+	./config.status
+	chmod a-w $@
+
+config.status: configure
+	./config.status --recheck
+
+configure: configure.in
+	autoconf
+
+# clean
+#######
+
+clean:
+	rm -f *~
+	for d in $(SRCDIR); \
+	do \
+	  rm -f $$d/*.cm[iox] $$d/*$(OBJEXT) $$d/*~ $$d/*.annot; \
+	done
+	rm -f $(GENERATED)
+	rm -f interpolation.*a interpolation.cm* interpolation.o interpolation$(LIBEXT)
+
+dist-clean distclean:: clean
+	rm -f Makefile config.cache config.log config.status *.byte *.opt
+
+gitclean git-clean:: dist-clean
+	rm -f config.* configure configure.lineno
+
+# depend
+########
+
+.PHONY: depend
+.depend depend: $(GENERATED)
+	rm -f .depend
+	$(OCAMLDEP) $(INCLUDES) $(SRCDIR)/*.ml $(SRCDIR)/*.mli > .depend
+
+include .depend
+
