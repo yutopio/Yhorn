@@ -24,7 +24,7 @@ let combineFormulae opAnd x y =
 %token EOF
 
 %start inputUnit
-%type <formula list> inputUnit
+%type <Types.formula list> inputUnit
 
 %%
 
