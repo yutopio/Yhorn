@@ -62,7 +62,9 @@ GENERATED = META version.ml parser.ml parser.mli lexer.ml
 
 $(CMX): OFLAGS += -for-pack Interpolation
 
+byte: BFLAGS+= -I +site-lib/glpk
 byte: $(CMA)
+opt: OFLAGS+= -I +site-lib/glpk
 opt: $(CMXA)
 
 interpolation.cma: interpolation.cmo
@@ -79,6 +81,12 @@ interpolation.cmo: $(CMO)
 
 interpolation.cmx: $(CMX)
 	$(OCAMLOPT) $(INCLUDES) -pack -o $@ $^
+
+interpolation.byte: interpolation.cmo
+	$(OCAMLC) -I +site-lib/glpk -g -unsafe -o $@ glpk.cma $^
+
+interpolation.opt: interpolation.cmx
+	$(OCAMLOPT) -I +site-lib/glpk -unsafe -inline 100 -o $@ glpk.cmxa $^
 
 VERSION=0.1
 

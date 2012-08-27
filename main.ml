@@ -1,3 +1,4 @@
+open Glpk
 open Parser
 open Types
 
@@ -178,17 +179,17 @@ let getInterpolant a b =
     print_endline "\n";
 
     (* DEBUG: Debug output *)
-    print_endline "Constants:\n";
+    print_endline "Constants:";
     Array.iter (fun (_, coef) ->
         print_string "\t";
         print_float (M.find "" coef)) ab;
-    print_endline "\n";
+    print_endline "\n\n";
 
     (* Do Gaussian elimination *)
     eliminate coefMat;
 
     (* DEBUG: Debug output *)
-    print_endline "Eliminated:\n";
+    print_endline "Eliminated:";
     printMatrix "\t" !coefMat;
     print_endline "\n";
 
@@ -199,7 +200,7 @@ let getInterpolant a b =
     (* DEBUG: Debug output *)
     print_endline "Kernel vectors:";
     List.iter (printVector "\t") kernels;
-    print_endline "\n==========";
+    print_endline "\n";
 
     (* Calculate inner products of constants and kernel vectors *)
     let prods = List.map (fun k ->
@@ -217,7 +218,17 @@ let getInterpolant a b =
     let pbounds = Array.create (abLen + 1) (0., infinity) in
     Array.set pbounds abLen (-.infinity, 1e-5 (* epsilon *));
     let xbounds = Array.create kLen (-.infinity, infinity) in
-    ()
+    let lp = make_problem Maximize zcoefs constrs pbounds xbounds in
+    set_message_level lp 0;
+    scale_problem lp;
+    use_presolver lp true;
+    simplex lp;
+
+    (* DEBUG: Debug output *)
+    let prim = get_col_primals lp in
+    print_endline "\n\nLP solution:";
+    printVector "\t" prim;
+    print_endline "\n=========="
 
 let directProduct input =
     let ret = ref [] in
