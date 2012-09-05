@@ -202,21 +202,18 @@ let getInterpolant a b =
     List.iter (printVector "\t") kernels;
     print_endline "\n";
 
-    (* Calculate inner products of constants and kernel vectors *)
-    let prods = List.map (fun k ->
-        arrayFold2 (fun sum (_, coef) x ->
-            sum +. (M.find "" coef) *. x) 0. ab k) kernels in
-
     (* Build linear programming problem for OCaml Glpk *)
     let zcoefs = Array.create kLen 1. in
-    let constrs = Array.init (abLen + 1) (fun i ->
-        listToArray (List.map
-            (if i < abLen then fun k -> Array.get k i else
+    let constrs = Array.init (abLen + 2) (fun i ->
+        listToArray (List.map (
+            if i < abLen then fun k -> Array.get k i
+            else if i = abLen then
                 fun k -> arrayFold2 (fun sum (_, coef) x ->
                     sum +. (M.find "" coef) *. x) 0. ab k
-            ) kernels)) in
+            else fun _ -> 1.) kernels)) in
     let pbounds = Array.create (abLen + 1) (0., infinity) in
     Array.set pbounds abLen (-.infinity, 1e-5 (* epsilon *));
+    Array.set pbounds (abLen + 1) (-.1., -.1.);
     let xbounds = Array.create kLen (-.infinity, infinity) in
     let lp = make_problem Maximize zcoefs constrs pbounds xbounds in
     set_message_level lp 0;
