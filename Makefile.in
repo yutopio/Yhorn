@@ -31,6 +31,7 @@ OCAMLVERSION = @OCAMLVERSION@
 OCAMLWEB = @OCAMLWEB@
 OCAMLWIN32 = @OCAMLWIN32@
 OCAMLFIND = @OCAMLFIND@
+OCAMLGLPK = @OCAMLGLPK@
 EXE = @EXE@
 LIBEXT = @LIBEXT@
 OBJEXT = @OBJEXT@
@@ -38,7 +39,7 @@ OBJEXT = @OBJEXT@
 # Others global variables
 SRCDIR	= .
 
-INCLUDES= -I $(SRCDIR)
+INCLUDES= -I $(SRCDIR) -I $(OCAMLGLPK)
 BFLAGS = $(INCLUDES) -g -dtypes
 OFLAGS = $(INCLUDES)
 
@@ -62,9 +63,7 @@ GENERATED = META version.ml parser.ml parser.mli lexer.ml
 
 $(CMX): OFLAGS += -for-pack Interpolation
 
-byte: BFLAGS+= -I +site-lib/glpk
 byte: $(CMA)
-opt: OFLAGS+= -I +site-lib/glpk
 opt: $(CMXA)
 
 interpolation.cma: interpolation.cmo
@@ -83,10 +82,10 @@ interpolation.cmx: $(CMX)
 	$(OCAMLOPT) $(INCLUDES) -pack -o $@ $^
 
 interpolation.byte: interpolation.cmo
-	$(OCAMLC) -I +site-lib/glpk -g -unsafe -o $@ glpk.cma $^
+	$(OCAMLC) -I $(OCAMLGLPK) -g -unsafe -o $@ glpk.cma $^
 
 interpolation.opt: interpolation.cmx
-	$(OCAMLOPT) -I +site-lib/glpk -unsafe -inline 100 -o $@ glpk.cmxa $^
+	$(OCAMLOPT) -I $(OCAMLGLPK) -unsafe -inline 100 -o $@ glpk.cmxa $^
 
 VERSION=0.1
 
