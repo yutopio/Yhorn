@@ -211,7 +211,7 @@ let getInterpolant a b =
                 fun k -> arrayFold2 (fun sum (_, coef) x ->
                     sum +. (M.find "" coef) *. x) 0. ab k
             else fun _ -> 1.) kernels)) in
-    let pbounds = Array.create (abLen + 1) (0., infinity) in
+    let pbounds = Array.create (abLen + 2) (0., infinity) in
     Array.set pbounds abLen (-.infinity, 1e-5 (* epsilon *));
     Array.set pbounds (abLen + 1) (-.1., -.1.);
     let xbounds = Array.create kLen (-.infinity, infinity) in
