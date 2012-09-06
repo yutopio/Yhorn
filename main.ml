@@ -187,8 +187,11 @@ let getInterpolant a b =
 
     (* Build linear programming problem for OCaml Glpk *)
     let zcoefs = Array.map (fun (_, coef) -> -.(M.find "" coef)) ab in
-    let constrs = coefMat in
-    let pbounds = Array.create vars (0., 0.) in
+    let constrs = Array.make_matrix (vars + 1) abLen 0. in
+    Array.iteri (fun i a -> Array.set constrs i a) coefMat;
+    Array.set constrs vars zcoefs;
+    let pbounds = Array.create (vars + 1) (0., 0.) in
+    Array.set pbounds vars (-100., 0.);
     let xbounds = Array.create abLen (0., infinity) in
     let lp = make_problem Minimize zcoefs constrs pbounds xbounds in
     set_message_level lp 0;
