@@ -159,63 +159,38 @@ let getInterpolant a b =
     let abLen = Array.length ab in
 
     (* Assign indices for all variables *)
-    let keyID = ref (-1) in
-    let keyIDs = Array.fold_left (fun m (_, coefs) ->
+    let vars = ref (-1) in
+    let varIDs = Array.fold_left (fun m (_, coefs) ->
         M.fold (fun k _ m ->
             if not (M.mem k m || k = "") then
-                (incr keyID; M.add k !keyID m) else m) coefs m) M.empty ab in
-    incr keyID;
+                (incr vars; M.add k !vars m) else m) coefs m) M.empty ab in
+    let vars = incr vars; !vars in
 
     (* Create a transposed coefficient matrix *)
-    let coefMat = ref (Array.init !keyID (fun _ -> Array.create abLen 0.)) in
+    let coefMat = Array.make_matrix vars abLen 0. in
     let set var =
-        if var <> "" then Array.set (Array.get !coefMat (M.find var keyIDs))
+        if var <> "" then Array.set (Array.get coefMat (M.find var varIDs))
         else fun _ _ -> () in
     Array.iteri (fun i (_, coef) -> M.iter (fun k v -> set k i v) coef) ab;
 
     (* DEBUG: Debug output *)
     print_endline "Coefficient matrix:";
-    printMatrix "\t" !coefMat;
+    printMatrix "\t" coefMat;
     print_endline "\n";
 
     (* DEBUG: Debug output *)
     print_endline "Constants:";
     Array.iter (fun (_, coef) ->
         print_string "\t";
-        print_float (M.find "" coef)) ab;
+        print_float (-.(M.find "" coef))) ab;
     print_endline "\n\n";
 
-    (* Do Gaussian elimination *)
-    eliminate coefMat;
-
-    (* DEBUG: Debug output *)
-    print_endline "Eliminated:";
-    printMatrix "\t" !coefMat;
-    print_endline "\n";
-
-    (* Get the kernel for the matrix *)
-    let kernels = getNoyau !coefMat in
-    let kLen = List.length kernels in
-
-    (* DEBUG: Debug output *)
-    print_endline "Kernel vectors:";
-    List.iter (printVector "\t") kernels;
-    print_endline "\n";
-
     (* Build linear programming problem for OCaml Glpk *)
-    let zcoefs = Array.create kLen 1. in
-    let constrs = Array.init (abLen + 2) (fun i ->
-        listToArray (List.map (
-            if i < abLen then fun k -> Array.get k i
-            else if i = abLen then
-                fun k -> arrayFold2 (fun sum (_, coef) x ->
-                    sum +. (M.find "" coef) *. x) 0. ab k
-            else fun _ -> 1.) kernels)) in
-    let pbounds = Array.create (abLen + 2) (0., infinity) in
-    Array.set pbounds abLen (-.infinity, 1e-5 (* epsilon *));
-    Array.set pbounds (abLen + 1) (-.1., -.1.);
-    let xbounds = Array.create kLen (-.infinity, infinity) in
-    let lp = make_problem Maximize zcoefs constrs pbounds xbounds in
+    let zcoefs = Array.map (fun (_, coef) -> -.(M.find "" coef)) ab in
+    let constrs = coefMat in
+    let pbounds = Array.create vars (0., 0.) in
+    let xbounds = Array.create abLen (0., infinity) in
+    let lp = make_problem Minimize zcoefs constrs pbounds xbounds in
     set_message_level lp 0;
     scale_problem lp;
     use_presolver lp true;
