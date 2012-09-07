@@ -185,13 +185,16 @@ let getInterpolant a b =
         print_float (-.(M.find "" coef))) ab;
     print_endline "\n\n";
 
+    (* TODO: Support mixed constraints of <= and < *)
+
     (* Build linear programming problem for OCaml Glpk *)
-    let zcoefs = Array.map (fun (_, coef) -> -.(M.find "" coef)) ab in
+    (* TODO: Use of SMT solvers as an alternative method *)
+    let zcoefs = Array.map (fun (_, coef) -> 0.) ab in
     let constrs = Array.make_matrix (vars + 1) abLen 0. in
     Array.iteri (fun i a -> Array.set constrs i a) coefMat;
-    Array.set constrs vars zcoefs;
+    Array.set constrs vars (Array.create abLen 1.);
     let pbounds = Array.create (vars + 1) (0., 0.) in
-    Array.set pbounds vars (-100., 0.);
+    Array.set pbounds vars (1., infinity);
     let xbounds = Array.create abLen (0., infinity) in
     let lp = make_problem Minimize zcoefs constrs pbounds xbounds in
     set_message_level lp 0;
@@ -202,8 +205,12 @@ let getInterpolant a b =
     (* DEBUG: Debug output *)
     let prim = get_col_primals lp in
     print_endline "\n\nLP solution:";
+    (* TODO: Want to have an integer vector *)
     printVector "\t" prim;
-    print_endline "\n=========="
+    print_endline "\n==========";
+
+    (* TODO: Show one interpolant *)
+    ()
 
 let directProduct input =
     let ret = ref [] in
@@ -217,8 +224,11 @@ let rec convertNormalForm group : nf =
         | Many x -> (directProduct (convertNormalForm x)) @ l
         | One x -> [x] :: l) [] group)
 
-let test = "x + y >= 2 & y - 2z <= 0 & 3x - z >= 5 ; 2x - y + 3z <= 0"
+(* FIXME: Buggy input *)
+let test = "x = z & y = z ; x >= w & y + 1 <= w"
+
 let formulae = inputUnit Lexer.token (Lexing.from_string test)
+(* TODO: Check consistency among formulae with = and <> before normalization *)
 let proc x = convertNormalForm (normalizeOperator x)
 let groups = directProduct (List.map proc formulae)
 let a = List.iter (fun x -> getInterpolant (List.hd x) (List.nth x 1)) groups

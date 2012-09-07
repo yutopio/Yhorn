@@ -29,6 +29,7 @@ let combineFormulae opAnd x y =
 %%
 
 inputUnit:
+    /* TODO: Support multiple formulae group */
     | formulae SEMICOLON formulae EOF { [$1;$3] }
 ;
 
