@@ -40,7 +40,8 @@ let normalizeExpr (op, t1, t2) =
         M.add key (sign *. coef +.
             (if M.mem key coefs then M.find key coefs else 0.)) coefs in
     let sign = if op = 2 || op = 6 then -1. else 1. in
-    let coefs = List.fold_left (addCoef sign) M.empty t1 in
+    let coefs = M.add "" 0. M.empty in
+    let coefs = List.fold_left (addCoef sign) coefs t1 in
     let coefs = List.fold_left (addCoef (-.sign)) coefs t2 in
     let coefs = M.fold (fun k v coefs ->
         if k <> "" && v = 0. then M.remove k coefs else coefs) coefs coefs in
@@ -207,10 +208,21 @@ let getInterpolant a b =
     print_endline "\n\nLP solution:";
     (* TODO: Want to have an integer vector *)
     printVector "\t" prim;
-    print_endline "\n==========";
 
-    (* TODO: Show one interpolant *)
-    ()
+    (* Calculate one interpolant *)
+    let i = ref 0 in
+    let m = List.fold_left (fun (f1, m) (f2, coefs) -> (f1 & f2),
+        let w = prim.(!i) in incr i;
+        if w = 0. then m else
+        M.fold (fun x v m ->
+            let v = (if M.mem x m then M.find x m else 0.) +. v *. w in
+            M.add x v m) coefs m) (true, M.empty) a in
+
+    (* DEBUG: Debug output *)
+    print_endline "\n\nInterpolant:";
+    printExpr2 "\t" m;
+
+    print_endline "\n=========="
 
 let directProduct input =
     let ret = ref [] in
