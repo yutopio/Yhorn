@@ -1,6 +1,7 @@
 open Glpk
 open Parser
 open Types
+open Z3py
 
 let abs x = if x < 0. then -.x else x
 
@@ -184,31 +185,25 @@ let getInterpolant a b =
     Array.iter (fun (_, coef) ->
         print_string "\t";
         print_float (-.(M.find "" coef))) ab;
-    print_endline "\n\n";
+    print_endline "\n";
 
     (* TODO: Support mixed constraints of <= and < *)
 
     (* Build linear programming problem for OCaml Glpk *)
     (* TODO: Use of SMT solvers as an alternative method *)
-    let zcoefs = Array.map (fun (_, coef) -> 0.) ab in
-    let constrs = Array.make_matrix (vars + 2) abLen 0. in
-    Array.iteri (fun i a -> Array.set constrs i a) coefMat;
-    Array.set constrs vars (Array.create abLen 1.);
-    Array.set constrs (vars + 1) (Array.map (fun (_, coef) -> -.(M.find "" coef)) ab);
-    let pbounds = Array.create (vars + 2) (0., 0.) in
-    Array.set pbounds vars (1., infinity);
-    Array.set pbounds (vars + 1) (-.infinity, 1e-5 (* epsilon *));
-    let xbounds = Array.create abLen (0., infinity) in
-    let lp = make_problem Minimize zcoefs constrs pbounds xbounds in
-    set_message_level lp 0;
-    scale_problem lp;
-    use_presolver lp true;
-    simplex lp;
+    let constrs = Array.make_matrix (vars + 2) abLen 0 in
+    Array.iteri (fun i a -> Array.set constrs i (Array.map int_of_float a)) coefMat;
+    Array.set constrs vars (Array.create abLen 1);
+    Array.set constrs (vars + 1) (Array.map (fun (_, coef) -> - (int_of_float (M.find "" coef))) ab);
+    let pbounds = Array.create (vars + 2) (0, 0) in
+    Array.set pbounds vars (1, max_int);
+    Array.set pbounds (vars + 1) (min_int, -1);
+    let xbounds = Array.create abLen (0, max_int) in
+    let ret = integer_programming constrs pbounds xbounds in
 
     (* DEBUG: Debug output *)
-    let prim = get_col_primals lp in
-    print_endline "\n\nLP solution:";
-    (* TODO: Want to have an integer vector *)
+    let prim = Array.map float_of_int ret in
+    print_endline "\nLP solution:";
     printVector "\t" prim;
 
     (* Calculate one interpolant *)

@@ -8,6 +8,13 @@ end
 
 module M = Map.Make(String)
 
+module Integer = struct
+  type t = int
+  let compare = compare
+end
+
+module MI = Map.Make(Integer)
+
 type term = float * string
 type expr = int * term list * term list
 type formula =
