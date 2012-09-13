@@ -191,11 +191,13 @@ let getInterpolant a b =
     (* Build linear programming problem for OCaml Glpk *)
     (* TODO: Use of SMT solvers as an alternative method *)
     let zcoefs = Array.map (fun (_, coef) -> 0.) ab in
-    let constrs = Array.make_matrix (vars + 1) abLen 0. in
+    let constrs = Array.make_matrix (vars + 2) abLen 0. in
     Array.iteri (fun i a -> Array.set constrs i a) coefMat;
     Array.set constrs vars (Array.create abLen 1.);
-    let pbounds = Array.create (vars + 1) (0., 0.) in
+    Array.set constrs (vars + 1) (Array.map (fun (_, coef) -> -.(M.find "" coef)) ab);
+    let pbounds = Array.create (vars + 2) (0., 0.) in
     Array.set pbounds vars (1., infinity);
+    Array.set pbounds (vars + 1) (-.infinity, 1e-5 (* epsilon *));
     let xbounds = Array.create abLen (0., infinity) in
     let lp = make_problem Minimize zcoefs constrs pbounds xbounds in
     set_message_level lp 0;
