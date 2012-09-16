@@ -15,78 +15,80 @@ let set_message_level _ _ = ()
 let scale_problem _ = ()
 let use_presolver _ _ = ()
 let simplex _ = ()
-let get_col_primals _ = Array.create 10 1.
+let get_col_primals _ = Array.create 10 1
 
 let mapIter f (dic:Dictionary<_,_>) =
     Array.iter (fun k -> f k dic.[k]) (dic.Keys.ToArray())
-
+let float_of_int (x:int) = Double.Parse(x.ToString())
 let abs x = if x < 0. then -x else x
 
 let printExpr2 (offset:string) ((op, coef):expr2) =
     let ret = new StringBuilder() in
     let first = ref true in
-    mapIter (fun v c ->
+    mapIter (fun v (c:int) ->
         if v = "" then () else
-        let cc = abs c in
-        if cc = 0. then () else
-        let format = (if c < 0. then "-" else if not (!first) then "+" else "") + (if cc <> 1. then "{0}" else "") + "{1}" in
+        let cc = Math.Abs(c) in
+        if cc = 0 then () else
+        let format = (if c < 0 then "-" else if not (!first) then "+" else "") + (if cc <> 1 then "{0}" else "") + "{1}" in
         (ret.AppendFormat(format, cc, v)); first := false) coef;
-    ret.Append(if op then " <= " else " < ");
+    ret.Append(match op with
+        | EQ -> " = "
+        | NEQ -> " <> "
+        | LT -> " < "
+        | LTE -> " <= "
+        | GT -> " > "
+        | GTE -> " >= ");
     ret.Append(-(coef.[""]));
     Console.WriteLine(offset + ret.ToString())
 
 let printMatrix (offset:string) =
     Array.iter (fun x ->
         Console.Write(offset);
-        Array.iter (fun (x:float) -> Console.Write("{0}\t", x.ToString("0.00"))) x;
+        Array.iter (fun (x:int) -> Console.Write("{0}\t", x)) x;
         Console.WriteLine())
-let printVector (offset:string) (x:float []) =
-    let elems = x.Select(fun (x:float) -> x.ToString("0.00")).ToArray() in
+let printVector (offset:string) (x:int []) =
+    let elems = x.Select(fun (x:int) -> x.ToString()).ToArray() in
     Console.WriteLine("{0}( {1} )", offset, String.Join("\t", elems))
 
 // This procedure sums up all terms according to the variable and move to the
-// left-side of the expression. It also flips ">" and ">=" operators to "<" and
-// "<=". Returns the operator number (1 <, 3 <>, 4 =, 5 <=) and the mapping from
-// a variable to its coefficient. The constant has empty string as a key.
+// left-side of the expression. It flips greater-than operators (>, >=) to
+// less-than operators (<, <=) and replaces strict inequality (<, >) with not
+// strict ones (<=, >=) by doing +/- 1 on constant term. Returns the operator
+// and the mapping from a variable to its coefficient. The constant term has the
+// empty string as a key.
 let normalizeExpr (op, t1, t2) =
     let coefs = new coef() in
     let addCoef sign (coef, key) =
-        coefs.[key] <-
-            if coefs.ContainsKey(key) then
-                coefs.[key] + sign * coef
-            else sign * coef in
-    let sign = if op = 2 || op = 6 then -1. else 1. in
+        coefs.[key] <- sign * coef +
+            if coefs.ContainsKey(key) then coefs.[key] else 0 in
+    let t2, sign, op =
+        match op with
+        | LT -> (-1, "") :: t2, 1, LTE
+        | GT -> (1, "") :: t2, -1, LTE
+        | GTE -> t2, -1, LTE
+        | _ -> t2, 1, op
+    coefs.Add("", 0);
     List.iter (addCoef sign) t1;
     List.iter (addCoef (-sign)) t2;
-    mapIter (fun k v -> if k <> "" & v = 0. then coefs.Remove(k); ()) coefs;
-    (if sign = -1. then op - 1 else op), coefs
+    mapIter (fun k v -> if k <> "" & v = 0 then coefs.Remove(k); ()) coefs;
+    One(op, coefs)
 
 // Copies the given mapping with sign of every coefficient reversed.
 let invert (coefs:coef) =
     let r = new coef(coefs) in
     mapIter (fun k v -> r.[k] <- (-v)) r; r
 
-// This procedure normalizes all formulae by sorting out its coefficients, and
-// reduces the kinds of operators into only >= and >. It returns the tree
-// data structure formed by formula2. The equality is stored as the first value
-// of One construct, which appears as the leaf of the tree.
+// This procedure will be deleted in the next commit.
 let normalizeOperator formulae =
     let rec Internal opAnd formulae ret =
         match formulae with
         | [] -> ret
         | x :: l ->
             let elem = match x with
-                | Expr x ->
-                    let (op, coefs) = normalizeExpr x in
-                    let pair eq = [One (eq, coefs); One (eq, invert coefs)] in
-                    match op with
-                    | 1 -> [One (false, coefs)]
-                    | 3 -> let l = pair false in if opAnd then [Many l] else l
-                    | 4 -> let l = pair true in if opAnd then l else [Many l]
-                    | 5 -> [One (true, coefs)]
-                | And x -> [Many (Internal true x [])]
-                | Or x -> [Many (Internal false x [])] in
-            Internal opAnd l (elem @ ret) in
+                | Expr x -> normalizeExpr x
+                | And x -> Many (Internal true x [])
+                | Or x -> Many (Internal false x []) in
+            Internal opAnd l (elem :: ret) in
     match formulae with
     | Expr _ -> Internal false [ formulae ] []
     | And x -> [ Many (Internal true x []) ]
@@ -170,7 +172,7 @@ let getInterpolant (a:expr2 list, b:expr2 list) =
     let vars = incr vars; !vars in
 
     (* Create a transposed coefficient matrix *)
-    let coefMat = Array.init vars (fun _ -> Array.create abLen 0.) in
+    let coefMat = Array.init vars (fun _ -> Array.create abLen 0) in
     let set var =
         if var <> "" then Array.set (Array.get coefMat varIDs.[var])
         else fun _ _ -> () in
@@ -193,9 +195,9 @@ let getInterpolant (a:expr2 list, b:expr2 list) =
     (* TODO: Use of SMT solvers as an alternative method *)
     let zcoefs = Array.map (fun _ -> 0.) ab in
     let constrs = Array.create (vars + 2) (Array.create abLen 0.) in
-    Array.iteri (fun i a -> Array.set constrs i a) coefMat;
+    Array.iteri (fun i a -> Array.set constrs i (Array.map float_of_int a)) coefMat;
     Array.set constrs vars (Array.create abLen 1.);
-    Array.set constrs (vars + 1) (Array.map (fun (_, coef:coef) -> -coef.[""]) ab);
+    Array.set constrs (vars + 1) (Array.map (fun (_, coef:coef) -> - (float_of_int coef.[""])) ab);
     let pbounds = Array.create (vars + 2) (0., 0.) in
     Array.set pbounds vars (1., infinity);
     Array.set pbounds (vars + 1) (Double.NegativeInfinity, Double.Epsilon);
@@ -217,11 +219,11 @@ let getInterpolant (a:expr2 list, b:expr2 list) =
     let m = new coef() in
     let m = (List.fold (fun f1 (f2, coefs) ->
         let w = prim.[!i] in incr i;
-        if w <> 0. then
+        if w <> 0 then
             mapIter (fun x v ->
-                let v = (if m.ContainsKey(x) then m.[x] else 0.) + v * w in
+                let v = (if m.ContainsKey(x) then m.[x] else 0) + v * w in
                 m.[x] <- v) coefs;
-        f1 & f2) true a), m in
+        LTE (* FIXME: should evaluate operators of each expression *) ) EQ a), m in
 
     (* DEBUG: Debug output *)
     Console.WriteLine("\n\nInterpolant:");
@@ -245,7 +247,7 @@ let rec convertNormalForm group : nf =
 let test = "x + y >= 2 & y - 2z <= 0 & 3x - z >= 5 ; 2x - y + 3z <= 0"
 
 let formulae = inputUnit Lexer.token (Lexing.LexBuffer<char>.FromString(test))
-(* TODO: Check consistency among formulae with = and <> before normalization *)
 let proc x = convertNormalForm (normalizeOperator x)
 let groups = directProduct (List.map proc formulae)
+(* TODO: Check consistency among formulae with = and <> before normalization *)
 let a = List.iter (fun (x:nf) -> getInterpolant (x.Item 0, x.Item 1)) groups
