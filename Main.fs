@@ -8,8 +8,17 @@ open Microsoft.FSharp.Collections
 open Parser
 open Types
 
+(* Mock *)
+let Minimize = ()
+let make_problem _ _ _ _ _ = ()
+let set_message_level _ _ = ()
+let scale_problem _ = ()
+let use_presolver _ _ = ()
+let simplex _ = ()
+let get_col_primals _ = Array.create 10 1.
+
 let mapIter f (dic:Dictionary<_,_>) =
-    Array.iter (fun k -> f k dic.[k]) (dic.Keys.ToArray()) in
+    Array.iter (fun k -> f k dic.[k]) (dic.Keys.ToArray())
 
 let abs x = if x < 0. then -x else x
 
@@ -152,66 +161,73 @@ let getInterpolant (a:expr2 list, b:expr2 list) =
     let abLen = Array.length ab in
 
     (* Assign indices for all variables *)
-    let keyIDs = new Dictionary<string, int>() in
-    let keyID = ref 0 in
+    let vars = ref (-1) in
+    let varIDs = new Dictionary<string, int>() in
     Array.iter (fun (_, coefs) ->
         mapIter (fun k _ ->
-            if not (keyIDs.ContainsKey(k) || k = "") then
-                (keyIDs.Add(k, !keyID); incr keyID)) coefs) ab;
+            if not (varIDs.ContainsKey(k) || k = "") then
+                (incr vars; varIDs.Add(k, !vars))) coefs) ab;
+    let vars = incr vars; !vars in
 
     (* Create a transposed coefficient matrix *)
-    let coefMat = ref (Array.init (keyIDs.Count) (
-        fun _ -> Array.create abLen 0.)) in
+    let coefMat = Array.init vars (fun _ -> Array.create abLen 0.) in
     let set var =
-        if var <> "" then Array.set (Array.get !coefMat keyIDs.[var])
+        if var <> "" then Array.set (Array.get coefMat varIDs.[var])
         else fun _ _ -> () in
     Array.iteri (fun i (_, coef) -> mapIter (fun k v -> set k i v) coef) ab;
 
     (* DEBUG: Debug output *)
     Console.WriteLine("Coefficient matrix:");
-    printMatrix "\t" !coefMat;
+    printMatrix "\t" coefMat;
     Console.WriteLine();
 
     (* DEBUG: Debug output *)
     Console.WriteLine("Constants:");
-    Array.iter (fun (_, coef:coef) -> Console.Write("\t{0}", coef.[""])) ab;
+    Array.iter (fun (_, coef:coef) -> Console.Write("\t{0}", -coef.[""])) ab;
     Console.WriteLine();
     Console.WriteLine();
 
-    (* Do Gaussian elimination *)
-    eliminate coefMat;
-
-    (* DEBUG: Debug output *)
-    Console.WriteLine("Eliminated:");
-    printMatrix "\t" !coefMat;
-    Console.WriteLine();
-
-    (* Get the kernel for the matrix *)
-    let kernels = getNoyau !coefMat in
-    let kLen = List.length kernels in
-
-    (* DEBUG: Debug output *)
-    Console.WriteLine();
-    Console.WriteLine("Kernel vectors:");
-    List.iter (printVector "\t") kernels
-    Console.WriteLine();
-    Console.WriteLine("==========");
-
-    (* Calculate inner products of constants and kernel vectors *)
-    let prods = List.map (fun k -> Array.fold2 (
-        fun sum (_, coef:coef) x -> sum + (coef.[""]) * x) 0. ab k) kernels in
+    (* TODO: Support mixed constraints of <= and < *)
 
     (* Build linear programming problem for OCaml Glpk *)
-    let zcoefs = Array.create kLen 1. in
-    let constrs = Array.init (abLen + 1) (fun i ->
-        List.toArray (List.map
-            (if i < abLen then fun (k:float []) -> k.[i] else
-                fun k -> Array.fold2 (fun sum (_, coef:coef) x ->
-                    sum + (coef.[""]) * x) 0. ab k
-            ) kernels)) in
-    let pbounds = Array.create (abLen + 1) (0., infinity) in
-    Array.set pbounds abLen (-infinity, 1e-5 (* epsilon *));
-    let xbounds = Array.create kLen (-infinity, infinity) in
+    (* TODO: Use of SMT solvers as an alternative method *)
+    let zcoefs = Array.map (fun _ -> 0.) ab in
+    let constrs = Array.create (vars + 2) (Array.create abLen 0.) in
+    Array.iteri (fun i a -> Array.set constrs i a) coefMat;
+    Array.set constrs vars (Array.create abLen 1.);
+    Array.set constrs (vars + 1) (Array.map (fun (_, coef:coef) -> -coef.[""]) ab);
+    let pbounds = Array.create (vars + 2) (0., 0.) in
+    Array.set pbounds vars (1., infinity);
+    Array.set pbounds (vars + 1) (Double.NegativeInfinity, Double.Epsilon);
+    let xbounds = Array.create abLen (0., infinity) in
+    let lp = make_problem Minimize zcoefs constrs pbounds xbounds in
+    set_message_level lp 0;
+    scale_problem lp;
+    use_presolver lp true;
+    simplex lp;
+
+    (* DEBUG: Debug output *)
+    let prim = get_col_primals lp in
+    Console.WriteLine("\n\nLP solution:");
+    (* TODO: Want to have an integer vector *)
+    printVector "\t" prim;
+
+    (* Calculate one interpolant *)
+    let i = ref 0 in
+    let m = new coef() in
+    let m = (List.fold (fun f1 (f2, coefs) ->
+        let w = prim.[!i] in incr i;
+        if w <> 0. then
+            mapIter (fun x v ->
+                let v = (if m.ContainsKey(x) then m.[x] else 0.) + v * w in
+                m.[x] <- v) coefs;
+        f1 & f2) true a), m in
+
+    (* DEBUG: Debug output *)
+    Console.WriteLine("\n\nInterpolant:");
+    printExpr2 "\t" m;
+
+    Console.WriteLine("\n==========");
     ()
 
 let directProduct input =
@@ -227,7 +243,9 @@ let rec convertNormalForm group : nf =
         | One x -> [x] :: l) [] group)
 
 let test = "x + y >= 2 & y - 2z <= 0 & 3x - z >= 5 ; 2x - y + 3z <= 0"
+
 let formulae = inputUnit Lexer.token (Lexing.LexBuffer<char>.FromString(test))
+(* TODO: Check consistency among formulae with = and <> before normalization *)
 let proc x = convertNormalForm (normalizeOperator x)
 let groups = directProduct (List.map proc formulae)
 let a = List.iter (fun (x:nf) -> getInterpolant (x.Item 0, x.Item 1)) groups
