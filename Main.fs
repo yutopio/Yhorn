@@ -71,28 +71,12 @@ let normalizeExpr (op, t1, t2) =
     List.iter (addCoef sign) t1;
     List.iter (addCoef (-sign)) t2;
     mapIter (fun k v -> if k <> "" & v = 0 then coefs.Remove(k); ()) coefs;
-    One(op, coefs)
+    op, coefs
 
 // Copies the given mapping with sign of every coefficient reversed.
 let invert (coefs:coef) =
     let r = new coef(coefs) in
     mapIter (fun k v -> r.[k] <- (-v)) r; r
-
-// This procedure will be deleted in the next commit.
-let normalizeOperator formulae =
-    let rec Internal opAnd formulae ret =
-        match formulae with
-        | [] -> ret
-        | x :: l ->
-            let elem = match x with
-                | Expr x -> normalizeExpr x
-                | And x -> Many (Internal true x [])
-                | Or x -> Many (Internal false x []) in
-            Internal opAnd l (elem :: ret) in
-    match formulae with
-    | Expr _ -> Internal false [ formulae ] []
-    | And x -> [ Many (Internal true x []) ]
-    | Or x -> Internal false x []
 
 (* Gaussian elimination routine *)
 let eliminate matrix =
@@ -239,15 +223,22 @@ let directProduct input =
         | x :: rest -> List.iter (fun x -> inner (current @ [x]) rest) x in
     inner [] input; !ret
 
-let rec convertNormalForm group : nf =
-    List.rev (List.fold (fun l -> function
-        | Many x -> (directProduct (convertNormalForm x)) @ l
-        | One x -> [x] :: l) [] group)
+let convertToDNF formulae =
+    let rec Internal formulae ret =
+        match formulae with
+        | [] -> List.rev ret
+        | x :: l ->
+            let ret = match x with
+                | Expr x -> [ normalizeExpr x ] :: ret
+                | And x | Or x -> (directProduct (Internal x [])) @ ret in
+            Internal l ret in
+    match formulae with
+    | Or x -> Internal x []
+    | _ -> Internal [ formulae ] []
 
 let test = "x + y >= 2 & y - 2z <= 0 & 3x - z >= 5 ; 2x - y + 3z <= 0"
 
 let formulae = inputUnit Lexer.token (Lexing.LexBuffer<char>.FromString(test))
-let proc x = convertNormalForm (normalizeOperator x)
-let groups = directProduct (List.map proc formulae)
+let groups = directProduct (List.map convertToDNF formulae)
 (* TODO: Check consistency among formulae with = and <> before normalization *)
 let a = List.iter (fun (x:nf) -> getInterpolant (x.Item 0, x.Item 1)) groups
