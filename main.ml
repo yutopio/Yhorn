@@ -228,10 +228,7 @@ let convertToDNF formulae =
     | Or x -> internal x []
     | _ -> internal [ formulae ] []
 
-(* FIXME: Buggy input *)
-let test = "x = z & y = z ; x >= w & y + 1 <= w"
-
-let formulae = inputUnit Lexer.token (Lexing.from_string test)
+let formulae = inputUnit Lexer.token (Lexing.from_channel stdin)
 let groups = directProduct (List.map convertToDNF formulae)
 (* TODO: Check consistency among formulae with = and <> before normalization *)
 let a = List.iter (fun x -> getInterpolant (List.hd x) (List.nth x 1)) groups
