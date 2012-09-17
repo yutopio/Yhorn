@@ -15,8 +15,8 @@ let combineFormulae opAnd x y =
 %}
 
 %token <string> IDENT
-%token <float> FLOAT
-%token <int> OP
+%token <int> INT
+%token <Types.operator> OP
 %token PLUS MINUS
 %token AND OR
 %token LPAREN RPAREN
@@ -47,17 +47,17 @@ formula:
 expr:
     | term              { [$1] }
     | expr PLUS term    { $1 @ [$3] }
-    | expr MINUS term   { let (a, b) = $3 in $1 @ [ (-.a, b) ] }
+    | expr MINUS term   { let (a, b) = $3 in $1 @ [ (-a, b) ] }
 ;
 
 term:
     | num       { ($1, "") }
     | num IDENT { ($1, $2) }
-    | IDENT     { (1., $1) }
+    | IDENT     { (1, $1) }
 ;
 
 num:
-    | FLOAT         { $1 }
-    | PLUS FLOAT    { $2 }
-    | MINUS FLOAT   { -.($2) }
+    | INT       { $1 }
+    | PLUS INT  { $2 }
+    | MINUS INT { -($2) }
 ;
