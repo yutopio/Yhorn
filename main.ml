@@ -2,79 +2,66 @@ open Glpk
 open Parser
 open Types
 
-let abs x = if x < 0. then -.x else x
+let fabs x = if x < 0. then -.x else x
 
 let printExpr2 offset (op, coef) =
     print_string offset;
     let first = ref true in
     M.iter (fun v c ->
-        if v = "" || c = 0. then () else (
-        print_string (if c < 0. then "-" else if not (!first) then "+" else "");
-        let cc = abs c in if cc <> 1. then print_float cc;
+        if v = "" || c = 0 then () else (
+        print_string (if c > 0 & not (!first) then "+" else if c = -1 then "-" else "");
+        if (abs c) <> 1 then print_int c;
         print_string v);
         first := false) coef;
-    print_string (if op then " <= " else " < ");
-    print_float (-.(M.find "" coef));
+    print_string (match op with
+        | EQ -> " = "
+        | NEQ -> " <> "
+        | LT -> " < "
+        | LTE -> " <= "
+        | GT -> " > "
+        | GTE -> " >= ");
+    print_int (-(M.find "" coef));
     print_newline ()
 
 let printMatrix offset =
     Array.iter (fun x ->
         print_string offset;
-        Array.iter (fun x -> print_float x; print_string "\t") x;
+        Array.iter (fun x -> print_int x; print_string "\t") x;
         print_newline ())
 
 let printVector offset x =
     print_string (offset ^ "( ");
     let len = Array.length x in
     Array.iteri (fun i x ->
-        print_float x;
+        print_int x;
         print_string (if i = len - 1 then "" else "\t")) x;
     print_endline ")"
 
 (* This procedure sums up all terms according to the variable and move to the
-   left-side of the expression. It also flips ">" and ">=" operators to "<" and
-   "<=". Returns the operator number (1 <, 3 <>, 4 =, 5 <=) and the mapping from
-   a variable to its coefficient. The constant has empty string as a key. *)
+   left-side of the expression. It flips greater-than operators (>, >=) to
+   less-than operators (<, <=) and replaces strict inequality (<, >) with not
+   strict ones (<=, >=) by doing +/- 1 on constant term. Returns the operator
+   and the mapping from a variable to its coefficient. The constant term has the	
+   empty string as a key. *)
 let normalizeExpr (op, t1, t2) =
     let addCoef sign coefs (coef, key) =
-        M.add key (sign *. coef +.
-            (if M.mem key coefs then M.find key coefs else 0.)) coefs in
-    let sign = if op = 2 || op = 6 then -1. else 1. in
-    let coefs = M.add "" 0. M.empty in
+        M.add key (sign * coef +
+            (if M.mem key coefs then M.find key coefs else 0)) coefs in
+    let t2, sign, op =
+        match op with
+        | LT -> (-1, "") :: t2, 1, LTE
+        | GT -> (1, "") :: t2, -1, LTE
+        | GTE -> t2, -1, LTE
+        | _ -> t2, 1, op in
+    let coefs = M.add "" 0 M.empty in
     let coefs = List.fold_left (addCoef sign) coefs t1 in
-    let coefs = List.fold_left (addCoef (-.sign)) coefs t2 in
+    let coefs = List.fold_left (addCoef (-sign)) coefs t2 in
     let coefs = M.fold (fun k v coefs ->
-        if k <> "" && v = 0. then M.remove k coefs else coefs) coefs coefs in
-    (if sign = -1. then op - 1 else op), coefs
+        if k <> "" && v = 0 then M.remove k coefs else coefs) coefs coefs in
+    op, coefs
 
 (* Copies the given mapping with sign of every coefficient reversed. *)
 let invert = M.map (fun v -> -.v)
-
-(* This procedure normalizes all formulae by sorting out its coefficients, and
-   reduces the kinds of operators into only >= and >. It returns the tree
-   data structure formed by formula2. The equality is stored as the first value
-   of One construct, which appears as the leaf of the tree. *)
-let normalizeOperator formulae =
-    let rec internal opAnd formulae ret =
-        match formulae with
-        | [] -> ret
-        | x :: l ->
-            let elem = match x with
-                | Expr x ->
-                    let (op, coefs) = normalizeExpr x in
-                    let pair eq = [One (eq, coefs); One (eq, invert coefs)] in (
-                    match op with
-                    | 1 -> [One (false, coefs)]
-                    | 3 -> let l = pair false in if opAnd then [Many l] else l
-                    | 4 -> let l = pair true in if opAnd then l else [Many l]
-                    | 5 -> [One (true, coefs)])
-                | And x -> [Many (internal true x [])]
-                | Or x -> [Many (internal false x [])] in
-            internal opAnd l (elem @ ret) in
-    match formulae with
-    | Expr _ -> internal false [ formulae ] []
-    | And x -> [ Many (internal true x []) ]
-    | Or x -> internal false x []
 
 (* Gaussian elimination routine *)
 let eliminate matrix =
@@ -89,7 +76,7 @@ let eliminate matrix =
         let (_, (i, t)) = Array.fold_left (fun (i, (j, y)) v -> (i + 1,
             if i < row then (-1, 0.) else (* Do not reuse pivot row *)
             let z = Array.get v col in (
-            if j = -1 || abs y < abs z then
+            if j = -1 || fabs y < fabs z then
             (i, z) else (j, y)))) (0, (-1, 0.)) !matrix in
 
         (* If no row has non-zero value in the column, it is skipped. *)
@@ -168,7 +155,7 @@ let getInterpolant a b =
     let vars = incr vars; !vars in
 
     (* Create a transposed coefficient matrix *)
-    let coefMat = Array.make_matrix vars abLen 0. in
+    let coefMat = Array.make_matrix vars abLen 0 in
     let set var =
         if var <> "" then Array.set (Array.get coefMat (M.find var varIDs))
         else fun _ _ -> () in
@@ -183,7 +170,7 @@ let getInterpolant a b =
     print_endline "Constants:";
     Array.iter (fun (_, coef) ->
         print_string "\t";
-        print_float (-.(M.find "" coef))) ab;
+        print_int (-(M.find "" coef))) ab;
     print_endline "\n\n";
 
     (* TODO: Support mixed constraints of <= and < *)
@@ -192,9 +179,9 @@ let getInterpolant a b =
     (* TODO: Use of SMT solvers as an alternative method *)
     let zcoefs = Array.map (fun (_, coef) -> 0.) ab in
     let constrs = Array.make_matrix (vars + 2) abLen 0. in
-    Array.iteri (fun i a -> Array.set constrs i a) coefMat;
+    Array.iteri (fun i a -> Array.set constrs i (Array.map float_of_int a)) coefMat;
     Array.set constrs vars (Array.create abLen 1.);
-    Array.set constrs (vars + 1) (Array.map (fun (_, coef) -> -.(M.find "" coef)) ab);
+    Array.set constrs (vars + 1) (Array.map (fun (_, coef) -> -.(float_of_int (M.find "" coef))) ab);
     let pbounds = Array.create (vars + 2) (0., 0.) in
     Array.set pbounds vars (1., infinity);
     Array.set pbounds (vars + 1) (-.infinity, 1e-5 (* epsilon *));
@@ -207,18 +194,20 @@ let getInterpolant a b =
 
     (* DEBUG: Debug output *)
     let prim = get_col_primals lp in
+    let prim = Array.map (fun x -> int_of_float(x *. 72.)) prim in
     print_endline "\n\nLP solution:";
     (* TODO: Want to have an integer vector *)
     printVector "\t" prim;
 
     (* Calculate one interpolant *)
     let i = ref 0 in
-    let m = List.fold_left (fun (f1, m) (f2, coefs) -> (f1 & f2),
+    let m = List.fold_left (fun (f1, m) (f2, coefs) ->
+        LTE (* FIXME: should evaluate operators of each expression *),
         let w = prim.(!i) in incr i;
-        if w = 0. then m else
+        if w = 0 then m else
         M.fold (fun x v m ->
-            let v = (if M.mem x m then M.find x m else 0.) +. v *. w in
-            M.add x v m) coefs m) (true, M.empty) a in
+            let v = (if M.mem x m then M.find x m else 0) + v * w in
+            M.add x v m) coefs m) (EQ, M.empty) a in
 
     (* DEBUG: Debug output *)
     print_endline "\n\nInterpolant:";
@@ -233,16 +222,23 @@ let directProduct input =
         | x :: rest -> List.iter (fun x -> inner (current @ [x]) rest) x in
     inner [] input; !ret
 
-let rec convertNormalForm group : nf =
-    List.rev (List.fold_left (fun l -> function
-        | Many x -> (directProduct (convertNormalForm x)) @ l
-        | One x -> [x] :: l) [] group)
+let convertToDNF formulae =
+    let rec internal formulae ret =
+        match formulae with
+        | [] -> List.rev ret
+        | x :: l ->
+            let ret = match x with
+                | Expr x -> [ normalizeExpr x ] :: ret
+                | And x | Or x -> (directProduct (internal x [])) @ ret in
+            internal l ret in
+    match formulae with
+    | Or x -> internal x []
+    | _ -> internal [ formulae ] []
 
 (* FIXME: Buggy input *)
 let test = "x = z & y = z ; x >= w & y + 1 <= w"
 
 let formulae = inputUnit Lexer.token (Lexing.from_string test)
+let groups = directProduct (List.map convertToDNF formulae)
 (* TODO: Check consistency among formulae with = and <> before normalization *)
-let proc x = convertNormalForm (normalizeOperator x)
-let groups = directProduct (List.map proc formulae)
 let a = List.iter (fun x -> getInterpolant (List.hd x) (List.nth x 1)) groups
