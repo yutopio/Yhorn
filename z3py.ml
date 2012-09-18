@@ -5,6 +5,7 @@ let buildScript constrs pbounds xbounds =
     let xLen = Array.length xbounds in
     let b1 = create (xLen * 4) in
     let b2 = create (xLen * 4) in
+    let b3 = create (xLen * 7) in
     let c = create 1 in (* Buffer size cannot be estimated *)
     Array.iteri (fun i (low, up) ->
         (* Declare variables *)
@@ -12,7 +13,8 @@ let buildScript constrs pbounds xbounds =
         add_string b2 name;
         let name = "x" ^ name in
         add_string b1 name;
-        if i + 1 <> xLen then (add_char b1 ','; add_char b2 ' ');
+        add_string b3 (name ^ "<>0");
+        if i + 1 <> xLen then (add_char b1 ','; add_char b2 ' '; add_char b3 ',');
 
         (* Add constraints about x *)
         if low = up then
@@ -53,8 +55,10 @@ let buildScript constrs pbounds xbounds =
                 add_buffer c b;
                 add_string c ("<=" ^ (string_of_int up) ^ ","))))) pbounds;
 
-    (* Sentinel *)
-    add_string c "True";
+    (* Suppress trivial solution *)
+    add_string c "Or(";
+    add_buffer c b3;
+    add_string c ")";
 
     (* Build Z3Py script *)
     "from z3 import *\n\n" ^

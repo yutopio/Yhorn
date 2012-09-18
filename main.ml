@@ -122,8 +122,8 @@ let getInterpolant exprs =
     let vars = incr vars; !vars in
 
     (* Use SMT solver to solve a linear programming problem *)
-    let constrs = Array.make_matrix (vars + 2) len 0 in
-    let pbounds = Array.create (vars + 2) (0, 0) in
+    let constrs = Array.make_matrix (vars + 1) len 0 in
+    let pbounds = Array.create (vars + 1) (0, 0) in
     let xbounds = Array.create len (0, max_int) in
 
     (* Coefficient part of the constraints: must be equal to zero in pbounds at
@@ -138,12 +138,6 @@ let getInterpolant exprs =
     constrs.(vars) <- (Array.map (fun (_ ,(_, coef)) -> - (M.find "" coef)) exprs);
     pbounds.(vars) <- if !ineq then (min_int, -1) else (max_int, 0);
 
-    (* The primal solution must not be zero vector. Especially when there are
-       inequations in given expressions, must have more than 1 in total
-       of all elements for  *)
-    constrs.(vars + 1) <- (Array.create len 1);
-    pbounds.(vars + 1) <- if !eq then (max_int, 0) else (1, max_int);
-
     let ret = try
         let prim = integer_programming constrs pbounds xbounds in
 
@@ -155,7 +149,7 @@ let getInterpolant exprs =
         let i = ref 0 in
         let m = Array.fold_left (fun (op1, m) (consider, (op2, coefs)) ->
             if not consider then (op1, m) else
-            if op1 = LTE then LTE else op2
+            (if op1 = LTE then LTE else op2),
             let w = prim.(!i) in incr i;
             if w = 0 then m else
             M.fold (fun x v m ->
