@@ -97,6 +97,12 @@ let arrayFold2 f x a =
     let i = ref (-1) in
     Array.fold_left (fun x -> f x (a.(incr i; !i))) x
 
+(* Try to calculate an interpolant from given expressions. All expressions are
+   to be represented as (consider : bool, (operator, coefficients : int M.t)).
+   The first bool represents if the expression should be considered as the first
+   logical group (in other words, to be considered when making an interpolant).
+   Other parameter represents the expression. The operator should be either LTE
+   or EQ. Any other are considered as LTE. *)
 let getInterpolant exprs =
     (* DEBUG: Debug output *)
     print_endline "\nExpressions:";
@@ -122,18 +128,21 @@ let getInterpolant exprs =
 
     (* Coefficient part of the constraints: must be equal to zero in pbounds at
        corresponding rows *)
-    Array.iteri (fun i (_, (_, coef)) -> M.iter (fun k v ->
-        if k <> "" then constrs.(M.find k varIDs).(i) <- v) coef) exprs;
+    let eq, ineq = ref false, ref false in
+    Array.iteri (fun i (_, (op, coef)) ->
+        M.iter (fun k v -> if k <> "" then constrs.(M.find k varIDs).(i) <- v) coef;
+        if op = EQ then (xbounds.(i) <- (min_int, max_int); eq := true) else ineq := true) exprs;
 
     (* Constant part should satisfy certain condition according to the given
        expressions *)
     constrs.(vars) <- (Array.map (fun (_ ,(_, coef)) -> - (M.find "" coef)) exprs);
-    pbounds.(vars) <- (min_int, -1);
+    pbounds.(vars) <- if !ineq then (min_int, -1) else (max_int, 0);
 
-    (* The primal solution must not be trivial: must have more than 1 in total
-       of all elements *)
+    (* The primal solution must not be zero vector. Especially when there are
+       inequations in given expressions, must have more than 1 in total
+       of all elements for  *)
     constrs.(vars + 1) <- (Array.create len 1);
-    pbounds.(vars + 1) <- (1, max_int);
+    pbounds.(vars + 1) <- if !eq then (max_int, 0) else (1, max_int);
 
     let ret = try
         let prim = integer_programming constrs pbounds xbounds in
@@ -144,9 +153,9 @@ let getInterpolant exprs =
 
         (* Calculate one interpolant *)
         let i = ref 0 in
-        let m = Array.fold_left (fun (f1, m) (consider, (f2, coefs)) ->
-            if not consider then (f1, m) else
-            LTE (* FIXME: should evaluate operators of each expression *),
+        let m = Array.fold_left (fun (op1, m) (consider, (op2, coefs)) ->
+            if not consider then (op1, m) else
+            if op1 = LTE then LTE else op2
             let w = prim.(!i) in incr i;
             if w = 0 then m else
             M.fold (fun x v m ->

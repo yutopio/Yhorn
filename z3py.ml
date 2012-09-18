@@ -18,10 +18,12 @@ let buildScript constrs pbounds xbounds =
         if low = up then
             add_string c (name ^ "==" ^ (string_of_int low) ^ ",")
         else (
-            if low <> min_int then
+            if low = max_int then
+                add_string c (name ^ "<>" ^ (string_of_int up) ^ ",")
+            else (if low <> min_int then
                 add_string c (name ^ ">=" ^ (string_of_int low) ^ ",");
             if up <> max_int then
-                add_string c (name ^ "<=" ^ (string_of_int up) ^ ","))) xbounds;
+                add_string c (name ^ "<=" ^ (string_of_int up) ^ ",")))) xbounds;
 
     Array.iteri (fun i (low, up) ->
         (* Build the expression *)
@@ -41,12 +43,15 @@ let buildScript constrs pbounds xbounds =
             add_buffer c b;
             add_string c ("==" ^ (string_of_int low) ^ ",")
         ) else (
-            if low <> min_int then (
+            if low = max_int then (
+                add_buffer c b;
+                add_string c ("<>" ^ (string_of_int up) ^ ","))
+            else (if low <> min_int then (
                 add_buffer c b;
                 add_string c (">=" ^ (string_of_int low) ^ ","));
             if up <> max_int then (
                 add_buffer c b;
-                add_string c ("<=" ^ (string_of_int up) ^ ",")))) pbounds;
+                add_string c ("<=" ^ (string_of_int up) ^ ","))))) pbounds;
 
     (* Sentinel *)
     add_string c "True";
