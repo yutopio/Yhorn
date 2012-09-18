@@ -13,8 +13,8 @@ let printExpr2 offset (op, coef) =
         if v = "" || c = 0 then () else (
         print_string (if c > 0 & not (!first) then "+" else if c = -1 then "-" else "");
         if (abs c) <> 1 then print_int c;
-        print_string v);
-        first := false) coef;
+        print_string v;
+        first := false)) coef;
     print_string (match op with
         | EQ -> " = "
         | NEQ -> " <> "
@@ -99,11 +99,10 @@ let arrayFold2 f x a =
 
 let getInterpolant exprs =
     (* DEBUG: Debug output *)
-    print_endline "Expressions:";
+    print_endline "\nExpressions:";
     List.iter (fun (f, e) -> if f then printExpr2 "\t" e) exprs;
     print_endline "    --------------------";
     List.iter (fun (f, e) -> if not f then printExpr2 "\t" e) exprs;
-    print_endline "\n";
 
     let exprs = listToArray exprs in
     let len = Array.length exprs in
@@ -136,7 +135,7 @@ let getInterpolant exprs =
     constrs.(vars + 1) <- (Array.create len 1);
     pbounds.(vars + 1) <- (1, max_int);
 
-    try
+    let ret = try
         let prim = integer_programming constrs pbounds xbounds in
 
         (* DEBUG: Debug output *)
@@ -155,12 +154,14 @@ let getInterpolant exprs =
                 M.add x v m) coefs m) (EQ, M.empty) exprs in
 
         (* DEBUG: Debug output *)
-        print_endline "\n\nInterpolant:";
+        print_endline "\nInterpolant:";
         printExpr2 "\t" m;
 
-        print_endline "\n==========";
         Some m
-    with _ -> None
+    with _ -> None in
+
+    print_endline "\n==========";
+    ret
 
 let prelude a b =
     let filter op = List.filter (fun (x, _) -> x = op) in
