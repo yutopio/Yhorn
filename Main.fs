@@ -50,6 +50,13 @@ let printVector (offset:string) (x:int []) =
     let elems = x.Select(fun (x:int) -> x.ToString()).ToArray() in
     Console.WriteLine("{0}( {1} )", offset, String.Join("\t", elems))
 
+let directProduct input =
+    let ret = ref [] in
+    let rec inner current = function
+        | [] -> ret := current :: !ret
+        | x :: rest -> List.iter (fun x -> inner (current @ [x]) rest) x in
+    inner [] input; !ret
+
 // This procedure sums up all terms according to the variable and move to the
 // left-side of the expression. It flips greater-than operators (>, >=) to
 // less-than operators (<, <=) and replaces strict inequality (<, >) with not
@@ -73,156 +80,6 @@ let normalizeExpr (op, t1, t2) =
     mapIter (fun k v -> if k <> "" & v = 0 then coefs.Remove(k); ()) coefs;
     op, coefs
 
-// Copies the given mapping with sign of every coefficient reversed.
-let invert (coefs:coef) =
-    let r = new coef(coefs) in
-    mapIter (fun k v -> r.[k] <- (-v)) r; r
-
-(* Gaussian elimination routine *)
-let eliminate matrix =
-    if Array.length !matrix = 0 then () else
-    let colLen = Array.length (Array.get !matrix 0) in
-    let rec eliminate matrix row col =
-        // When the pivoting ends to the last column, end elimination.
-        if col = colLen then () else
-
-        // Choose the pivot row, which has the largest absolute value in
-        // the current eliminating column.
-        let (_, (i, t)) = Array.fold (fun (i, (j, y)) v -> (i + 1,
-            if i < row then (-1, 0.) else (* Do not reuse pivot row *)
-            let z = Array.get v col in (
-            if j = -1 || abs y < abs z then
-            (i, z) else (j, y)))) (0, (-1, 0.)) !matrix in
-
-        // If no row has non-zero value in the column, it is skipped.
-        let row = if i = -1 then row else (
-
-            // If the pivot row is not at diagonal position, switch.
-            let pivot = Array.get !matrix i in
-            (if i <> row then
-                Array.set !matrix i (Array.get !matrix row);
-                Array.set !matrix row pivot);
-
-            // Eliminate other rows' elements by using the pivot row.
-            (matrix := Array.mapi (fun j v ->
-                if row = j then
-                    Array.map (fun x -> x / t) v
-                else
-                    let s = (Array.get v col) / t in
-                    Array.map2 (fun u v -> u - v * s) v pivot) !matrix);
-            row + 1) in
-
-        // Recursively process all columns.
-        eliminate matrix row (col + 1) in
-    eliminate matrix 0 0
-
-let getNoyau matrix =
-    let rowLen = Array.length matrix in
-    if rowLen = 0 then [] else
-    let getRow = Array.get matrix in
-    let get row = Array.get (getRow row) in
-
-    let colLen = Array.length (getRow 0) in
-    let rec Internal matrix row col pivots ret =
-        if col = colLen then ret else
-
-        if row < rowLen & (get row col) = 1. then
-            Internal matrix (row + 1) (col + 1) (pivots @ [col]) ret
-        else (
-            let v = Array.create colLen 0. in
-            Array.set v col 1.;
-            List.iteri (fun i x -> Array.set v x (-(get i col))) pivots;
-            Internal matrix row (col + 1) pivots (ret @ [v])) in
-    Internal matrix 0 0 [] []
-
-let getInterpolant (a:expr2 list, b:expr2 list) =
-    (* DEBUG: Debug output *)
-    Console.WriteLine("Expressions:");
-    List.iter (printExpr2 "\t") a;
-    Console.WriteLine("    --------------------");
-    List.iter (printExpr2 "\t") b;
-    Console.WriteLine();
-
-    let ab = List.toArray (a @ b) in
-    let abLen = Array.length ab in
-
-    (* Assign indices for all variables *)
-    let vars = ref (-1) in
-    let varIDs = new Dictionary<string, int>() in
-    Array.iter (fun (_, coefs) ->
-        mapIter (fun k _ ->
-            if not (varIDs.ContainsKey(k) || k = "") then
-                (incr vars; varIDs.Add(k, !vars))) coefs) ab;
-    let vars = incr vars; !vars in
-
-    (* Create a transposed coefficient matrix *)
-    let coefMat = Array.init vars (fun _ -> Array.create abLen 0) in
-    let set var =
-        if var <> "" then Array.set (Array.get coefMat varIDs.[var])
-        else fun _ _ -> () in
-    Array.iteri (fun i (_, coef) -> mapIter (fun k v -> set k i v) coef) ab;
-
-    (* DEBUG: Debug output *)
-    Console.WriteLine("Coefficient matrix:");
-    printMatrix "\t" coefMat;
-    Console.WriteLine();
-
-    (* DEBUG: Debug output *)
-    Console.WriteLine("Constants:");
-    Array.iter (fun (_, coef:coef) -> Console.Write("\t{0}", -coef.[""])) ab;
-    Console.WriteLine();
-    Console.WriteLine();
-
-    (* TODO: Support mixed constraints of <= and < *)
-
-    (* Build linear programming problem for OCaml Glpk *)
-    (* TODO: Use of SMT solvers as an alternative method *)
-    let zcoefs = Array.map (fun _ -> 0.) ab in
-    let constrs = Array.create (vars + 2) (Array.create abLen 0.) in
-    Array.iteri (fun i a -> Array.set constrs i (Array.map float_of_int a)) coefMat;
-    Array.set constrs vars (Array.create abLen 1.);
-    Array.set constrs (vars + 1) (Array.map (fun (_, coef:coef) -> - (float_of_int coef.[""])) ab);
-    let pbounds = Array.create (vars + 2) (0., 0.) in
-    Array.set pbounds vars (1., infinity);
-    Array.set pbounds (vars + 1) (Double.NegativeInfinity, Double.Epsilon);
-    let xbounds = Array.create abLen (0., infinity) in
-    let lp = make_problem Minimize zcoefs constrs pbounds xbounds in
-    set_message_level lp 0;
-    scale_problem lp;
-    use_presolver lp true;
-    simplex lp;
-
-    (* DEBUG: Debug output *)
-    let prim = get_col_primals lp in
-    Console.WriteLine("\n\nLP solution:");
-    (* TODO: Want to have an integer vector *)
-    printVector "\t" prim;
-
-    (* Calculate one interpolant *)
-    let i = ref 0 in
-    let m = new coef() in
-    let m = (List.fold (fun f1 (f2, coefs) ->
-        let w = prim.[!i] in incr i;
-        if w <> 0 then
-            mapIter (fun x v ->
-                let v = (if m.ContainsKey(x) then m.[x] else 0) + v * w in
-                m.[x] <- v) coefs;
-        LTE (* FIXME: should evaluate operators of each expression *) ) EQ a), m in
-
-    (* DEBUG: Debug output *)
-    Console.WriteLine("\n\nInterpolant:");
-    printExpr2 "\t" m;
-
-    Console.WriteLine("\n==========");
-    ()
-
-let directProduct input =
-    let ret = ref [] in
-    let rec inner current = function
-        | [] -> ret := current :: !ret
-        | x :: rest -> List.iter (fun x -> inner (current @ [x]) rest) x in
-    inner [] input; !ret
-
 let convertToDNF formulae =
     let rec Internal formulae ret =
         match formulae with
@@ -236,9 +93,141 @@ let convertToDNF formulae =
     | Or x -> Internal x []
     | _ -> Internal [ formulae ] []
 
+// Copies the given mapping with sign of every coefficient reversed.
+let invert (coefs:coef) =
+    let r = new coef(coefs) in
+    mapIter (fun k v -> r.[k] <- (-v)) r; r
+let copy (coefs:coef) = new coef(coefs)
+
+let getInterpolant (exprs:(bool * expr2) list) =
+    (* DEBUG: Debug output *)
+    Console.WriteLine("Expressions:");
+    List.iter (fun (f, e) -> if f then printExpr2 "\t" e) exprs;
+    Console.WriteLine("    --------------------");
+    List.iter (fun (f, e) -> if not f then printExpr2 "\t" e) exprs;
+    Console.WriteLine();
+
+    let exprs = List.toArray exprs in
+    let len = Array.length exprs in
+
+    (* Assign indices for all variables *)
+    let vars = ref (-1) in
+    let varIDs = new Dictionary<string, int>() in
+    Array.iter (fun (_, (_, coefs)) ->
+        mapIter (fun k _ ->
+            if not (varIDs.ContainsKey(k) || k = "") then
+                (incr vars; varIDs.Add(k, !vars))) coefs) exprs;
+    let vars = incr vars; !vars in
+
+    (* Build linear programming problem for OCaml Glpk *)
+    (* TODO: Use of SMT solvers as an alternative method *)
+    let zcoefs = Array.map (fun _ -> 0.) exprs in
+    let constrs = Array.create (vars + 2) (Array.create len 0.) in
+    let pbounds = Array.create (vars + 2) (0., 0.) in
+    let xbounds = Array.create len (0., infinity) in
+
+    (* Coefficient part of the constraints: must be equal to zero in pbounds at
+       corresponding rows *)
+    Array.iteri (fun i (_, (_, coef)) -> mapIter (fun k v ->
+        if k <> "" then constrs.[varIDs.[k]].[i] <- (float_of_int v)) coef) exprs;
+
+    (* Constant part should satisfy certain condition according to the given
+       expressions *)
+    constrs.[vars] <- (Array.map (fun (_ ,(_, coef:coef)) -> - (float_of_int coef.[""])) exprs);
+    pbounds.[vars] <- (Double.NegativeInfinity, Double.Epsilon);
+
+    (* The primal solution must not be trivial: must have more than 1 in total
+       of all elements *)
+    constrs.[vars + 1] <- (Array.create len 1.);
+    pbounds.[vars + 1] <- (1., infinity);
+
+    try
+        let lp = make_problem Minimize zcoefs constrs pbounds xbounds in
+        set_message_level lp 0;
+        scale_problem lp;
+        use_presolver lp true;
+        simplex lp;
+
+        (* DEBUG: Debug output *)
+        let prim = get_col_primals lp in
+        Console.WriteLine("\n\nLP solution:");
+        (* TODO: Want to have an integer vector *)
+        printVector "\t" prim;
+
+        (* Calculate one interpolant *)
+        let i = ref 0 in
+        let m = new coef() in
+        let m = (Array.fold (fun f1 (consider, (f2, coefs)) ->
+            if not consider then f1 else
+            let w = prim.[!i] in incr i;
+            if w <> 0 then
+                mapIter (fun x v ->
+                    let v = (if m.ContainsKey(x) then m.[x] else 0) + v * w in
+                    m.[x] <- v) coefs;
+            LTE (* FIXME: should evaluate operators of each expression *) ) EQ exprs), m in
+
+        (* DEBUG: Debug output *)
+        Console.WriteLine("\n\nInterpolant:");
+        printExpr2 "\t" m;
+
+        Console.WriteLine("\n==========");
+        Some m
+    with _ -> None
+
+let prelude a b =
+    let filter op = List.filter (fun (x, _) -> x = op) in
+    let addFlag op exprs consider = List.map (fun x -> (consider, x)) (filter op exprs) in
+    let proc op exprs consider = let t = addFlag op exprs consider in (t, List.length t) in
+    let exec = fun x -> x () in
+
+    (* Extract all equations and not-equal inequations *)
+    let eqA, leqA = proc EQ a true in
+    let neqA, lneqA = proc NEQ a true in
+    let eqB, leqB = proc EQ b false in
+    let neqB, lneqB = proc NEQ b false in
+    let plus (x:coef) = let x = copy x in x.[""] <- x.[""] + 1; x in
+    let minus (x:coef) = let x = invert x in x.[""] <- x.[""] + 1; x in
+
+    let tryGetInterpolant coefProc exprs = List.tryPick (fun (consider, (_, coef)) ->
+        getInterpolant ((consider, (LTE, coefProc coef)) :: exprs)) in
+
+    let eqAeqB _ =
+        let eqs = eqA @ eqB in
+        List.tryPick exec [
+            fun _ -> getInterpolant eqs;
+            fun _ -> tryGetInterpolant plus eqs neqA;
+            fun _ -> tryGetInterpolant minus eqs neqA;
+            fun _ -> tryGetInterpolant plus eqs neqB;
+            fun _ -> tryGetInterpolant minus eqs neqB ] in
+    let eqAneqB _ =
+        List.tryPick exec [
+            fun _ -> tryGetInterpolant plus eqA neqB;
+            fun _ -> tryGetInterpolant minus eqA neqB ] in
+    let neqAeqB _ =
+        List.tryPick exec [
+            fun _ -> tryGetInterpolant plus eqB neqA;
+            fun _ -> tryGetInterpolant minus eqB neqA ]
+
+    let all _ =
+        (* Gather all expressions of LTE with consideration flag, and expand
+           equations. *)
+        let exprs = (addFlag LTE a true) @ (addFlag LTE b false) @
+            List.fold (fun ret (c, (_, coefs)) ->
+                (c, (LTE, coefs)) ::
+                (c, (LTE, invert coefs)) :: ret) [] (eqA @ eqB) in
+
+        (* Split not-equal inequations into disjunction of two expressions and
+           choose either as for each inequations. *)
+        let neqs = List.map (fun (c, (_, coef)) ->
+            [ (c, (LTE, plus coef)) ; (c, (LTE, minus coef)) ]) (neqA @ neqB) in
+        List.tryPick (fun x -> getInterpolant (x @ exprs)) (directProduct neqs) in
+
+    List.tryPick exec [
+        (if leqA <> 0 then (if leqB <> 0 then eqAeqB else eqAneqB) else neqAeqB);
+        all]
+
 let test = "x + y >= 2 & y - 2z <= 0 & 3x - z >= 5 ; 2x - y + 3z <= 0"
 
 let formulae = inputUnit Lexer.token (Lexing.LexBuffer<char>.FromString(test))
 let groups = directProduct (List.map convertToDNF formulae)
-(* TODO: Check consistency among formulae with = and <> before normalization *)
-let a = List.iter (fun (x:nf) -> getInterpolant (x.Item 0, x.Item 1)) groups
+let a = List.map (fun (x:nf) -> prelude (x.Item 0) (x.Item 1)) groups
