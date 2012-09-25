@@ -28,9 +28,9 @@ let printExpr2 (offset:string) ((op, coef):expr2) =
     mapIter (fun v (c:int) ->
         if v = "" then () else
         let cc = Math.Abs(c) in
-        if cc = 0 then () else
+        if cc = 0 then () else (
         let format = (if c < 0 then "-" else if not (!first) then "+" else "") + (if cc <> 1 then "{0}" else "") + "{1}" in
-        (ret.AppendFormat(format, cc, v)); first := false) coef;
+        (ret.AppendFormat(format, cc, v)); first := false)) coef;
     ret.Append(match op with
         | EQ -> " = "
         | NEQ -> " <> "
@@ -99,13 +99,18 @@ let invert (coefs:coef) =
     mapIter (fun k v -> r.[k] <- (-v)) r; r
 let copy (coefs:coef) = new coef(coefs)
 
+// Try to calculate an interpolant from given expressions. All expressions are
+// to be represented as (consider : bool, (operator, coefficients : int M.t)).
+// The first bool represents if the expression should be considered as the first
+// logical group (in other words, to be considered when making an interpolant).
+// Other parameter represents the expression. The operator should be either LTE
+// or EQ. Any other are considered as LTE.
 let getInterpolant (exprs:(bool * expr2) list) =
     (* DEBUG: Debug output *)
-    Console.WriteLine("Expressions:");
+    Console.WriteLine("\nExpressions:");
     List.iter (fun (f, e) -> if f then printExpr2 "\t" e) exprs;
     Console.WriteLine("    --------------------");
     List.iter (fun (f, e) -> if not f then printExpr2 "\t" e) exprs;
-    Console.WriteLine();
 
     let exprs = List.toArray exprs in
     let len = Array.length exprs in
@@ -128,8 +133,10 @@ let getInterpolant (exprs:(bool * expr2) list) =
 
     (* Coefficient part of the constraints: must be equal to zero in pbounds at
        corresponding rows *)
-    Array.iteri (fun i (_, (_, coef)) -> mapIter (fun k v ->
-        if k <> "" then constrs.[varIDs.[k]].[i] <- (float_of_int v)) coef) exprs;
+    let eq, ineq = ref false, ref false in
+    Array.iteri (fun i (_, (op, coef)) ->
+        mapIter (fun k v -> if k <> "" then constrs.[varIDs.[k]].[i] <- (float_of_int v)) coef;
+        if op = EQ then (xbounds.[i] <- (Double.NegativeInfinity, Double.PositiveInfinity); eq := true) else ineq := true) exprs;
 
     (* Constant part should satisfy certain condition according to the given
        expressions *)
@@ -141,38 +148,41 @@ let getInterpolant (exprs:(bool * expr2) list) =
     constrs.[vars + 1] <- (Array.create len 1.);
     pbounds.[vars + 1] <- (1., infinity);
 
-    try
-        let lp = make_problem Minimize zcoefs constrs pbounds xbounds in
-        set_message_level lp 0;
-        scale_problem lp;
-        use_presolver lp true;
-        simplex lp;
+    let ret =
+        try
+            let lp = make_problem Minimize zcoefs constrs pbounds xbounds in
+            set_message_level lp 0;
+            scale_problem lp;
+            use_presolver lp true;
+            simplex lp;
 
-        (* DEBUG: Debug output *)
-        let prim = get_col_primals lp in
-        Console.WriteLine("\n\nLP solution:");
-        (* TODO: Want to have an integer vector *)
-        printVector "\t" prim;
+            (* DEBUG: Debug output *)
+            let prim = get_col_primals lp in
+            Console.WriteLine("\n\nLP solution:");
+            (* TODO: Want to have an integer vector *)
+            printVector "\t" prim;
 
-        (* Calculate one interpolant *)
-        let i = ref 0 in
-        let m = new coef() in
-        let m = (Array.fold (fun f1 (consider, (f2, coefs)) ->
-            if not consider then f1 else
-            let w = prim.[!i] in incr i;
-            if w <> 0 then
-                mapIter (fun x v ->
-                    let v = (if m.ContainsKey(x) then m.[x] else 0) + v * w in
-                    m.[x] <- v) coefs;
-            LTE (* FIXME: should evaluate operators of each expression *) ) EQ exprs), m in
+            (* Calculate one interpolant *)
+            let i = ref 0 in
+            let m = new coef() in
+            let m = (Array.fold (fun op1 (consider, (op2, coefs)) ->
+                if not consider then op1 else
+                let w = prim.[!i] in incr i;
+                if w <> 0 then
+                    mapIter (fun x v ->
+                        let v = (if m.ContainsKey(x) then m.[x] else 0) + v * w in
+                        m.[x] <- v) coefs;
+                if op1 = LTE then LTE else op2) EQ exprs), m in
 
-        (* DEBUG: Debug output *)
-        Console.WriteLine("\n\nInterpolant:");
-        printExpr2 "\t" m;
+            (* DEBUG: Debug output *)
+            Console.WriteLine("\nInterpolant:");
+            printExpr2 "\t" m;
 
-        Console.WriteLine("\n==========");
-        Some m
-    with _ -> None
+            Some m
+        with _ -> None in
+
+    Console.WriteLine("\n==========");
+    ret
 
 let prelude a b =
     let filter op = List.filter (fun (x, _) -> x = op) in
@@ -226,8 +236,6 @@ let prelude a b =
         (if leqA <> 0 then (if leqB <> 0 then eqAeqB else eqAneqB) else neqAeqB);
         all]
 
-let test = "x + y >= 2 & y - 2z <= 0 & 3x - z >= 5 ; 2x - y + 3z <= 0"
-
-let formulae = inputUnit Lexer.token (Lexing.LexBuffer<char>.FromString(test))
+let formulae = inputUnit Lexer.token (Lexing.LexBuffer<char>.FromTextReader(Console.In))
 let groups = directProduct (List.map convertToDNF formulae)
 let a = List.map (fun (x:nf) -> prelude (x.Item 0) (x.Item 1)) groups
