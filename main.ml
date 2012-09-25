@@ -12,8 +12,8 @@ let printExpr2 offset (op, coef) =
         if v = "" || c = 0 then () else (
         print_string (if c > 0 & not (!first) then "+" else if c = -1 then "-" else "");
         if (abs c) <> 1 then print_int c;
-        print_string v);
-        first := false) coef;
+        print_string v;
+        first := false)) coef;
     print_string (match op with
         | EQ -> " = "
         | NEQ -> " <> "
@@ -96,13 +96,18 @@ let arrayFold2 f x a =
     let i = ref (-1) in
     Array.fold_left (fun x -> f x (a.(incr i; !i))) x
 
+(* Try to calculate an interpolant from given expressions. All expressions are
+   to be represented as (consider : bool, (operator, coefficients : int M.t)).
+   The first bool represents if the expression should be considered as the first
+   logical group (in other words, to be considered when making an interpolant).
+   Other parameter represents the expression. The operator should be either LTE
+   or EQ. Any other are considered as LTE. *)
 let getInterpolant exprs =
     (* DEBUG: Debug output *)
-    print_endline "Expressions:";
+    print_endline "\nExpressions:";
     List.iter (fun (f, e) -> if f then printExpr2 "\t" e) exprs;
     print_endline "    --------------------";
     List.iter (fun (f, e) -> if not f then printExpr2 "\t" e) exprs;
-    print_endline "\n";
 
     let exprs = listToArray exprs in
     let len = Array.length exprs in
@@ -124,8 +129,10 @@ let getInterpolant exprs =
 
     (* Coefficient part of the constraints: must be equal to zero in pbounds at
        corresponding rows *)
-    Array.iteri (fun i (_, (_, coef)) -> M.iter (fun k v ->
-        if k <> "" then constrs.(M.find k varIDs).(i) <- float_of_int v) coef) exprs;
+    let eq, ineq = ref false, ref false in
+    Array.iteri (fun i (_, (op, coef)) ->
+        M.iter (fun k v -> if k <> "" then constrs.(M.find k varIDs).(i) <- float_of_int v) coef;
+        if op = EQ then (xbounds.(i) <- (-.infinity, infinity); eq := true) else ineq := true) exprs;
 
     (* Constant part should satisfy certain condition according to the given
        expressions *)
@@ -137,7 +144,7 @@ let getInterpolant exprs =
     constrs.(vars + 1) <- (Array.create len 1.);
     pbounds.(vars + 1) <- (1., infinity);
 
-    try
+    let ret = try
         let lp = make_problem Minimize zcoefs constrs pbounds xbounds in
         set_message_level lp 0;
         scale_problem lp;
@@ -153,9 +160,10 @@ let getInterpolant exprs =
 
         (* Calculate one interpolant *)
         let i = ref 0 in
-        let m = Array.fold_left (fun (f1, m) (consider, (f2, coefs)) ->
-            if not consider then (f1, m) else
-            LTE (* FIXME: should evaluate operators of each expression *),
+
+        let m = Array.fold_left (fun (op1, m) (consider, (op2, coefs)) ->
+            if not consider then (op1, m) else
+            (if op1 = LTE then LTE else op2),
             let w = prim.(!i) in incr i;
             if w = 0 then m else
             M.fold (fun x v m ->
@@ -163,12 +171,14 @@ let getInterpolant exprs =
                 M.add x v m) coefs m) (EQ, M.empty) exprs in
 
         (* DEBUG: Debug output *)
-        print_endline "\n\nInterpolant:";
+        print_endline "\nInterpolant:";
         printExpr2 "\t" m;
 
-        print_endline "\n==========";
         Some m
-    with _ -> None
+    with _ -> None in
+
+    print_endline "\n==========";
+    ret
 
 let prelude a b =
     let filter op = List.filter (fun (x, _) -> x = op) in
@@ -222,8 +232,6 @@ let prelude a b =
         (if leqA <> 0 then (if leqB <> 0 then eqAeqB else eqAneqB) else neqAeqB);
         all]
 
-let test = "x = z & y = z ; x >= w & y + 1 <= w"
-
-let formulae = inputUnit Lexer.token (Lexing.from_string test)
+let formulae = inputUnit Lexer.token (Lexing.from_channel stdin)
 let groups = directProduct (List.map convertToDNF formulae)
 let a = List.map (fun x -> prelude (List.hd x) (List.nth x 1)) groups
