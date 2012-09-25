@@ -1,4 +1,3 @@
-open Glpk
 open Parser
 open Types
 open Z3py
