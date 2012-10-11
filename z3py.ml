@@ -1,69 +1,42 @@
 open Buffer
 open Unix
+open Util
+open Types
 
-let buildScript constrs pbounds xbounds =
-    let xLen = Array.length xbounds in
-    let b1 = create (xLen * 4) in
-    let b2 = create (xLen * 4) in
-    let b3 = create (xLen * 7) in
-    let c = create 1 in (* Buffer size cannot be estimated *)
-    Array.iteri (fun i (low, up) ->
-        (* Declare variables *)
-        let name = string_of_int i in
-        add_string b2 name;
-        let name = "x" ^ name in
-        add_string b1 name;
-        add_string b3 (name ^ "<>0");
-        if i + 1 <> xLen then (add_char b1 ','; add_char b2 ' '; add_char b3 ',');
-
-        (* Add constraints about x *)
-        if low = up then
-            add_string c (name ^ "==" ^ (string_of_int low) ^ ",")
-        else (
-            if low = max_int then
-                add_string c (name ^ "<>" ^ (string_of_int up) ^ ",")
-            else (if low <> min_int then
-                add_string c (name ^ ">=" ^ (string_of_int low) ^ ",");
-            if up <> max_int then
-                add_string c (name ^ "<=" ^ (string_of_int up) ^ ",")))) xbounds;
-
-    Array.iteri (fun i (low, up) ->
+let buildScript (constrs, nonZero) =
+    let vars = ref [] in
+    let constrs = List.map (fun (op, coef) ->
         (* Build the expression *)
         let b = create 1 in
         let first = ref true in
-        Array.iteri (fun i c ->
-            if c = 0 then () else (
-            if c > 0 && (not !first) then add_char b '+';
+        (M.iter (fun k v ->
+            if v = 0 then () else (
+            if not (List.mem k !vars) then vars := k :: !vars;
+            if v > 0 && (not !first) then add_char b '+';
             first := false;
-            add_string b (string_of_int c);
-            add_string b "*x";
-            add_string b (string_of_int i))) constrs.(i);
-        if !first then add_string b "0";
+            add_string b (string_of_int v);
+            add_string b "*";
+            add_string b k)) coef;
+        if !first then add_string b "0");
 
         (* Add constraints about p *)
-        if low = up then (
-            add_buffer c b;
-            add_string c ("==" ^ (string_of_int low) ^ ",")
-        ) else (
-            if low = max_int then (
-                add_buffer c b;
-                add_string c ("<>" ^ (string_of_int up) ^ ","))
-            else (if low <> min_int then (
-                add_buffer c b;
-                add_string c (">=" ^ (string_of_int low) ^ ","));
-            if up <> max_int then (
-                add_buffer c b;
-                add_string c ("<=" ^ (string_of_int up) ^ ","))))) pbounds;
+        add_string b (string_of_operator op);
+        add_string b "0";
+        contents b) constrs in
 
     (* Suppress trivial solution *)
-    add_string c "Or(";
-    add_buffer c b3;
-    add_string c ")";
+    let constrs = constrs @ (List.map (fun group ->
+        let b = create 1 in
+        add_string b "Or(";
+        add_string b (join "," (List.map (fun x -> x ^ "!=0") group));
+        add_string b ")";
+        contents b) nonZero) in
 
     (* Build Z3Py script *)
-    "from z3 import *\n\n" ^
-    (contents b1) ^ " = Ints('" ^ (contents b2) ^ "')\n\n" ^
-    "solve(" ^ (contents c) ^ ")\n"
+    "from z3 import *\n" ^
+    (join "," !vars) ^ " = Ints('" ^
+    (join " " !vars) ^ "')\n" ^
+    "solve(" ^ (join "," constrs) ^ ")\n"
 
 let execute script =
     let (i, o) = open_process "python" in
@@ -74,8 +47,7 @@ let execute script =
     let _ = close_process (i, o) in
     ret
 
-let integer_programming constrs pbounds xbounds =
-    let script = buildScript constrs pbounds xbounds in
+let integer_programming space =
+    let script = buildScript space in
     let ret = execute script in
-    let assignments = Z3pyparser.inputUnit Z3pylexer.token (Lexing.from_string ret) in
-    Array.init (Array.length xbounds) (fun i -> Types.MI.find i assignments)
+    Z3pyparser.inputUnit Z3pylexer.token (Lexing.from_string ret)

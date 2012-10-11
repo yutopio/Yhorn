@@ -1,9 +1,11 @@
+open Util
 open Parser
 open Types
-open Z3py
 
 let fabs x = if x < 0. then -.x else x
 let tryPick f = List.fold_left (fun ret x -> if ret = None then f x else ret) None
+let addDefault k v d (+) m =
+    M.add k ((+) (if M.mem k m then M.find k m else d) v) m
 
 let printExpr2 offset (op, coef) =
     print_string offset;
@@ -14,13 +16,7 @@ let printExpr2 offset (op, coef) =
         if (abs c) <> 1 then print_int c;
         print_string v;
         first := false)) coef;
-    print_string (match op with
-        | EQ -> " = "
-        | NEQ -> " <> "
-        | LT -> " < "
-        | LTE -> " <= "
-        | GT -> " > "
-        | GTE -> " >= ");
+    print_string (string_of_operator op);
     print_int (-(M.find "" coef));
     print_newline ()
 
@@ -49,7 +45,7 @@ let directProduct input =
    left-side of the expression. It flips greater-than operators (>, >=) to
    less-than operators (<, <=) and replaces strict inequality (<, >) with not
    strict ones (<=, >=) by doing +/- 1 on constant term. Returns the operator
-   and the mapping from a variable to its coefficient. The constant term has the	
+   and the mapping from a variable to its coefficient. The constant term has the
    empty string as a key. *)
 let normalizeExpr (op, t1, t2) =
     let addCoef sign coefs (coef, key) =
@@ -82,19 +78,8 @@ let convertToDNF formulae =
     | _ -> internal [ formulae ] []
 
 (* Copies the given mapping with sign of every coefficient reversed. *)
+let coefOp op = M.fold (fun k v -> addDefault k v 0 op)
 let invert = M.map (fun v -> -v)
-
-let listToArray l =
-    let len = List.length l in
-    if len = 0 then [| |] else
-    let ret = Array.make len (List.hd l) in
-    let i = ref 0 in
-    List.iter (fun x -> ret.(!i) <- x; incr i) l;
-    ret
-
-let arrayFold2 f x a =
-    let i = ref (-1) in
-    Array.fold_left (fun x -> f x (a.(incr i; !i))) x
 
 (* Try to calculate an interpolant from given expressions. All expressions are
    to be represented as (consider : bool, (operator, coefficients : int M.t)).
@@ -102,7 +87,7 @@ let arrayFold2 f x a =
    logical group (in other words, to be considered when making an interpolant).
    Other parameter represents the expression. The operator should be either LTE
    or EQ. Any other are considered as LTE. *)
-let getInterpolant exprs =
+let getSpace exprs =
     (* DEBUG: Debug output *)
     print_endline "\nExpressions:";
     List.iter (fun (f, e) -> if f then printExpr2 "\t" e) exprs;
@@ -110,50 +95,35 @@ let getInterpolant exprs =
     List.iter (fun (f, e) -> if not f then printExpr2 "\t" e) exprs;
 
     let exprs = listToArray exprs in
-    let len = Array.length exprs in
 
-    (* Assign indices for all variables *)
-    let vars = ref (-1) in
-    let varIDs = Array.fold_left (fun m (_, (_, coefs)) ->
-        M.fold (fun k _ m ->
-            if not (M.mem k m || k = "") then
-                (incr vars; M.add k !vars m) else m) coefs m) M.empty exprs in
-    let vars = incr vars; !vars in
+    (* Build linear constraints for an SMT solver *)
+    let m, constrs, (a, b), ipLte =
+        Array.fold_left (fun (m, constrs, (a, b), ipLte) (c, (op, coef)) ->
+            let pi = "p" ^ (string_of_int (new_id ())) in
+            let m = M.fold (fun k v -> addDefault
+                k (pi, v) M.empty (fun m (k, v) -> M.add k v m)) coef m in
+            let constrs = match op with
+                | EQ -> constrs
+                | LTE -> (LTE, M.add pi (-1) M.empty) :: constrs
+                | _ -> assert false in
+            let (a, b) = if c then (pi :: a), b else a, (pi :: b) in
+            let ipLte = ipLte || (c && op = LTE) in
+            (m, constrs, (a, b), ipLte))
+        (M.empty, [], ([], []), false) exprs in
 
-    (* Use SMT solver to solve a linear programming problem *)
-    let constrs = Array.make_matrix (vars + 1) len 0 in
-    let pbounds = Array.create (vars + 1) (0, 0) in
-    let xbounds = Array.create len (0, max_int) in
+    let op = (if ipLte then LTE else EQ) in
+    let coef = M.map (M.filter (fun k _ -> List.mem k a)) m in
+    let constrs = ((if constrs = [] then NEQ else GT), M.find "" m) ::
+        (M.fold (fun k v -> (@) (if k = "" then [] else [ (EQ, v) ])) m constrs) in
+    (op, coef), constrs, [(a @ b)]
 
-    (* Coefficient part of the constraints: must be equal to zero in pbounds at
-       corresponding rows *)
-    let eq, ineq = ref false, ref false in
-    Array.iteri (fun i (_, (op, coef)) ->
-        M.iter (fun k v -> if k <> "" then constrs.(M.find k varIDs).(i) <- v) coef;
-        if op = EQ then (xbounds.(i) <- (min_int, max_int); eq := true) else ineq := true) exprs;
-
-    (* Constant part should satisfy certain condition according to the given
-       expressions *)
-    constrs.(vars) <- (Array.map (fun (_ ,(_, coef)) -> - (M.find "" coef)) exprs);
-    pbounds.(vars) <- if !ineq then (min_int, -1) else (max_int, 0);
-
+let getInterpolant ((op, expr), coef, zero) =
     let ret = try
-        let prim = integer_programming constrs pbounds xbounds in
+        let sol = Z3py.integer_programming (coef, zero) in
 
-        (* DEBUG: Debug output *)
-        print_endline "\nLP solution:";
-        printVector "\t" prim;
-
-        (* Calculate one interpolant *)
-        let i = ref 0 in
-        let m = Array.fold_left (fun (op1, m) (consider, (op2, coefs)) ->
-            if not consider then (op1, m) else
-            (if op1 = LTE then LTE else op2),
-            let w = prim.(!i) in incr i;
-            if w = 0 then m else
-            M.fold (fun x v m ->
-                let v = (if M.mem x m then M.find x m else 0) + v * w in
-                M.add x v m) coefs m) (EQ, M.empty) exprs in
+        (* Construct one interpolant *)
+        let expr = M.map (fun v -> M.fold (fun k v -> (+) ((M.find k sol) * v)) v 0) expr in
+        let m = op, expr in
 
         (* DEBUG: Debug output *)
         print_endline "\nInterpolant:";
@@ -165,7 +135,7 @@ let getInterpolant exprs =
     print_endline "\n==========";
     ret
 
-let prelude a b =
+let solve a b =
     let filter op = List.filter (fun (x, _) -> x = op) in
     let addFlag op exprs consider = List.map (fun x -> (consider, x)) (filter op exprs) in
     let proc op exprs consider = let t = addFlag op exprs consider in (t, List.length t) in
@@ -179,13 +149,17 @@ let prelude a b =
     let plus x = M.add "" (1 + (M.find "" x)) x in
     let minus x = M.add "" (1 - (M.find "" x)) (invert x) in
 
+    let tryGetInterpolant2 x =
+        let sp = getSpace x in
+        match getInterpolant sp with None -> None | Some _ -> Some sp in
     let tryGetInterpolant coefProc exprs = tryPick (fun (consider, (_, coef)) ->
-        getInterpolant ((consider, (LTE, coefProc coef)) :: exprs)) in
+        let sp = getSpace ((consider, (LTE, coefProc coef)) :: exprs) in
+        match getInterpolant sp with None -> None | Some _ -> Some sp) in
 
     let eqAeqB _ =
         let eqs = eqA @ eqB in
         tryPick exec [
-            (fun _ -> getInterpolant eqs);
+            (fun _ -> tryGetInterpolant2 eqs);
             (fun _ -> tryGetInterpolant plus eqs neqA);
             (fun _ -> tryGetInterpolant minus eqs neqA);
             (fun _ -> tryGetInterpolant plus eqs neqB);
@@ -211,12 +185,35 @@ let prelude a b =
            choose either as for each inequations. *)
         let neqs = List.map (fun (c, (_, coef)) ->
             [ (c, (LTE, plus coef)) ; (c, (LTE, minus coef)) ]) (neqA @ neqB) in
-        tryPick (fun x -> getInterpolant (x @ exprs)) (directProduct neqs) in
+        tryPick (fun x -> tryGetInterpolant2 (x @ exprs)) (directProduct neqs) in
 
     tryPick exec [
         (if leqA <> 0 then (if leqB <> 0 then eqAeqB else eqAneqB) else neqAeqB);
         all]
 
+let intersectSpace ((op1, coef1), constrs1, zero1) ((op2, coef2), constrs2, zero2) =
+    let x1 = M.fold (fun k v r -> k :: r) coef1 [] in
+    let x2 = M.fold (fun k v r -> k :: r) coef2 [] in
+    let vars = distinct (x1 @ x2) in
+
+    let constrs3 = List.fold_left (fun ret k ->
+        let v1 = if M.mem k coef1 then M.find k coef1 else M.empty in
+	let v2 = if M.mem k coef2 then M.find k coef2 else M.empty in
+	let v = coefOp (-) v1 v2 in (EQ, v) :: ret) [] vars in
+    let constrs = constrs1 @ constrs2 @ constrs3 in
+
+    let op = match op1, op2 with
+        | EQ, _
+        | _, EQ -> EQ
+	| _ -> LTE in
+
+    ((op, coef1), constrs, zero1 @ zero2)
+
 let formulae = inputUnit Lexer.token (Lexing.from_channel stdin)
 let groups = directProduct (List.map convertToDNF formulae)
-let a = List.map (fun x -> prelude (List.hd x) (List.nth x 1)) groups
+let a = List.map (fun x -> solve (List.hd x) (List.nth x 1)) groups
+let a = List.filter (function None -> false | _ -> true) a
+let a = List.map (function (Some x) -> x) a
+let combine = reduce intersectSpace a
+let _ = print_endline "\n\n\n*******\n\n\n"
+let _ = printExpr2 "" (match getInterpolant combine with Some x -> x)

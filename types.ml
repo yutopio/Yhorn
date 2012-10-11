@@ -8,13 +8,6 @@ end
 
 module M = Map.Make(String)
 
-module Integer = struct
-  type t = int
-  let compare = compare
-end
-
-module MI = Map.Make(Integer)
-
 type operator =
     | EQ
     | NEQ
@@ -22,6 +15,14 @@ type operator =
     | LTE
     | GT
     | GTE
+
+let string_of_operator = function
+    | EQ -> "=="
+    | NEQ -> "!="
+    | LT -> "<"
+    | LTE -> "<="
+    | GT -> ">"
+    | GTE -> ">="
 
 type term = int * string
 type expr = operator * term list * term list
@@ -35,4 +36,6 @@ type expr2 = operator * coef
 type formula2 =
     | One of expr2
     | Many of formula2 list
-type nf = expr2 list list
+type 'a nf = 'a list list
+
+type space = (operator * coef M.t) * expr2 list * string list list
