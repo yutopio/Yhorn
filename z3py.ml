@@ -9,17 +9,14 @@ let buildScript (constrs, nonZero) =
         (* Build the expression *)
         let b = create 1 in
         let first = ref true in
-        (M.iter (fun k v ->
-            if v = 0 then () else (
-            if not (List.mem k !vars) then vars := k :: !vars;
-            if v > 0 && (not !first) then add_char b '+';
+        M.iter (fun v c ->
+            if c = 0 then () else (
+            if not (List.mem v !vars) then vars := v :: !vars;
+            if c > 0 && not !first then add_char b '+' else if c = -1 then add_char b '-';
             first := false;
-            add_string b (string_of_int v);
-            add_string b "*";
-            add_string b k)) coef;
-        if !first then add_string b "0");
-
-        (* Add constraints about p *)
+            if (abs c) <> 1 then add_string b ((string_of_int c) ^ "*");
+            add_string b v)) coef;
+        if !first then add_string b "0";
         add_string b (string_of_operator op);
         add_string b "0";
         contents b) constrs in

@@ -12,10 +12,11 @@ let printExpr2 offset (op, coef) =
     let first = ref true in
     M.iter (fun v c ->
         if v = "" || c = 0 then () else (
-        print_string (if c > 0 & not (!first) then "+" else if c = -1 then "-" else "");
+        print_string (if c > 0 && not !first then "+" else if c = -1 then "-" else "");
+        first := false;
         if (abs c) <> 1 then print_int c;
-        print_string v;
-        first := false)) coef;
+        print_string v)) coef;
+    if !first then print_string "0";
     print_string (string_of_operator op);
     print_int (-(M.find "" coef));
     print_newline ()
