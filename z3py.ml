@@ -43,9 +43,17 @@ let execute script =
     output_string o script;
     flush o;
     close_out o;
-    let ret = input_line i in
+
+    let ret = Buffer.create 1 in
+    (try
+        while true do
+            let line = input_line i in
+            Buffer.add_string ret line
+        done
+    with End_of_file -> ());
+
     let _ = close_process (i, o) in
-    ret
+    Buffer.contents ret
 
 let integer_programming space =
     let script = buildScript space in

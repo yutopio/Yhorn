@@ -88,17 +88,17 @@ let invert = M.map (fun v -> -v)
    Other parameter represents the expression. The operator should be either LTE
    or EQ. Any other are considered as LTE. *)
 let getSpace exprs =
+    let exprs = (true, (LTE, M.add "" (-1) M.empty)) :: exprs in
+
     (* DEBUG: Debug output *)
     print_endline "\nExpressions:";
     List.iter (fun (f, e) -> if f then printExpr2 "\t" e) exprs;
     print_endline "    --------------------";
     List.iter (fun (f, e) -> if not f then printExpr2 "\t" e) exprs;
 
-    let exprs = listToArray exprs in
-
     (* Build linear constraints for an SMT solver *)
     let m, constrs, (a, b), ipLte =
-        Array.fold_left (fun (m, constrs, (a, b), ipLte) (c, (op, coef)) ->
+        List.fold_left (fun (m, constrs, (a, b), ipLte) (c, (op, coef)) ->
             let pi = "p" ^ (string_of_int (new_id ())) in
             let m = M.fold (fun k v -> addDefault
                 k (pi, v) M.empty (fun m (k, v) -> M.add k v m)) coef m in
@@ -198,8 +198,8 @@ let intersectSpace ((op1, coef1), constrs1, zero1) ((op2, coef2), constrs2, zero
 
     let constrs3 = List.fold_left (fun ret k ->
         let v1 = if M.mem k coef1 then M.find k coef1 else M.empty in
-	let v2 = if M.mem k coef2 then M.find k coef2 else M.empty in
-	let v = coefOp (-) v1 v2 in (EQ, v) :: ret) [] vars in
+        let v2 = if M.mem k coef2 then M.find k coef2 else M.empty in
+        let v = coefOp (-) v1 v2 in (EQ, v) :: ret) [] vars in
     let constrs = constrs1 @ constrs2 @ constrs3 in
 
     let op = match op1, op2 with
@@ -215,5 +215,5 @@ let a = List.map (fun x -> solve (List.hd x) (List.nth x 1)) groups
 let a = List.filter (function None -> false | _ -> true) a
 let a = List.map (function (Some x) -> x) a
 let combine = reduce intersectSpace a
-let _ = print_endline "\n\n\n*******\n\n\n"
-let _ = printExpr2 "" (match getInterpolant combine with Some x -> x)
+let _ = print_endline "\nIntersection of interpolant spaces:"
+let _ = getInterpolant combine
