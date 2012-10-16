@@ -206,7 +206,7 @@ let intersectSpace ((op1, coef1), constrs1, zero1) ((op2, coef2), constrs2, zero
     let op = match op1, op2 with
         | EQ, _
         | _, EQ -> EQ
-	| _ -> LTE in
+        | _ -> LTE in
 
     ((op, coef1), constrs, zero1 @ zero2)
 

@@ -5,9 +5,9 @@ let new_id =
 
 let distinct l =
     let rec internal l = function
-	    | x :: rest ->
+        | x :: rest ->
             internal (l @ (if List.mem x l then [] else [x])) rest
-	    | [] -> l in
+        | [] -> l in
     internal [] l
 
 let reduce f = function
@@ -26,7 +26,7 @@ let join separator elements =
         Buffer.add_string buf separator;
         internal rest in
     internal elements
-    
+
 let listToArray l =
     let len = List.length l in
     if len = 0 then [| |] else
