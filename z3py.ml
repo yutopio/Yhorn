@@ -22,21 +22,24 @@ let buildScript (constrs, nonZero) =
         contents b) constrs in
 
     (* Suppress trivial solution *)
-    let constrs = constrs @ (List.map (fun group ->
-        let b = create 1 in
-        add_string b "Or(";
-        add_string b (join "," (List.map (fun x -> x ^ "!=0") group));
-        add_string b ")";
-        contents b) nonZero) in
+    let (_, zeroConstrs, orNames) = List.fold_left (fun (i, c, o) group ->
+        let name = "o" ^ (string_of_int i) in
+        i + 1,
+        (name ^ "=[" ^ (join "," (List.map (fun x -> x ^ "!=0") group)) ^ "]") :: c,
+        ("Or(" ^ name ^ ")") :: o) (0, [], []) nonZero in
 
     (* Build Z3Py script *)
-    "from z3 import *\n" ^
-    (join "," !vars) ^ " = Ints('" ^
-    (join " " !vars) ^ "')\n" ^
-    "solve(" ^ (join "," constrs) ^ ")\n"
+    (List.fold_left (fun x v ->
+        x ^
+        (join "," v) ^ " = Ints('" ^
+        (join " " v) ^ "')\n") "" (splitByN 200 !vars)) ^
+    (join "\n" zeroConstrs) ^ "\n" ^
+    "p=[" ^ (join "," (constrs @ orNames)) ^ "]\n" ^
+    "solve(p)"
 
 let execute script =
     let (i, o) = open_process "python" in
+    let script = "from z3 import *\n" ^ script in
     output_string o script;
     flush o;
     close_out o;
