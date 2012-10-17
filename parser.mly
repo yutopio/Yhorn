@@ -17,10 +17,11 @@ let combineFormulae opAnd x y =
 %token <string> IDENT
 %token <int> INT
 %token <Types.operator> OP
-%token PLUS MINUS
-%token AND OR
+%token PLUS MINUS ASTERISK
 %token LPAREN RPAREN
-%token SEMICOLON
+%token LBRACK RBRACK
+%token COMMA
+%token INTERPOLATE DOT
 %token EOF
 
 %start inputUnit
@@ -29,31 +30,41 @@ let combineFormulae opAnd x y =
 %%
 
 inputUnit:
-    /* TODO: Support multiple formulae group */
-    | formulae SEMICOLON formulae EOF { [$1;$3] }
+    | INTERPOLATE LPAREN blocks RPAREN DOT EOF  { $3 }
+;
+
+blocks:
+    | block COMMA blocks    { $1::$3 }
+    | block                 { [$1] }
+;
+
+block:
+    | LBRACK formulae RBRACK    { And($2) }
 ;
 
 formulae:
-    | formula                   { Expr($1) }
-    | LPAREN formulae RPAREN    { $2 }
-    | formulae AND formulae     { combineFormulae true $1 $3 }
-    | formulae OR formulae      { combineFormulae false $1 $3 }
+    | formula                   { [$1] }
+    | formulae COMMA formula    { $1 @ [$3] }
 ;
 
 formula:
-    | expr OP expr  { ($2, $1, $3) }
+    | expr OP expr          { Expr($2, $1, $3) }
+    | LPAREN formula RPAREN { $2 }
 ;
 
 expr:
-    | term              { [$1] }
-    | expr PLUS term    { $1 @ [$3] }
-    | expr MINUS term   { let (a, b) = $3 in $1 @ [ (-a, b) ] }
+    | term                  { [$1] }
+    | expr PLUS expr        { $1 @ $3 }
+    | expr MINUS term       { let (a, b) = $3 in $1 @ [ (-a, b) ] }
+    | LPAREN expr RPAREN    { $2 }
 ;
 
 term:
-    | num       { ($1, "") }
-    | num IDENT { ($1, $2) }
-    | IDENT     { (1, $1) }
+    | num                   { ($1, "") }
+    | IDENT                 { (1, $1) }
+    | term ASTERISK term    { let ((a, b), (c, d)) = ($1, $3) in
+                              assert (a = 1 && d = ""); (c, b) }
+    | LPAREN term RPAREN    { $2 }
 ;
 
 num:
