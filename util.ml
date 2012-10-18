@@ -14,6 +14,13 @@ let reduce f = function
     | x :: rest -> List.fold_left f x rest
     | _ -> assert false
 
+let directProduct input =
+    let ret = ref [] in
+    let rec inner current = function
+        | [] -> ret := current :: !ret
+        | x :: rest -> List.iter (fun x -> inner (current @ [x]) rest) x in
+    inner [] input; !ret
+
 let join separator elements =
     let buf = Buffer.create 1 in
     let rec internal = function

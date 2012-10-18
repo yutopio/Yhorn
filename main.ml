@@ -35,43 +35,13 @@ let printVector offset x =
         print_string (if i = len - 1 then "" else "\t")) x;
     print_endline ")"
 
-let directProduct input =
-    let ret = ref [] in
-    let rec inner current = function
-        | [] -> ret := current :: !ret
-        | x :: rest -> List.iter (fun x -> inner (current @ [x]) rest) x in
-    inner [] input; !ret
-
-(* This procedure sums up all terms according to the variable and move to the
-   left-side of the expression. It flips greater-than operators (>, >=) to
-   less-than operators (<, <=) and replaces strict inequality (<, >) with not
-   strict ones (<=, >=) by doing +/- 1 on constant term. Returns the operator
-   and the mapping from a variable to its coefficient. The constant term has the
-   empty string as a key. *)
-let normalizeExpr (op, t1, t2) =
-    let addCoef sign coefs (coef, key) =
-        M.add key (sign * coef +
-            (if M.mem key coefs then M.find key coefs else 0)) coefs in
-    let t2, sign, op =
-        match op with
-        | LT -> (-1, "") :: t2, 1, LTE
-        | GT -> (1, "") :: t2, -1, LTE
-        | GTE -> t2, -1, LTE
-        | _ -> t2, 1, op in
-    let coefs = M.add "" 0 M.empty in
-    let coefs = List.fold_left (addCoef sign) coefs t1 in
-    let coefs = List.fold_left (addCoef (-sign)) coefs t2 in
-    let coefs = M.fold (fun k v coefs ->
-        if k <> "" && v = 0 then M.remove k coefs else coefs) coefs coefs in
-    op, coefs
-
 let convertToDNF formulae =
     let rec internal formulae ret =
         match formulae with
         | [] -> List.rev ret
         | x :: l ->
             let ret = match x with
-                | Expr x -> [ normalizeExpr x ] :: ret
+                | Expr x -> [ x ] :: ret
                 | And x | Or x -> (directProduct (internal x [])) @ ret in
             internal l ret in
     match formulae with
@@ -118,7 +88,8 @@ let getSpace exprs =
         (M.fold (fun k v -> (@) (if k = "" then [] else [ (EQ, v) ])) m constrs) in
     (op, coef), constrs, [(a @ b)]
 
-let getInterpolant ((op, expr), coef, zero) =
+let getInterpolant sp =
+    match sp with Expr((op, expr), coef, zero) ->
     let ret = try
         let sol = Z3py.integer_programming (coef, zero) in
 
@@ -130,7 +101,7 @@ let getInterpolant ((op, expr), coef, zero) =
         print_endline "\nInterpolant:";
         printExpr2 "\t" m;
 
-        Some m
+        Some(Expr m)
     with _ -> None in
 
     print_endline "\n==========";
@@ -151,11 +122,11 @@ let solve a b =
     let minus x = M.add "" (1 - (M.find "" x)) (invert x) in
 
     let tryGetInterpolant2 x =
-        let sp = getSpace x in
-        match getInterpolant sp with None -> None | Some _ -> Some sp in
+        let sp = Expr(getSpace x) in
+        match getInterpolant sp with None -> None | Some _ -> Some(sp) in
     let tryGetInterpolant coefProc exprs = tryPick (fun (consider, (_, coef)) ->
-        let sp = getSpace ((consider, (LTE, coefProc coef)) :: exprs) in
-        match getInterpolant sp with None -> None | Some _ -> Some sp) in
+        let sp = Expr(getSpace ((consider, (LTE, coefProc coef)) :: exprs)) in
+        match getInterpolant sp with None -> None | Some _ -> Some(sp)) in
 
     let eqAeqB _ =
         let eqs = eqA @ eqB in
@@ -192,7 +163,10 @@ let solve a b =
         (if leqA <> 0 then (if leqB <> 0 then eqAeqB else eqAneqB) else neqAeqB);
         all]
 
-let intersectSpace ((op1, coef1), constrs1, zero1) ((op2, coef2), constrs2, zero2) =
+let intersectSpace sp1 sp2 =
+    match sp1 with Expr ((op1, coef1), constrs1, zero1) ->
+    match sp2 with Expr ((op2, coef2), constrs2, zero2) ->
+
     let x1 = M.fold (fun k v r -> k :: r) coef1 [] in
     let x2 = M.fold (fun k v r -> k :: r) coef2 [] in
     let vars = distinct (x1 @ x2) in
@@ -208,7 +182,7 @@ let intersectSpace ((op1, coef1), constrs1, zero1) ((op2, coef2), constrs2, zero
         | _, EQ -> EQ
         | _ -> LTE in
 
-    ((op, coef1), constrs, zero1 @ zero2)
+    Expr ((op, coef1), constrs, zero1 @ zero2)
 
 let formulae = inputUnit Lexer.token (Lexing.from_channel stdin)
 let groups = directProduct (List.map convertToDNF formulae)

@@ -24,18 +24,13 @@ let string_of_operator = function
     | GT -> ">"
     | GTE -> ">="
 
-type term = int * string
-type expr = operator * term list * term list
-type formula =
-    | Expr of expr
-    | And of formula list
-    | Or of formula list
-
 type coef = int M.t
-type expr2 = operator * coef
-type formula2 =
-    | One of expr2
-    | Many of formula2 list
+type expr = operator * coef
+type 'a formula =
+    | Expr of 'a
+    | And of 'a formula list
+    | Or of 'a formula list
+
 type 'a nf = 'a list list
 
-type space = (operator * coef M.t) * expr2 list * string list list
+type space = (operator * coef M.t) * expr list * string list list

@@ -12,6 +12,29 @@ let combineFormulae opAnd x y =
     | (_, Or x, _) -> Or(y :: x)
     | (_, _, Or y) -> Or(y @ [ x ])
     | _ -> Or [ y ; x ]
+
+(* This procedure sums up all terms according to the variable and move to the
+   left-side of the expression. It flips greater-than operators (>, >=) to
+   less-than operators (<, <=) and replaces strict inequality (<, >) with not
+   strict ones (<=, >=) by doing +/- 1 on constant term. Returns the operator
+   and the mapping from a variable to its coefficient. The constant term has the
+   empty string as a key. *)
+let normalizeExpr (op, t1, t2) =
+    let addCoef sign coefs (coef, key) =
+        M.add key (sign * coef +
+            (if M.mem key coefs then M.find key coefs else 0)) coefs in
+    let t2, sign, op =
+        match op with
+        | LT -> (-1, "") :: t2, 1, LTE
+        | GT -> (1, "") :: t2, -1, LTE
+        | GTE -> t2, -1, LTE
+        | _ -> t2, 1, op in
+    let coefs = M.add "" 0 M.empty in
+    let coefs = List.fold_left (addCoef sign) coefs t1 in
+    let coefs = List.fold_left (addCoef (-sign)) coefs t2 in
+    let coefs = M.fold (fun k v coefs ->
+        if k <> "" && v = 0 then M.remove k coefs else coefs) coefs coefs in
+    op, coefs
 %}
 
 %token <string> IDENT
@@ -24,7 +47,7 @@ let combineFormulae opAnd x y =
 %token EOF
 
 %start inputUnit
-%type <Types.formula list> inputUnit
+%type <Types.expr Types.formula list> inputUnit
 
 %%
 
@@ -41,7 +64,7 @@ formulae:
 ;
 
 formula:
-    | expr OP expr  { ($2, $1, $3) }
+    | expr OP expr  { normalizeExpr ($2, $1, $3) }
 ;
 
 expr:
