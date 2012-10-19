@@ -2,8 +2,6 @@ open Util
 open Parser
 open Types
 
-let fabs x = if x < 0. then -.x else x
-let tryPick f = List.fold_left (fun ret x -> if ret = None then f x else ret) None
 let addDefault k v d (+) m =
     M.add k ((+) (if M.mem k m then M.find k m else d) v) m
 
@@ -20,20 +18,6 @@ let printExpr2 offset (op, coef) =
     print_string (string_of_operator op);
     print_int (-(M.find "" coef));
     print_newline ()
-
-let printMatrix offset =
-    Array.iter (fun x ->
-        print_string offset;
-        Array.iter (fun x -> print_int x; print_string "\t") x;
-        print_newline ())
-
-let printVector offset x =
-    print_string (offset ^ "( ");
-    let len = Array.length x in
-    Array.iteri (fun i x ->
-        print_int x;
-        print_string (if i = len - 1 then "" else "\t")) x;
-    print_endline ")"
 
 let convertToDNF formulae =
     let rec internal formulae ret =
@@ -67,26 +51,46 @@ let getSpace exprs =
     print_endline "    --------------------";
     List.iter (fun (f, e) -> if not f then printExpr2 "\t" e) exprs;
 
-    (* Build linear constraints for an SMT solver *)
+    (* Build the coefficient mapping for the first, and at the same time, check
+       the operator of each expression. *)
     let m, constrs, (a, b), ipLte =
         List.fold_left (fun (m, constrs, (a, b), ipLte) (c, (op, coef)) ->
             let pi = "p" ^ (string_of_int (new_id ())) in
-            let m = M.fold (fun k v -> addDefault
-                k (pi, v) M.empty (fun m (k, v) -> M.add k v m)) coef m in
-            let constrs = match op with
+
+            (* Building an coefficient mapping in terms of variables *)
+            (M.fold (fun k v -> addDefault
+                k (pi, v) M.empty (fun m (k, v) -> M.add k v m)) coef m),
+
+            (* If the expression is an inequality, its weight should be
+               positive *)
+            (match op with
                 | EQ -> constrs
-                | LTE -> (LTE, M.add pi (-1) M.empty) :: constrs
-                | _ -> assert false in
-            let (a, b) = if c then (pi :: a), b else a, (pi :: b) in
-            let ipLte = ipLte || (c && op = LTE) in
-            (m, constrs, (a, b), ipLte))
+                | LTE -> (GTE, M.add pi 1 M.empty) :: constrs
+                | _ -> assert false),
+
+            (* To build the coefficient mapping for an interpolant, the variable
+               name for the weight of each expression should be memorized *)
+            (if c then (pi :: a), b else a, (pi :: b)),
+
+            (* The flag to note that the interpolant should be LTE or EQ *)
+            (ipLte || (c && op = LTE)))
         (M.empty, [], ([], []), false) exprs in
 
-    let op = (if ipLte then LTE else EQ) in
-    let coef = M.map (M.filter (fun k _ -> List.mem k a)) m in
-    let constrs = ((if constrs = [] then NEQ else GT), M.find "" m) ::
-        (M.fold (fun k v -> (@) (if k = "" then [] else [ (EQ, v) ])) m constrs) in
-    (op, coef), constrs, [(a @ b)]
+    (* The interpolant will be a sum among some expressions *)
+    ((if ipLte then LTE else EQ),
+        M.map (M.filter (fun k _ -> List.mem k a)) m),
+
+    (* In constraints, all variables' coefficients must be equals to zero under
+       given weights to each expression. As for the constants, if all expression
+       were equalities, the sum of them must be not equal (NEQ) to zero to make
+       inconsistency. Otherwise, i.e., LTE inequalities involved, the sum must
+       be greater than zero. *)
+    List.rev (M.fold (fun k v -> (@) [ (if k = "" then
+        (if constrs = [] then NEQ else GT) else EQ), v ]) m constrs),
+
+    (* The weight of these expression should not be a zero vector to suppress
+       trivial solution. *)
+    [(a @ b)]
 
 let getInterpolant sp =
     match sp with Expr((op, expr), coef, zero) ->
@@ -107,63 +111,8 @@ let getInterpolant sp =
     print_endline "\n==========";
     ret
 
-let solve a b =
-    let filter op = List.filter (fun (x, _) -> x = op) in
-    let addFlag op exprs consider = List.map (fun x -> (consider, x)) (filter op exprs) in
-    let proc op exprs consider = let t = addFlag op exprs consider in (t, List.length t) in
-    let exec = fun x -> x () in
-
-    (* Extract all equations and not-equal inequations *)
-    let eqA, leqA = proc EQ a true in
-    let neqA, lneqA = proc NEQ a true in
-    let eqB, leqB = proc EQ b false in
-    let neqB, lneqB = proc NEQ b false in
-    let plus x = M.add "" (1 + (M.find "" x)) x in
-    let minus x = M.add "" (1 - (M.find "" x)) (invert x) in
-
-    let tryGetInterpolant2 x =
-        let sp = Expr(getSpace x) in
-        match getInterpolant sp with None -> None | Some _ -> Some(sp) in
-    let tryGetInterpolant coefProc exprs = tryPick (fun (consider, (_, coef)) ->
-        let sp = Expr(getSpace ((consider, (LTE, coefProc coef)) :: exprs)) in
-        match getInterpolant sp with None -> None | Some _ -> Some(sp)) in
-
-    let eqAeqB _ =
-        let eqs = eqA @ eqB in
-        tryPick exec [
-            (fun _ -> tryGetInterpolant2 eqs);
-            (fun _ -> tryGetInterpolant plus eqs neqA);
-            (fun _ -> tryGetInterpolant minus eqs neqA);
-            (fun _ -> tryGetInterpolant plus eqs neqB);
-            (fun _ -> tryGetInterpolant minus eqs neqB) ] in
-    let eqAneqB _ =
-        tryPick exec [
-            (fun _ -> tryGetInterpolant plus eqA neqB);
-            (fun _ -> tryGetInterpolant minus eqA neqB) ] in
-    let neqAeqB _ =
-        tryPick exec [
-            (fun _ -> tryGetInterpolant plus eqB neqA);
-            (fun _ -> tryGetInterpolant minus eqB neqA) ] in
-
-    let all _ =
-        (* Gather all expressions of LTE with consideration flag, and expand
-           equations. *)
-        let exprs = (addFlag LTE a true) @ (addFlag LTE b false) @
-            List.fold_left (fun ret (c, (_, coefs)) ->
-                (c, (LTE, coefs)) ::
-                (c, (LTE, invert coefs)) :: ret) [] (eqA @ eqB) in
-
-        (* Split not-equal inequations into disjunction of two expressions and
-           choose either as for each inequations. *)
-        let neqs = List.map (fun (c, (_, coef)) ->
-            [ (c, (LTE, plus coef)) ; (c, (LTE, minus coef)) ]) (neqA @ neqB) in
-        tryPick (fun x -> tryGetInterpolant2 (x @ exprs)) (directProduct neqs) in
-
-    tryPick exec [
-        (if leqA <> 0 then (if leqB <> 0 then eqAeqB else eqAneqB) else neqAeqB);
-        all]
-
 let intersectSpace sp1 sp2 =
+    print_endline "\nIntersecting space\n";
     match sp1 with Expr ((op1, coef1), constrs1, zero1) ->
     match sp2 with Expr ((op2, coef2), constrs2, zero2) ->
 
@@ -182,7 +131,60 @@ let intersectSpace sp1 sp2 =
         | _, EQ -> EQ
         | _ -> LTE in
 
-    Expr ((op, coef1), constrs, zero1 @ zero2)
+    let sp = (op, coef1), constrs, zero1 @ zero2 in
+    match getInterpolant (Expr sp) with
+    | Some _ -> Expr sp
+    | None -> And [ sp1; sp2 ]
+
+let solve a b =
+    let filter op = List.filter (fun (x, _) -> x = op) in
+    let addFlag op exprs consider = List.map (fun x -> (consider, x)) (filter op exprs) in
+    let proc op exprs consider = let t = addFlag op exprs consider in (t, List.length t) in
+    let exec = fun x -> x () in
+
+    (* Extract all equations and not-equal inequations *)
+    let eqA, leqA = proc EQ a true in
+    let neqA, lneqA = proc NEQ a true in
+    let eqB, leqB = proc EQ b false in
+    let neqB, lneqB = proc NEQ b false in
+    let plus x = M.add "" (1 + (M.find "" x)) x in
+    let minus x = M.add "" (1 - (M.find "" x)) (invert x) in
+
+    let tryGetInterpolant exprs = tryPick (fun (consider, (_, coef)) ->
+        let sp1 = Expr(getSpace ((consider, (LTE, plus coef)) :: exprs)) in
+        match getInterpolant sp1 with None -> None | Some _ ->
+        let sp2 = Expr(getSpace ((consider, (LTE, minus coef)) :: exprs)) in
+        match getInterpolant sp2 with None -> None | Some _ ->
+        Some(intersectSpace sp1 sp2)) in
+
+    let eqAeqB _ =
+        let eqs = eqA @ eqB in
+        tryPick exec [
+            (fun _ -> tryGetInterpolant eqs neqA);
+            (fun _ -> tryGetInterpolant eqs neqB) ] in
+    let eqAneqB _ = tryGetInterpolant eqA neqB in
+    let neqAeqB _ = tryGetInterpolant eqB neqA in
+
+    let all _ =
+        (* Gather all expressions of LTE with consideration flag, and expand
+           equations. *)
+        let exprs = (addFlag LTE a true) @ (addFlag LTE b false) @
+            List.fold_left (fun ret (c, (_, coefs)) ->
+                (c, (LTE, coefs)) ::
+                (c, (LTE, invert coefs)) :: ret) [] (eqA @ eqB) in
+
+        (* Split not-equal inequations into disjunction of two expressions and
+           choose either as for each inequations. *)
+        let neqs = List.map (fun (c, (_, coef)) ->
+            [ (c, (LTE, plus coef)) ; (c, (LTE, minus coef)) ]) (neqA @ neqB) in
+        tryPick (fun x ->
+            let sp = Expr(getSpace (x @ exprs)) in
+            match getInterpolant sp with None -> None | Some _ -> Some(sp)
+        ) (directProduct neqs) in
+
+    tryPick exec [
+        (if leqA <> 0 then (if leqB <> 0 then eqAeqB else eqAneqB) else neqAeqB);
+        all]
 
 let formulae = inputUnit Lexer.token (Lexing.from_channel stdin)
 let groups = directProduct (List.map convertToDNF formulae)

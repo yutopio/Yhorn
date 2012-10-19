@@ -29,10 +29,7 @@ let buildScript (constrs, nonZero) =
         ("Or(" ^ name ^ ")") :: o) (0, [], []) nonZero in
 
     (* Build Z3Py script *)
-    (List.fold_left (fun x v ->
-        x ^
-        (join "," v) ^ " = Ints('" ^
-        (join " " v) ^ "')\n") "" (splitByN 200 !vars)) ^
+    (join "," !vars) ^ " = Ints('" ^ (join " " !vars) ^ "')\n" ^
     (join "\n" zeroConstrs) ^ "\n" ^
     "p=[" ^ (join "," (constrs @ orNames)) ^ "]\n" ^
     "solve(p)"
