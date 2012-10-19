@@ -77,3 +77,7 @@ let splitByN n x =
         | [] -> List.rev (group :: ret)
         | _ -> internal1 rest (group :: ret) in
     internal1 x []
+
+let mapi f l =
+    let _, r = List.fold_left (fun (i, l) x -> i + 1, (f i x) :: l) (0, []) l in
+    List.rev r

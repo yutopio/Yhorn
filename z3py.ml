@@ -3,36 +3,48 @@ open Unix
 open Util
 open Types
 
-let buildScript (constrs, nonZero) =
+let printExprZ3 (op, coef) vars =
+    (* TODO: Merge this function with printExpr in main.ml *)
+    let b = create 1 in
+    let first = ref true in
+    M.iter (fun v c ->
+        if c = 0 then () else (
+        if not (List.mem v !vars) then vars := v :: !vars;
+        if c > 0 && not !first then add_char b '+' else if c = -1 then add_char b '-';
+        first := false;
+        if (abs c) <> 1 then add_string b ((string_of_int c) ^ "*");
+        add_string b v)) coef;
+    if !first then add_string b "0";
+    add_string b (string_of_operator op);
+    add_string b "0";
+    contents b
+
+let buildScript constrs =
     let vars = ref [] in
-    let constrs = List.map (fun (op, coef) ->
-        (* Build the expression *)
-        let b = create 1 in
-        let first = ref true in
-        M.iter (fun v c ->
-            if c = 0 then () else (
-            if not (List.mem v !vars) then vars := v :: !vars;
-            if c > 0 && not !first then add_char b '+' else if c = -1 then add_char b '-';
-            first := false;
-            if (abs c) <> 1 then add_string b ((string_of_int c) ^ "*");
-            add_string b v)) coef;
-        if !first then add_string b "0";
-        add_string b (string_of_operator op);
-        add_string b "0";
-        contents b) constrs in
 
-    (* Suppress trivial solution *)
-    let (_, zeroConstrs, orNames) = List.fold_left (fun (i, c, o) group ->
-        let name = "o" ^ (string_of_int i) in
-        i + 1,
-        (name ^ "=[" ^ (join "," (List.map (fun x -> x ^ "!=0") group)) ^ "]") :: c,
-        ("Or(" ^ name ^ ")") :: o) (0, [], []) nonZero in
+    (* Build up code snippets *)
+    let b = create 1 in
+    let rec inner hierarchy e =
+        match e with
+        | Expr x -> printExprZ3 x vars
+        | And x | Or x ->
+            (* DEBUG: rev is for ease of script inspection *)
+            let name = "e" ^ (join "_" (List.rev hierarchy)) in
 
-    (* Build Z3Py script *)
+            (* DEBUG: `hierarchy @ [i]` can simply be `i :: hierarchy` *)
+            add_string b (name ^ "=[" ^ (join "," (
+                mapi (fun i -> inner (hierarchy @ [string_of_int i])) x)) ^ "]\n");
+            (match e with And _ -> "And" | Or _ -> "Or") ^ "(" ^ name ^ ")" in
+    let root = inner [] constrs in
+
+    (* Variable declaration first *)
     (join "," !vars) ^ " = Ints('" ^ (join " " !vars) ^ "')\n" ^
-    (join "\n" zeroConstrs) ^ "\n" ^
-    "p=[" ^ (join "," (constrs @ orNames)) ^ "]\n" ^
-    "solve(p)"
+
+    (* Then buffer contents *)
+    (contents b) ^
+
+    (* Finally solve invocation *)
+    "solve(" ^ root ^ ")"
 
 let execute script =
     let (i, o) = open_process "python" in

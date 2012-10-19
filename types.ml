@@ -33,4 +33,4 @@ type 'a formula =
 
 type 'a nf = 'a list list
 
-type space = (operator * coef M.t) * expr list * string list list
+type space = (operator * coef M.t) * expr formula

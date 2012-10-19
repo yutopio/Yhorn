@@ -65,7 +65,7 @@ let getSpace exprs =
                positive *)
             (match op with
                 | EQ -> constrs
-                | LTE -> (GTE, M.add pi 1 M.empty) :: constrs
+                | LTE -> Expr(GTE, M.add pi 1 M.empty) :: constrs
                 | _ -> assert false),
 
             (* To build the coefficient mapping for an interpolant, the variable
@@ -85,17 +85,17 @@ let getSpace exprs =
        were equalities, the sum of them must be not equal (NEQ) to zero to make
        inconsistency. Otherwise, i.e., LTE inequalities involved, the sum must
        be greater than zero. *)
-    List.rev (M.fold (fun k v -> (@) [ (if k = "" then
-        (if constrs = [] then NEQ else GT) else EQ), v ]) m constrs),
-
-    (* The weight of these expression should not be a zero vector to suppress
-       trivial solution. *)
-    [(a @ b)]
+    And(List.rev (
+        (* The weight of these expression should not be a zero vector to suppress
+           trivial solution. *)
+        Or(List.map (fun k -> Expr(NEQ, M.add k 1 M.empty)) (a @ b)) ::
+        M.fold (fun k v -> (@) [ Expr((if k = "" then
+            (if constrs = [] then NEQ else GT) else EQ), v) ]) m constrs))
 
 let getInterpolant sp =
-    match sp with Expr((op, expr), coef, zero) ->
+    match sp with Expr((op, expr), constraints) ->
     let ret = try
-        let sol = Z3py.integer_programming (coef, zero) in
+        let sol = Z3py.integer_programming constraints in
 
         (* Construct one interpolant *)
         let expr = M.map (fun v -> M.fold (fun k v -> (+) ((M.find k sol) * v)) v 0) expr in
@@ -113,25 +113,27 @@ let getInterpolant sp =
 
 let intersectSpace sp1 sp2 =
     print_endline "\nIntersecting space\n";
-    match sp1 with Expr ((op1, coef1), constrs1, zero1) ->
-    match sp2 with Expr ((op2, coef2), constrs2, zero2) ->
+    match sp1 with Expr ((op1, coef1), And(constrs1)) ->
+    match sp2 with Expr ((op2, coef2), And(constrs2)) ->
 
     let x1 = M.fold (fun k v r -> k :: r) coef1 [] in
     let x2 = M.fold (fun k v r -> k :: r) coef2 [] in
     let vars = distinct (x1 @ x2) in
 
-    let constrs3 = List.fold_left (fun ret k ->
+    let (c3, c4) = List.fold_left (fun (r1, r2) k ->
         let v1 = if M.mem k coef1 then M.find k coef1 else M.empty in
         let v2 = if M.mem k coef2 then M.find k coef2 else M.empty in
-        let v = coefOp (-) v1 v2 in (EQ, v) :: ret) [] vars in
-    let constrs = constrs1 @ constrs2 @ constrs3 in
+        (let v = coefOp (+) v1 v2 in Expr(EQ, v) :: r1),
+        (let v = coefOp (-) v1 v2 in Expr(EQ, v) :: r2)) ([], []) vars in
+    let c3, c4 = (List.rev c3), (List.rev c4) in (* DEBUG: rev is for ease of inspection *)
+    let constrs = constrs1 @ constrs2 @ [ Or [And c3 ; And c4] ] in
 
     let op = match op1, op2 with
         | EQ, _
         | _, EQ -> EQ
         | _ -> LTE in
 
-    let sp = (op, coef1), constrs, zero1 @ zero2 in
+    let sp = (op, coef1), (And constrs) in
     match getInterpolant (Expr sp) with
     | Some _ -> Expr sp
     | None -> And [ sp1; sp2 ]
