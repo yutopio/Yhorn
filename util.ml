@@ -78,6 +78,7 @@ let splitByN n x =
         | _ -> internal1 rest (group :: ret) in
     internal1 x []
 
+(* TODO: Since OCaml 4.00.0 *)
 let mapi f l =
     let _, r = List.fold_left (fun (i, l) x -> i + 1, (f i x) :: l) (0, []) l in
     List.rev r

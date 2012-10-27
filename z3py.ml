@@ -3,22 +3,6 @@ open Unix
 open Util
 open Types
 
-let printExprZ3 (op, coef) vars =
-    (* TODO: Merge this function with printExpr in main.ml *)
-    let b = create 1 in
-    let first = ref true in
-    M.iter (fun v c ->
-        if c = 0 then () else (
-        if not (List.mem v !vars) then vars := v :: !vars;
-        if c > 0 && not !first then add_char b '+' else if c = -1 then add_char b '-';
-        first := false;
-        if (abs c) <> 1 then add_string b ((string_of_int c) ^ "*");
-        add_string b v)) coef;
-    if !first then add_string b "0";
-    add_string b (string_of_operator op);
-    add_string b "0";
-    contents b
-
 let buildScript constrs =
     let vars = ref [] in
 
@@ -26,7 +10,7 @@ let buildScript constrs =
     let b = create 1 in
     let rec inner hierarchy e =
         match e with
-        | Expr x -> printExprZ3 x vars
+        | Expr x -> printExpr ~vars:(Some vars) x
         | And x | Or x ->
             (* DEBUG: rev is for ease of script inspection *)
             let name = "e" ^ (join "_" (List.rev hierarchy)) in

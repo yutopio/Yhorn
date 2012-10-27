@@ -1,7 +1,6 @@
 open Types
 
 val addDefault : M.key -> 'a -> 'b -> ('b -> 'a -> 'b) -> 'b M.t -> 'b M.t
-val printExpr2 : string -> expr -> unit
 val convertToDNF : expr formula -> expr nf
 val coefOp : (int -> 'a -> int) -> 'a M.t -> int M.t -> int M.t
 val invert : coef -> coef
