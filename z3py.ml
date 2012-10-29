@@ -29,27 +29,20 @@ let buildScript constrs =
     (contents b) ^
 
     (* Finally solve invocation *)
-    "solve(" ^ root ^ ")"
+    "solve(" ^ root ^ ")\n"
 
-let execute script =
-    let (i, o) = open_process "python" in
-    let script = "from z3 import *\n" ^ script in
-    output_string o script;
+let (i, o) = open_process "python -i"
+let lexbuf =
+    output_string o "from z3 import *\n";
+    output_string o "import sys\n";
     flush o;
-    close_out o;
-
-    let ret = Buffer.create 1 in
-    (try
-        while true do
-            let line = input_line i in
-            Buffer.add_string ret line
-        done
-    with End_of_file -> ());
-
-    let _ = close_process (i, o) in
-    Buffer.contents ret
+    Lexing.from_channel i
+let close () = close_process (i, o)
 
 let integer_programming space =
     let script = buildScript space in
-    let ret = execute script in
-    Z3pyparser.inputUnit Z3pylexer.token (Lexing.from_string ret)
+    output_string o script;
+    output_string o "print \"\\n$\\n\"\n";
+    flush o;
+
+    Z3pyparser.inputUnit Z3pylexer.token lexbuf

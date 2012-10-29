@@ -6,7 +6,7 @@ open Types
 %token <string> STR
 %token LBR RBR EQ COMMA
 %token NO_SOL
-%token EOF
+%token EOI
 
 %start inputUnit
 %type <int Types.M.t option> inputUnit
@@ -14,9 +14,9 @@ open Types
 %%
 
 inputUnit:
-    | NO_SOL                    { None }
-    | LBR RBR EOF               { Some M.empty }
-    | LBR assignments RBR EOF   { Some $2 }
+    | NO_SOL EOI                { None }
+    | LBR RBR EOI               { Some M.empty }
+    | LBR assignments RBR EOI   { Some $2 }
 ;
 
 assignments:

@@ -3,12 +3,12 @@ open Buffer
 open Map
 open Util
 
-module String = struct
+module MyString = struct
   type t = string
   let compare = compare
 end
 
-module M = Map.Make(String)
+module M = Map.Make(MyString)
 
 type operator =
     | EQ

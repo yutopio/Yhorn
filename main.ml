@@ -261,6 +261,8 @@ let main _ =
             print_string "Solution:\n\t";
             print_endline (printFormula printExpr t)
         | None -> print_endline "No solution")
-    | None -> print_endline "No solution")
+    | None -> print_endline "No solution");
+
+    ignore (Z3py.close ())
 
 let _ = main ()

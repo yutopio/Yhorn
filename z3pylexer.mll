@@ -17,11 +17,13 @@ rule token = parse
     | "no solution" { NO_SOL }
     | sp+   { token lexbuf }
     | br+   { token lexbuf }
+    | ">>>" { token lexbuf }
     | '['   { LBR }
     | ']'   { RBR }
     | '='   { EQ }
     | ','   { COMMA }
     | int   { INT(int_of_string(lexeme lexbuf)) }
     | ident { STR(lexeme lexbuf) }
-    | eof   { EOF }
+    | '$'   { EOI }
+    | eof   { EOI }
     | _     { z3UnrecOutput (lexeme lexbuf) }
