@@ -88,18 +88,14 @@ let rec getInterpolant sp =
 
     match sp with
     | Expr ((op, expr), constraints) -> (
-        try
-            let sol = Z3py.integer_programming constraints in
-
+        match Z3py.integer_programming constraints with
+        | Some sol ->
             (* Construct one interpolant *)
             let expr = M.map (fun v -> M.fold (fun k v -> (+) ((M.find k sol) * v)) v 0) expr in
             let op = M.fold (fun k v o -> if v <> 0 && M.mem k op && M.find k op = LTE then
                 (assert (v > 0); LTE) else o) sol EQ in
-
-            let m = op, expr in
-
-            Some (Expr m)
-        with _ -> None)
+            Some (Expr (op, expr))
+        | None -> None)
 
     | And sps -> inner true sps
     | Or sps -> inner false sps

@@ -5,16 +5,18 @@ open Types
 %token <int> INT
 %token <string> STR
 %token LBR RBR EQ COMMA
+%token NO_SOL
 %token EOF
 
 %start inputUnit
-%type <int Types.M.t> inputUnit
+%type <int Types.M.t option> inputUnit
 
 %%
 
 inputUnit:
-    | LBR RBR EOF               { M.empty }
-    | LBR assignments RBR EOF   { $2 }
+    | NO_SOL                    { None }
+    | LBR RBR EOF               { Some M.empty }
+    | LBR assignments RBR EOF   { Some $2 }
 ;
 
 assignments:

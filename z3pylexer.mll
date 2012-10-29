@@ -14,6 +14,7 @@ let identChar = letter | digit | '_'
 let ident = letter identChar*
 
 rule token = parse
+    | "no solution" { NO_SOL }
     | sp+   { token lexbuf }
     | br+   { token lexbuf }
     | '['   { LBR }
