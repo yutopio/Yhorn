@@ -37,7 +37,7 @@ let printExpr ?(vars = None) (op, coef) =
     let buf = create 1 in
     let first = ref true in
     M.iter (fun v c ->
-        if (not z3 & v = "") || c = 0 then () else (
+        if v = "" || c = 0 then () else (
         if not (List.mem v !vars) then vars := v :: !vars;
         if c > 0 && not !first then add_char buf '+' else if c = -1 then add_char buf '-';
         first := false;
@@ -45,7 +45,7 @@ let printExpr ?(vars = None) (op, coef) =
         add_string buf v)) coef;
     if !first then add_string buf "0";
     add_string buf (string_of_operator op);
-    add_string buf (if z3 then "0" else string_of_int (-(M.find "" coef)));
+    add_string buf (if M.mem "" coef then string_of_int (-(M.find "" coef)) else "0");
     contents buf
     
 type 'a formula =

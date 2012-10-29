@@ -22,7 +22,8 @@ let buildScript constrs =
     let root = inner [] constrs in
 
     (* Variable declaration first *)
-    (join "," !vars) ^ " = Ints('" ^ (join " " !vars) ^ "')\n" ^
+    (if (List.length !vars) = 0 then "" else
+        (join "," !vars) ^ " = Ints('" ^ (join " " !vars) ^ "')\n") ^
 
     (* Then buffer contents *)
     (contents b) ^

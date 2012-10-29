@@ -29,6 +29,7 @@ let invert = M.map (fun v -> -v)
    Other parameter represents the expression. The operator should be either LTE
    or EQ. Any other are considered as LTE. *)
 let getSpace exprs =
+    (* Add 0 <= 1 constraint for completeness. *)
     let exprs = (true, (LTE, M.add "" (-1) M.empty)) :: exprs in
 
     (* DEBUG: Debug output *)
@@ -75,6 +76,16 @@ let getSpace exprs =
             (if constrs = [] then NEQ else GT) else EQ), v) ]) m constrs))
 
 let rec getInterpolant sp =
+    let inner opAnd sps =
+        (* If the space is expressed by the union of spaces, take one interpolant from each space *)
+        try
+            let is = List.map (fun x ->
+                match getInterpolant x with
+                | Some x -> x
+                | None -> raise Not_found) sps in
+            Some (if opAnd then And is else Or is)
+        with Not_found -> None in
+
     match sp with
     | Expr ((op, expr), constraints) -> (
         try
@@ -89,17 +100,12 @@ let rec getInterpolant sp =
 
             Some (Expr m)
         with _ -> None)
-    | And sps ->
-        (* If the space is expressed by the union of spaces, take one interpolant from each space *)
-        Some (Or (List.map (fun x ->
-            match getInterpolant x with
-            | Some x -> x
-            | None -> assert false) sps))
 
-let rec intersectSpace sp1 sp2 =
-    match sp1, sp2 with
-    | Expr ((op1, coef1), And c1),
-      Expr ((op2, coef2), And c2) -> (
+    | And sps -> inner true sps
+    | Or sps -> inner false sps
+
+let rec mergeSpace opAnd sp1 sp2 =
+    let mergeSpSp ((op1, coef1), And c1) ((op2, coef2), And c2) =
 
         (* Consider all variables are present in both *)
         let x1 = M.fold (fun k v r -> k :: r) coef1 [] in
@@ -139,26 +145,41 @@ let rec intersectSpace sp1 sp2 =
         match getInterpolant (Expr sp) with
         | Some _ -> Expr sp
         | None ->
-        And [ sp1; sp2 ])
+            if opAnd then
+                (* (* If failed to merge space for And, there is no interpolant. *)
+                Expr ((M.empty, M.empty), Expr(EQ, M.add "" 1 M.empty)) *)
+                And [ sp1; sp2]
+            else Or [ sp1; sp2 ] in
 
-    | And sps, Expr e
-    | Expr e, And sps -> (
-
+    let mergeSpSps sp sps =
         (* Try to take simple intersection between each space and one. When
            successful, newly created spaces will be concatenated. Otherwise,
            just add one space into the list. *)
+        let ctor x = if opAnd then And x else Or x in
         try
-            let sps = List.map (fun sp ->
-                match intersectSpace (Expr e) sp with
-                | Expr x -> Expr x
-                | And _ -> raise Not_found
+            let sps = List.map (fun sp1 ->
+                match (mergeSpace opAnd sp sp1), opAnd with
+                | Expr x, _ -> Expr x
+                | And _, true
+                | Or _, false -> raise Not_found
                 | _ -> assert false) sps in
-            And sps
-        with Not_found -> And ((Expr e) :: sps)
+            ctor sps
+        with Not_found -> ctor (sp :: sps) in
 
-    )
-
-    | And sps1, And sps2 -> And (sps1 @ sps2)
+    match sp1, sp2, opAnd with
+    | Expr e1, Expr e2, _ -> mergeSpSp e1 e2
+    | And sps, Expr e, true
+    | Expr e, And sps, true -> mergeSpSps (Expr e) sps
+    | And sps1, And sps2, true -> And (sps1 @ sps2)
+    | Or sps, Expr e, false
+    | Expr e, Or sps, false -> mergeSpSps (Expr e) sps
+    | Or sps1, Or sps2, false -> Or (sps1 @ sps2)
+    | And sps_a, Or sps_o, true
+    | Or sps_o, And sps_a, true -> And ((Or sps_o) :: sps_a)
+    | And sps_a, Or sps_o, false
+    | Or sps_o, And sps_a, false -> Or ((And sps_a) :: sps_o)
+    | _, _, true -> And [ sp1; sp2 ]
+    | _, _, false -> Or [ sp1; sp2 ]
 
 let solve a b =
     let filter op = List.filter (fun (x, _) -> x = op) in
@@ -174,56 +195,76 @@ let solve a b =
     let plus x = M.add "" (1 + (M.find "" x)) x in
     let minus x = M.add "" (1 - (M.find "" x)) (invert x) in
 
-    let tryGetInterpolant exprs = tryPick (fun (consider, (_, coef)) ->
+    let tryGetInterpolant opAnd exprs = tryPick (fun (consider, (_, coef)) ->
         (* DEBUG: List.rev is for ease of inspection *)
         let sp1 = Expr(getSpace (List.rev ((consider, (LTE, plus coef)) :: exprs))) in
         match getInterpolant sp1 with None -> None | Some _ ->
         let sp2 = Expr(getSpace (List.rev ((consider, (LTE, minus coef)) :: exprs))) in
         match getInterpolant sp2 with None -> None | Some _ ->
-        Some(intersectSpace sp1 sp2)) in
+        Some(mergeSpace opAnd sp1 sp2)) in
+
+    let none _ = None in
 
     let eqAeqB _ =
         let eqs = eqA @ eqB in
         tryPick exec [
-            (fun _ -> tryGetInterpolant eqs neqA);
-            (fun _ -> tryGetInterpolant eqs neqB) ] in
-    let eqAneqB _ = tryGetInterpolant eqA neqB in
-    let neqAeqB _ = tryGetInterpolant eqB neqA in
+            (fun _ -> tryGetInterpolant false eqs neqA);
+            (fun _ -> tryGetInterpolant true eqs neqB) ] in
+    let eqAneqB _ = tryGetInterpolant true eqA neqB in
+    let neqAeqB _ = tryGetInterpolant false eqB neqA in
+
+    let eqAll _ =
+      let sp = Expr(getSpace ((List.map (fun x -> true, x) a) @ (List.map (fun x -> false, x) b))) in
+      match getInterpolant sp with None -> None | Some _ -> Some sp in
 
     let all _ =
-        (* Gather all expressions of LTE with consideration flag, and expand
-           equations. *)
-        let exprs = (addFlag LTE a true) @ (addFlag LTE b false) @
-            List.fold_left (fun ret (c, (_, coefs)) ->
-                (c, (LTE, coefs)) ::
-                (c, (LTE, invert coefs)) :: ret) [] (eqA @ eqB) in
+        (* Gather all expressions of LTE with consideration flag. *)
+        let exprs = (addFlag LTE a true) @ (addFlag LTE b false) @ (eqA @ eqB) in
 
         (* Split not-equal inequations into disjunction of two expressions and
            choose either as for each inequations. *)
-        let neqs = List.map (fun (c, (_, coef)) ->
-            [ (c, (LTE, plus coef)) ; (c, (LTE, minus coef)) ]) (neqA @ neqB) in
-        tryPick (fun x ->
-            let sp = Expr(getSpace (x @ exprs)) in
-            match getInterpolant sp with None -> None | Some _ -> Some(sp)
-        ) (directProduct neqs) in
+        let neqExpand = List.map (fun (c, (_, coef)) ->
+            [ (c, (LTE, plus coef)) ; (c, (LTE, minus coef)) ]) in
+        let neqAs = directProduct (neqExpand neqA) in
+        let neqBs = directProduct (neqExpand neqB) in
+
+        (* Try to get interpolant *)
+        try
+            Some (
+            reduce (mergeSpace true) (List.map (fun b ->
+            reduce (mergeSpace false) (List.map (fun a ->
+                let sp = Expr (getSpace (exprs @ a @ b)) in
+                match getInterpolant sp with
+                | Some _ -> sp
+                | None -> raise Not_found) neqAs)) neqBs))
+        with Not_found -> None in
 
     tryPick exec [
         (if leqA <> 0 then (if leqB <> 0 then eqAeqB else eqAneqB) else neqAeqB);
-        (if lneqA + lneqB = 0 then fun () -> (
-            let sp = Expr(getSpace ((List.map (fun x -> true, x) a) @ (List.map (fun x -> false, x) b))) in
-            match getInterpolant sp with None -> None | Some _ -> Some sp) else fun () -> None);
+        (if lneqA + lneqB = 0 then eqAll else none);
         all]
 
-let formulae = inputUnit Lexer.token (Lexing.from_channel stdin)
-let groups = directProduct (List.map convertToDNF formulae)
-let a = List.map (fun x -> solve (List.hd x) (List.nth x 1)) groups
-let a = List.filter (function None -> false | _ -> true) a
-let a = List.map (function (Some x) -> x) a
+let main _ =
+    let formulae = inputUnit Lexer.token (Lexing.from_channel stdin) in
+    match List.map convertToDNF formulae with | [a_s; b_s] ->
 
-let t =
-    print_endline "\nSolution:";
-    let combine = reduce intersectSpace a in
-    let sol = match getInterpolant combine with
-        | Some t -> printFormula printExpr t
-        | _ -> "No solution" in
-    print_endline ("\t" ^ sol)
+    let space =
+        try
+            Some (
+            reduce (mergeSpace true) (List.map (fun b ->
+            reduce (mergeSpace false) (List.map (fun a ->
+                match solve a b with
+                | Some x -> x
+                | None -> raise Not_found) a_s)) b_s))
+        with Not_found -> None in
+
+    (match space with
+    | Some space -> (
+        match getInterpolant space with
+        | Some t ->
+            print_string "Solution:\n\t";
+            print_endline (printFormula printExpr t)
+        | None -> print_endline "No solution")
+    | None -> print_endline "No solution")
+
+let _ = main ()

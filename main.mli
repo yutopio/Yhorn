@@ -7,4 +7,5 @@ val invert : coef -> coef
 val getSpace : (bool * expr) list -> space
 val getInterpolant : space formula -> expr formula option
 val solve : expr list -> expr list -> space formula option
-val intersectSpace : space formula -> space formula -> space formula
+val mergeSpace : bool -> space formula -> space formula -> space formula
+val main: unit -> unit
