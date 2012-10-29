@@ -33,9 +33,9 @@ let getSpace exprs =
 
     (* DEBUG: Debug output *)
     print_endline "\nExpressions:";
-    List.iter (fun (f, e) -> if f then printExpr2 "\t" e) exprs;
+    List.iter (fun (f, e) -> if f then print_endline ("\t" ^ (printExpr e))) exprs;
     print_endline "    --------------------";
-    List.iter (fun (f, e) -> if not f then printExpr2 "\t" e) exprs;
+    List.iter (fun (f, e) -> if not f then print_endline ("\t" ^ (printExpr e))) exprs;
 
     (* Build the coefficient mapping for the first, and at the same time, check
        the operator of each expression. *)
