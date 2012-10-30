@@ -31,13 +31,15 @@ let buildScript constrs =
     (* Finally solve invocation *)
     "solve(" ^ root ^ ")\n"
 
-let (i, o) = open_process "python -i"
+let (i, o) as p = open_process "python -i"
+(* let (i, o, e) as p = open_process_full "python" [| "PYTHONINSPECT=1" |] *)
 let lexbuf =
     output_string o "from z3 import *\n";
     output_string o "import sys\n";
     flush o;
     Lexing.from_channel i
-let close () = close_process (i, o)
+let close () = close_process p
+(* let close () = close_process_full p *)
 
 let integer_programming space =
     let script = buildScript space in
