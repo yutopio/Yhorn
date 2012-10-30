@@ -1,11 +1,5 @@
 open Types
 
-(** [addDefault k v d (+) m] adds value v to the existing record value with key
-    k in the given mapping m. Adding is done by (+) function given. If no record
-    with key k is present, it will be newly created with the default value d. *)
-let addDefault k v d (+) m =
-    M.add k ((+) (if M.mem k m then M.find k m else d) v) m
-
 (** Apply a function to each element in the list and pick the first result that
     is not None. *)
 let tryPick f = List.fold_left (fun ret x -> if ret = None then f x else ret) None

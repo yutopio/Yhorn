@@ -7,10 +7,15 @@ open Types
 %token <int> INT
 %token <Types.operator> OP
 %token PLUS MINUS
-%token AND OR
+%token AND OR NOT
 %token LPAREN RPAREN
 %token SEMICOLON
 %token EOF
+
+%nonassoc SEMICOLON
+%left AND OR
+%right NOT
+%left PLUS MINUS
 
 %start inputUnit
 %type <Types.expr Types.formula list> inputUnit
@@ -19,7 +24,7 @@ open Types
 
 inputUnit:
     /* TODO: Support multiple formulae group */
-    | formulae SEMICOLON formulae EOF { [$1;$3] }
+    | formulae SEMICOLON formulae EOF { List.map normalizeFormula [$1;$3] }
 ;
 
 formulae:
@@ -27,22 +32,23 @@ formulae:
     | LPAREN formulae RPAREN    { $2 }
     | formulae AND formulae     { combineFormulae true $1 $3 }
     | formulae OR formulae      { combineFormulae false $1 $3 }
+    | NOT formulae              { negateFormula $2 }
 ;
 
 formula:
-    | expr OP expr  { normalizeExpr ($2, $1, $3) }
+    | expr OP expr  { ($2, $1 -- $3) }
 ;
 
 expr:
-    | term              { [$1] }
-    | expr PLUS term    { $1 @ [$3] }
-    | expr MINUS term   { let (a, b) = $3 in $1 @ [ (-a, b) ] }
+    | term              { $1 }
+    | expr PLUS term    { $1 ++ $3 }
+    | expr MINUS term   { $1 -- $3 }
 ;
 
 term:
-    | num       { ($1, "") }
-    | num IDENT { ($1, $2) }
-    | IDENT     { (1, $1) }
+    | num       { M.add "" $1 M.empty }
+    | num IDENT { M.add $2 $1 M.empty }
+    | IDENT     { M.add $1 1 M.empty }
 ;
 
 num:

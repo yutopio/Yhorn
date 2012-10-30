@@ -15,10 +15,6 @@ let convertToDNF formulae =
     | Or x -> internal x []
     | _ -> internal [ formulae ] []
 
-(* Copies the given mapping with sign of every coefficient reversed. *)
-let coefOp op = M.fold (fun k v -> addDefault k v 0 op)
-let invert = M.map (fun v -> -v)
-
 (* Try to calculate an interpolant from given expressions. All expressions are
    to be represented as (consider : bool, (operator, coefficients : int M.t)).
    The first bool represents if the expression should be considered as the first
@@ -185,8 +181,8 @@ let solve a b =
     let neqA, lneqA = proc NEQ a true in
     let eqB, leqB = proc EQ b false in
     let neqB, lneqB = proc NEQ b false in
-    let plus x = M.add "" (1 + (M.find "" x)) x in
-    let minus x = M.add "" (1 - (M.find "" x)) (invert x) in
+    let plus x = addDefault "" 1 0 (+) x in
+    let minus x = M.add "" (1 - (M.find "" x)) (~-- x) in
 
     let tryGetInterpolant opAnd exprs = tryPick (fun (consider, (_, coef)) ->
         (* DEBUG: List.rev is for ease of inspection *)
@@ -265,4 +261,4 @@ let main _ =
 
     ignore (Z3py.close ())
 
-(* let _ = main () *)
+ let _ = main () 

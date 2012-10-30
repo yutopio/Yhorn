@@ -9,6 +9,12 @@ end
 
 module M = Map.Make(MyString)
 
+(** [addDefault k v d (+) m] adds value v to the existing record value with key
+    k in the given mapping m. Adding is done by (+) function given. If no record
+    with key k is present, it will be newly created with the default value d. *)
+let addDefault k v d (+) m =
+    M.add k ((+) (if M.mem k m then M.find k m else d) v) m
+
 type operator =
     | EQ
     | NEQ
@@ -16,6 +22,14 @@ type operator =
     | LTE
     | GT
     | GTE
+
+let negateOp = function
+    | EQ -> NEQ
+    | NEQ -> EQ
+    | LT -> GTE
+    | LTE -> GT
+    | GT -> LTE
+    | GTE -> LT
 
 let string_of_operator = function
     | EQ -> "=="
@@ -26,6 +40,12 @@ let string_of_operator = function
     | GTE -> ">="
 
 type coef = int M.t
+
+let coefOp op = M.fold (fun k v -> addDefault k v 0 op)
+let (++) = coefOp (+)
+let (--) x y = coefOp (-) y x (* Note that the operands need to be reversed. *)
+let (~--) = M.map (fun v -> -v)
+
 type expr = operator * coef
 
 let printExpr ?(vars = None) (op, coef) =
@@ -53,44 +73,49 @@ type 'a formula =
     | Or of 'a formula list
 
 let rec printFormula elementPrinter x =
-    match x with
-    | Expr x -> elementPrinter x
-    | And x -> String.concat " & " (List.map (fun x -> "(" ^ (printFormula elementPrinter x) ^ ")") x)
-    | Or x -> String.concat " | " (List.map (fun x -> "(" ^ (printFormula elementPrinter x) ^ ")") x)
+    let ret = match x with
+    | Expr x -> `A x
+    | And x -> `B(x, " & ")
+    | Or x -> `B(x, " | ") in
 
-type 'a nf = 'a list list
-type space = (operator M.t * coef M.t) * expr formula
+    match ret with
+    | `A x -> elementPrinter x
+    | `B(x, y) -> String.concat y (List.map (
+        fun x -> "(" ^ (printFormula elementPrinter x) ^ ")") x)
 
 let combineFormulae opAnd x y =
     match (opAnd, x, y) with
-    | (true, And x, And y) -> And(y @ x)
-    | (true, And x, _) -> And(y :: x)
-    | (true, _, And y) -> And(y @ [ x ])
+    | (true, And x, And y) -> And (y @ x)
+    | (true, And x, _) -> And (y :: x)
+    | (true, _, And y) -> And (y @ [ x ])
     | (true, _, _) -> And [ y ; x ]
-    | (_, Or x, Or y) -> Or(y @ x)
-    | (_, Or x, _) -> Or(y :: x)
-    | (_, _, Or y) -> Or(y @ [ x ])
+    | (_, Or x, Or y) -> Or (y @ x)
+    | (_, Or x, _) -> Or (y :: x)
+    | (_, _, Or y) -> Or (y @ [ x ])
     | _ -> Or [ y ; x ]
 
-(* This procedure sums up all terms according to the variable and move to the
-   left-side of the expression. It flips greater-than operators (>, >=) to
-   less-than operators (<, <=) and replaces strict inequality (<, >) with not
-   strict ones (<=, >=) by doing +/- 1 on constant term. Returns the operator
-   and the mapping from a variable to its coefficient. The constant term has the
-   empty string as a key. *)
-let normalizeExpr (op, t1, t2) =
-    let addCoef sign coefs (coef, key) =
-        M.add key (sign * coef +
-            (if M.mem key coefs then M.find key coefs else 0)) coefs in
-    let t2, sign, op =
+(** Flips greater-than operators (>, >=) to less-than operators (<, <=) and
+    replaces strict inequality (<, >) with not strict ones (<=, >=) by adding 1
+    on constant term. Any variables with 0-weight are eliminated. Returns the
+    operator and the coefficient mapping. *)
+let normalizeExpr (op, coef) =
+    let op, coef =
         match op with
-        | LT -> (-1, "") :: t2, 1, LTE
-        | GT -> (1, "") :: t2, -1, LTE
-        | GTE -> t2, -1, LTE
-        | _ -> t2, 1, op in
-    let coefs = M.add "" 0 M.empty in
-    let coefs = List.fold_left (addCoef sign) coefs t1 in
-    let coefs = List.fold_left (addCoef (-sign)) coefs t2 in
-    let coefs = M.fold (fun k v coefs ->
-        if k <> "" && v = 0 then M.remove k coefs else coefs) coefs coefs in
-    op, coefs
+        | LT -> LTE, (addDefault "" 1 0 (+) coef)
+        | GT -> LTE, (addDefault "" 1 0 (+) (~-- coef))
+        | GTE -> LTE, (~-- coef)
+        | _ -> op, coef in
+    op, (M.filter (fun k v -> k = "" || v <> 0) coef)
+
+let rec normalizeFormula = function
+    | And x -> And (List.map normalizeFormula x)
+    | Or x -> Or (List.map normalizeFormula x)
+    | Expr e -> Expr (normalizeExpr e)
+
+let rec negateFormula = function
+    | And x -> Or (List.map negateFormula x)
+    | Or x -> And (List.map negateFormula x)
+    | Expr (op, coef) -> Expr (negateOp op, coef)
+
+type 'a nf = 'a list list
+type space = (operator M.t * coef M.t) * expr formula
