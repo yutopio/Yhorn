@@ -147,11 +147,10 @@ let rec mergeSpace opAnd sp1 sp2 =
                 And [ sp1; sp2]
             else Or [ sp1; sp2 ] in
 
-    let mergeSpSps sp sps =
+    let mergeSpSps sp sps spsAnd =
         (* Try to take simple intersection between each space and one. When
            successful, newly created spaces will be concatenated. Otherwise,
            just add one space into the list. *)
-        let ctor x = if opAnd then And x else Or x in
         try
             let sps = List.map (fun sp1 ->
                 match (mergeSpace opAnd sp sp1), opAnd with
@@ -159,16 +158,21 @@ let rec mergeSpace opAnd sp1 sp2 =
                 | And _, true
                 | Or _, false -> raise Not_found
                 | _ -> assert false) sps in
-            ctor sps
-        with Not_found -> ctor (sp :: sps) in
+	    if spsAnd then And sps else Or sps
+        with Not_found -> (
+            match opAnd, spsAnd with
+            | true, true -> And (sp :: sps)
+            | true, false -> And [ sp; Or sps ]
+            | false, true -> Or [ sp; And sps ]
+            | false, false -> Or (sp :: sps)) in
 
     match sp1, sp2, opAnd with
     | Expr e1, Expr e2, _ -> mergeSpSp e1 e2
-    | And sps, Expr e, true
-    | Expr e, And sps, true -> mergeSpSps (Expr e) sps
+    | And sps, Expr e, _
+    | Expr e, And sps, _ -> mergeSpSps (Expr e) sps true
     | And sps1, And sps2, true -> And (sps1 @ sps2)
-    | Or sps, Expr e, false
-    | Expr e, Or sps, false -> mergeSpSps (Expr e) sps
+    | Or sps, Expr e, _
+    | Expr e, Or sps, _ -> mergeSpSps (Expr e) sps false
     | Or sps1, Or sps2, false -> Or (sps1 @ sps2)
     | And sps_a, Or sps_o, true
     | Or sps_o, And sps_a, true -> And ((Or sps_o) :: sps_a)
