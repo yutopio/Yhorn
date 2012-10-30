@@ -2,9 +2,6 @@ open Util
 open Parser
 open Types
 
-let addDefault k v d (+) m =
-    M.add k ((+) (if M.mem k m then M.find k m else d) v) m
-
 let convertToDNF formulae =
     let rec internal formulae ret =
         match formulae with
@@ -268,4 +265,4 @@ let main _ =
 
     ignore (Z3py.close ())
 
-let _ = main ()
+(* let _ = main () *)

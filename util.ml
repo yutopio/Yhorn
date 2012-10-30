@@ -1,4 +1,13 @@
+open Types
 
+(** [addDefault k v d (+) m] adds value v to the existing record value with key
+    k in the given mapping m. Adding is done by (+) function given. If no record
+    with key k is present, it will be newly created with the default value d. *)
+let addDefault k v d (+) m =
+    M.add k ((+) (if M.mem k m then M.find k m else d) v) m
+
+(** Apply a function to each element in the list and pick the first result that
+    is not None. *)
 let tryPick f = List.fold_left (fun ret x -> if ret = None then f x else ret) None
 
 let new_id =
@@ -12,37 +21,20 @@ let distinct l =
         | [] -> l in
     internal [] l
 
+(** [reduce f [ x1 ; x2 ; ...; xn] ] returns f ... (f (f x1 x2) x3) ... xn. *)
 let reduce f = function
     | x :: rest -> List.fold_left f x rest
     | _ -> assert false
 
+(** Gets the all possible combinations of elements each of those are chosen from
+    every list. For example, [directProduct [[A;B]; [C;D]] ] returns [ [A;C];
+    [A;D]; [B;C]; [B;D] ]. *)
 let directProduct input =
     let ret = ref [] in
     let rec inner current = function
         | [] -> ret := current :: !ret
         | x :: rest -> List.iter (fun x -> inner (current @ [x]) rest) x in
     inner [] input; !ret
-
-let join separator elements =
-    let buf = Buffer.create 1 in
-    let rec internal = function
-    | [] -> ""
-    | [x] ->
-        Buffer.add_string buf x;
-        Buffer.contents buf
-    | x :: rest ->
-        Buffer.add_string buf x;
-        Buffer.add_string buf separator;
-        internal rest in
-    internal elements
-
-let listToArray l =
-    let len = List.length l in
-    if len = 0 then [| |] else
-    let ret = Array.make len (List.hd l) in
-    let i = ref 0 in
-    List.iter (fun x -> ret.(!i) <- x; incr i) l;
-    ret
 
 let arrayFold2 f x a =
     let i = ref (-1) in
