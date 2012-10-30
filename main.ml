@@ -240,11 +240,9 @@ let solve a b =
         (if lneqA + lneqB = 0 then eqAll else none);
         all]
 
-let main _ =
-    let formulae = inputUnit Lexer.token (Lexing.from_channel stdin) in
-    match List.map convertToDNF formulae with | [a_s; b_s] ->
-
-    let space =
+let interpolate formulae =
+    match List.map convertToDNF formulae with
+    | [a_s; b_s] -> (
         try
             Some (
             reduce (mergeSpace true) (List.map (fun b ->
@@ -252,7 +250,12 @@ let main _ =
                 match solve a b with
                 | Some x -> x
                 | None -> raise Not_found) a_s)) b_s))
-        with Not_found -> None in
+        with Not_found -> None)
+    | _ -> assert false (* TODO: NYI *)
+
+let main _ =
+    let formulae = inputUnit Lexer.token (Lexing.from_channel stdin) in
+    let space = interpolate formulae in
 
     (match space with
     | Some space -> (
