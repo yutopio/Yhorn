@@ -17,10 +17,12 @@ let ident = identStartChar identChar*
 rule token = parse
     | sp+               { token lexbuf }
     | br+               { token lexbuf }
-    | "<="              { OP(LTE) }
     | "/*"              { blockComment lexbuf }
+    | "<="              { OP(LTE) }
     | ">="              { OP(GTE) }
     | "<>"              { OP(NEQ) }
+    | "!="              { OP(NEQ) }
+    | "=="              { OP(EQ) }
     | '<'               { OP(LT) }
     | '>'               { OP(GT) }
     | '='               { OP(EQ) }
@@ -30,6 +32,7 @@ rule token = parse
     | ')'               { RPAREN }
     | '&'               { AND }
     | '|'               { OR }
+    | '!'               { NOT }
     | ';'               { SEMICOLON }
     | ident             { IDENT(lexeme lexbuf) }
     | digit+            { INT(int_of_string(lexeme lexbuf)) }

@@ -2,9 +2,6 @@ open Util
 open Parser
 open Types
 
-let addDefault k v d (+) m =
-    M.add k ((+) (if M.mem k m then M.find k m else d) v) m
-
 let convertToDNF formulae =
     let rec internal formulae ret =
         match formulae with
@@ -17,10 +14,6 @@ let convertToDNF formulae =
     match formulae with
     | Or x -> internal x []
     | _ -> internal [ formulae ] []
-
-(* Copies the given mapping with sign of every coefficient reversed. *)
-let coefOp op = M.fold (fun k v -> addDefault k v 0 op)
-let invert = M.map (fun v -> -v)
 
 (* Try to calculate an interpolant from given expressions. All expressions are
    to be represented as (consider : bool, (operator, coefficients : int M.t)).
@@ -192,8 +185,8 @@ let solve a b =
     let neqA, lneqA = proc NEQ a true in
     let eqB, leqB = proc EQ b false in
     let neqB, lneqB = proc NEQ b false in
-    let plus x = M.add "" (1 + (M.find "" x)) x in
-    let minus x = M.add "" (1 - (M.find "" x)) (invert x) in
+    let plus x = addDefault "" 1 0 (+) x in
+    let minus x = M.add "" (1 - (M.find "" x)) (~-- x) in
 
     let tryGetInterpolant opAnd exprs = tryPick (fun (consider, (_, coef)) ->
         (* DEBUG: List.rev is for ease of inspection *)
@@ -244,11 +237,9 @@ let solve a b =
         (if lneqA + lneqB = 0 then eqAll else none);
         all]
 
-let main _ =
-    let formulae = inputUnit Lexer.token (Lexing.from_channel stdin) in
-    match List.map convertToDNF formulae with | [a_s; b_s] ->
-
-    let space =
+let interpolate formulae =
+    match List.map convertToDNF formulae with
+    | [a_s; b_s] -> (
         try
             Some (
             reduce (mergeSpace true) (List.map (fun b ->
@@ -256,7 +247,12 @@ let main _ =
                 match solve a b with
                 | Some x -> x
                 | None -> raise Not_found) a_s)) b_s))
-        with Not_found -> None in
+        with Not_found -> None)
+    | _ -> assert false (* TODO: NYI *)
+
+let main _ =
+    let formulae = inputUnit Lexer.token (Lexing.from_channel stdin) in
+    let space = interpolate formulae in
 
     (match space with
     | Some space -> (
@@ -269,4 +265,4 @@ let main _ =
 
     ignore (Z3py.close ())
 
-let _ = main ()
+ let _ = main () 

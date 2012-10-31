@@ -45,46 +45,46 @@ OFLAGS = $(INCLUDES)
 # main target
 #############
 
-NAME=interpolation
+NAME=yint
 all: byte $(OCAMLBEST)
 
 # bytecode and native-code compilation
 ######################################
 
-CMO = 	version error util types parser lexer z3pyparser z3pylexer z3py main
+CMO = 	version error types util parser lexer z3pyparser z3pylexer z3py main
 CMO :=  $(patsubst %, $(SRCDIR)/%.cmo, $(CMO))
 
 CMX = $(CMO:.cmo=.cmx)
-CMA = interpolation.cma
-CMXA = interpolation.cmxa
+CMA = yint.cma
+CMXA = yint.cmxa
 
 GENERATED = META version.ml parser.ml parser.mli lexer.ml \
                             z3pyparser.ml z3pyparser.mli z3pylexer.ml
 
-$(CMX): OFLAGS += -for-pack Interpolation
+$(CMX): OFLAGS += -for-pack Yint
 
 byte: $(CMA)
 opt: $(CMXA)
 
-interpolation.cma: interpolation.cmo
+yint.cma: yint.cmo
 	$(OCAMLC) $(INCLUDES) -a -g -o $@ $^
 
-interpolation.cmxa: interpolation.cmx
+yint.cmxa: yint.cmx
 	$(OCAMLOPT) $(INCLUDES) -a -o $@ $^
 
-interpolation.cmi: interpolation.cmo
-interpolation.o: interpolation.cmx
+yint.cmi: yint.cmo
+yint.o: yint.cmx
 
-interpolation.cmo: $(CMO)
+yint.cmo: $(CMO)
 	$(OCAMLC) $(INCLUDES) -pack -g -o $@ $^
 
-interpolation.cmx: $(CMX)
+yint.cmx: $(CMX)
 	$(OCAMLOPT) $(INCLUDES) -pack -o $@ $^
 
-interpolation.byte: interpolation.cmo
+yint.byte: yint.cmo
 	$(OCAMLC) -g -unsafe -o $@ unix.cma $^
 
-interpolation.opt: interpolation.cmx
+yint.opt: yint.cmx
 	$(OCAMLOPT) -unsafe -inline 100 -o $@ unix.cmxa $^
 
 VERSION=0.1
@@ -183,7 +183,7 @@ clean:
 	  rm -f $$d/*.cm[iox] $$d/*$(OBJEXT) $$d/*~ $$d/*.annot; \
 	done
 	rm -f $(GENERATED)
-	rm -f interpolation.*a interpolation.cm* interpolation.o interpolation$(LIBEXT)
+	rm -f yint.*a yint.cm* yint.o yint$(LIBEXT)
 
 dist-clean distclean:: clean
 	rm -f Makefile config.cache config.log config.status *.byte *.opt

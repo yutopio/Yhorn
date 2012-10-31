@@ -13,17 +13,17 @@ let buildScript constrs =
         | Expr x -> printExpr ~vars:(Some vars) x
         | And x | Or x ->
             (* DEBUG: rev is for ease of script inspection *)
-            let name = "e" ^ (join "_" (List.rev hierarchy)) in
+            let name = "e" ^ (String.concat "_" (List.rev hierarchy)) in
 
             (* DEBUG: `hierarchy @ [i]` can simply be `i :: hierarchy` *)
-            add_string b (name ^ "=[" ^ (join "," (
+            add_string b (name ^ "=[" ^ (String.concat "," (
                 mapi (fun i -> inner (hierarchy @ [string_of_int i])) x)) ^ "]\n");
             (match e with And _ -> "And" | Or _ -> "Or") ^ "(" ^ name ^ ")" in
     let root = inner [] constrs in
 
     (* Variable declaration first *)
     (if (List.length !vars) = 0 then "" else
-        (join "," !vars) ^ " = Ints('" ^ (join " " !vars) ^ "')\n") ^
+        (String.concat "," !vars) ^ " = Ints('" ^ (String.concat " " !vars) ^ "')\n") ^
 
     (* Then buffer contents *)
     (contents b) ^
@@ -31,18 +31,17 @@ let buildScript constrs =
     (* Finally solve invocation *)
     "solve(" ^ root ^ ")\n"
 
-let (i, o) = open_process "python -i"
+let (i, o, _) as p = open_process_full "python -i" (environment ())
 let lexbuf =
     output_string o "from z3 import *\n";
-    output_string o "import sys\n";
     flush o;
     Lexing.from_channel i
-let close () = close_process (i, o)
+let close () = close_process_full p
 
 let integer_programming space =
     let script = buildScript space in
     output_string o script;
-    output_string o "print \"\\n$\\n\"\n";
+    output_string o "print \"$\"\n";
     flush o;
 
     Z3pyparser.inputUnit Z3pylexer.token lexbuf
