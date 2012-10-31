@@ -240,27 +240,30 @@ let solve a b =
 let interpolate formulae =
     match List.map convertToDNF formulae with
     | [a_s; b_s] -> (
-        let cnf = try Some (
-            reduce (mergeSpace true) (List.map (fun b ->
-            reduce (mergeSpace false) (List.map (fun a ->
+        try
+            let spaces = List.map (fun b -> List.map (fun a ->
                 match solve a b with
                 | Some x -> x
-                | None -> raise Not_found) a_s)) b_s))
-        with Not_found -> None in
-        let dnf = try Some (
-            reduce (mergeSpace false) (List.map (fun a ->
-            reduce (mergeSpace true) (List.map (fun b ->
-                match solve a b with
-                | Some x -> x
-                | None -> raise Not_found) b_s)) a_s))
-        with Not_found -> None in
+                | None -> raise Not_found) a_s) b_s in
 
-        match cnf, dnf with
-        | Some x, Some y -> Some (
-             if countFormula x < countFormula y then x else y)
-        | Some x, None -> Some x
-        | None, Some x -> Some x
-        | None, None -> None)
+(* DEBUG: Copied from util.ml in MoCHi Horn Clause*)
+let rec transpose xss = (
+  if List.for_all (fun xs -> xs = []) xss then
+    []
+  else
+    let xs, xss =
+      List.split
+        (List.map (function x::xs -> x, xs | _ -> assert false ) xss)
+    in
+    xs::transpose xss) in
+(*************************************************)
+
+            let cnf = reduce (mergeSpace true) (
+                List.map (reduce (mergeSpace false)) spaces) in
+            let dnf = reduce (mergeSpace false) (
+                List.map (reduce (mergeSpace true)) (transpose spaces)) in
+            Some (if countFormula cnf > countFormula dnf then dnf else cnf)
+        with Not_found -> None)
     | _ -> assert false (* TODO: NYI *)
 
 let main _ =
