@@ -117,5 +117,10 @@ let rec negateFormula = function
     | Or x -> And (List.map negateFormula x)
     | Expr (op, coef) -> Expr (negateOp op, coef)
 
+let rec countFormula = function
+    | And x
+    | Or x -> List.fold_left (+) 0 (List.map countFormula x)
+    | Expr _ -> 1
+
 type 'a nf = 'a list list
 type space = (operator M.t * coef M.t) * expr formula

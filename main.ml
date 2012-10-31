@@ -240,14 +240,27 @@ let solve a b =
 let interpolate formulae =
     match List.map convertToDNF formulae with
     | [a_s; b_s] -> (
-        try
-            Some (
+        let cnf = try Some (
             reduce (mergeSpace true) (List.map (fun b ->
             reduce (mergeSpace false) (List.map (fun a ->
                 match solve a b with
                 | Some x -> x
                 | None -> raise Not_found) a_s)) b_s))
-        with Not_found -> None)
+        with Not_found -> None in
+        let dnf = try Some (
+            reduce (mergeSpace false) (List.map (fun a ->
+            reduce (mergeSpace true) (List.map (fun b ->
+                match solve a b with
+                | Some x -> x
+                | None -> raise Not_found) b_s)) a_s))
+        with Not_found -> None in
+
+        match cnf, dnf with
+        | Some x, Some y -> Some (
+             if countFormula x < countFormula y then x else y)
+        | Some x, None -> Some x
+        | None, Some x -> Some x
+        | None, None -> None)
     | _ -> assert false (* TODO: NYI *)
 
 let main _ =
