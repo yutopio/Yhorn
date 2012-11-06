@@ -24,7 +24,7 @@ open Types
 
 inputUnit:
     /* TODO: Support multiple formulae group */
-    | formulae SEMICOLON formulae EOF { List.map normalizeFormula [$1;$3] }
+    | formulae SEMICOLON formulae EOF { [$1;$3] }
 ;
 
 formulae:

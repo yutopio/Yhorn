@@ -238,7 +238,7 @@ let solve a b =
         all]
 
 let interpolate formulae =
-    match List.map convertToDNF formulae with
+    match List.map (fun x -> convertToDNF (normalizeFormula x)) formulae with
     | [a_s; b_s] -> (
         try
             let spaces = List.map (fun b -> List.map (fun a ->
@@ -281,4 +281,4 @@ let main _ =
 
     ignore (Z3py.close ())
 
- let _ = main () 
+(* let _ = main () *)
