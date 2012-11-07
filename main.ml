@@ -1,5 +1,4 @@
 open Util
-open Parser
 open Types
 
 let convertToDNF formulae =
@@ -265,20 +264,3 @@ let rec transpose xss = (
             Some (if countFormula cnf > countFormula dnf then dnf else cnf)
         with Not_found -> None)
     | _ -> assert false (* TODO: NYI *)
-
-let main _ =
-    let formulae = inputUnit Lexer.token (Lexing.from_channel stdin) in
-    let space = interpolate formulae in
-
-    (match space with
-    | Some space -> (
-        match getInterpolant space with
-        | Some t ->
-            print_string "Solution:\n\t";
-            print_endline (printFormula printExpr t)
-        | None -> print_endline "No solution")
-    | None -> print_endline "No solution");
-
-    ignore (Z3py.close ())
-
-(* let _ = main () *)
