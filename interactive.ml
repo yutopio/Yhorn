@@ -13,8 +13,8 @@ let main _ =
         | Some t ->
             print_string "Solution:\n\t";
             print_endline (printFormula printExpr t)
-        | None -> print_endline "No solution")
-    | None -> print_endline "No solution");
+        | None -> print_endline "No solution (no interpolant)")
+    | None -> print_endline "No solution (no space)");
 
     ignore (Yint.Z3py.close ())
 

@@ -185,7 +185,7 @@ let solve a b =
     let eqB, leqB = proc EQ b false in
     let neqB, lneqB = proc NEQ b false in
     let plus x = addDefault "" 1 0 (+) x in
-    let minus x = M.add "" (1 - (M.find "" x)) (~-- x) in
+    let minus x = M.add "" (1 - (if M.mem "" x then M.find "" x else 0)) (~-- x) in
 
     let tryGetInterpolant opAnd exprs = tryPick (fun (consider, (_, coef)) ->
         (* DEBUG: List.rev is for ease of inspection *)
@@ -206,8 +206,8 @@ let solve a b =
     let neqAeqB _ = tryGetInterpolant false eqB neqA in
 
     let eqAll _ =
-      let sp = Expr(getSpace ((List.map (fun x -> true, x) a) @ (List.map (fun x -> false, x) b))) in
-      match getInterpolant sp with None -> None | Some _ -> Some sp in
+        let sp = Expr(getSpace ((List.map (fun x -> true, x) a) @ (List.map (fun x -> false, x) b))) in
+        match getInterpolant sp with None -> None | Some _ -> Some sp in
 
     let all _ =
         (* Gather all expressions of LTE with consideration flag. *)
@@ -245,7 +245,7 @@ let interpolate formulae =
                 | Some x -> x
                 | None -> raise Not_found) a_s) b_s in
 
-(* DEBUG: Copied from util.ml in MoCHi Horn Clause*)
+(* DEBUG: Copied from util.ml in VHorn *)
 let rec transpose xss = (
   if List.for_all (fun xs -> xs = []) xss then
     []
