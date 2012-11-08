@@ -29,6 +29,13 @@ let getSpace exprs =
     List.iter (fun (f, e) -> if f then print_endline ("\t" ^ (printExpr e))) exprs;
     print_endline "    --------------------";
     List.iter (fun (f, e) -> if not f then print_endline ("\t" ^ (printExpr e))) exprs;
+    (* DEBUG: Following code snippets also shows expression numbers
+    print_endline "\nExpressions:";
+    let _ = List.fold_left (fun i (f, e) -> if f then print_endline (
+        (string_of_int i) ^ "\t" ^ (printExpr e)); i + 1) 0 exprs in
+    print_endline "    --------------------";
+    let _ = List.fold_left (fun i (f, e) -> if not f then print_endline (
+        (string_of_int i) ^ "\t" ^ (printExpr e)); i + 1) 0 exprs in *)
 
     (* Build the coefficient mapping for the first, and at the same time, check
        the operator of each expression. *)
@@ -91,6 +98,14 @@ let rec getInterpolant sp =
 
     | And sps -> inner true sps
     | Or sps -> inner false sps
+
+(* DEBUG: Uncomment following lines to dump intermediate interpolants
+let getInterpolant sp =
+    let ret = getInterpolant sp in
+    (match ret with
+      | Some x -> print_endline (printFormula printExpr x)
+      | None -> print_endline "none");
+    ret *)
 
 let rec mergeSpace opAnd sp1 sp2 =
     let mergeSpSp ((op1, coef1), And c1) ((op2, coef2), And c2) =
@@ -236,10 +251,11 @@ let solve a b =
         (if lneqA + lneqB = 0 then eqAll else none);
         all]
 
-let interpolate formulae =
+let interpolate formulae = try (
     match List.map (fun x -> convertToDNF (normalizeFormula x)) formulae with
     | [a_s; b_s] -> (
         try
+            (* TODO: Filter self-contradict formulae from a_s and b_s *)
             let spaces = List.map (fun b -> List.map (fun a ->
                 match solve a b with
                 | Some x -> x
@@ -264,3 +280,9 @@ let rec transpose xss = (
             Some (if countFormula cnf > countFormula dnf then dnf else cnf)
         with Not_found -> None)
     | _ -> assert false (* TODO: NYI *)
+
+    ) with e ->
+        print_endline ("Yint: Unhandled exception (" ^
+            (Printexc.to_string e) ^
+            ")");
+        assert false

@@ -17,7 +17,6 @@ rule token = parse
     | "no solution" { NO_SOL }
     | sp+   { token lexbuf }
     | br+   { token lexbuf }
-    | ">>>" { token lexbuf }
     | '['   { LBR }
     | ']'   { RBR }
     | '='   { EQ }
@@ -25,5 +24,5 @@ rule token = parse
     | int   { INT(int_of_string(lexeme lexbuf)) }
     | ident { STR(lexeme lexbuf) }
     | '$'   { EOI }
-    | eof   { EOI }
+    | eof   { EOF (* DEBUG: export OCAMLRUNPARAM=p *) }
     | _     { z3UnrecOutput (lexeme lexbuf) }

@@ -6,7 +6,7 @@ open Types
 %token <string> STR
 %token LBR RBR EQ COMMA
 %token NO_SOL
-%token EOI
+%token EOI EOF
 
 %start inputUnit
 %type <int Types.M.t option> inputUnit

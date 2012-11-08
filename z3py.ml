@@ -36,11 +36,18 @@ let lexbuf =
     output_string o "from z3 import *\n";
     flush o;
     Lexing.from_channel i
+    (* DEBUG: Uncomment following lines to dump Z3 output.
+    Lexing.from_function (fun buf len ->
+        let ret = input i buf 0 len in
+        print_string (String.sub buf 0 ret);
+        ret) *)
 let close () = close_process_full p
 
 let integer_programming space =
     let script = buildScript space in
     output_string o script;
+    (* DEBUG: Uncomment following line to dump Z3Py script.
+    print_endline script; *)
     output_string o "print \"$\"\n";
     flush o;
 
