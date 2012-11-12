@@ -1,6 +1,19 @@
 open Util
 open Types
 
+(** [any] denotes the interpolant space x=0 where x can be anything. Equivalent
+    of (0=0 | 0=1). *)
+let any = Expr ((M.empty, M.add "" (M.add "x" 1 M.empty) M.empty),
+    Expr (EQ, M.empty))
+
+(** [bot] denotes the interpolant space x=0 where x is not equal to 0.
+    Equivalent of 0=1. *)
+let bot = Expr ((M.empty, M.add "" (M.add "x" 1 M.empty) M.empty),
+    Expr (NEQ, M.add "x" 1 M.empty))
+
+(** [top] denotes the interpolant space 0=0. *)
+let top = Expr ((M.empty, M.empty), Expr (EQ, M.empty))
+
 let convertToDNF formulae =
     let rec internal formulae ret =
         match formulae with
@@ -255,7 +268,22 @@ let interpolate formulae = try (
     match List.map (fun x -> convertToDNF (normalizeFormula x)) formulae with
     | [a_s; b_s] -> (
         try
-            (* TODO: Filter self-contradict formulae from a_s and b_s *)
+            (* Remove contradictory conjunctions. *)
+            let removeContradiction l =
+                List.rev (List.fold_left (fun l x -> match solve x [] with
+                  | Some _ -> l
+                  | None -> x :: l) [] l) in
+            let a_s = removeContradiction a_s in
+            let b_s = removeContradiction b_s in
+
+            Some (match a_s, b_s with
+            | [], [] -> any
+            | [], _ -> bot
+            | _, [] -> top
+            | _, _ ->
+
+            (* Calculate the interpolant space between each conjunctions from A
+               and B. *)
             let spaces = List.map (fun b -> List.map (fun a ->
                 match solve a b with
                 | Some x -> x
@@ -277,7 +305,7 @@ let rec transpose xss = (
                 List.map (reduce (mergeSpace false)) spaces) in
             let dnf = reduce (mergeSpace false) (
                 List.map (reduce (mergeSpace true)) (transpose spaces)) in
-            Some (if countFormula cnf > countFormula dnf then dnf else cnf)
+            if countFormula cnf > countFormula dnf then dnf else cnf)
         with Not_found -> None)
     | _ -> assert false (* TODO: NYI *)
 
