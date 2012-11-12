@@ -1,19 +1,6 @@
 open Util
 open Types
 
-let convertToDNF formulae =
-    let rec internal formulae ret =
-        match formulae with
-        | [] -> List.rev ret
-        | x :: l ->
-            let ret = match x with
-                | Expr x -> [ x ] :: ret
-                | And x | Or x -> (directProduct (internal x [])) @ ret in
-            internal l ret in
-    match formulae with
-    | Or x -> internal x []
-    | _ -> internal [ formulae ] []
-
 (* Try to calculate an interpolant from given expressions. All expressions are
    to be represented as (consider : bool, (operator, coefficients : int M.t)).
    The first bool represents if the expression should be considered as the first
@@ -252,7 +239,7 @@ let solve a b =
         all]
 
 let interpolate formulae = try (
-    match List.map (fun x -> convertToDNF (normalizeFormula x)) formulae with
+    match List.map (fun x -> convertToNF false (normalizeFormula x)) formulae with
     | [a_s; b_s] -> (
         try
             (* TODO: Filter self-contradict formulae from a_s and b_s *)

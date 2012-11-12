@@ -1,5 +1,3 @@
-open Types
-
 (** Apply a function to each element in the list and pick the first result that
     is not None. *)
 let tryPick f = List.fold_left (fun ret x -> if ret = None then f x else ret) None

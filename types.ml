@@ -1,6 +1,7 @@
 
 open Buffer
 open Map
+open Util
 
 module MyString = struct
   type t = string
@@ -9,11 +10,14 @@ end
 
 module M = Map.Make(MyString)
 
+let findDefault k d m =
+    if M.mem k m then M.find k m else d
+
 (** [addDefault k v d (+) m] adds value v to the existing record value with key
     k in the given mapping m. Adding is done by (+) function given. If no record
     with key k is present, it will be newly created with the default value d. *)
 let addDefault k v d (+) m =
-    M.add k ((+) (if M.mem k m then M.find k m else d) v) m
+    M.add k ((+) (findDefault k d m) v) m
 
 type operator =
     | EQ
@@ -122,5 +126,22 @@ let rec countFormula = function
     | Or x -> List.fold_left (+) 0 (List.map countFormula x)
     | Expr _ -> 1
 
+(** Normal form of element *)
 type 'a nf = 'a list list
+
+let convertToNF cnf formulae =
+    let rec internal formulae ret =
+        match formulae with
+        | [] -> List.rev ret
+        | x :: l ->
+            let ret = match x with
+                | Expr x -> [ x ] :: ret
+                | And x | Or x -> (directProduct (internal x [])) @ ret in
+            internal l ret in
+    match cnf, formulae with
+    | true, And x
+    | false, Or x -> internal x []
+    | _ -> internal [ formulae ] []
+
+(** Solution space of interpolation *)
 type space = (operator M.t * coef M.t) * expr formula
