@@ -1,6 +1,7 @@
 
 open Buffer
 open Map
+open Set
 
 module MyString = struct
   type t = string
@@ -47,6 +48,15 @@ let (--) x y = coefOp (-) y x (* Note that the operands need to be reversed. *)
 let (~--) = M.map (fun v -> -v)
 
 type expr = operator * coef
+type pvar = string
+
+module MyPVar = struct
+  type t = pvar
+  let compare = compare
+end
+
+module MP = Map.Make(MyPVar)
+module SP = Set.Make(MyPVar)
 
 let printExpr ?(vars = None) (op, coef) =
     let z3, vars = match vars with
@@ -66,7 +76,7 @@ let printExpr ?(vars = None) (op, coef) =
     add_string buf (string_of_operator op);
     add_string buf (if M.mem "" coef then string_of_int (-(M.find "" coef)) else "0");
     contents buf
-    
+
 type 'a formula =
     | Expr of 'a
     | And of 'a formula list
@@ -93,6 +103,8 @@ let combineFormulae opAnd x y =
     | (_, Or x, _) -> Or (y :: x)
     | (_, _, Or y) -> Or (y @ [ x ])
     | _ -> Or [ y ; x ]
+let (&&&) : expr formula -> expr formula -> expr formula = combineFormulae true
+let (|||) : expr formula -> expr formula -> expr formula = combineFormulae false
 
 (** Flips greater-than operators (>, >=) to less-than operators (<, <=) and
     replaces strict inequality (<, >) with not strict ones (<=, >=) by adding 1
@@ -116,11 +128,19 @@ let rec negateFormula = function
     | And x -> Or (List.map negateFormula x)
     | Or x -> And (List.map negateFormula x)
     | Expr (op, coef) -> Expr (negateOp op, coef)
+let (!!!) = negateFormula
 
 let rec countFormula = function
     | And x
     | Or x -> List.fold_left (+) 0 (List.map countFormula x)
     | Expr _ -> 1
+
+type hornTerm =
+    | LinearExpr of expr formula
+    | PredVar of pvar
+type leftHand = SP.t * expr formula option
+type rightHand = hornTerm
+type horn = leftHand * rightHand
 
 type 'a nf = 'a list list
 type space = (operator M.t * coef M.t) * expr formula

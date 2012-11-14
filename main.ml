@@ -178,7 +178,7 @@ let rec mergeSpace opAnd sp1 sp2 =
                 | And _, true
                 | Or _, false -> raise Not_found
                 | _ -> assert false) sps in
-	    if spsAnd then And sps else Or sps
+            if spsAnd then And sps else Or sps
         with Not_found -> (
             match opAnd, spsAnd with
             | true, true -> And (sp :: sps)
@@ -201,7 +201,7 @@ let rec mergeSpace opAnd sp1 sp2 =
     | _, _, true -> And [ sp1; sp2 ]
     | _, _, false -> Or [ sp1; sp2 ]
 
-let solve a b =
+let laSolve a b =
     let filter op = List.filter (fun (x, _) -> x = op) in
     let addFlag op exprs consider = List.map (fun x -> (consider, x)) (filter op exprs) in
     let proc op exprs consider = let t = addFlag op exprs consider in (t, List.length t) in
@@ -270,7 +270,7 @@ let interpolate formulae = try (
         try
             (* Remove contradictory conjunctions. *)
             let removeContradiction l =
-                List.rev (List.fold_left (fun l x -> match solve x [] with
+                List.rev (List.fold_left (fun l x -> match laSolve x [] with
                   | Some _ -> l
                   | None -> x :: l) [] l) in
             let a_s = removeContradiction a_s in
@@ -285,7 +285,7 @@ let interpolate formulae = try (
             (* Calculate the interpolant space between each conjunctions from A
                and B. *)
             let spaces = List.map (fun b -> List.map (fun a ->
-                match solve a b with
+                match laSolve a b with
                 | Some x -> x
                 | None -> raise Not_found) a_s) b_s in
 
@@ -314,3 +314,161 @@ let rec transpose xss = (
             (Printexc.to_string e) ^
             ")");
         assert false
+
+(* TODO: Consider moving to types.ml *)
+type 'a tree =
+  | Tree of 'a * 'a tree list
+  | Leaf of 'a
+  
+let id x = Obj.magic x
+let rec dfs ?(pre=id) ?(post=id) ?(trans=id) tree =
+  let dfs = dfs ~pre:pre ~post:post ~trans:trans in
+  let elt = pre tree in
+  post (match elt with
+  | Tree(x, children) -> Tree((trans x), (List.map dfs children))
+  | Leaf x -> Leaf (trans x))
+
+(* TODO: Rename this. *)
+let top = Expr (EQ, M.add "" 0 M.empty)
+let bot = Expr (EQ, M.add "" 1 M.empty)
+
+let buildTrees clauses =
+  (* TODO: If you consider solving Horn clauses with complicated structure, it
+     may be a good idea to consider using Ocamlgraph. *)
+  let buildSeedling = List.fold_left (fun trees (lh, rh) ->
+    let (pvars, la) = lh in
+    let lh = SP.fold (fun x l -> Leaf(PredVar x) :: l) pvars [] in
+    let lh = match la with
+      | None -> lh
+      | Some x -> Leaf(LinearExpr x) :: lh in
+
+    (* TODO: DEBUG: Guarantee the absence of loop structure. Will be supported
+       in future version. *)
+    (match rh with
+    | PredVar p -> assert (not (SP.mem p pvars))
+    | _ -> ());
+
+    (* Make pieces of horn clause trees. *)
+    (pvars, Tree(rh, lh)) :: trees
+  ) [] in
+
+  (* TODO: Very inefficient algorithm to build a tree. *)
+  let rec graft x = function
+    | [] -> x
+    | current :: rest ->
+      let (fpvs, (Tree(rh, lh) as t)) = current in
+
+      match rh with
+      | LinearExpr _ ->
+        (* Skip. Linear expression always comes at the root. *)
+        graft (x @ [current]) rest
+
+      | PredVar p ->
+        (* Current item is not considered for replacement because we do not
+           consider looping construct at this moment. ... Well even if we do, it
+           may not be a good idea to perform replacement anyway.
+           By the way, `rest` and `x` is the correct order because `rest` should
+           be prioritized for further processing. *)
+        let replace, new_rest = List.partition (
+          fun (fpvs, _) -> SP.mem p fpvs) (rest @ x) in
+        match replace with
+        | [] ->
+          (* If a predicate variable comes at the root, insert contradictory
+             linear expression on top for ease of calculation. *)
+          let current = (fpvs, Tree(LinearExpr bot, [t])) in
+          graft (x @ [current]) rest
+
+        | [(rep_fpvs, rep_t)] ->
+          let new_t = dfs ~pre:(fun dfs_t ->
+            match dfs_t with
+            | Leaf (PredVar pp) ->
+              if p = pp then
+                (* Replace this leaf with the current tree. Note that we can do
+                   this right because we do not have loop. If we do have a
+                   recursive reference of predicate variable, this replacement
+                   does not end. *)
+                t
+              else dfs_t
+            | _ -> dfs_t) rep_t in
+
+          (* Update free predicate variables. *)
+          let rep_fpvs = (SP.remove p rep_fpvs) in
+
+          (* TODO: DEBUG: We guarantee there is no DAG for the moment. To be
+             supported. *)
+          assert (SP.is_empty (SP.inter rep_fpvs fpvs));
+
+          let new_fpvs = SP.union rep_fpvs fpvs in
+          let current = (new_fpvs, new_t) in
+          graft [] (new_rest @ [current])
+        | _ ->
+          (* TODO: We still do not support DAG (Directed acyclic graph)
+             structure. *)
+          assert false in
+
+  (* Eliminate free variable information. *)
+  let _, trees = List.split (graft [] (buildSeedling clauses)) in
+  List.map (dfs ~pre:(fun t ->
+    match t with
+    | Leaf (PredVar pp as p) ->
+      (* If a predicate variable comes at leafs, insert tautological linear
+         expression for ease of calculation. *)
+      Tree(p, [ Leaf (LinearExpr top) ])
+    | _ -> t)) trees
+
+let solveTree tree =
+  (* Preprocess tree to add a placeholder for linear expressions propagation. *)
+  let tree = dfs ~trans:(fun x -> bot, x) tree in
+
+  let m = ref MP.empty in
+  ignore(dfs
+    ~pre:(function
+      | Tree((exprs, x), children) ->
+        (* Gather leaves from the children level. *)
+        let leaves = List.fold_left (fun l x ->
+          match x with
+          | Leaf(_, LinearExpr e) -> e :: l
+          | _ -> l) [] children in
+
+        (* DEBUG: Should be at most one leave... *)
+        assert (List.length leaves <= 1);
+
+        (* By combining leaves from above and the root, build an expression
+           for the second group of interpolation input. *)
+        let newExprs = reduce (&&&) ((
+          match x with
+          | LinearExpr e -> e (* Only the root. *)
+          | _ -> exprs) :: leaves) in
+
+        (* Propagate leave information to decendants. *)
+        let newChildren = List.map (fun x ->
+          match x with
+          | Tree((_, x), children) ->
+            Tree((newExprs, x), children)
+          | _ -> x) children in
+
+        (* Renew current node. *)
+        Tree((newExprs, x), newChildren)
+      | Leaf (_, LinearExpr e) -> Leaf (bot, LinearExpr e) (* Don't care *)
+      | _ -> assert false (* No predicate variables comes at leaves. *))
+
+    ~post:(function
+      | Tree((_, LinearExpr e), _) -> Leaf(bot, LinearExpr bot) (* Don't care *)
+      | Tree((b, PredVar p), children) ->
+        let a = reduce (&&&) (List.map (fun (Leaf(x, _)) -> x) children) in
+        m := MP.add p (a, b) !m;
+        Leaf (a, LinearExpr bot)
+      | Leaf (_, LinearExpr e) -> Leaf(e, LinearExpr bot)
+      | _ -> assert false (* Ditto *)) tree);
+
+  (* Perform interpolation to give predicates to all variables. *)
+  MP.map (fun (a, b) -> (interpolate [a;b])) !m
+
+let solve clauses =
+  let trees = buildTrees clauses in
+  List.fold_left (fun m t -> MP.merge (fun _ a b ->
+    match a, b with
+    | None, None
+    | Some _, Some _ -> assert false
+    | x, None
+    | None, x -> x) m (solveTree t)) MP.empty trees

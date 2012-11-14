@@ -13,7 +13,7 @@ let rec convert = function
         let l, r = (ref l), (ref r) in
         let t, vp = if v > 0 then l, v else r, (-v) in
         let v = mk_int ctx vp _int in
-	let _ =
+        let _ =
           if k = "" then t := v :: !t
           else
             let k = mk_const ctx (mk_string_symbol ctx k) _int in
