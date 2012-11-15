@@ -4,10 +4,12 @@ open Yint.Lexer
 open Yint.Main
 
 let main _ =
-    let formulae = inputUnit token (Lexing.from_channel stdin) in
-    let space = interpolate formulae in
-
-    (match space with
+  let input = inputUnit token (Lexing.from_channel stdin) in
+  let predAssignments = solve input in
+    
+  MP.iter (fun k v ->
+  print_endline ("***** " ^ k ^ " *****");
+    (match v with
     | Some space -> (
         match getInterpolant space with
         | Some t ->
@@ -15,6 +17,7 @@ let main _ =
             print_endline (printFormula printExpr t)
         | None -> print_endline "No solution (no interpolant)")
     | None -> print_endline "No solution (no space)");
+  print_newline ()) predAssignments;
 
     ignore (Yint.Z3py.close ())
 
