@@ -6,9 +6,10 @@ open Yint.Main
 let main _ =
   let input = inputUnit token (Lexing.from_channel stdin) in
   let predAssignments = solve input in
-    
+
+  print_newline ();
   MP.iter (fun k v ->
-  print_endline ("***** " ^ k ^ " *****");
+    print_endline ("***** " ^ k ^ " *****");
     (match v with
     | Some space -> (
         match getInterpolant space with
@@ -17,8 +18,6 @@ let main _ =
             print_endline (printFormula printExpr t)
         | None -> print_endline "No solution (no interpolant)")
     | None -> print_endline "No solution (no space)");
-  print_newline ()) predAssignments;
-
-    ignore (Yint.Z3py.close ())
+  print_newline ()) predAssignments
 
 let _ = main ()

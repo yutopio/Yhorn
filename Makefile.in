@@ -39,7 +39,7 @@ OBJEXT = @OBJEXT@
 SRCDIR	= .
 
 INCLUDES= -I $(SRCDIR)
-BFLAGS = $(INCLUDES) -g -dtypes
+BFLAGS = $(INCLUDES) -g -annot
 OFLAGS = $(INCLUDES)
 
 # main target
@@ -51,15 +51,14 @@ all: byte $(OCAMLBEST)
 # bytecode and native-code compilation
 ######################################
 
-CMO = 	version error types util parser lexer z3pyparser z3pylexer z3py main
+CMO = 	version error types util parser lexer z3interface main
 CMO :=  $(patsubst %, $(SRCDIR)/%.cmo, $(CMO))
 
 CMX = $(CMO:.cmo=.cmx)
 CMA = yint.cma
 CMXA = yint.cmxa
 
-GENERATED = META version.ml parser.ml parser.mli lexer.ml \
-                            z3pyparser.ml z3pyparser.mli z3pylexer.ml
+GENERATED = META version.ml parser.ml parser.mli lexer.ml
 
 $(CMX): OFLAGS += -for-pack Yint
 
@@ -82,10 +81,10 @@ yint.cmx: $(CMX)
 	$(OCAMLOPT) $(INCLUDES) -pack -o $@ $^
 
 yint.byte: yint.cmo interactive.cmo
-	$(OCAMLC) -g -unsafe -o $@ unix.cma $^
+	$(OCAMLC) -g -unsafe -o $@ unix.cma z3.cma $^
 
 yint.opt: yint.cmx interactive.cmx
-	$(OCAMLOPT) -unsafe -inline 100 -o $@ unix.cmxa $^
+	$(OCAMLOPT) -unsafe -inline 100 -o $@ unix.cmxa z3.cmxa $^
 
 VERSION=0.1
 

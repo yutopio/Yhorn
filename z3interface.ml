@@ -42,11 +42,13 @@ let integer_programming constrs =
     | L_TRUE ->
       let md = solver_get_model ctx s in
       let rec repeat f n k =
-        if n > 0 then (repeat f (n - 1) (f n k))
-        else f 0 k in
+        if n > 0 then
+          let n = n - 1 in
+          (repeat f n (f n k))
+        else k in
       let mdn = model_get_num_consts ctx md in
       let m = repeat (fun i m ->
-        let fd = model_get_func_decl ctx md i in
+        let fd = model_get_const_decl ctx md i in
         let name = get_symbol_string ctx (get_decl_name ctx fd) in
         match model_get_const_interp ctx md fd with
           | Some ast ->

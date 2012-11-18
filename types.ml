@@ -82,16 +82,16 @@ type 'a formula =
     | And of 'a formula list
     | Or of 'a formula list
 
-let rec printFormula elementPrinter x =
+let rec printFormula eltPrinter x =
     let ret = match x with
     | Expr x -> `A x
     | And x -> `B(x, " & ")
     | Or x -> `B(x, " | ") in
 
     match ret with
-    | `A x -> elementPrinter x
+    | `A x -> eltPrinter x
     | `B(x, y) -> String.concat y (List.map (
-        fun x -> "(" ^ (printFormula elementPrinter x) ^ ")") x)
+        fun x -> "(" ^ (printFormula eltPrinter x) ^ ")") x)
 
 let combineFormulae opAnd x y =
     match (opAnd, x, y) with
@@ -117,7 +117,7 @@ let normalizeExpr (op, coef) =
         | GT -> LTE, (addDefault "" 1 0 (+) (~-- coef))
         | GTE -> LTE, (~-- coef)
         | _ -> op, coef in
-    op, (M.filter (fun k v -> k = "" || v <> 0) coef)
+    op, (M.filter (fun _ v -> v <> 0) coef)
 
 let rec normalizeFormula = function
     | And x -> And (List.map normalizeFormula x)
@@ -141,6 +141,10 @@ type hornTerm =
 type leftHand = SP.t * expr formula option
 type rightHand = hornTerm
 type horn = leftHand * rightHand
+
+let printHornTerm = function
+    | LinearExpr e -> printFormula printExpr e
+    | PredVar p -> p
 
 type 'a nf = 'a list list
 type space = (operator M.t * coef M.t) * expr formula

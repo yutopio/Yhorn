@@ -100,10 +100,18 @@ let rec getInterpolant sp =
 
     match sp with
     | Expr ((op, expr), constraints) -> (
-        match Z3py.integer_programming constraints with
+        (* DEBUG: Z3 integer programming constraint.
+        print_endline (printFormula printExpr constraints); *)
+
+        match Z3interface.integer_programming constraints with
         | Some sol ->
+            (* DEBUG: Dump Z3 solution.
+            print_endline ("Z3 solution: [" ^ (String.concat ", " (
+            M.fold (fun k v l -> (k ^ "=" ^ (string_of_int v)) :: l) sol [])) ^ "]"); *)
+
             (* Construct one interpolant *)
-            let expr = M.map (fun v -> M.fold (fun k v -> (+) ((M.find k sol) * v)) v 0) expr in
+            let expr = M.map (fun v -> M.fold (fun k v -> (+) ((
+                if M.mem k sol then M.find k sol else 1) * v)) v 0) expr in
             let op = M.fold (fun k v o -> if v <> 0 && M.mem k op && M.find k op = LTE then
                 (assert (v > 0); LTE) else o) sol EQ in
             Some (Expr (op, expr))
@@ -319,7 +327,17 @@ let rec transpose xss = (
 type 'a tree =
   | Tree of 'a * 'a tree list
   | Leaf of 'a
-  
+
+let printTree eltPrinter t =
+  let buf = Buffer.create 1 in
+  let print i x = Buffer.add_string buf (i ^ (eltPrinter x) ^ "\n") in
+  let rec printTree indent = function
+    | Leaf x -> print indent x
+    | Tree (x, children) -> print indent x;
+      List.iter (printTree (indent ^ "  ")) children in
+  printTree "" t;
+  Buffer.contents buf
+
 let id x = Obj.magic x
 let rec dfs ?(pre=id) ?(post=id) ?(trans=id) tree =
   let dfs = dfs ~pre:pre ~post:post ~trans:trans in
@@ -329,7 +347,7 @@ let rec dfs ?(pre=id) ?(post=id) ?(trans=id) tree =
   | Leaf x -> Leaf (trans x))
 
 (* TODO: Rename this. *)
-let top = Expr (EQ, M.add "" 0 M.empty)
+let top = Expr (EQ, M.empty)
 let bot = Expr (EQ, M.add "" 1 M.empty)
 
 let buildTrees clauses =
@@ -435,7 +453,7 @@ let solveTree tree =
 
         (* By combining leaves from above and the root, build an expression
            for the second group of interpolation input. *)
-        let newExprs = reduce (&&&) ((
+        let childExprs = reduce (&&&) ((
           match x with
           | LinearExpr e -> e (* Only the root. *)
           | _ -> exprs) :: leaves) in
@@ -444,11 +462,11 @@ let solveTree tree =
         let newChildren = List.map (fun x ->
           match x with
           | Tree((_, x), children) ->
-            Tree((newExprs, x), children)
+            Tree((childExprs, x), children)
           | _ -> x) children in
 
         (* Renew current node. *)
-        Tree((newExprs, x), newChildren)
+        Tree((exprs, x), newChildren)
       | Leaf (_, LinearExpr e) -> Leaf (bot, LinearExpr e) (* Don't care *)
       | _ -> assert false (* No predicate variables comes at leaves. *))
 
@@ -466,7 +484,11 @@ let solveTree tree =
 
 let solve clauses =
   let trees = buildTrees clauses in
-  List.fold_left (fun m t -> MP.merge (fun _ a b ->
+  List.fold_left (fun m t ->
+    (* DEBUG: dump trees *)
+    print_endline (printTree printHornTerm t);
+
+    MP.merge (fun _ a b ->
     match a, b with
     | None, None
     | Some _, Some _ -> assert false
