@@ -273,7 +273,7 @@ let laSolve a b =
         all]
 
 let interpolate formulae = try (
-    match List.map (fun x -> convertToDNF (normalizeFormula x)) formulae with
+    match List.map (fun x -> convertToNF false (normalizeFormula x)) formulae with
     | [a_s; b_s] -> (
         try
             (* Remove contradictory conjunctions. *)
