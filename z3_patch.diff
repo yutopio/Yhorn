@@ -1,0 +1,255 @@
+diff --git a/README b/README
+index cf028ef..3344cea 100644
+--- a/README
++++ b/README
+@@ -12,7 +12,7 @@ Z3 can be built using Visual Studio Command Prompt and make/g++.
+ 2) Building Z3 using make/g++ and Python
+ Execute:
+ 
+-   autconf
++   autoconf
+    ./configure
+    python scripts/mk_make.py
+    cd build
+diff --git a/src/api/ml/build-lib.sh b/src/api/ml/build-lib.sh
+old mode 100644
+new mode 100755
+index 93c7262..6853234
+--- a/src/api/ml/build-lib.sh
++++ b/src/api/ml/build-lib.sh
+@@ -3,7 +3,7 @@
+ # Script to compile the Z3 OCaml API
+ # Expects to find ../lib/libz3{,_dbg}.{a,so,dylib}
+ 
+-CFLAGS="-ccopt -Wno-discard-qual -ccopt -I../include"
++CFLAGS="-ccopt -Wno-discard-qual"
+ XCDBG="-g -ccopt -g $CFLAGS"
+ XCOPT="-ccopt -O3 -ccopt -fomit-frame-pointer $CFLAGS"
+ 
+@@ -18,14 +18,14 @@ ocamlopt -c $XCOPT z3_stubs.c z3_theory_stubs.c z3.mli z3.ml
+ 
+ ar rcs libz3stubs.a z3.o z3_stubs.o z3_theory_stubs.o
+ 
+-ocamlc -custom -a $XCDBG -cclib -L$PWD/../lib -cclib -lz3_dbg -cclib -lcamlidl -cclib -lz3stubs_dbg z3.cmo -o z3_dbg.cma
++ocamlc -custom -a $XCDBG -o z3_dbg.cma z3.cmo -ccopt -L. -cclib -lz3stubs_dbg -cclib -lz3_dbg -cclib -lcamlidl
+ 
+-ocamlc -custom -a $XCDBG -cclib -L$PWD/../lib -cclib -lz3 -cclib -lcamlidl -cclib -lz3stubs z3.cmo -o z3.cma
++ocamlc -custom -a $XCDBG -o z3.cma z3.cmo -ccopt -L. -cclib -lz3stubs -cclib -lz3 -cclib -lcamlidl
+ 
+-ocamlopt -a $XCDBG -cclib -L$PWD/../lib -cclib -lz3_dbg -cclib -lcamlidl -cclib -lz3stubs_dbg z3.cmx -o z3_dbg.cmxa
++ocamlopt -a $XCDBG -o z3_dbg.cmxa z3.cmx -ccopt -L. -cclib -lz3stubs_dbg -cclib -lz3_dbg -cclib -lcamlidl
+ 
+-ocamlopt -a $XCOPT -cclib -L$PWD/../lib -cclib -lz3 -cclib -lcamlidl -cclib -lz3stubs z3.cmx -o z3.cmxa
++ocamlopt -a $XCOPT -o z3.cmxa z3.cmx -ccopt -L. -cclib -lz3stubs -cclib -lz3 -cclib -lcamlidl
+ 
+-ocamlmktop -o ocamlz3 z3.cma -cclib -L.
++ocamlmktop -o ocamlz3 z3.cma
+ 
+ rm z3.cm{o,x} *.o
+diff --git a/src/api/ml/install-lib.sh b/src/api/ml/install-lib.sh
+new file mode 100755
+index 0000000..7daca1c
+--- /dev/null
++++ b/src/api/ml/install-lib.sh
+@@ -0,0 +1,13 @@
++#!/bin/bash
++
++PREFIX=/usr/local
++
++mkdir -p $PREFIX/lib
++cp libz3stubs.a $PREFIX/lib
++
++echo "description = \"Z3\"" > META
++echo "requires=\"\"" >> META
++echo "archive(byte) = \"z3.cma\"" >> META
++echo "archive(native) = \"z3.cmxa\"" >> META
++
++ocamlfind install z3 z3.cmi z3.cma z3.a z3.cmxa META
+diff --git a/src/api/ml/z3.ml b/src/api/ml/z3.ml
+index 76536ef..37b8bed 100644
+--- a/src/api/ml/z3.ml
++++ b/src/api/ml/z3.ml
+@@ -1,5 +1,7 @@
+ (* File generated from z3.idl *)
+ 
++let preload () = ()
++
+ type context
+ and symbol
+ and ast
+@@ -1219,13 +1221,13 @@ external get_smtlib_sort : context -> int -> sort
+ 
+ external get_smtlib_error : context -> string
+ 	= "camlidl_z3_Z3_get_smtlib_error"
+-
++(*
+ external parse_z3_string : context -> string -> ast
+ 	= "camlidl_z3_Z3_parse_z3_string"
+ 
+ external parse_z3_file : context -> string -> ast
+ 	= "camlidl_z3_Z3_parse_z3_file"
+-
++*)
+ external set_error : context -> error_code -> unit
+ 	= "camlidl_z3_Z3_set_error"
+ 
+@@ -2930,13 +2932,13 @@ external get_smtlib_sort : context -> int -> sort
+ 
+ external get_smtlib_error : context -> string
+ 	= "camlidl_z3V3_Z3_get_smtlib_error"
+-
++(*
+ external parse_z3_string : context -> string -> ast
+ 	= "camlidl_z3_Z3_parse_z3V3_string"
+ 
+ external parse_z3_file : context -> string -> ast
+ 	= "camlidl_z3_Z3_parse_z3V3_file"
+-
++*)
+ external get_version : unit -> int * int * int * int
+ 	= "camlidl_z3V3_Z3_get_version"
+ 
+diff --git a/src/api/ml/z3.mli b/src/api/ml/z3.mli
+index b0935f0..6423ad4 100644
+--- a/src/api/ml/z3.mli
++++ b/src/api/ml/z3.mli
+@@ -1,5 +1,7 @@
+ (* File generated from z3.idl *)
+ 
++val preload : unit -> unit
++
+ type context
+ and symbol
+ and ast
+@@ -4787,7 +4789,6 @@ external get_smtlib_sort : context -> int -> sort
+ external get_smtlib_error : context -> string
+ 	= "camlidl_z3_Z3_get_smtlib_error"
+ 
+-*)
+ (**
+        Summary: \[ [ parse_z3_string c str ] \]
+        Parse the given string using the Z3 native parser.
+@@ -4806,7 +4807,7 @@ external parse_z3_string : context -> string -> ast
+ *)
+ external parse_z3_file : context -> string -> ast
+ 	= "camlidl_z3_Z3_parse_z3_file"
+-
++*)
+ (**
+        {2 {L Error Handling}}
+ *)
+@@ -10198,7 +10199,7 @@ external get_smtlib_sort : context -> int -> sort
+ *)
+ external get_smtlib_error : context -> string
+ 	= "camlidl_z3V3_Z3_get_smtlib_error"
+-
++(*
+ (**
+        Summary: \[ [ parse_z3_string c str ] \]
+        Parse the given string using the Z3 native parser.
+@@ -10217,7 +10218,7 @@ external parse_z3_string : context -> string -> ast
+ *)
+ external parse_z3_file : context -> string -> ast
+ 	= "camlidl_z3_Z3_parse_z3V3_file"
+-
++*)
+ (**
+        {2 {L Miscellaneous}}
+ *)
+diff --git a/src/api/ml/z3_stubs.c b/src/api/ml/z3_stubs.c
+index 0f32cb2..0810057 100644
+--- a/src/api/ml/z3_stubs.c
++++ b/src/api/ml/z3_stubs.c
+@@ -8169,13 +8169,13 @@ check_error_code(c);
+   /* end user-supplied deallocation sequence */
+   return _vres;
+ }
+-
++/*
+ value camlidl_z3_Z3_parse_z3_string(
+ 	value _v_c,
+ 	value _v_str)
+ {
+-  Z3_context c; /*in*/
+-  Z3_string str; /*in*/
++  Z3_context c; /*in
++  Z3_string str; /*in
+   Z3_ast _res;
+   value _vres;
+ 
+@@ -8186,9 +8186,9 @@ value camlidl_z3_Z3_parse_z3_string(
+   _res = Z3_parse_z3_string(c, str);
+   _vres = camlidl_c2ml_z3_Z3_ast(&_res, _ctx);
+   camlidl_free(_ctx);
+-  /* begin user-supplied deallocation sequence */
++  /* begin user-supplied deallocation sequence 
+ check_error_code(c);
+-  /* end user-supplied deallocation sequence */
++  /* end user-supplied deallocation sequence 
+   return _vres;
+ }
+ 
+@@ -8196,8 +8196,8 @@ value camlidl_z3_Z3_parse_z3_file(
+ 	value _v_c,
+ 	value _v_file_name)
+ {
+-  Z3_context c; /*in*/
+-  Z3_string file_name; /*in*/
++  Z3_context c; /*in
++  Z3_string file_name; /*in
+   Z3_ast _res;
+   value _vres;
+ 
+@@ -8208,12 +8208,12 @@ value camlidl_z3_Z3_parse_z3_file(
+   _res = Z3_parse_z3_file(c, file_name);
+   _vres = camlidl_c2ml_z3_Z3_ast(&_res, _ctx);
+   camlidl_free(_ctx);
+-  /* begin user-supplied deallocation sequence */
++  /* begin user-supplied deallocation sequence 
+ check_error_code(c);
+-  /* end user-supplied deallocation sequence */
++  /* end user-supplied deallocation sequence 
+   return _vres;
+ }
+-
++*/
+ value camlidl_z3_Z3_set_error(
+ 	value _v_c,
+ 	value _v_e)
+@@ -17569,13 +17569,13 @@ value camlidl_z3V3_Z3_get_smtlib_error(
+   camlidl_free(_ctx);
+   return _vres;
+ }
+-
++/*
+ value camlidl_z3_Z3_parse_z3V3_string(
+ 	value _v_c,
+ 	value _v_str)
+ {
+-  Z3_context c; /*in*/
+-  Z3_string str; /*in*/
++  Z3_context c; /*in
++  Z3_string str; /*in
+   Z3_ast _res;
+   value _vres;
+ 
+@@ -17593,8 +17593,8 @@ value camlidl_z3_Z3_parse_z3V3_file(
+ 	value _v_c,
+ 	value _v_file_name)
+ {
+-  Z3_context c; /*in*/
+-  Z3_string file_name; /*in*/
++  Z3_context c; /*in
++  Z3_string file_name; /*in
+   Z3_ast _res;
+   value _vres;
+ 
+@@ -17607,7 +17607,7 @@ value camlidl_z3_Z3_parse_z3V3_file(
+   camlidl_free(_ctx);
+   return _vres;
+ }
+-
++*/
+ value camlidl_z3V3_Z3_get_version(value _unit)
+ {
+   unsigned int *major; /*out*/

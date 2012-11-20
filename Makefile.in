@@ -34,11 +34,12 @@ OCAMLFIND = @OCAMLFIND@
 EXE = @EXE@
 LIBEXT = @LIBEXT@
 OBJEXT = @OBJEXT@
+Z3ML = @Z3ML@
 
 # Others global variables
 SRCDIR	= .
 
-INCLUDES= -I $(SRCDIR)
+INCLUDES= -I $(SRCDIR) -I $(Z3ML)
 BFLAGS = $(INCLUDES) -g -annot
 OFLAGS = $(INCLUDES)
 
@@ -81,10 +82,10 @@ yint.cmx: $(CMX)
 	$(OCAMLOPT) $(INCLUDES) -pack -o $@ $^
 
 yint.byte: yint.cmo interactive.cmo
-	$(OCAMLC) -g -unsafe -o $@ unix.cma z3.cma $^
+	$(OCAMLC) $(INCLUDES) -g -unsafe -o $@ unix.cma z3.cma $^
 
 yint.opt: yint.cmx interactive.cmx
-	$(OCAMLOPT) -unsafe -inline 100 -o $@ unix.cmxa z3.cmxa $^
+	$(OCAMLOPT) $(INCLUDES) -unsafe -inline 100 -o $@ unix.cmxa z3.cmxa $^
 
 VERSION=0.1
 
@@ -102,7 +103,7 @@ META: META.in Makefile
 
 DOCFILES=$(NAME).ps $(NAME).html
 
-NODOC	= parser lexer z3pyparser z3pylexer version
+NODOC	= parser lexer version
 NODOC	:= $(patsubst %, $(SRCDIR)/%.cmo, $(NODOC))
 DOC_CMO	= $(filter-out $(NODOC), $(CMO))
 DOC_SRC	= $(DOC_CMO:.cmo=.ml) main.mli

@@ -1,6 +1,9 @@
 open Types
 open Z3
 
+(* Calling `preload` will trigger callback registration *)
+let _ = preload ()
+
 let ctx = mk_context [ "MODEL", "true" ]
 let _int = mk_int_sort ctx
 let _bool = mk_bool_sort ctx
