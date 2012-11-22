@@ -168,4 +168,9 @@ let convertToNF cnf formulae =
     | _ -> internal [ formulae ] []
 
 (** Solution space of interpolation *)
-type space = (operator M.t * coef M.t) * expr formula
+type pexpr = operator M.t * coef M.t
+type constr = expr formula
+type space = pexpr * constr
+
+type hornSolSpace = pexpr formula M.t * constr
+type hornSol = expr formula M.t

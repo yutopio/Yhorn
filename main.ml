@@ -74,6 +74,12 @@ let getSpace exprs =
         M.fold (fun k v -> (@) [ Expr((if k = "" then
             (if constrs = [] then NEQ else GT) else EQ), v) ]) m constrs))
 
+let assignParameters assign (op, expr) =
+  (M.fold (fun k v o -> if v <> 0 && findDefault k EQ op = LTE then
+      (assert (v > 0); LTE) else o) assign EQ),
+  (M.map (fun v -> M.fold (fun k v -> (+) ((
+    if M.mem k assign then M.find k assign else 1) * v)) v 0) expr)
+
 let rec getInterpolant sp =
     let inner opAnd sps =
         (* If the space is expressed by the union of spaces, take one interpolant from each space *)
@@ -86,7 +92,7 @@ let rec getInterpolant sp =
         with Not_found -> None in
 
     match sp with
-    | Expr ((op, expr), constraints) -> (
+    | Expr (pexpr, constraints) -> (
         (* DEBUG: Z3 integer programming constraint.
         print_endline (printFormula printExpr constraints); *)
 
@@ -97,11 +103,7 @@ let rec getInterpolant sp =
             M.fold (fun k v l -> (k ^ "=" ^ (string_of_int v)) :: l) sol [])) ^ "]"); *)
 
             (* Construct one interpolant *)
-            let expr = M.map (fun v -> M.fold (fun k v -> (+) ((
-                if M.mem k sol then M.find k sol else 1) * v)) v 0) expr in
-            let op = M.fold (fun k v o -> if v <> 0 && M.mem k op && M.find k op = LTE then
-                (assert (v > 0); LTE) else o) sol EQ in
-            Some (Expr (op, expr))
+            Some(Expr (assignParameters sol pexpr))
         | None -> None)
 
     | And sps -> inner true sps
@@ -468,6 +470,18 @@ let solveTree tree =
 
   (* Perform interpolation to give predicates to all variables. *)
   MP.map (fun (a, b) -> (interpolate [a;b])) !m
+
+(* TODO: Type change required; pexprs should be pexpr formula M.t *)
+let getSolution ((pexprs:pexpr M.t), constr) =
+  match Z3interface.integer_programming constr with
+    | Some sol ->
+      (* DEBUG: Dump Z3 solution.
+         print_endline ("Z3 solution: [" ^ (String.concat ", " (
+         M.fold (fun k v l -> (k ^ "=" ^ (string_of_int v)) :: l) sol [])) ^ "]"); *)
+
+      (* Construct one interpolant *)
+      M.map (assignParameters sol) pexprs
+    | None -> assert false
 
 let solve clauses =
   let trees = buildTrees clauses in
