@@ -14,19 +14,6 @@ let bot = Expr ((M.empty, M.add "" (M.add "x" 1 M.empty) M.empty),
 (** [top] denotes the interpolant space 0=0. *)
 let top = Expr ((M.empty, M.empty), Expr (EQ, M.empty))
 
-let convertToDNF formulae =
-    let rec internal formulae ret =
-        match formulae with
-        | [] -> List.rev ret
-        | x :: l ->
-            let ret = match x with
-                | Expr x -> [ x ] :: ret
-                | And x | Or x -> (directProduct (internal x [])) @ ret in
-            internal l ret in
-    match formulae with
-    | Or x -> internal x []
-    | _ -> internal [ formulae ] []
-
 (* Try to calculate an interpolant from given expressions. All expressions are
    to be represented as (consider : bool, (operator, coefficients : int M.t)).
    The first bool represents if the expression should be considered as the first
