@@ -75,16 +75,6 @@ let getSpace exprs =
             (if constrs = [] then NEQ else GT) else EQ), v) ]) m constrs))
 
 let rec getInterpolant sp =
-    let inner opAnd sps =
-        (* If the space is expressed by the union of spaces, take one interpolant from each space *)
-        try
-            let is = List.map (fun x ->
-                match getInterpolant x with
-                | Some x -> x
-                | None -> raise Not_found) sps in
-            Some (if opAnd then And is else Or is)
-        with Not_found -> None in
-
     match sp with
     | Expr ((op, expr), constraints) -> (
         (* DEBUG: Z3 integer programming constraint.
@@ -98,14 +88,22 @@ let rec getInterpolant sp =
 
             (* Construct one interpolant *)
             let expr = M.map (fun v -> M.fold (fun k v -> (+) ((
-                if M.mem k sol then M.find k sol else 1) * v)) v 0) expr in
-            let op = M.fold (fun k v o -> if v <> 0 && M.mem k op && M.find k op = LTE then
+                findDefault k 1 sol) * v)) v 0) expr in
+            let op = M.fold (fun k v o -> if v <> 0 && findDefault k EQ op = LTE then
                 (assert (v > 0); LTE) else o) sol EQ in
             Some (Expr (op, expr))
         | None -> None)
-
-    | And sps -> inner true sps
-    | Or sps -> inner false sps
+    | And sps -> getInterpolantList true sps
+    | Or sps -> getInterpolantList false sps
+and getInterpolantList opAnd sps =
+    (* If the space is expressed by the union of spaces, take one interpolant from each space *)
+    try
+        let is = List.map (fun x ->
+            match getInterpolant x with
+            | Some x -> x
+            | None -> raise Not_found) sps in
+        Some (if opAnd then And is else Or is)
+    with Not_found -> None
 
 (* DEBUG: Uncomment following lines to dump intermediate interpolants
 let getInterpolant sp =
@@ -125,8 +123,7 @@ let rec mergeSpace opAnd sp1 sp2 =
 
         (* Coefficients of both interpolants must be the same *)
         let (c3, c4) = List.fold_left (fun (r1, r2) k ->
-            let v1 = if M.mem k coef1 then M.find k coef1 else M.empty in
-            let v2 = if M.mem k coef2 then M.find k coef2 else M.empty in
+            let [v1;v2] = List.map (findDefault k M.empty) [coef1;coef2] in
             (let v = coefOp (+) v1 v2 in Expr(EQ, v) :: r1),
             (let v = coefOp (-) v1 v2 in Expr(EQ, v) :: r2)) ([], []) vars in
 
@@ -208,7 +205,7 @@ let laSolve a b =
     let eqB, leqB = proc EQ b false in
     let neqB, lneqB = proc NEQ b false in
     let plus x = addDefault "" 1 0 (+) x in
-    let minus x = M.add "" (1 - (if M.mem "" x then M.find "" x else 0)) (~-- x) in
+    let minus x = M.add "" (1 - (findDefault "" 0 x)) (~-- x) in
 
     let tryGetInterpolant opAnd exprs = tryPick (fun (consider, (_, coef)) ->
         (* DEBUG: List.rev is for ease of inspection *)
@@ -260,7 +257,7 @@ let laSolve a b =
         all]
 
 let interpolate formulae = try (
-    match List.map (fun x -> convertToNF false (normalizeFormula x)) formulae with
+    match List.map (fun x -> convertToNF false (mapFormula normalizeExpr x)) formulae with
     | [a_s; b_s] -> (
         try
             (* Remove contradictory conjunctions. *)
@@ -342,19 +339,26 @@ let buildTrees clauses =
      may be a good idea to consider using Ocamlgraph. *)
   let buildSeedling = List.fold_left (fun trees (lh, rh) ->
     let (pvars, la) = lh in
-    let lh = SP.fold (fun x l -> Leaf(PredVar x) :: l) pvars [] in
+
+    (* Rename all variables into internal names to avoid name collision. *)
+    let m = ref M.empty in
+    let pvars = M.map (renameList m) pvars in
+    let lh = M.fold (fun x v l -> Leaf(PredVar (x, v)) :: l) pvars [] in
     let lh = match la with
       | None -> lh
-      | Some x -> Leaf(LinearExpr x) :: lh in
+      | Some x -> Leaf(LinearExpr (mapFormula (renameExpr m) x)) :: lh in
 
-    (* TODO: DEBUG: Guarantee the absence of loop structure. Will be supported
-       in future version. *)
-    (match rh with
-    | PredVar p -> assert (not (SP.mem p pvars))
-    | _ -> ());
+    let rh = match rh with
+    | PredVar (p, l) ->
+        (* TODO: DEBUG: Guarantee the absence of loop structure. Will be
+           supported in future version. *)
+        assert (not (M.mem p pvars));
+
+        PredVar (p, (renameList m l))
+    | LinearExpr e -> LinearExpr (mapFormula (renameExpr m) e) in
 
     (* Make pieces of horn clause trees. *)
-    (pvars, Tree(rh, lh)) :: trees
+    (M.fold (fun x _ -> S.add x) pvars S.empty, Tree(rh, lh)) :: trees
   ) [] in
 
   (* TODO: Very inefficient algorithm to build a tree. *)
@@ -368,14 +372,14 @@ let buildTrees clauses =
         (* Skip. Linear expression always comes at the root. *)
         graft (x @ [current]) rest
 
-      | PredVar p ->
+      | PredVar (p, l) ->
         (* Current item is not considered for replacement because we do not
            consider looping construct at this moment. ... Well even if we do, it
            may not be a good idea to perform replacement anyway.
            By the way, `rest` and `x` is the correct order because `rest` should
            be prioritized for further processing. *)
         let replace, new_rest = List.partition (
-          fun (fpvs, _) -> SP.mem p fpvs) (rest @ x) in
+          fun (fpvs, _) -> S.mem p fpvs) (rest @ x) in
         match replace with
         | [] ->
           (* If a predicate variable comes at the root, insert contradictory
@@ -386,24 +390,33 @@ let buildTrees clauses =
         | [(rep_fpvs, rep_t)] ->
           let new_t = dfs ~pre:(fun dfs_t ->
             match dfs_t with
-            | Leaf (PredVar pp) ->
-              if p = pp then
+            | Leaf (PredVar (pp, ll)) ->
+              if p = pp then (
                 (* Replace this leaf with the current tree. Note that we can do
                    this right because we do not have loop. If we do have a
                    recursive reference of predicate variable, this replacement
                    does not end. *)
-                t
+
+                (* We need to add a constraint to let the renamed variables equal. *)
+                assert (List.length l = List.length ll);
+
+                if List.length l = 0 then
+                  t
+                else
+                  let eq = reduce (&&&) (List.map (fun (a, b) -> Expr (
+                      EQ, M.add a 1 (M.add b (-1) M.empty))) (zip l ll)) in
+                  Tree(LinearExpr (eq), [t]))
               else dfs_t
             | _ -> dfs_t) rep_t in
 
           (* Update free predicate variables. *)
-          let rep_fpvs = (SP.remove p rep_fpvs) in
+          let rep_fpvs = (S.remove p rep_fpvs) in
 
           (* TODO: DEBUG: We guarantee there is no DAG for the moment. To be
              supported. *)
-          assert (SP.is_empty (SP.inter rep_fpvs fpvs));
+          assert (S.is_empty (S.inter rep_fpvs fpvs));
 
-          let new_fpvs = SP.union rep_fpvs fpvs in
+          let new_fpvs = S.union rep_fpvs fpvs in
           let current = (new_fpvs, new_t) in
           graft [] (new_rest @ [current])
         | _ ->
@@ -425,7 +438,8 @@ let solveTree tree =
   (* Preprocess tree to add a placeholder for linear expressions propagation. *)
   let tree = dfs ~trans:(fun x -> bot, x) tree in
 
-  let m = ref MP.empty in
+  let root = ref true in
+  let m = ref M.empty in
   ignore(dfs
     ~pre:(function
       | Tree((exprs, x), children) ->
@@ -441,9 +455,11 @@ let solveTree tree =
         (* By combining leaves from above and the root, build an expression
            for the second group of interpolation input. *)
         let childExprs = reduce (&&&) ((
-          match x with
-          | LinearExpr e -> e (* Only the root. *)
-          | _ -> exprs) :: leaves) in
+          match x, !root with
+          | (LinearExpr e), true -> root := false; [e]
+          | (LinearExpr e), _ -> [e; exprs]
+          | _, false -> [exprs]
+          | _ -> assert false) @ leaves) in
 
         (* Propagate leave information to decendants. *)
         let newChildren = List.map (fun x ->
@@ -458,16 +474,19 @@ let solveTree tree =
       | _ -> assert false (* No predicate variables comes at leaves. *))
 
     ~post:(function
-      | Tree((_, LinearExpr e), _) -> Leaf(bot, LinearExpr bot) (* Don't care *)
-      | Tree((b, PredVar p), children) ->
+      | Tree((b, x), children) ->
         let a = reduce (&&&) (List.map (fun (Leaf(x, _)) -> x) children) in
-        m := MP.add p (a, b) !m;
+        (match x with
+          | PredVar (p, params) -> m := M.add p (params, a, b) !m
+          | LinearExpr e -> ());
         Leaf (a, LinearExpr bot)
       | Leaf (_, LinearExpr e) -> Leaf(e, LinearExpr bot)
       | _ -> assert false (* Ditto *)) tree);
 
   (* Perform interpolation to give predicates to all variables. *)
-  MP.map (fun (a, b) -> (interpolate [a;b])) !m
+  M.map (fun (params, a, b) -> (
+    (* TODO: Application for the predicate variable should be treated right. *)
+    interpolate [a;b])) !m
 
 let solve clauses =
   let trees = buildTrees clauses in
@@ -475,9 +494,9 @@ let solve clauses =
     (* DEBUG: dump trees *)
     print_endline (printTree printHornTerm t);
 
-    MP.merge (fun _ a b ->
+    M.merge (fun _ a b ->
     match a, b with
     | None, None
     | Some _, Some _ -> assert false
     | x, None
-    | None, x -> x) m (solveTree t)) MP.empty trees
+    | None, x -> x) m (solveTree t)) M.empty trees

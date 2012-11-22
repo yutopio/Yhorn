@@ -37,6 +37,7 @@ rule token = parse
     | '!'               { NOT }
     | ";;"              { DBLSEMICOLON }
     | ';'               { SEMICOLON }
+    | ','               { COMMA }
     | lowerIdent        { VAR(lexeme lexbuf) }
     | upperIdent        { PRED(lexeme lexbuf) }
     | digit+            { INT(int_of_string(lexeme lexbuf)) }
