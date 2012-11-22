@@ -8,7 +8,7 @@ let main _ =
   let predAssignments = solve input in
 
   print_newline ();
-  MP.iter (fun k v ->
+  M.iter (fun k v ->
     print_endline ("***** " ^ k ^ " *****");
     (match v with
     | Some space -> (

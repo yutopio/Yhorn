@@ -1,6 +1,8 @@
 %{
 open Error
 open Types
+
+let pVarAdd (x, y) = M.add x y
 %}
 
 %token <string> VAR
@@ -10,7 +12,7 @@ open Types
 %token PLUS MINUS
 %token AND OR NOT
 %token LPAREN RPAREN
-%token SEMICOLON DBLSEMICOLON
+%token SEMICOLON DBLSEMICOLON COMMA
 %token EOF
 
 %nonassoc SEMICOLON
@@ -30,18 +32,29 @@ inputUnit:
 ;
 
 hornClause:
-    | clause SEMICOLON PRED     { $1, (PredVar $3) }
+    | clause SEMICOLON pred     { $1, (PredVar $3) }
     | clause SEMICOLON exprs    { $1, (LinearExpr $3) }
 ;
 
 clause:
-    | exprs                         { (SP.empty, Some $1) }
-    | PRED                          { (SP.add $1 SP.empty, None) }
+    | exprs                         { (M.empty, Some $1) }
+    | pred                          { (pVarAdd $1 M.empty, None) }
     | clause AND exprs %prec CAND   { let (a, b) = $1 in a, Some(
                                       match b with
                                       | Some e -> e &&& $3
                                       | None -> $3) }
-    | clause AND PRED               { let (a, b) = $1 in SP.add $3 a, b  }
+    | clause AND pred               { let (a, b) = $1 in pVarAdd $3 a, b  }
+;
+
+pred:
+    | PRED                          { ($1, []) }
+    | PRED LPAREN RPAREN            { ($1, []) }
+    | PRED LPAREN predParam RPAREN  { ($1, $3) }
+;
+
+predParam:
+    | VAR                   { [$1] }
+    | VAR COMMA predParam   { $1::$3 }
 ;
 
 exprs:

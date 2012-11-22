@@ -10,6 +10,7 @@ module MyString = struct
 end
 
 module M = Map.Make(MyString)
+module S = Set.Make(MyString)
 
 let findDefault k d m =
     if M.mem k m then M.find k m else d
@@ -52,15 +53,7 @@ let (--) x y = coefOp (-) y x (* Note that the operands need to be reversed. *)
 let (~--) = M.map (fun v -> -v)
 
 type expr = operator * coef
-type pvar = string
-
-module MyPVar = struct
-  type t = pvar
-  let compare = compare
-end
-
-module MP = Map.Make(MyPVar)
-module SP = Set.Make(MyPVar)
+type pvar = string * string list
 
 let printExpr ?(vars = None) (op, coef) =
     let z3, vars = match vars with
@@ -80,6 +73,32 @@ let printExpr ?(vars = None) (op, coef) =
     add_string buf (string_of_operator op);
     add_string buf (if M.mem "" coef then string_of_int (-(M.find "" coef)) else "0");
     contents buf
+
+(** Flips greater-than operators (>, >=) to less-than operators (<, <=) and
+    replaces strict inequality (<, >) with not strict ones (<=, >=) by adding 1
+    on constant term. Any variables with 0-weight are eliminated. Returns the
+    operator and the coefficient mapping. *)
+let normalizeExpr (op, coef) =
+    let op, coef =
+        match op with
+        | LT -> LTE, (addDefault "" 1 0 (+) coef)
+        | GT -> LTE, (addDefault "" 1 0 (+) (~-- coef))
+        | GTE -> LTE, (~-- coef)
+        | _ -> op, coef in
+    op, (M.filter (fun _ v -> v <> 0) coef)
+
+let negateExpr (op, coef) = (negateOp op, coef)
+
+let rec renameInternal m k =
+  if not (M.mem k !m) then
+    m := M.add k ("$" ^ string_of_int (new_id ())) !m;
+  M.find k !m
+and renameExpr m (op, coef) =
+  (op, M.fold (fun k -> M.add (renameInternal m k)) coef M.empty)
+and renameList m = List.map (renameInternal m)
+
+let printPvar (name, params) =
+    name ^ "(" ^ String.concat "," params ^ ")"
 
 type 'a formula =
     | Expr of 'a
@@ -110,29 +129,12 @@ let combineFormulae opAnd x y =
 let (&&&) : expr formula -> expr formula -> expr formula = combineFormulae true
 let (|||) : expr formula -> expr formula -> expr formula = combineFormulae false
 
-(** Flips greater-than operators (>, >=) to less-than operators (<, <=) and
-    replaces strict inequality (<, >) with not strict ones (<=, >=) by adding 1
-    on constant term. Any variables with 0-weight are eliminated. Returns the
-    operator and the coefficient mapping. *)
-let normalizeExpr (op, coef) =
-    let op, coef =
-        match op with
-        | LT -> LTE, (addDefault "" 1 0 (+) coef)
-        | GT -> LTE, (addDefault "" 1 0 (+) (~-- coef))
-        | GTE -> LTE, (~-- coef)
-        | _ -> op, coef in
-    op, (M.filter (fun _ v -> v <> 0) coef)
+let rec mapFormula f = function
+    | And x -> And (List.map (mapFormula f) x)
+    | Or x -> Or (List.map (mapFormula f) x)
+    | Expr e -> Expr (f e)
 
-let rec normalizeFormula = function
-    | And x -> And (List.map normalizeFormula x)
-    | Or x -> Or (List.map normalizeFormula x)
-    | Expr e -> Expr (normalizeExpr e)
-
-let rec negateFormula = function
-    | And x -> Or (List.map negateFormula x)
-    | Or x -> And (List.map negateFormula x)
-    | Expr (op, coef) -> Expr (negateOp op, coef)
-let (!!!) = negateFormula
+let (!!!) : expr formula -> expr formula = mapFormula negateExpr
 
 let rec countFormula = function
     | And x
@@ -142,13 +144,13 @@ let rec countFormula = function
 type hornTerm =
     | LinearExpr of expr formula
     | PredVar of pvar
-type leftHand = SP.t * expr formula option
+type leftHand = string list M.t * expr formula option
 type rightHand = hornTerm
 type horn = leftHand * rightHand
 
 let printHornTerm = function
     | LinearExpr e -> printFormula printExpr e
-    | PredVar p -> p
+    | PredVar p -> printPvar p
 
 (** Normal form of element *)
 type 'a nf = 'a list list

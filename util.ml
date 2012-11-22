@@ -32,6 +32,13 @@ let arrayFold2 f x a =
     let i = ref (-1) in
     Array.fold_left (fun x -> f x (a.(incr i; !i))) x
 
+let zip a =
+    let a = ref a in
+    List.map (fun y ->
+        match !a with
+        | x::rest -> a := rest; (x,y)
+        | _ -> assert false)
+
 let rec skip n x =
     assert (n >= 0);
     if n = 0 then x
