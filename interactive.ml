@@ -5,19 +5,11 @@ open Yint.Main
 
 let main _ =
   let input = inputUnit token (Lexing.from_channel stdin) in
-  let predAssignments = solve input in
+  let solSp = solve input in
+  let predAssignments = getSolution solSp in
 
   print_newline ();
-  M.iter (fun k v ->
-    print_endline ("***** " ^ k ^ " *****");
-    (match v with
-    | Some space -> (
-        match getInterpolant space with
-        | Some t ->
-            print_string "Solution:\n\t";
-            print_endline (printFormula printExpr t)
-        | None -> print_endline "No solution (no interpolant)")
-    | None -> print_endline "No solution (no space)");
-  print_newline ()) predAssignments
+  M.iter (fun k x ->
+    print_endline (k ^ ": " ^ (printFormula printExpr x))) predAssignments
 
 let _ = main ()

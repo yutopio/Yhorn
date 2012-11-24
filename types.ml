@@ -47,9 +47,9 @@ let string_of_operator = function
 
 type coef = int M.t
 
-let coefOp op = M.fold (fun k v -> addDefault k v 0 op)
-let (++) = coefOp (+)
-let (--) x y = coefOp (-) y x (* Note that the operands need to be reversed. *)
+let coefOp op d = M.fold (fun k v -> addDefault k v d op)
+let (++) = coefOp (+) 0
+let (--) x y = coefOp (-) 0 y x (* Note that the operands need to be reversed. *)
 let (~--) = M.map (fun v -> -v)
 
 type expr = operator * coef
@@ -144,9 +144,7 @@ let rec countFormula = function
 type hornTerm =
     | LinearExpr of expr formula
     | PredVar of pvar
-type leftHand = string list M.t * expr formula option
-type rightHand = hornTerm
-type horn = leftHand * rightHand
+type horn = hornTerm list * hornTerm
 
 let printHornTerm = function
     | LinearExpr e -> printFormula printExpr e
@@ -171,6 +169,14 @@ let convertToNF cnf formulae =
 
 (** Solution space of interpolation *)
 type pexpr = operator M.t * coef M.t
+let (+++) (o1, c1) (o2, c2) = ((M.merge (fun _ a b ->
+  match a, b with
+    | Some x, _
+    | _, Some x -> Some x)) o1 o2), (coefOp (M.merge (fun _ a b ->
+  match a, b with
+    | Some x, _
+    | _, Some x -> Some x)) M.empty c1 c2)
+
 type constr = expr formula
 type space = pexpr * constr
 

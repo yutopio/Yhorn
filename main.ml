@@ -126,8 +126,8 @@ let rec mergeSpace opAnd sp1 sp2 =
         (* Coefficients of both interpolants must be the same *)
         let (c3, c4) = List.fold_left (fun (r1, r2) k ->
             let [v1;v2] = List.map (findDefault k M.empty) [coef1;coef2] in
-            (let v = coefOp (+) v1 v2 in Expr(EQ, v) :: r1),
-            (let v = coefOp (-) v1 v2 in Expr(EQ, v) :: r2)) ([], []) vars in
+            (Expr(EQ, v1 ++ v2) :: r1),
+            (Expr(EQ, v1 -- v2) :: r2)) ([], []) vars in
 
         (* DEBUG: rev is for ease of inspection *)
         let c3, c4 = (List.rev c3), (List.rev c4) in
@@ -436,32 +436,42 @@ let buildTrees clauses =
       Tree(p, [ Leaf (LinearExpr top) ])
     | _ -> t)) trees
 
-let solveTree tree =
-  (* Preprocess tree to add a placeholder for linear expressions propagation. *)
-  let tree = dfs ~trans:(fun x -> bot, x) tree in
+module MyInt = struct
+  type t = int
+  let compare = compare
+end
 
-  let root = ref true in
+module MI = Map.Make(MyInt)
+
+let solveTree tree =
+  let laMap = ref MI.empty in
+  let laId = ref 0 in
+
+  (* Preprocess tree to add a placeholder for linear expressions propagation. *)
+  let tree = dfs ~trans:(fun x -> [],
+    match x with
+      | LinearExpr e -> let id = incr laId; !laId in
+                        `L (laMap := MI.add id e !laMap; id)
+      | PredVar p -> `P p) tree in
+
+  let laMergeGroups = ref [] in
   let m = ref M.empty in
   ignore(dfs
     ~pre:(function
       | Tree((exprs, x), children) ->
-        (* Gather leaves from the children level. *)
-        let leaves = List.fold_left (fun l x ->
-          match x with
-          | Leaf(_, LinearExpr e) -> e :: l
-          | _ -> l) [] children in
-
-        (* DEBUG: Should be at most one leave... *)
-        assert (List.length leaves <= 1);
+        (* Pick a leaf (if any) from the children. *)
+        let leaf = tryPick (function
+          | Leaf(_, `L x) -> Some x
+          | _ -> None) children in
 
         (* By combining leaves from above and the root, build an expression
-           for the second group of interpolation input. *)
-        let childExprs = reduce (&&&) ((
-          match x, !root with
-          | (LinearExpr e), true -> root := false; [e]
-          | (LinearExpr e), _ -> [e; exprs]
-          | _, false -> [exprs]
-          | _ -> assert false) @ leaves) in
+           ID list for the second group of interpolation input. *)
+        let childExprs = match leaf with
+          | Some x -> x :: exprs
+          | None -> exprs in
+        let childExprs = match x with
+          | (`L x) -> x :: childExprs
+          | _ -> childExprs in
 
         (* Propagate leave information to decendants. *)
         let newChildren = List.map (fun x ->
@@ -472,26 +482,72 @@ let solveTree tree =
 
         (* Renew current node. *)
         Tree((exprs, x), newChildren)
-      | Leaf (_, LinearExpr e) -> Leaf (bot, LinearExpr e) (* Don't care *)
+      | Leaf (_, `L x) -> Leaf ([], `L x) (* Don't care *)
       | _ -> assert false (* No predicate variables comes at leaves. *))
 
     ~post:(function
       | Tree((b, x), children) ->
-        let a = reduce (&&&) (List.map (fun (Leaf(x, _)) -> x) children) in
+        let (a, (merge, leaf)) = List.fold_left (
+          fun (a, (merge, leaf)) (Leaf(x, y)) -> (x @ a),
+            match y with
+              | `L x -> merge, (
+                match leaf with
+                  | None -> Some x
+                  | Some _ -> assert false (* Should only appear once *))
+              | `LP x -> (x :: merge), leaf
+              | `P _ -> merge, leaf) ([], ([], None)) children in
+        let merge = match leaf with
+          | Some x -> x :: merge
+          | None -> merge in
+        if List.length merge > 1 then
+          laMergeGroups := merge :: !laMergeGroups;
+
         (match x with
-          | PredVar (p, params) -> m := M.add p (params, a, b) !m
-          | LinearExpr e -> ());
-        Leaf (a, LinearExpr bot)
-      | Leaf (_, LinearExpr e) -> Leaf(e, LinearExpr bot)
+          | `P ((p, params) as pp) ->
+            m := M.add p (params, a, b) !m;
+            Leaf(a, `P pp)
+          | `L x -> Leaf(x :: a, `LP x)
+          | `LP _ -> assert false)
+      | Leaf (_, `L x) -> Leaf([x], `L x)
       | _ -> assert false (* Ditto *)) tree);
 
-  (* Perform interpolation to give predicates to all variables. *)
-  M.map (fun (params, a, b) -> (
-    (* TODO: Application for the predicate variable should be treated right. *)
-    interpolate [a;b])) !m
+  let laMap = List.fold_right (fun (x::rest) ->
+    m := M.map (fun (params, a, b) ->
+      let [(_,a);(_,b)] = List.map (List.fold_left (fun (_x, l) y ->
+        match _x, (List.mem y rest) with
+          | _, false -> (_x, y::l)
+          | true, _ -> (_x, l)
+          | false, _ -> (true, x::l)) (false, [])) [a;b] in
+      (params, a, b)) !m;
 
-(* TODO: Type change required; pexprs should be pexpr formula M.t *)
-let getSolution ((pexprs:pexpr M.t), constr) =
+    List.fold_right (fun y laMap ->
+      let _y = MI.find y laMap in
+      let laMap = MI.remove y laMap in
+
+(* DEBUG: Copied from types.ml...
+   TODO: Should consider extending Map module *)
+let findDefault k d m = if MI.mem k m then MI.find k m else d in
+let addDefault k v d (+) m = MI.add k ((+) (findDefault k d m) v) m in
+(*************************************************)
+
+      addDefault x _y top (&&&) laMap) rest) !laMergeGroups !laMap in
+
+  let laMap = MI.map (convertToNF false) laMap in
+  let (laIds, laDnfs) = List.split (MI.bindings laMap) in
+  reduce (fun _ _ -> assert false
+    (* mergeSpace (* TODO: NYI. Should consider opAnd *) *)) (
+    List.map (fun assigns ->
+      let spaces = List.map (fun x ->
+        getSpace (List.map (fun y -> (true, y)) x)) assigns in
+      let pexprs, constrs = List.split spaces in
+      let pexprMap = zip laIds pexprs in
+
+      (M.map (fun (_, a, _) -> Expr (
+        reduce (+++) (List.map (fun x -> List.assoc x pexprMap) a))) !m),
+      (reduce (&&&) constrs)
+  ) (directProduct laDnfs))
+
+let getSolution (pexprs, constr) =
   match Z3interface.integer_programming constr with
     | Some sol ->
       (* DEBUG: Dump Z3 solution.
@@ -499,18 +555,28 @@ let getSolution ((pexprs:pexpr M.t), constr) =
          M.fold (fun k v l -> (k ^ "=" ^ (string_of_int v)) :: l) sol [])) ^ "]"); *)
 
       (* Construct one interpolant *)
-      M.map (assignParameters sol) pexprs
-    | None -> assert false
+      M.map (mapFormula (assignParameters sol)) pexprs
+    | None -> raise Not_found
+
+let preprocLefthand =
+  List.fold_left (fun (pvars, la) -> function
+    | LinearExpr x -> pvars, Some (match la with
+        | None -> x
+        | Some y -> x &&& y)
+    | PredVar (p, params) -> (M.add p params pvars), la) (M.empty, None)
 
 let solve clauses =
+  let clauses = List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses in
   let trees = buildTrees clauses in
-  List.fold_left (fun m t ->
-    (* DEBUG: dump trees *)
-    print_endline (printTree printHornTerm t);
 
-    M.merge (fun _ a b ->
-    match a, b with
-    | None, None
-    | Some _, Some _ -> assert false
-    | x, None
-    | None, x -> x) m (solveTree t)) M.empty trees
+  (* DEBUG: dump trees
+  List.iter (fun t -> print_endline (printTree printHornTerm t)) trees; *)
+
+  reduce (fun (m1, c1) (m2, c2) ->
+    (M.merge (fun _ a b ->
+      match a, b with
+        | None, None
+        | Some _, Some _ -> assert false
+        | x, None
+        | None, x -> x) m1 m2),
+    c1 &&& c2) (List.map solveTree trees)

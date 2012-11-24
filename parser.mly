@@ -1,8 +1,6 @@
 %{
 open Error
 open Types
-
-let pVarAdd (x, y) = M.add x y
 %}
 
 %token <string> VAR
@@ -37,13 +35,13 @@ hornClause:
 ;
 
 clause:
-    | exprs                         { (M.empty, Some $1) }
-    | pred                          { (pVarAdd $1 M.empty, None) }
-    | clause AND exprs %prec CAND   { let (a, b) = $1 in a, Some(
-                                      match b with
-                                      | Some e -> e &&& $3
-                                      | None -> $3) }
-    | clause AND pred               { let (a, b) = $1 in pVarAdd $3 a, b  }
+    | hornTerm                          { [$1] }
+    | hornTerm AND clause %prec CAND    { $1::$3 }
+;
+
+hornTerm:
+    | exprs                 { LinearExpr $1 }
+    | pred                  { PredVar $1 }
 ;
 
 pred:
