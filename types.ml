@@ -94,7 +94,7 @@ let rec renameInternal m k =
     m := M.add k ("$" ^ string_of_int (new_id ())) !m;
   M.find k !m
 and renameExpr m (op, coef) =
-  (op, M.fold (fun k -> M.add (renameInternal m k)) coef M.empty)
+  (op, M.fold (fun k -> M.add (if k = "" then "" else renameInternal m k)) coef M.empty)
 and renameList m = List.map (renameInternal m)
 
 let printPvar (name, params) =

@@ -41,7 +41,11 @@ let getSpace exprs =
        the operator of each expression. *)
     let m, constrs, (a, b), op =
         List.fold_left (fun (m, constrs, (a, b), ipOp) (c, (op, coef)) ->
-            let pi = "p" ^ (string_of_int (new_id ())) in
+            let id = string_of_int (new_id ()) in
+            let pi = "p" ^ id in
+
+            (* DEBUG: *)
+            print_endline (id ^ "\t" ^ (printExpr (op, coef)));
 
             (* Building an coefficient mapping in terms of variables *)
             (M.fold (fun k v -> addDefault
@@ -455,7 +459,7 @@ let solveTree tree =
       | PredVar p -> `P p) tree in
 
   let laMergeGroups = ref [] in
-  let m = ref M.empty in
+  let predMap = ref M.empty in
   ignore(dfs
     ~pre:(function
       | Tree((exprs, x), children) ->
@@ -504,7 +508,7 @@ let solveTree tree =
 
         (match x with
           | `P ((p, params) as pp) ->
-            m := M.add p (params, a, b) !m;
+            predMap := M.add p (params, a, b) !predMap;
             Leaf(a, `P pp)
           | `L x -> Leaf(x :: a, `LP x)
           | `LP _ -> assert false)
@@ -512,13 +516,13 @@ let solveTree tree =
       | _ -> assert false (* Ditto *)) tree);
 
   let laMap = List.fold_right (fun (x::rest) ->
-    m := M.map (fun (params, a, b) ->
+    predMap := M.map (fun (params, a, b) ->
       let [(_,a);(_,b)] = List.map (List.fold_left (fun (_x, l) y ->
         match _x, (List.mem y rest) with
           | _, false -> (_x, y::l)
           | true, _ -> (_x, l)
           | false, _ -> (true, x::l)) (false, [])) [a;b] in
-      (params, a, b)) !m;
+      (params, a, b)) !predMap;
 
     List.fold_right (fun y laMap ->
       let _y = MI.find y laMap in
@@ -537,14 +541,44 @@ let addDefault k v d (+) m = MI.add k ((+) (findDefault k d m) v) m in
   reduce (fun _ _ -> assert false
     (* mergeSpace (* TODO: NYI. Should consider opAnd *) *)) (
     List.map (fun assigns ->
-      let spaces = List.map (fun x ->
-        getSpace (List.map (fun y -> (true, y)) x)) assigns in
-      let pexprs, constrs = List.split spaces in
-      let pexprMap = zip laIds pexprs in
+      (* Give IDs and flatten. *)
+      let exprs = listFold2 (fun t x y ->
+        (List.map (fun z -> (x, z)) y) @ t) [] laIds assigns in
+
+      (* Build the coefficient mapping for the first, and at the same time, check
+         the operator of each expression. *)
+      let coefMap, constrs, op, piMap =
+        List.fold_left (fun (coefMap, constrs, ops, piMap) (id, (op, coef)) ->
+          let strId = string_of_int (new_id ()) in
+          let pi = "p" ^ strId in
+
+          (* DEBUG: *)
+          print_endline (strId ^ "\t" ^ (printExpr (op, coef)));
+
+          (* Building an coefficient mapping in terms of variables *)
+          (M.fold (fun k v -> addDefault
+            k (pi, v) M.empty (fun m (k, v) -> M.add k v m)) coef coefMap),
+
+          (* If the expression is an inequality, its weight should be
+             positive *)
+          (match op with
+            | EQ -> constrs
+            | LTE -> Expr(GTE, M.add pi 1 M.empty) :: constrs
+            | _ -> assert false),
+
+          (* The flag to note that the interpolant should be LTE or EQ *)
+          (M.add pi op ops),
+
+          (* Correspondance between expression ID and groupID *)
+          (M.add pi id piMap)
+        ) (M.empty, [], M.empty, M.empty) exprs in
 
       (M.map (fun (_, a, _) -> Expr (
-        reduce (+++) (List.map (fun x -> List.assoc x pexprMap) a))) !m),
-      (reduce (&&&) constrs)
+        (op, M.map (M.filter (fun k _ -> List.mem (M.find k piMap) a)) coefMap))
+       ) !predMap),
+      And(List.rev (  (* DEBUG: rev *)
+        M.fold (fun k v -> (@) [ Expr((if k = "" then
+            (if constrs = [] then NEQ else GT) else EQ), v) ]) coefMap constrs))
   ) (directProduct laDnfs))
 
 let getSolution (pexprs, constr) =
