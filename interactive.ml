@@ -9,7 +9,8 @@ let main _ =
   let predAssignments = getSolution solSp in
 
   print_newline ();
-  M.iter (fun k x ->
-    print_endline (k ^ ": " ^ (printFormula printExpr x))) predAssignments
+  M.iter (fun k (params, x) ->
+    print_endline (k ^ "(" ^ (String.concat "," params) ^ ") : "
+                   ^ (printFormula printExpr x))) predAssignments
 
 let _ = main ()

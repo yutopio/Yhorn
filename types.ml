@@ -180,5 +180,5 @@ let (+++) (o1, c1) (o2, c2) = ((M.merge (fun _ a b ->
 type constr = expr formula
 type space = pexpr * constr
 
-type hornSolSpace = pexpr formula M.t * constr
-type hornSol = expr formula M.t
+type hornSolSpace = (string list * pexpr formula) M.t * constr
+type hornSol = (string list * expr formula) M.t

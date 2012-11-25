@@ -573,9 +573,13 @@ let addDefault k v d (+) m = MI.add k ((+) (findDefault k d m) v) m in
           (M.add pi id piMap)
         ) (M.empty, [], M.empty, M.empty) exprs in
 
-      (M.map (fun (_, a, _) -> Expr (
-        (op, M.map (M.filter (fun k _ -> List.mem (M.find k piMap) a)) coefMap))
-       ) !predMap),
+      (M.map (fun (params, a, _) ->
+	let renameMap = ref (let (_, m) = List.fold_left (fun (i, m) x -> (i + 1),
+          M.add x (String.make 1 (Char.chr (97 + i))) m) (0, M.empty) params in m) in
+        renameList renameMap params,
+	Expr (renameExpr renameMap (op, M.map (
+	  M.filter (fun k _ -> List.mem (M.find k piMap) a)) coefMap))
+      ) !predMap),
       And(List.rev (  (* DEBUG: rev *)
         M.fold (fun k v -> (@) [ Expr((if k = "" then
             (if constrs = [] then NEQ else GT) else EQ), v) ]) coefMap constrs))
@@ -589,7 +593,7 @@ let getSolution (pexprs, constr) =
          M.fold (fun k v l -> (k ^ "=" ^ (string_of_int v)) :: l) sol [])) ^ "]"); *)
 
       (* Construct one interpolant *)
-      M.map (mapFormula (assignParameters sol)) pexprs
+      M.map (fun (params, x) -> params, (mapFormula (assignParameters sol) x)) pexprs
     | None -> raise Not_found
 
 let preprocLefthand =
