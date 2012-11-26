@@ -125,7 +125,10 @@ let rec mapFormula f = function
     | Or x -> Or (List.map (mapFormula f) x)
     | Expr e -> Expr (f e)
 
-let (!!!) : expr formula -> expr formula = mapFormula negateExpr
+let rec (!!!) = function
+    | And x -> Or (List.map (!!!) x)
+    | Or x -> And (List.map (!!!) x)
+    | Expr e -> Expr (negateExpr e)
 
 let rec countFormula = function
     | And x
