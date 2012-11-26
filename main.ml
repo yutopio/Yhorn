@@ -388,9 +388,10 @@ let buildTrees clauses =
           fun (fpvs, _) -> S.mem p fpvs) (rest @ x) in
         match replace with
         | [] ->
-          (* If a predicate variable comes at the root, insert contradictory
-             linear expression on top for ease of calculation. *)
-          let current = (fpvs, Tree(LinearExpr bot, [t])) in
+          (* If a predicate variable comes at the root, insert a tautological
+             linear expression on top for ease of calculation. It will be later
+	     refuted to make a contradiction for interpolation. *)
+          let current = (fpvs, Tree(LinearExpr (Expr (NEQ, M.add "" 1 M.empty)), [t])) in
           graft (x @ [current]) rest
 
         | [(rep_fpvs, rep_t)] ->
@@ -452,11 +453,18 @@ let solveTree tree =
   let laId = ref 0 in
 
   (* Preprocess tree to add a placeholder for linear expressions propagation. *)
-  let tree = dfs ~trans:(fun x -> [],
-    match x with
-      | LinearExpr e -> let id = incr laId; !laId in
-                        `L (laMap := MI.add id e !laMap; id)
-      | PredVar p -> `P p) tree in
+  let rootId = ref (-1) in
+  let tree = dfs
+    ~trans:(fun x -> [],
+      match x with
+        | LinearExpr e -> let id = incr laId; !laId in
+                          `L (laMap := MI.add id e !laMap; id)
+        | PredVar p -> `P p)
+
+    ~post:(fun x ->
+      match x with
+        | Tree ((_, `L id), _) -> rootId := id; x
+        | _ -> x) tree in
 
   let laMergeGroups = ref [] in
   let predMap = ref M.empty in
@@ -516,6 +524,9 @@ let solveTree tree =
       | _ -> assert false (* Ditto *)) tree);
 
   let laMap = List.fold_right (fun (x::rest) ->
+    (* Changing the root linear expression group ID, if merge occurs. *)
+    if List.mem !rootId rest then rootId := x;
+
     predMap := M.map (fun (params, a, b) ->
       let [(_,a);(_,b)] = List.map (List.fold_left (fun (_x, l) y ->
         match _x, (List.mem y rest) with
@@ -529,8 +540,10 @@ let solveTree tree =
       let laMap = MI.remove y laMap in
       MI.addDefault x _y top (&&&) laMap) rest) !laMergeGroups !laMap in
 
-  let laMap = MI.map ((mapFormula normalizeExpr) |-
-      (convertToNF false)) laMap in
+  (* Before start processing, root expression should be negated to make a contradiction. *)
+  let laMap = laMap |>
+      (MI.add !rootId (!!! (MI.find !rootId laMap))) |>
+      (MI.map ((mapFormula normalizeExpr) |- (convertToNF false))) in
   let (laIds, laDnfs) = List.split (MI.bindings laMap) in
   reduce (fun _ _ -> assert false
     (* mergeSpace (* TODO: NYI. Should consider opAnd *) *)) (
