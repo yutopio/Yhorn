@@ -1,5 +1,20 @@
 let id x = x
 
+(* DEBUG: Copied from util.ml in VHorn ****************************************)
+
+(** compose operator *)
+let (-|) f g x = f (g x)
+let (-||) f g x y = f (g x y)
+
+(** reverse compose operator *)
+let (|-) f g x = g (f x)
+let (||-) f g x y = g (f x y)
+
+(** pipeline operator *)
+let (|>) x f = f x
+
+(******************************************************************************)
+
 (** Apply a function to each element in the list and pick the first result that
     is not None. *)
 let tryPick f = List.fold_left (fun ret x -> if ret = None then f x else ret) None

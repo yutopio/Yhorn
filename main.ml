@@ -529,7 +529,8 @@ let solveTree tree =
       let laMap = MI.remove y laMap in
       MI.addDefault x _y top (&&&) laMap) rest) !laMergeGroups !laMap in
 
-  let laMap = MI.map (convertToNF false) laMap in
+  let laMap = MI.map ((mapFormula normalizeExpr) |-
+      (convertToNF false)) laMap in
   let (laIds, laDnfs) = List.split (MI.bindings laMap) in
   reduce (fun _ _ -> assert false
     (* mergeSpace (* TODO: NYI. Should consider opAnd *) *)) (
