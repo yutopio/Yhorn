@@ -30,22 +30,12 @@ let directProduct input =
         | x :: rest -> List.iter (fun x -> inner (current @ [x]) rest) x in
     inner [] input; !ret
 
-(*
 let fold2 fold_left indexer f x a =
     let i = ref (-1) in
     fold_left (fun x -> f x (indexer a (incr i; !i))) x
 
-let arrayFold2 = fold2 Array.fold_left (fun a x -> a.(x))
-let listFold2 = fold2 List.fold_left List.nth
-*)
-
-let arrayFold2 f x a =
-    let i = ref (-1) in
-    Array.fold_left (fun x -> f x (a.(incr i; !i))) x
-
-let listFold2 f x a =
-    let i = ref (-1) in
-    List.fold_left (fun x -> f x (List.nth a (incr i; !i))) x
+let arrayFold2 a = fold2 Array.fold_left (fun a x -> a.(x)) a
+let listFold2 a = fold2 List.fold_left List.nth a
 
 let zip a =
     let a = ref a in
