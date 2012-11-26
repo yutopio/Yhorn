@@ -38,9 +38,6 @@ let rec convert = function
   | Or x -> mk_or ctx (Array.of_list (List.map convert x))
 
 let integer_programming constrs =
-  (* DEBUG: Print constraint
-  print_endline ("Z3 problem: " ^ (printFormula printExpr constrs)); *)
-
   let ast = convert constrs in
   let s = mk_solver ctx in
   solver_assert ctx s ast;

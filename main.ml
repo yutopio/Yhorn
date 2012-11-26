@@ -390,7 +390,7 @@ let buildTrees clauses =
         | [] ->
           (* If a predicate variable comes at the root, insert a tautological
              linear expression on top for ease of calculation. It will be later
-	     refuted to make a contradiction for interpolation. *)
+             refuted to make a contradiction for interpolation. *)
           let current = (fpvs, Tree(LinearExpr (Expr (NEQ, M.add "" 1 M.empty)), [t])) in
           graft (x @ [current]) rest
 
@@ -451,54 +451,18 @@ module MI = MapEx.Make(MyInt)
 let solveTree tree =
   let laMap = ref MI.empty in
   let laId = ref 0 in
-
-  (* Preprocess tree to add a placeholder for linear expressions propagation. *)
   let rootId = ref (-1) in
-  let tree = dfs
+  let laMergeGroups = ref [] in
+  let predMap = ref M.empty in
+  ignore(dfs
     ~trans:(fun x -> [],
       match x with
         | LinearExpr e -> let id = incr laId; !laId in
                           `L (laMap := MI.add id e !laMap; id)
         | PredVar p -> `P p)
 
-    ~post:(fun x ->
-      match x with
-        | Tree ((_, `L id), _) -> rootId := id; x
-        | _ -> x) tree in
-
-  let laMergeGroups = ref [] in
-  let predMap = ref M.empty in
-  ignore(dfs
-    ~pre:(function
-      | Tree((exprs, x), children) ->
-        (* Pick a leaf (if any) from the children. *)
-        let leaf = tryPick (function
-          | Leaf(_, `L x) -> Some x
-          | _ -> None) children in
-
-        (* By combining leaves from above and the root, build an expression
-           ID list for the second group of interpolation input. *)
-        let childExprs = match leaf with
-          | Some x -> x :: exprs
-          | None -> exprs in
-        let childExprs = match x with
-          | (`L x) -> x :: childExprs
-          | _ -> childExprs in
-
-        (* Propagate leave information to decendants. *)
-        let newChildren = List.map (fun x ->
-          match x with
-          | Tree((_, x), children) ->
-            Tree((childExprs, x), children)
-          | _ -> x) children in
-
-        (* Renew current node. *)
-        Tree((exprs, x), newChildren)
-      | Leaf (_, `L x) -> Leaf ([], `L x) (* Don't care *)
-      | _ -> assert false (* No predicate variables comes at leaves. *))
-
     ~post:(function
-      | Tree((b, x), children) ->
+      | Tree((_, x), children) ->
         let (a, (merge, leaf)) = List.fold_left (
           fun (a, (merge, leaf)) (Leaf(x, y)) -> (x @ a),
             match y with
@@ -516,9 +480,9 @@ let solveTree tree =
 
         (match x with
           | `P ((p, params) as pp) ->
-            predMap := M.add p (params, a, b) !predMap;
+            predMap := M.add p (params, a) !predMap;
             Leaf(a, `P pp)
-          | `L x -> Leaf(x :: a, `LP x)
+          | `L x -> rootId := x; Leaf(x :: a, `LP x)
           | `LP _ -> assert false)
       | Leaf (_, `L x) -> Leaf([x], `L x)
       | _ -> assert false (* Ditto *)) tree);
@@ -527,13 +491,13 @@ let solveTree tree =
     (* Changing the root linear expression group ID, if merge occurs. *)
     if List.mem !rootId rest then rootId := x;
 
-    predMap := M.map (fun (params, a, b) ->
-      let [(_,a);(_,b)] = List.map (List.fold_left (fun (_x, l) y ->
+    predMap := M.map (fun (params, a) ->
+      let (_, a) = List.fold_left (fun (_x, l) y ->
         match _x, (List.mem y rest) with
           | _, false -> (_x, y::l)
           | true, _ -> (_x, l)
-          | false, _ -> (true, x::l)) (false, [])) [a;b] in
-      (params, a, b)) !predMap;
+          | false, _ -> (true, x::l)) (false, []) a in
+      (params, a)) !predMap;
 
     List.fold_right (fun y laMap ->
       let _y = MI.find y laMap in
@@ -580,12 +544,12 @@ let solveTree tree =
           (M.add pi id piMap)
         ) (M.empty, [], M.empty, M.empty) exprs in
 
-      (M.map (fun (params, a, _) ->
-	let renameMap = ref (let (_, m) = List.fold_left (fun (i, m) x -> (i + 1),
+      (M.map (fun (params, a) ->
+        let renameMap = ref (let (_, m) = List.fold_left (fun (i, m) x -> (i + 1),
           M.add x (String.make 1 (Char.chr (97 + i))) m) (0, M.empty) params in m) in
         renameList renameMap params,
-	Expr (renameExpr renameMap (op, M.map (
-	  M.filter (fun k _ -> List.mem (M.find k piMap) a)) coefMap))
+        Expr (renameExpr renameMap (op, M.map (
+          M.filter (fun k _ -> List.mem (M.find k piMap) a)) coefMap))
       ) !predMap),
       And(List.rev (  (* DEBUG: rev *)
         M.fold (fun k v -> (@) [ Expr((if k = "" then
@@ -593,6 +557,9 @@ let solveTree tree =
   ) (directProduct laDnfs))
 
 let getSolution (pexprs, constr) =
+  (* DEBUG: Dump Z3 problem.
+  print_endline ("Z3 problem: " ^ (printFormula printExpr constr)); *)
+
   match Z3interface.integer_programming constr with
     | Some sol ->
       (* DEBUG: Dump Z3 solution.
