@@ -48,7 +48,7 @@ let getSpace exprs =
             print_endline (id ^ "\t" ^ (printExpr (op, coef)));
 
             (* Building an coefficient mapping in terms of variables *)
-            (M.fold (fun k v -> addDefault
+            (M.fold (fun k v -> M.addDefault
                 k (pi, v) M.empty (fun m (k, v) -> M.add k v m)) coef m),
 
             (* If the expression is an inequality, its weight should be
@@ -79,10 +79,10 @@ let getSpace exprs =
             (if constrs = [] then NEQ else GT) else EQ), v) ]) m constrs))
 
 let assignParameters assign (op, expr) =
-  (M.fold (fun k v o -> if v <> 0 && findDefault k EQ op = LTE then
+  (M.fold (fun k v o -> if v <> 0 && M.findDefault k EQ op = LTE then
       (assert (v > 0); LTE) else o) assign EQ),
   (M.map (fun v -> M.fold (fun k v -> (+) ((
-    findDefault k 1 assign) * v)) v 0) expr)
+    M.findDefault k 1 assign) * v)) v 0) expr)
 
 let rec getInterpolant sp =
     match sp with
@@ -129,7 +129,7 @@ let rec mergeSpace opAnd sp1 sp2 =
 
         (* Coefficients of both interpolants must be the same *)
         let (c3, c4) = List.fold_left (fun (r1, r2) k ->
-            let [v1;v2] = List.map (findDefault k M.empty) [coef1;coef2] in
+            let [v1;v2] = List.map (M.findDefault k M.empty) [coef1;coef2] in
             (Expr(EQ, v1 ++ v2) :: r1),
             (Expr(EQ, v1 -- v2) :: r2)) ([], []) vars in
 
@@ -210,8 +210,8 @@ let laSolve a b =
     let neqA, lneqA = proc NEQ a true in
     let eqB, leqB = proc EQ b false in
     let neqB, lneqB = proc NEQ b false in
-    let plus x = addDefault "" 1 0 (+) x in
-    let minus x = M.add "" (1 - (findDefault "" 0 x)) (~-- x) in
+    let plus x = M.addDefault "" 1 0 (+) x in
+    let minus x = M.add "" (1 - (M.findDefault "" 0 x)) (~-- x) in
 
     let tryGetInterpolant opAnd exprs = tryPick (fun (consider, (_, coef)) ->
         (* DEBUG: List.rev is for ease of inspection *)
@@ -445,7 +445,7 @@ module MyInt = struct
   let compare = compare
 end
 
-module MI = Map.Make(MyInt)
+module MI = MapEx.Make(MyInt)
 
 let solveTree tree =
   let laMap = ref MI.empty in
@@ -527,14 +527,7 @@ let solveTree tree =
     List.fold_right (fun y laMap ->
       let _y = MI.find y laMap in
       let laMap = MI.remove y laMap in
-
-(* DEBUG: Copied from types.ml...
-   TODO: Should consider extending Map module *)
-let findDefault k d m = if MI.mem k m then MI.find k m else d in
-let addDefault k v d (+) m = MI.add k ((+) (findDefault k d m) v) m in
-(*************************************************)
-
-      addDefault x _y top (&&&) laMap) rest) !laMergeGroups !laMap in
+      MI.addDefault x _y top (&&&) laMap) rest) !laMergeGroups !laMap in
 
   let laMap = MI.map (convertToNF false) laMap in
   let (laIds, laDnfs) = List.split (MI.bindings laMap) in
@@ -556,7 +549,7 @@ let addDefault k v d (+) m = MI.add k ((+) (findDefault k d m) v) m in
           print_endline (strId ^ "\t" ^ (printExpr (op, coef)));
 
           (* Building an coefficient mapping in terms of variables *)
-          (M.fold (fun k v -> addDefault
+          (M.fold (fun k v -> M.addDefault
             k (pi, v) M.empty (fun m (k, v) -> M.add k v m)) coef coefMap),
 
           (* If the expression is an inequality, its weight should be

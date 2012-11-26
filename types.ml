@@ -9,17 +9,8 @@ module MyString = struct
   let compare = compare
 end
 
-module M = Map.Make(MyString)
+module M = MapEx.Make(MyString)
 module S = Set.Make(MyString)
-
-let findDefault k d m =
-    if M.mem k m then M.find k m else d
-
-(** [addDefault k v d (+) m] adds value v to the existing record value with key
-    k in the given mapping m. Adding is done by (+) function given. If no record
-    with key k is present, it will be newly created with the default value d. *)
-let addDefault k v d (+) m =
-    M.add k ((+) (findDefault k d m) v) m
 
 type operator =
     | EQ
@@ -47,7 +38,7 @@ let string_of_operator = function
 
 type coef = int M.t
 
-let coefOp op d = M.fold (fun k v -> addDefault k v d op)
+let coefOp op d = M.fold (fun k v -> M.addDefault k v d op)
 let (++) = coefOp (+) 0
 let (--) x y = coefOp (-) 0 y x (* Note that the operands need to be reversed. *)
 let (~--) = M.map (fun v -> -v)
@@ -81,8 +72,8 @@ let printExpr ?(vars = None) (op, coef) =
 let normalizeExpr (op, coef) =
     let op, coef =
         match op with
-        | LT -> LTE, (addDefault "" 1 0 (+) coef)
-        | GT -> LTE, (addDefault "" 1 0 (+) (~-- coef))
+        | LT -> LTE, (M.addDefault "" 1 0 (+) coef)
+        | GT -> LTE, (M.addDefault "" 1 0 (+) (~-- coef))
         | GTE -> LTE, (~-- coef)
         | _ -> op, coef in
     op, (M.filter (fun _ v -> v <> 0) coef)
@@ -169,13 +160,9 @@ let convertToNF cnf formulae =
 
 (** Solution space of interpolation *)
 type pexpr = operator M.t * coef M.t
-let (+++) (o1, c1) (o2, c2) = ((M.merge (fun _ a b ->
-  match a, b with
-    | Some x, _
-    | _, Some x -> Some x)) o1 o2), (coefOp (M.merge (fun _ a b ->
-  match a, b with
-    | Some x, _
-    | _, Some x -> Some x)) M.empty c1 c2)
+let (+++) (o1, c1) (o2, c2) =
+  (M.simpleMerge o1 o2),
+  (coefOp M.simpleMerge M.empty c1 c2)
 
 type constr = expr formula
 type space = pexpr * constr
