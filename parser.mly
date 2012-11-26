@@ -10,10 +10,10 @@ open Types
 %token PLUS MINUS
 %token AND OR NOT
 %token LPAREN RPAREN
-%token SEMICOLON DBLSEMICOLON COMMA
+%token ARROW DOT COMMA
 %token EOF
 
-%nonassoc SEMICOLON
+%nonassoc ARROW
 %left CAND
 %left AND OR
 %right NOT
@@ -25,13 +25,13 @@ open Types
 %%
 
 inputUnit:
-    | hornClause EOF                    { [$1] }
-    | hornClause DBLSEMICOLON inputUnit { $1::$3 }
+    | EOF                   { [] }
+    | hornClause inputUnit  { $1::$2 }
 ;
 
 hornClause:
-    | clause SEMICOLON pred     { $1, (PredVar $3) }
-    | clause SEMICOLON exprs    { $1, (LinearExpr $3) }
+    | clause ARROW pred DOT     { $1, (PredVar $3) }
+    | clause ARROW exprs DOT    { $1, (LinearExpr $3) }
 ;
 
 clause:

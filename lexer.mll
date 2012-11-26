@@ -35,8 +35,8 @@ rule token = parse
     | '&'               { AND }
     | '|'               { OR }
     | '!'               { NOT }
-    | ";;"              { DBLSEMICOLON }
-    | ';'               { SEMICOLON }
+    | '.'               { DOT }
+    | "->"              { ARROW }
     | ','               { COMMA }
     | lowerIdent        { VAR(lexeme lexbuf) }
     | upperIdent        { PRED(lexeme lexbuf) }
