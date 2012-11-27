@@ -449,16 +449,16 @@ end
 module MI = MapEx.Make(MyInt)
 
 let solveTree tree =
-  let laMap = ref MI.empty in
-  let laId = ref 0 in
+  let laGroups = ref MI.empty in
+  let groupId = ref 0 in
   let rootId = ref (-1) in
   let laMergeGroups = ref [] in
   let predMap = ref M.empty in
   ignore(dfs
     ~trans:(fun x -> [],
       match x with
-        | LinearExpr e -> let id = incr laId; !laId in
-                          `L (laMap := MI.add id e !laMap; id)
+        | LinearExpr e -> let id = incr groupId; !groupId in
+                          `L (laGroups := MI.add id e !laGroups; id)
         | PredVar p -> `P p)
 
     ~post:(function
@@ -487,7 +487,7 @@ let solveTree tree =
       | Leaf (_, `L x) -> Leaf([x], `L x)
       | _ -> assert false (* Ditto *)) tree);
 
-  let laMap = List.fold_right (fun (x::rest) ->
+  let laGroups = List.fold_right (fun (x::rest) ->
     (* Changing the root linear expression group ID, if merge occurs. *)
     if List.mem !rootId rest then rootId := x;
 
@@ -499,16 +499,19 @@ let solveTree tree =
           | false, _ -> (true, x::l)) (false, []) a in
       (params, a)) !predMap;
 
-    List.fold_right (fun y laMap ->
-      let _y = MI.find y laMap in
-      let laMap = MI.remove y laMap in
-      MI.addDefault x _y top (&&&) laMap) rest) !laMergeGroups !laMap in
+    List.fold_right (fun y m ->
+      let _y = MI.find y m in
+      let m = MI.remove y m in
+      MI.addDefault x _y top (&&&) m) rest) !laMergeGroups !laGroups in
 
-  (* Before start processing, root expression should be negated to make a contradiction. *)
-  let laMap = laMap |>
-      (MI.add !rootId (!!! (MI.find !rootId laMap))) |>
-      (MI.map ((mapFormula normalizeExpr) |- (convertToNF false))) in
-  let (laIds, laDnfs) = List.split (MI.bindings laMap) in
+  (* Before start processing, root expression is negated to make a
+     contradiction for applying Farkas' Lemma. Then all expression groups
+     are converted to DNF. *)
+  let (laIds, laDnfs) = laGroups |>
+      (MI.add !rootId (!!! (MI.find !rootId laGroups))) |>
+      (MI.map ((mapFormula normalizeExpr) |- (convertToNF false))) |>
+      MI.bindings |> List.split in
+
   reduce (fun _ _ -> assert false
     (* mergeSpace (* TODO: NYI. Should consider opAnd *) *)) (
     List.map (fun assigns ->
@@ -516,44 +519,54 @@ let solveTree tree =
       let exprs = listFold2 (fun t x y ->
         (List.map (fun z -> (x, z)) y) @ t) [] laIds assigns in
 
-      (* Build the coefficient mapping for the first, and at the same time, check
+      (* Build the coefficient mapping for all assigned expressions and check
          the operator of each expression. *)
-      let coefMap, constrs, op, piMap =
-        List.fold_left (fun (coefMap, constrs, ops, piMap) (id, (op, coef)) ->
-          let strId = string_of_int (new_id ()) in
-          let pi = "p" ^ strId in
+      let coefs, constr, ops, exprGroup =
+        List.fold_left (fun (coefs, constr, ops, exprGroup) (gid, (op, coef)) ->
+          let exprId = "p" ^ (string_of_int (new_id ())) in
 
           (* DEBUG: *)
-          print_endline (strId ^ "\t" ^ (printExpr (op, coef)));
+          print_endline ((string_of_int gid) ^ "\t" ^ exprId ^ "\t" ^
+            (printExpr (op, coef)));
 
           (* Building an coefficient mapping in terms of variables *)
           (M.fold (fun k v -> M.addDefault
-            k (pi, v) M.empty (fun m (k, v) -> M.add k v m)) coef coefMap),
+            k (exprId, v) M.empty (fun m (k, v) -> M.add k v m)) coef coefs),
 
           (* If the expression is an inequality, its weight should be
              positive *)
           (match op with
-            | EQ -> constrs
-            | LTE -> Expr(GTE, M.add pi 1 M.empty) :: constrs
+            | EQ -> constr
+            | LTE -> Expr(GTE, M.add exprId 1 M.empty) :: constr
             | _ -> assert false),
 
           (* The flag to note that the interpolant should be LTE or EQ *)
-          (M.add pi op ops),
+          (M.add exprId op ops),
 
           (* Correspondance between expression ID and groupID *)
-          (M.add pi id piMap)
+          (M.add exprId gid exprGroup)
         ) (M.empty, [], M.empty, M.empty) exprs in
 
       (M.map (fun (params, a) ->
-        let renameMap = ref (let (_, m) = List.fold_left (fun (i, m) x -> (i + 1),
-          M.add x (String.make 1 (Char.chr (97 + i))) m) (0, M.empty) params in m) in
+        (* Parameters have internal names at this moment, so they are renamed
+           to 'a' - 'z' by alphabetical order. Make a renaming map and then
+           apply it. We beleive there are no more than 26 parameters... *)
+        let (_, renameMap) = List.fold_left (fun (i, m) x -> (i + 1),
+          M.add x (String.make 1 (Char.chr (97 + i))) m) (0, M.empty) params in
+        let renameMap = ref renameMap in
+
+        (* Parameter list for the predicate are renamed. *)
         renameList renameMap params,
-        Expr (renameExpr renameMap (op, M.map (
-          M.filter (fun k _ -> List.mem (M.find k piMap) a)) coefMap))
-      ) !predMap),
-      And(List.rev (  (* DEBUG: rev *)
-        M.fold (fun k v -> (@) [ Expr((if k = "" then
-            (if constrs = [] then NEQ else GT) else EQ), v) ]) coefMap constrs))
+
+        (* Predicate body are built from coefficient mapping by extracting only
+           relating coefficinet and weight. Finally the body is renamed. *)
+        Expr (renameExpr renameMap (ops, coefs |>
+            M.filter (fun k _ -> List.mem k params) |>
+            M.map (M.filter (fun k _ -> List.mem (M.find k exprGroup) a))))
+       ) !predMap),
+
+      And(M.fold (fun k v -> (@) [ Expr((if k = "" then
+          (if constr = [] then NEQ else GT) else EQ), v) ]) coefs constr)
   ) (directProduct laDnfs))
 
 let getSolution (pexprs, constr) =
@@ -567,7 +580,8 @@ let getSolution (pexprs, constr) =
          M.fold (fun k v l -> (k ^ "=" ^ (string_of_int v)) :: l) sol [])) ^ "]"); *)
 
       (* Construct one interpolant *)
-      M.map (fun (params, x) -> params, (mapFormula (assignParameters sol) x)) pexprs
+      M.map (fun (params, x) ->
+        params, (mapFormula (assignParameters sol) x)) pexprs
     | None -> raise Not_found
 
 let preprocLefthand =
