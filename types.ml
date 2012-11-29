@@ -130,6 +130,16 @@ let rec (!!!) = function
     | Or x -> And (List.map (!!!) x)
     | Expr e -> Expr (negateExpr e)
 
+let (==>) x y = (!!! x) ||| y
+let (<=>) x y = (x ==> y) &&& (y ==> x)
+
+let rec splitNegation = function
+    | And x -> reduce (&&&) (List.map splitNegation x)
+    | Or x -> reduce (|||) (List.map splitNegation x)
+    | Expr (NEQ, coef) -> Or (
+      List.map (fun x -> Expr (normalizeExpr (x, coef))) [LT;GT])
+    | Expr e -> Expr e
+
 let rec countFormula = function
     | And x
     | Or x -> List.fold_left (+) 0 (List.map countFormula x)

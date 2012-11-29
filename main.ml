@@ -119,43 +119,40 @@ let getInterpolant sp =
       | None -> print_endline "none");
     ret *)
 
+let generateExprMergeConstr (op1, coef1) (op2, coef2) =
+  (* Consider all variables are present in both *)
+  let vars = [] |>
+    M.fold (fun k v r -> k :: r) coef1 |>
+    M.fold (fun k v r -> k :: r) coef2 |>
+    distinct in
+
+  (* Coefficients of both interpolants must be the same *)
+  let (c3, c4) = List.fold_left (fun (r1, r2) k ->
+    let [v1;v2] = List.map (M.findDefault k M.empty) [coef1;coef2] in
+    (Expr(EQ, v1 ++ v2) :: r1),
+    (Expr(EQ, v1 -- v2) :: r2)) ([], []) vars in
+
+  (* Check weight variables those for making an interpolant LTE. *)
+  let f x =
+    let p = M.fold (fun k v p -> if v = LTE then k :: p else p) x [] in
+    let eq = List.fold_left (fun c x ->
+      (Expr (EQ, M.add x 1 M.empty)) :: c) [] p in
+    (p, eq) in
+  let (p1lte, i1eq), (p2lte, i2eq) = (f op1), (f op2) in
+
+  let [c3;c4;i1eq;i2eq] = List.map (reduce (&&&)) [c3;c4;i1eq;i2eq] in
+
+  (* Constraint for making both interpolant the same operator. *)
+  match p1lte, p2lte with
+    | [], [] -> c3 ||| c4
+    | _, [] -> (c3 ||| c4) &&& i1eq
+    | [], _ -> (c3 ||| c4) &&& i2eq
+    | _ -> (i1eq <=> i2eq) &&& (i1eq ==> (c3 ||| c4)) &&& ((!!! i1eq) ==> c4)
+
 let rec mergeSpace opAnd sp1 sp2 =
-    let mergeSpSp ((op1, coef1), And c1) ((op2, coef2), And c2) =
-
-        (* Consider all variables are present in both *)
-        let x1 = M.fold (fun k v r -> k :: r) coef1 [] in
-        let x2 = M.fold (fun k v r -> k :: r) coef2 [] in
-        let vars = distinct (x1 @ x2) in
-
-        (* Coefficients of both interpolants must be the same *)
-        let (c3, c4) = List.fold_left (fun (r1, r2) k ->
-            let [v1;v2] = List.map (M.findDefault k M.empty) [coef1;coef2] in
-            (Expr(EQ, v1 ++ v2) :: r1),
-            (Expr(EQ, v1 -- v2) :: r2)) ([], []) vars in
-
-        (* DEBUG: rev is for ease of inspection *)
-        let c3, c4 = (List.rev c3), (List.rev c4) in
-
-        (* Check weight variables those for making an interpolant LTE rather
-           than EQ. Note i1eq = ~i1lte and i2eq = ~i2lte. *)
-        let f x =
-            let p = ref [] in
-            M.iter (fun k v -> if v = LTE then p := k :: !p) x;
-            let eq, neq = List.fold_left (fun (c1, c2) x ->
-                ((Expr (EQ, M.add x 1 M.empty)) :: c1),
-                ((Expr (NEQ, M.add x 1 M.empty)) :: c2)) ([], []) !p in
-            (!p, eq, neq) in
-        let (p1lte, i1eq, i1lte), (p2lte, i2eq, i2lte) = (f op1), (f op2) in
-
-        (* Constraint for making both interpolant the same operator. *)
-        let c5 = match p1lte, p2lte with
-            | [], [] -> [ Or [ And c3; And c4 ] ]
-            | _, [] -> (Or [ And c3; And c4 ]) :: i1eq
-            | [], _ -> (Or [ And c3; And c4 ]) :: i2eq
-            | _, _ -> [ Or ((And i2eq) :: i1lte); Or ((And i1eq) :: i2lte);
-                Or ([ And c3; And c4 ] @ i1lte); Or [ And i1eq; And c4 ] ] in
-
-          let sp = ((M.fold M.add op1 op2), coef1), (And (c1 @ c2 @ c5)) in
+    let mergeSpSp ((op1, coef1), c1) ((op2, coef2), c2) =
+        let c5 = generateExprMergeConstr (op1, coef1) (op2, coef2) in
+        let sp = ((M.fold M.add op1 op2), coef1), (c1 &&& c2 &&& c5) in
         match getInterpolant (Expr sp) with
         | Some _ -> Expr sp
         | None ->
@@ -263,7 +260,10 @@ let laSolve a b =
         all]
 
 let interpolate formulae = try (
-    match List.map (fun x -> convertToNF false (mapFormula normalizeExpr x)) formulae with
+    match List.map (
+      mapFormula normalizeExpr |-
+      splitNegation |-
+      convertToNF false) formulae with
     | [a_s; b_s] -> (
         try
             (* Remove contradictory conjunctions. *)
@@ -509,11 +509,31 @@ let solveTree tree =
      are converted to DNF. *)
   let (laIds, laDnfs) = laGroups |>
       (MI.add !rootId (!!! (MI.find !rootId laGroups))) |>
-      (MI.map ((mapFormula normalizeExpr) |- (convertToNF false))) |>
+      (MI.map (
+	mapFormula normalizeExpr |-
+        splitNegation |-
+        convertToNF false)) |>
       MI.bindings |> List.split in
 
-  reduce (fun _ _ -> assert false
-    (* mergeSpace (* TODO: NYI. Should consider opAnd *) *)) (
+  reduce (fun (pmap1, constr1) (pmap2, constr2) ->
+
+    (* Implementation of the simple merging. If failed to merge in this
+       algorithm, you must consider using logical operations. *)
+    let Some constr3 = M.fold (fun pvar (v1, f1) constr ->
+      let (v2, f2) = M.find pvar pmap2 in
+
+      (* Binding parameter names should be all the same because of the renaming. *)
+      assert (v1 = v2);
+
+      (* DEBUG: Simple merge *)
+      let Expr e1, Expr e2 = f1, f2 in
+
+      let addConstr = generateExprMergeConstr e1 e2 in
+      match constr with
+	| None -> Some addConstr
+	| Some x -> Some (x &&& addConstr)) pmap1 None in
+    (pmap1, constr1 &&& constr2 &&& constr3)) (
+
     List.map (fun assigns ->
       (* Give IDs and flatten. *)
       let exprs = listFold2 (fun t x y ->
@@ -551,8 +571,9 @@ let solveTree tree =
         (* Parameters have internal names at this moment, so they are renamed
            to 'a' - 'z' by alphabetical order. Make a renaming map and then
            apply it. We beleive there are no more than 26 parameters... *)
-        let (_, renameMap) = List.fold_left (fun (i, m) x -> (i + 1),
+        let (i, renameMap) = List.fold_left (fun (i, m) x -> (i + 1),
           M.add x (String.make 1 (Char.chr (97 + i))) m) (0, M.empty) params in
+	assert (i <= 26);
         let renameMap = ref renameMap in
 
         (* Parameter list for the predicate are renamed. *)
