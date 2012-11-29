@@ -49,7 +49,7 @@ let getSpace exprs =
 
             (* Building an coefficient mapping in terms of variables *)
             (M.fold (fun k v -> M.addDefault
-                k (pi, v) M.empty (fun m (k, v) -> M.add k v m)) coef m),
+                M.empty (fun m (k, v) -> M.add k v m) k (pi, v)) coef m),
 
             (* If the expression is an inequality, its weight should be
                positive *)
@@ -207,7 +207,7 @@ let laSolve a b =
     let neqA, lneqA = proc NEQ a true in
     let eqB, leqB = proc EQ b false in
     let neqB, lneqB = proc NEQ b false in
-    let plus x = M.addDefault "" 1 0 (+) x in
+    let plus x = M.addDefault 0 (+) "" 1 x in
     let minus x = M.add "" (1 - (M.findDefault "" 0 x)) (~-- x) in
 
     let tryGetInterpolant opAnd exprs = tryPick (fun (consider, (_, coef)) ->
@@ -338,7 +338,6 @@ let rec dfs ?(pre=id) ?(post=id) ?(trans=id) tree =
 
 (* TODO: Rename this. *)
 let top = Expr (EQ, M.empty)
-let bot = Expr (EQ, M.add "" 1 M.empty)
 
 let buildTrees clauses =
   (* TODO: If you consider solving Horn clauses with complicated structure, it
@@ -441,6 +440,54 @@ let buildTrees clauses =
       Tree(p, [ Leaf (LinearExpr top) ])
     | _ -> t)) trees
 
+let getSolution (pexprs, constr) =
+  (* DEBUG: Dump Z3 problem.
+  print_endline ("Z3 problem: " ^ (printFormula printExpr constr)); *)
+
+  match Z3interface.integer_programming constr with
+    | Some sol ->
+      (* DEBUG: Dump Z3 solution.
+      print_endline ("Z3 solution: [" ^ (String.concat ", " (
+        M.fold (fun k v l -> (k ^ "=" ^ (string_of_int v))::l) sol [])) ^ "]\n"); *)
+
+      (* Construct one interpolant *)
+      M.map (fun (params, x) ->
+        params, (mapFormula (assignParameters sol) x)) pexprs
+    | None -> raise Not_found
+
+let merge (pmap1, constr1) (pmap2, constr2) =
+  print_endline "\nMerging...";
+  print_endline ("constr1: " ^ (printFormula printExpr constr1));
+  print_endline ("constr2: " ^ (printFormula printExpr constr2));
+
+  (* Implementation of the simple merging. If failed to merge in this
+     algorithm, you must consider using logical operations. *)
+  try
+    let Some constr3 = M.fold (fun pvar (v1, f1) constr ->
+      let (v2, f2) = M.find pvar pmap2 in
+
+      (* Binding parameter names should be all the same because of the renaming. *)
+      assert (v1 = v2);
+
+      (* DEBUG: Simple merge *)
+      let Expr e1, Expr e2 = f1, f2 in
+
+      let addConstr = generateExprMergeConstr e1 e2 in
+      match constr with
+	| None -> Some addConstr
+	| Some x -> Some (x &&& addConstr)) pmap1 None in
+
+    let ret = (pmap1, constr1 &&& constr2 &&& constr3) in
+    ignore(getSolution ret); ret
+  with _ ->
+    (M.fold (M.addDefault ([], Expr (M.empty, M.empty))
+      (fun (v, f1) (_, f2) ->  v, (f1 |||
+          (* DEBUG: TODO: Constant use of ||| is incorrect.
+	     Must consider the position of disjunction among whole horn clauses. *)
+	  f2))
+    ) pmap1 pmap2),
+    (constr1 &&& constr2)
+
 module MyInt = struct
   type t = int
   let compare = compare
@@ -502,7 +549,7 @@ let solveTree tree =
     List.fold_right (fun y m ->
       let _y = MI.find y m in
       let m = MI.remove y m in
-      MI.addDefault x _y top (&&&) m) rest) !laMergeGroups !laGroups in
+      MI.addDefault top (&&&) x _y m) rest) !laMergeGroups !laGroups in
 
   (* Before start processing, root expression is negated to make a
      contradiction for applying Farkas' Lemma. Then all expression groups
@@ -515,25 +562,7 @@ let solveTree tree =
         convertToNF false)) |>
       MI.bindings |> List.split in
 
-  reduce (fun (pmap1, constr1) (pmap2, constr2) ->
-
-    (* Implementation of the simple merging. If failed to merge in this
-       algorithm, you must consider using logical operations. *)
-    let Some constr3 = M.fold (fun pvar (v1, f1) constr ->
-      let (v2, f2) = M.find pvar pmap2 in
-
-      (* Binding parameter names should be all the same because of the renaming. *)
-      assert (v1 = v2);
-
-      (* DEBUG: Simple merge *)
-      let Expr e1, Expr e2 = f1, f2 in
-
-      let addConstr = generateExprMergeConstr e1 e2 in
-      match constr with
-	| None -> Some addConstr
-	| Some x -> Some (x &&& addConstr)) pmap1 None in
-    (pmap1, constr1 &&& constr2 &&& constr3)) (
-
+  reduce merge (
     List.map (fun assigns ->
       (* Give IDs and flatten. *)
       let exprs = listFold2 (fun t x y ->
@@ -551,7 +580,7 @@ let solveTree tree =
 
           (* Building an coefficient mapping in terms of variables *)
           (M.fold (fun k v -> M.addDefault
-            k (exprId, v) M.empty (fun m (k, v) -> M.add k v m)) coef coefs),
+            M.empty (fun m (k, v) -> M.add k v m) k (exprId, v)) coef coefs),
 
           (* If the expression is an inequality, its weight should be
              positive *)
@@ -589,21 +618,6 @@ let solveTree tree =
       And(M.fold (fun k v -> (@) [ Expr((if k = "" then
           (if constr = [] then NEQ else GT) else EQ), v) ]) coefs constr)
   ) (directProduct laDnfs))
-
-let getSolution (pexprs, constr) =
-  (* DEBUG: Dump Z3 problem.
-  print_endline ("Z3 problem: " ^ (printFormula printExpr constr)); *)
-
-  match Z3interface.integer_programming constr with
-    | Some sol ->
-      (* DEBUG: Dump Z3 solution.
-         print_endline ("Z3 solution: [" ^ (String.concat ", " (
-         M.fold (fun k v l -> (k ^ "=" ^ (string_of_int v)) :: l) sol [])) ^ "]"); *)
-
-      (* Construct one interpolant *)
-      M.map (fun (params, x) ->
-        params, (mapFormula (assignParameters sol) x)) pexprs
-    | None -> raise Not_found
 
 let preprocLefthand =
   List.fold_left (fun (pvars, la) -> function

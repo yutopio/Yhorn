@@ -38,7 +38,7 @@ let string_of_operator = function
 
 type coef = int M.t
 
-let coefOp op d = M.fold (fun k v -> M.addDefault k v d op)
+let coefOp op d = M.fold (M.addDefault d op)
 let (++) = coefOp (+) 0
 let (--) x y = coefOp (-) 0 y x (* Note that the operands need to be reversed. *)
 let (~--) = M.map (fun v -> -v)
@@ -72,8 +72,8 @@ let printExpr ?(vars = None) (op, coef) =
 let normalizeExpr (op, coef) =
     let op, coef =
         match op with
-        | LT -> LTE, (M.addDefault "" 1 0 (+) coef)
-        | GT -> LTE, (M.addDefault "" 1 0 (+) (~-- coef))
+        | LT -> LTE, (M.addDefault 0 (+) "" 1 coef)
+        | GT -> LTE, (M.addDefault 0 (+) "" 1 (~-- coef))
         | GTE -> LTE, (~-- coef)
         | _ -> op, coef in
     op, (M.filter (fun _ v -> v <> 0) coef)
@@ -117,8 +117,8 @@ let combineFormulae opAnd x y =
     | (_, Or x, _) -> Or (y :: x)
     | (_, _, Or y) -> Or (y @ [ x ])
     | _ -> Or [ y ; x ]
-let (&&&) : expr formula -> expr formula -> expr formula = combineFormulae true
-let (|||) : expr formula -> expr formula -> expr formula = combineFormulae false
+let (&&&) x = combineFormulae true x
+let (|||) x = combineFormulae false x
 
 let rec mapFormula f = function
     | And x -> And (List.map (mapFormula f) x)
