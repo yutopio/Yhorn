@@ -1,7 +1,7 @@
-open Yint.Types
-open Yint.Parser
-open Yint.Lexer
-open Yint.Main
+open Types
+open Parser
+open Lexer
+open Main
 
 let main _ =
   let input = inputUnit token (Lexing.from_channel stdin) in

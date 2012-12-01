@@ -474,8 +474,8 @@ let merge (pmap1, constr1) (pmap2, constr2) =
 
       let addConstr = generateExprMergeConstr e1 e2 in
       match constr with
-	| None -> Some addConstr
-	| Some x -> Some (x &&& addConstr)) pmap1 None in
+        | None -> Some addConstr
+        | Some x -> Some (x &&& addConstr)) pmap1 None in
 
     let ret = (pmap1, constr1 &&& constr2 &&& constr3) in
     ignore(getSolution ret); ret
@@ -483,8 +483,8 @@ let merge (pmap1, constr1) (pmap2, constr2) =
     (M.fold (M.addDefault ([], Expr (M.empty, M.empty))
       (fun (v, f1) (_, f2) ->  v, (f1 |||
           (* DEBUG: TODO: Constant use of ||| is incorrect.
-	     Must consider the position of disjunction among whole horn clauses. *)
-	  f2))
+             Must consider the position of disjunction among whole horn clauses. *)
+          f2))
     ) pmap1 pmap2),
     (constr1 &&& constr2)
 
@@ -557,7 +557,7 @@ let solveTree tree =
   let (laIds, laDnfs) = laGroups |>
       (MI.add !rootId (!!! (MI.find !rootId laGroups))) |>
       (MI.map (
-	mapFormula normalizeExpr |-
+        mapFormula normalizeExpr |-
         splitNegation |-
         convertToNF false)) |>
       MI.bindings |> List.split in

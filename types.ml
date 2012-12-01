@@ -1,7 +1,4 @@
-
 open Buffer
-open Map
-open Set
 open Util
 
 module MyString = struct
