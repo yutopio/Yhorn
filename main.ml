@@ -336,109 +336,73 @@ let rec dfs ?(pre=id) ?(post=id) ?(trans=id) tree =
   | Tree(x, children) -> Tree((trans x), (List.map dfs children))
   | Leaf x -> Leaf (trans x))
 
+let buildGraph clauses =
+  let predVars = ref M.empty in
+  List.fold_left (fun g (lh, rh) ->
+    (* Rename all variables to internal names for avoiding name collision. *)
+    let nameMap = ref M.empty in
+
+    let (g, dst) = match rh with
+      | PredVar (p, l) ->
+        if M.mem p !predVars then (
+          let binders = M.find p !predVars in
+          nameMap := listFold2 (fun m a b -> M.add a b m) M.empty l binders;
+          g, PredVar (p, binders)
+        ) else (
+          let binders = renameList nameMap l in
+          predVars := M.add p binders !predVars;
+          let dst = PredVar (p, binders) in
+          (G.add_vertex g dst), dst)
+      | LinearExpr e ->
+        let dst = LinearExpr (mapFormula (renameExpr nameMap) e) in
+        (G.add_vertex g dst), dst in
+
+    let (pvars, la) = lh in
+    let g, vertices, constr = M.fold (fun p args (g, vertices, constr) ->
+      (* Get parameter list of the predicate variable, whose elements have been
+         renamed to internal names. *)
+      let g, binders =
+        if M.mem p !predVars then
+          g, M.find p !predVars
+        else (
+          let binders = repeat (fun _ l -> (new_name ()) :: l)
+            (List.length args) [] in
+          let g = G.add_vertex g (PredVar (p, binders)) in
+          predVars := M.add p binders !predVars;
+          g, binders) in
+
+      (* Build binding constraint. *)
+      let args = renameList nameMap args in
+      let constr = listFold2 (fun l a b -> if a = b then l else
+        Expr(EQ, M.add a 1 (M.add b (-1) M.empty)) :: l) constr binders args in
+
+      g, (PredVar (p, binders) :: vertices), constr
+    ) pvars (g, [], []) in
+
+    let g, vertices =
+      match
+        (match
+          (match la with
+            | None -> None
+            | Some x -> Some (mapFormula (renameExpr nameMap) x)),
+          (match constr with
+            | [] -> None
+            | _ -> Some (And constr)) with
+          | None, None -> None
+          | None, Some x
+          | Some x, None -> Some x
+          | Some x, Some y -> Some (x &&& y)) with
+        | None -> g, vertices
+        | Some x ->
+          let vertex = LinearExpr x in
+          (G.add_vertex g vertex), vertex :: vertices in
+
+    (* Add edges between all left-hand terms and right-hand term. *)
+    List.fold_left (fun g src -> G.add_edge g src dst) g vertices
+  ) G.empty clauses
+
 (* TODO: Rename this. *)
 let top = Expr (EQ, M.empty)
-
-let buildTrees clauses =
-  (* TODO: If you consider solving Horn clauses with complicated structure, it
-     may be a good idea to consider using Ocamlgraph. *)
-  let buildSeedling = List.fold_left (fun trees (lh, rh) ->
-    let (pvars, la) = lh in
-
-    (* Rename all variables into internal names to avoid name collision. *)
-    let m = ref M.empty in
-    let pvars = M.map (renameList m) pvars in
-    let lh = M.fold (fun x v l -> Leaf(PredVar (x, v)) :: l) pvars [] in
-    let lh = match la with
-      | None -> lh
-      | Some x -> Leaf(LinearExpr (mapFormula (renameExpr m) x)) :: lh in
-
-    let rh = match rh with
-    | PredVar (p, l) ->
-        (* TODO: DEBUG: Guarantee the absence of loop structure. Will be
-           supported in future version. *)
-        assert (not (M.mem p pvars));
-
-        PredVar (p, (renameList m l))
-    | LinearExpr e -> LinearExpr (mapFormula (renameExpr m) e) in
-
-    (* Make pieces of horn clause trees. *)
-    (M.fold (fun x _ -> S.add x) pvars S.empty, Tree(rh, lh)) :: trees
-  ) [] in
-
-  (* TODO: Very inefficient algorithm to build a tree. *)
-  let rec graft x = function
-    | [] -> x
-    | current :: rest ->
-      let (fpvs, (Tree(rh, lh) as t)) = current in
-
-      match rh with
-      | LinearExpr _ ->
-        (* Skip. Linear expression always comes at the root. *)
-        graft (x @ [current]) rest
-
-      | PredVar (p, l) ->
-        (* Current item is not considered for replacement because we do not
-           consider looping construct at this moment. ... Well even if we do, it
-           may not be a good idea to perform replacement anyway.
-           By the way, `rest` and `x` is the correct order because `rest` should
-           be prioritized for further processing. *)
-        let replace, new_rest = List.partition (
-          fun (fpvs, _) -> S.mem p fpvs) (rest @ x) in
-        match replace with
-        | [] ->
-          (* If a predicate variable comes at the root, insert a tautological
-             linear expression on top for ease of calculation. It will be later
-             refuted to make a contradiction for interpolation. *)
-          let current = (fpvs, Tree(LinearExpr (Expr (NEQ, M.add "" 1 M.empty)), [t])) in
-          graft (x @ [current]) rest
-
-        | [(rep_fpvs, rep_t)] ->
-          let new_t = dfs ~pre:(fun dfs_t ->
-            match dfs_t with
-            | Leaf (PredVar (pp, ll)) ->
-              if p = pp then (
-                (* Replace this leaf with the current tree. Note that we can do
-                   this right because we do not have loop. If we do have a
-                   recursive reference of predicate variable, this replacement
-                   does not end. *)
-
-                (* We need to add a constraint to let the renamed variables equal. *)
-                assert (List.length l = List.length ll);
-
-                if List.length l = 0 then
-                  t
-                else
-                  let eq = reduce (&&&) (List.map (fun (a, b) -> Expr (
-                      EQ, M.add a 1 (M.add b (-1) M.empty))) (zip l ll)) in
-                  Tree(LinearExpr (eq), [t]))
-              else dfs_t
-            | _ -> dfs_t) rep_t in
-
-          (* Update free predicate variables. *)
-          let rep_fpvs = (S.remove p rep_fpvs) in
-
-          (* TODO: DEBUG: We guarantee there is no DAG for the moment. To be
-             supported. *)
-          assert (S.is_empty (S.inter rep_fpvs fpvs));
-
-          let new_fpvs = S.union rep_fpvs fpvs in
-          let current = (new_fpvs, new_t) in
-          graft [] (new_rest @ [current])
-        | _ ->
-          (* TODO: We still do not support DAG (Directed acyclic graph)
-             structure. *)
-          assert false in
-
-  (* Eliminate free variable information. *)
-  let _, trees = List.split (graft [] (buildSeedling clauses)) in
-  List.map (dfs ~pre:(fun t ->
-    match t with
-    | Leaf (PredVar pp as p) ->
-      (* If a predicate variable comes at leafs, insert tautological linear
-         expression for ease of calculation. *)
-      Tree(p, [ Leaf (LinearExpr top) ])
-    | _ -> t)) trees
 
 let getSolution (pexprs, constr) =
   (* DEBUG: Dump Z3 problem.
@@ -626,8 +590,15 @@ let preprocLefthand =
         | Some y -> x &&& y)
     | PredVar (p, params) -> (M.add p params pvars), la) (M.empty, None)
 
+let buildTrees _ = assert false
 let solve clauses =
   let clauses = List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses in
+  let g = buildGraph clauses in
+
+  (* DEBUG: Show the constructed graph. *)
+  print_endline ("Cycle: " ^ (string_of_bool (Traverser.has_cycle g)));
+  display_with_gv g;
+
   let trees = buildTrees clauses in
 
   (* DEBUG: dump trees

@@ -22,6 +22,7 @@ let tryPick f = List.fold_left (fun ret x -> if ret = None then f x else ret) No
 let new_id =
     let id = ref 0 in
     fun () -> (incr id; !id)
+let new_name () = "$" ^ string_of_int (new_id ())
 
 let distinct l =
     let rec internal l = function

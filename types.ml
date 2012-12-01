@@ -79,7 +79,7 @@ let negateExpr (op, coef) = (negateOp op, coef)
 
 let rec renameInternal m k =
   if not (M.mem k !m) then
-    m := M.add k ("$" ^ string_of_int (new_id ())) !m;
+    m := M.add k (new_name ()) !m;
   M.find k !m
 and renameExpr m (op, coef) =
   (op, M.fold (fun k -> M.add (if k = "" then "" else renameInternal m k)) coef M.empty)
@@ -179,3 +179,39 @@ type space = pexpr * constr
 
 type hornSolSpace = (string list * pexpr formula) M.t * constr
 type hornSol = (string list * expr formula) M.t
+
+(* Ocamlgraph related types *)
+
+module MyVertex = struct
+  type t = hornTerm
+  let compare = compare
+  let hash _ = 0 (* TODO: *)
+  let equal = (=)
+end
+
+module G = Graph.Persistent.Digraph.ConcreteBidirectional(MyVertex)
+module Traverser = Graph.Traverse.Dfs(G)
+
+module Display = struct
+  include G
+  let vertex_name v = "\"" ^ (printHornTerm (V.label v)) ^ "\""
+  let graph_attributes _ = []
+  let default_vertex_attributes _ = []
+  let vertex_attributes _ = [`Fontname "Courier"; `Shape `Box]
+  let default_edge_attributes _ = []
+  let edge_attributes e = []
+  let get_subgraph _ = None
+end
+
+module Dot = Graph.Graphviz.Dot(Display)
+
+let display_with_gv g =
+  let dot = Filename.temp_file "graph" ".dot" in
+  let ps = Filename.temp_file "graph" ".ps" in
+  let oc = open_out dot in
+  Dot.output_graph oc g;
+  close_out oc;
+  ignore (Sys.command ("dot -Tps " ^ dot ^ " > " ^ ps));
+  ignore (Sys.command ("gv " ^ ps ^ " 2>/dev/null"));
+  Sys.remove dot;
+  Sys.remove ps
