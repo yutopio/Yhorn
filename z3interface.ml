@@ -1,4 +1,5 @@
 open Types
+open Util
 open Z3
 
 (* Calling `preload` will trigger callback registration *)
@@ -44,11 +45,6 @@ let integer_programming constrs =
   match solver_check ctx s with
     | L_TRUE ->
       let md = solver_get_model ctx s in
-      let rec repeat f n k =
-        if n > 0 then
-          let n = n - 1 in
-          (repeat f n (f n k))
-        else k in
       let mdn = model_get_num_consts ctx md in
       let m = repeat (fun i m ->
         let fd = model_get_const_decl ctx md i in

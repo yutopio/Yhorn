@@ -93,3 +93,9 @@ let splitByN n x =
 let mapi f l =
     let _, r = List.fold_left (fun (i, l) x -> i + 1, (f i x) :: l) (0, []) l in
     List.rev r
+
+let rec repeat f n k =
+  if n > 0 then
+    let n = n - 1 in
+    (repeat f n (f n k))
+  else k
