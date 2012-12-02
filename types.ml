@@ -190,11 +190,10 @@ module MyVertex = struct
 end
 
 module G = Graph.Persistent.Digraph.ConcreteBidirectional(MyVertex)
+module GA = Graph.Persistent.Digraph.Abstract(MyVertex)
 module Traverser = Graph.Traverse.Dfs(G)
 
-module Display = struct
-  include G
-  let vertex_name v = "\"" ^ (printHornTerm (V.label v)) ^ "\""
+module DisplayAttrib = struct
   let graph_attributes _ = []
   let default_vertex_attributes _ = []
   let vertex_attributes _ = [`Fontname "Courier"; `Shape `Box]
@@ -203,15 +202,32 @@ module Display = struct
   let get_subgraph _ = None
 end
 
-module Dot = Graph.Graphviz.Dot(Display)
+module Display = struct
+  include G
+  include DisplayAttrib
+  let vertex_name v = "\"" ^ (printHornTerm (V.label v)) ^ "\""
+end
 
-let display_with_gv g =
+module DisplayA = struct
+  include GA
+  include DisplayAttrib
+  let vertex_name v = "\"" ^ (string_of_int (V.hash v)) ^ ": " ^
+    (printHornTerm (V.label v)) ^ "\""
+end
+
+module Dot = Graph.Graphviz.Dot(Display)
+module DotA = Graph.Graphviz.Dot(DisplayA)
+
+let display output g =
   let dot = Filename.temp_file "graph" ".dot" in
   let ps = Filename.temp_file "graph" ".ps" in
   let oc = open_out dot in
-  Dot.output_graph oc g;
+  output oc g;
   close_out oc;
   ignore (Sys.command ("dot -Tps " ^ dot ^ " > " ^ ps));
   ignore (Sys.command ("gv " ^ ps ^ " 2>/dev/null"));
   Sys.remove dot;
   Sys.remove ps
+
+let display_with_gv = display Dot.output_graph
+let display_with_gvA = display DotA.output_graph

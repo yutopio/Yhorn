@@ -401,6 +401,18 @@ let buildGraph clauses =
     List.fold_left (fun g src -> G.add_edge g src dst) g vertices
   ) G.empty clauses
 
+let flattenGraph g =
+  G.fold_vertex (fun v l ->
+    (* TODO: This algorithm cannot find the self-looping predicate variable node
+       which has no children. *)
+    if G.out_degree g v = 0 then v :: l else l) g [] |>
+
+  (* Traverse the graph from given starting points to make trees. *)
+  List.map (fun v ->
+    let rec f v va = G.fold_pred (fun u g ->
+      let ua = GA.V.create u in GA.add_edge (f u ua g) ua va) g v in
+    f v (GA.V.create v) GA.empty)
+
 (* TODO: Rename this. *)
 let top = Expr (EQ, M.empty)
 
@@ -596,13 +608,15 @@ let solve clauses =
   let g = buildGraph clauses in
 
   (* DEBUG: Show the constructed graph. *)
-  print_endline ("Cycle: " ^ (string_of_bool (Traverser.has_cycle g)));
+  let cycle = Traverser.has_cycle g in
+  print_endline ("Cycle: " ^ (string_of_bool cycle));
   display_with_gv g;
+  if not cycle then List.iter display_with_gvA (flattenGraph g);
 
   let trees = buildTrees clauses in
 
-  (* DEBUG: dump trees
-  List.iter (fun t -> print_endline (printTree printHornTerm t)) trees; *)
+  (* DEBUG: dump trees *)
+  List.iter (fun t -> print_endline (printTree printHornTerm t)) trees;
 
   reduce (fun (m1, c1) (m2, c2) ->
     (M.merge (fun _ a b ->
