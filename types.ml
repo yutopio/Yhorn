@@ -151,6 +151,10 @@ let printHornTerm = function
     | LinearExpr e -> printFormula printExpr e
     | PredVar p -> printPvar p
 
+let renameHornTerm m = function
+    | LinearExpr e -> LinearExpr (mapFormula (renameExpr m) e)
+    | PredVar (p, param) -> PredVar (p, renameList m param)
+
 (** Normal form of element *)
 type 'a nf = 'a list list
 
