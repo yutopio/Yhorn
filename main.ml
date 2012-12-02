@@ -358,26 +358,28 @@ let buildGraph clauses =
         (G.add_vertex g dst), dst in
 
     let (pvars, la) = lh in
-    let g, vertices, constr = M.fold (fun p args (g, vertices, constr) ->
-      (* Get parameter list of the predicate variable, whose elements have been
-         renamed to internal names. *)
-      let g, binders =
-        if M.mem p !predVars then
-          g, M.find p !predVars
-        else (
-          let binders = repeat (fun _ l -> (new_name ()) :: l)
-            (List.length args) [] in
-          let g = G.add_vertex g (PredVar (p, binders)) in
-          predVars := M.add p binders !predVars;
-          g, binders) in
+    let g, vertices, constr = List.fold_left (
+      fun (g, vertices, constr) (p, args) ->
+        (* Get parameter list of the predicate variable, whose elements have
+           been renamed to internal names. *)
+        let g, binders =
+          if M.mem p !predVars then
+            g, M.find p !predVars
+          else (
+            let binders = repeat (fun _ l -> (new_name ()) :: l)
+              (List.length args) [] in
+            let g = G.add_vertex g (PredVar (p, binders)) in
+            predVars := M.add p binders !predVars;
+            g, binders) in
 
-      (* Build binding constraint. *)
-      let args = renameList nameMap args in
-      let constr = listFold2 (fun l a b -> if a = b then l else
-        Expr(EQ, M.add a 1 (M.add b (-1) M.empty)) :: l) constr binders args in
+        (* Build binding constraint. *)
+        let args = renameList nameMap args in
+        let constr = listFold2 (fun l a b ->
+          if a = b then l else Expr(EQ, M.add a 1 (M.add b (-1) M.empty)) :: l)
+          constr binders args in
 
       g, (PredVar (p, binders) :: vertices), constr
-    ) pvars (g, [], []) in
+    ) (g, [], []) pvars in
 
     let g, vertices =
       match
@@ -600,7 +602,7 @@ let preprocLefthand =
     | LinearExpr x -> pvars, Some (match la with
         | None -> x
         | Some y -> x &&& y)
-    | PredVar (p, params) -> (M.add p params pvars), la) (M.empty, None)
+    | PredVar (p, params) -> ((p, params) :: pvars), la) ([], None)
 
 let buildTrees _ = assert false
 let solve clauses =
