@@ -313,29 +313,6 @@ let rec transpose xss = (
             ")");
         assert false
 
-(* TODO: Consider moving to types.ml *)
-type 'a tree =
-  | Tree of 'a * 'a tree list
-  | Leaf of 'a
-
-let printTree eltPrinter t =
-  let buf = Buffer.create 1 in
-  let print i x = Buffer.add_string buf (i ^ (eltPrinter x) ^ "\n") in
-  let rec printTree indent = function
-    | Leaf x -> print indent x
-    | Tree (x, children) -> print indent x;
-      List.iter (printTree (indent ^ "  ")) children in
-  printTree "" t;
-  Buffer.contents buf
-
-let id x = Obj.magic x
-let rec dfs ?(pre=id) ?(post=id) ?(trans=id) tree =
-  let dfs = dfs ~pre:pre ~post:post ~trans:trans in
-  let elt = pre tree in
-  post (match elt with
-  | Tree(x, children) -> Tree((trans x), (List.map dfs children))
-  | Leaf x -> Leaf (trans x))
-
 let buildGraph clauses =
   let predVertices = ref M.empty in
   List.fold_left (fun g (lh, rh) ->
@@ -421,10 +398,22 @@ let flattenGraph g =
 
   (* Traverse the graph from given starting points to make trees. *)
   List.map (fun v ->
-    let rec f v nameMap g' =
+    (* Keep track of linear expressions with giving a unique ID. *)
+    let laGroups = ref MI.empty in
+
+    (* After splitting a graph into a tree, one predicate variable may appear
+       multiple times in the tree. Thus, each appearance will be remembered by
+       the ID. `predMap` tracks the mapping between such predicate ID and linear
+       expression IDs appearing above the predicate. `predCopies` remembers the
+       correspondance between the original name of predicate variable and
+       predicate IDs. *)
+    let predMap = ref MI.empty in
+    let predCopies = ref M.empty in
+
+    let rec f v nameMap =
       let renamedLabel v = renameHornTerm nameMap (G.V.label v) in
-      let v' = G.V.create (renamedLabel v) in
-      let (g', u's, la) = G.fold_pred (fun u (g', u's, la) ->
+
+      let (u's, la) = G.fold_pred (fun u (u's, la) ->
         match renamedLabel u with
           | PredVar (p, args) ->
             (* This prevents `nameMap` sharing over all DFS. *)
@@ -447,20 +436,32 @@ let flattenGraph g =
               [] bindings in
 
             (* Traverse children first to unify predicate variable nodes. *)
-            let (g', u') = f src nameMap g' in
-            g', (u' :: u's), (if constr = [] then la else la &&& And(constr))
+            let u' = f src nameMap in
+            (u' @ u's), (if constr = [] then la else la &&& And(constr))
 
           | LinearExpr e ->
             (* NOTE: Linear expressions must appear only once. *)
-            g', u's, (la &&& e)
-      ) g v (g', [], top) in
+            u's, (la &&& e)
+      ) g v ([], top) in
 
-      (* Add edges between new left-hand nodes and right-hand node. *)
-      let u's = (G.V.create (LinearExpr la)) :: u's in
-      let g' = List.fold_left (fun g' u' -> G.add_edge g' u' v') g' u's in
-      g', v'
+      let registerLa la =
+        let key = MI.cardinal !laGroups in
+        laGroups := MI.add key la !laGroups; key in
+
+      match (renamedLabel v) with
+        | PredVar (p, param) ->
+          let pid = (new_id ()) in
+          let u's = if la <> top then (registerLa la) :: u's else u's in
+          predMap := MI.add pid (param, u's) !predMap;
+          predCopies := M.addDefault [] (fun l x -> x :: l) p pid !predCopies;
+          u's
+
+        | LinearExpr e ->
+          registerLa (if la <> top then la &&& (!!! e) else !!! e);
+          [] (* Doesn't care on what to return. *)
     in
-    let (g, _) = f v (ref M.empty) G.empty in g)
+    ignore(f v (ref M.empty));
+    !laGroups, !predMap, !predCopies)
 
 let getSolution (pexprs, constr) =
   (* DEBUG: Dump Z3 problem.
@@ -510,74 +511,8 @@ let merge (pmap1, constr1) (pmap2, constr2) =
     ) pmap1 pmap2),
     (constr1 &&& constr2)
 
-module MyInt = struct
-  type t = int
-  let compare = compare
-end
-
-module MI = MapEx.Make(MyInt)
-
-let solveTree tree =
-  let laGroups = ref MI.empty in
-  let groupId = ref 0 in
-  let rootId = ref (-1) in
-  let laMergeGroups = ref [] in
-  let predMap = ref M.empty in
-  ignore(dfs
-    ~trans:(fun x -> [],
-      match x with
-        | LinearExpr e -> let id = incr groupId; !groupId in
-                          `L (laGroups := MI.add id e !laGroups; id)
-        | PredVar p -> `P p)
-
-    ~post:(function
-      | Tree((_, x), children) ->
-        let (a, (merge, leaf)) = List.fold_left (
-          fun (a, (merge, leaf)) (Leaf(x, y)) -> (x @ a),
-            match y with
-              | `L x -> merge, (
-                match leaf with
-                  | None -> Some x
-                  | Some _ -> assert false (* Should only appear once *))
-              | `LP x -> (x :: merge), leaf
-              | `P _ -> merge, leaf) ([], ([], None)) children in
-        let merge = match leaf with
-          | Some x -> x :: merge
-          | None -> merge in
-        if List.length merge > 1 then
-          laMergeGroups := merge :: !laMergeGroups;
-
-        (match x with
-          | `P ((p, params) as pp) ->
-            predMap := M.add p (params, a) !predMap;
-            Leaf(a, `P pp)
-          | `L x -> rootId := x; Leaf(x :: a, `LP x)
-          | `LP _ -> assert false)
-      | Leaf (_, `L x) -> Leaf([x], `L x)
-      | _ -> assert false (* Ditto *)) tree);
-
-  let laGroups = List.fold_right (fun (x::rest) ->
-    (* Changing the root linear expression group ID, if merge occurs. *)
-    if List.mem !rootId rest then rootId := x;
-
-    predMap := M.map (fun (params, a) ->
-      let (_, a) = List.fold_left (fun (_x, l) y ->
-        match _x, (List.mem y rest) with
-          | _, false -> (_x, y::l)
-          | true, _ -> (_x, l)
-          | false, _ -> (true, x::l)) (false, []) a in
-      (params, a)) !predMap;
-
-    List.fold_right (fun y m ->
-      let _y = MI.find y m in
-      let m = MI.remove y m in
-      MI.addDefault top (&&&) x _y m) rest) !laMergeGroups !laGroups in
-
-  (* Before start processing, root expression is negated to make a
-     contradiction for applying Farkas' Lemma. Then all expression groups
-     are converted to DNF. *)
+let solveTree (laGroups, predMap, predCopies) =
   let (laIds, laDnfs) = laGroups |>
-      (MI.add !rootId (!!! (MI.find !rootId laGroups))) |>
       (MI.map (
         mapFormula normalizeExpr |-
         splitNegation |-
@@ -618,13 +553,13 @@ let solveTree tree =
           (M.add exprId gid exprGroup)
         ) (M.empty, [], M.empty, M.empty) exprs in
 
-      (M.map (fun (params, a) ->
+      let predSols = MI.map (fun (params, a) ->
         (* Parameters have internal names at this moment, so they are renamed
            to 'a' - 'z' by alphabetical order. Make a renaming map and then
            apply it. We beleive there are no more than 26 parameters... *)
         let (i, renameMap) = List.fold_left (fun (i, m) x -> (i + 1),
           M.add x (String.make 1 (Char.chr (97 + i))) m) (0, M.empty) params in
-	assert (i <= 26);
+        assert (i <= 26);
         let renameMap = ref renameMap in
 
         (* Parameter list for the predicate are renamed. *)
@@ -635,7 +570,11 @@ let solveTree tree =
         Expr (renameExpr renameMap (ops, coefs |>
             M.filter (fun k _ -> List.mem k params) |>
             M.map (M.filter (fun k _ -> List.mem (M.find k exprGroup) a))))
-       ) !predMap),
+      ) predMap in
+
+      (M.map (fun x ->
+        reduce (fun (p1, e1) (p2, e2) -> assert (p1 = p2); (p1, e1 &&& e2))
+          (List.map (fun x -> MI.find x predSols) x)) predCopies),
 
       And(M.fold (fun k v -> (@) [ Expr((if k = "" then
           (if constr = [] then NEQ else GT) else EQ), v) ]) coefs constr)
@@ -648,21 +587,20 @@ let preprocLefthand =
         | Some y -> x &&& y)
     | PredVar (p, params) -> ((p, params) :: pvars), la) ([], None)
 
-let buildTrees _ = assert false
 let solve clauses =
-  let clauses = List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses in
-  let g = buildGraph clauses in
+  List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses |>
+  buildGraph |>
 
   (* DEBUG: Show the constructed graph. *)
-  let cycle = Traverser.has_cycle g in
-  print_endline ("Cycle: " ^ (string_of_bool cycle));
-  display_with_gv g;
-  if not cycle then List.iter display_with_gv (flattenGraph g);
+  (fun g ->
+    let cycle = Traverser.has_cycle g in
+    print_endline ("Cycle: " ^ (string_of_bool cycle));
+    display_with_gv g;
+    assert (not cycle);
+    g) |>
 
-  let trees = buildTrees clauses in
-
-  (* DEBUG: dump trees *)
-  List.iter (fun t -> print_endline (printTree printHornTerm t)) trees;
+  flattenGraph |>
+  List.map solveTree |>
 
   reduce (fun (m1, c1) (m2, c2) ->
     (M.merge (fun _ a b ->
@@ -671,4 +609,4 @@ let solve clauses =
         | Some _, Some _ -> assert false
         | x, None
         | None, x -> x) m1 m2),
-    c1 &&& c2) (List.map solveTree trees)
+    c1 &&& c2)

@@ -9,6 +9,13 @@ end
 module M = MapEx.Make(MyString)
 module S = Set.Make(MyString)
 
+module MyInt = struct
+  type t = int
+  let compare = compare
+end
+
+module MI = MapEx.Make(MyInt)
+
 type operator =
     | EQ
     | NEQ
@@ -233,8 +240,7 @@ end
 module Display = struct
   include G
   include DisplayAttrib
-  let vertex_name v = "\"" ^ (string_of_int (V.hash v)) ^ ": " ^
-    (printHornTerm (V.label v)) ^ "\""
+  let vertex_name v = "\"" ^ (printHornTerm (V.label v)) ^ "\""
   let edge_attributes e =
     match E.label e with
       | None -> []
