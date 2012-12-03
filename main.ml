@@ -337,71 +337,81 @@ let rec dfs ?(pre=id) ?(post=id) ?(trans=id) tree =
   | Leaf x -> Leaf (trans x))
 
 let buildGraph clauses =
-  let predVars = ref M.empty in
+  let predVertices = ref M.empty in
   List.fold_left (fun g (lh, rh) ->
     (* Rename all variables to internal names for avoiding name collision. *)
     let nameMap = ref M.empty in
 
-    let (g, dst) = match rh with
+    let dst = match rh with
       | PredVar (p, l) ->
-        if M.mem p !predVars then (
-          let binders = M.find p !predVars in
+        if M.mem p !predVertices then (
+          (* If the predicate `p` already exists, build a renaming map so that
+             the current horn clause become consistent with already built part
+             of the graph. *)
+          let dst = M.find p !predVertices in
+          let PredVar (p, binders) = G.V.label dst in
           nameMap := listFold2 (fun m a b -> M.add a b m) M.empty l binders;
-          g, PredVar (p, binders)
+          dst
         ) else (
-          let binders = renameList nameMap l in
-          predVars := M.add p binders !predVars;
-          let dst = PredVar (p, binders) in
-          (G.add_vertex g dst), dst)
+          (* Otherwise, create a new predicate vertex and remember it. *)
+          let dst = G.V.create (PredVar (p, (renameList nameMap l))) in
+          predVertices := M.add p dst !predVertices;
+          dst)
       | LinearExpr e ->
-        let dst = LinearExpr (mapFormula (renameExpr nameMap) e) in
-        (G.add_vertex g dst), dst in
+        (* If the right-hand of the horn clause is a linear expression, there
+           are no special things to consider. Just create a new vertex. *)
+        G.V.create (LinearExpr (mapFormula (renameExpr nameMap) e)) in
+
+    (* Following statement has no effect if the vertex `dst` is in the graph. *)
+    let g = G.add_vertex g dst in
 
     let (pvars, la) = lh in
-    let g, vertices, constr = List.fold_left (
-      fun (g, vertices, constr) (p, args) ->
-        (* Get parameter list of the predicate variable, whose elements have
-           been renamed to internal names. *)
-        let g, binders =
-          if M.mem p !predVars then
-            g, M.find p !predVars
-          else (
-            let binders = repeat (fun _ l -> (new_name ()) :: l)
-              (List.length args) [] in
-            let g = G.add_vertex g (PredVar (p, binders)) in
-            predVars := M.add p binders !predVars;
-            g, binders) in
+    let g, srcs = List.fold_left (fun (g, srcs) (p, args) ->
+      (* Get (or create if needed) the predicate variable vertex and its binder.
+         We will relate this vertex from newly-created predicate variable
+         vertices that corrensponds to the application of such predicates. The
+         edge will carry binding information. *)
+      let src, binders =
+        if M.mem p !predVertices then
+          (* If exists, extract binders from the vertex label. *)
+          let src = M.find p !predVertices in
+          let PredVar (_, binders) = G.V.label src in
+          src, binders
+        else (
+          (* If not yet exists, create a new vertex with a fresh binder. *)
+          let binders = repeat (fun _ l -> (new_name ()) :: l)
+            (List.length args) [] in
+          let src = G.V.create (PredVar (p, binders)) in
+          predVertices := M.add p src !predVertices;
+          src, binders) in
 
-        (* Build binding constraint. *)
-        let args = renameList nameMap args in
-        let constr = listFold2 (fun l a b ->
-          if a = b then l else Expr(EQ, M.add a 1 (M.add b (-1) M.empty)) :: l)
-          constr binders args in
+      (* Create a vertex which corresponds to the application to the predicate
+         variable. *)
+      let args = renameList nameMap args in
+      let dst = G.V.create (PredVar (p, args)) in
 
-      g, (PredVar (p, binders) :: vertices), constr
-    ) (g, [], []) pvars in
+      (* Build a name mapping between referred predicate variable (appears on
+         the right-hand of Horn clause) and referring one (on the left-hand). *)
+      let renames = listFold2 (fun l a b -> (a, b) :: l) [] binders args in
 
-    let g, vertices =
-      match
-        (match
-          (match la with
-            | None -> None
-            | Some x -> Some (mapFormula (renameExpr nameMap) x)),
-          (match constr with
-            | [] -> None
-            | _ -> Some (And constr)) with
-          | None, None -> None
-          | None, Some x
-          | Some x, None -> Some x
-          | Some x, Some y -> Some (x &&& y)) with
-        | None -> g, vertices
-        | Some x ->
-          let vertex = LinearExpr x in
-          (G.add_vertex g vertex), vertex :: vertices in
+      (* Add a edge between origin *)
+      let g = G.add_edge_e g (G.E.create src (Some renames) dst) in
+      g, (dst :: srcs)
+    ) (g, []) pvars in
+
+    (* If a linear expression exists on the left-hand, create a corresponding
+       vertex. *)
+    let srcs = match la with
+      | None -> srcs
+      | Some x ->
+        (G.V.create (LinearExpr (mapFormula (renameExpr nameMap) x))) :: srcs in
 
     (* Add edges between all left-hand terms and right-hand term. *)
-    List.fold_left (fun g src -> G.add_edge g src dst) g vertices
+    List.fold_left (fun g src -> G.add_edge g src dst) g srcs
   ) G.empty clauses
+
+(* TODO: Rename this. *)
+let top = Expr (EQ, M.empty)
 
 let flattenGraph g =
   G.fold_vertex (fun v l ->
@@ -411,12 +421,46 @@ let flattenGraph g =
 
   (* Traverse the graph from given starting points to make trees. *)
   List.map (fun v ->
-    let rec f v va = G.fold_pred (fun u g ->
-      let ua = GA.V.create u in GA.add_edge (f u ua g) ua va) g v in
-    f v (GA.V.create v) GA.empty)
+    let rec f v nameMap g' =
+      let renamedLabel v = renameHornTerm nameMap (G.V.label v) in
+      let v' = G.V.create (renamedLabel v) in
+      let (g', u's, la) = G.fold_pred (fun u (g', u's, la) ->
+        match renamedLabel u with
+          | PredVar (p, args) ->
+            (* This prevents `nameMap` sharing over all DFS. *)
+            let nameMap = ref (!nameMap) in
 
-(* TODO: Rename this. *)
-let top = Expr (EQ, M.empty)
+            (* Every application vertex must have exactly one parent. *)
+            let es = G.fold_pred_e (fun e l -> e :: l) g u [] in
+            let e = assert (List.length es = 1); List.hd es in
+
+            (* Bindings of predicate variables are converted to linear equations
+               so that it can be treated easy. Note that the binder and argument
+               will have different names even if they have the same one before
+               conversion.*)
+            let src, (Some bindings) = (G.E.src e), (G.E.label e) in
+            let constr = List.fold_left (fun constr (x, y) ->
+              let x' = new_name () in
+              let y' = renameVar nameMap y in
+              nameMap := M.add x x' !nameMap;
+              Expr (EQ, M.add x' 1 (M.add y' (-1) M.empty)) :: constr)
+              [] bindings in
+
+            (* Traverse children first to unify predicate variable nodes. *)
+            let (g', u') = f src nameMap g' in
+            g', (u' :: u's), (if constr = [] then la else la &&& And(constr))
+
+          | LinearExpr e ->
+            (* NOTE: Linear expressions must appear only once. *)
+            g', u's, (la &&& e)
+      ) g v (g', [], top) in
+
+      (* Add edges between new left-hand nodes and right-hand node. *)
+      let u's = (G.V.create (LinearExpr la)) :: u's in
+      let g' = List.fold_left (fun g' u' -> G.add_edge g' u' v') g' u's in
+      g', v'
+    in
+    let (g, _) = f v (ref M.empty) G.empty in g)
 
 let getSolution (pexprs, constr) =
   (* DEBUG: Dump Z3 problem.
@@ -613,7 +657,7 @@ let solve clauses =
   let cycle = Traverser.has_cycle g in
   print_endline ("Cycle: " ^ (string_of_bool cycle));
   display_with_gv g;
-  if not cycle then List.iter display_with_gvA (flattenGraph g);
+  if not cycle then List.iter display_with_gv (flattenGraph g);
 
   let trees = buildTrees clauses in
 

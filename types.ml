@@ -77,13 +77,14 @@ let normalizeExpr (op, coef) =
 
 let negateExpr (op, coef) = (negateOp op, coef)
 
-let rec renameInternal m k =
+let rec renameVar m k =
+  assert (k <> "");
   if not (M.mem k !m) then
     m := M.add k (new_name ()) !m;
   M.find k !m
-and renameExpr m (op, coef) =
-  (op, M.fold (fun k -> M.add (if k = "" then "" else renameInternal m k)) coef M.empty)
-and renameList m = List.map (renameInternal m)
+and renameExpr m (op, coef) = op,
+  M.fold (fun k -> M.add (if k = "" then "" else renameVar m k)) coef M.empty
+and renameList m = List.map (renameVar m)
 
 let printPvar (name, params) =
     name ^ "(" ^ String.concat "," params ^ ")"
@@ -193,34 +194,55 @@ module MyVertex = struct
   let equal = (=)
 end
 
-module G = Graph.Persistent.Digraph.ConcreteBidirectional(MyVertex)
-module GA = Graph.Persistent.Digraph.Abstract(MyVertex)
+module MyEdge = struct
+  type t = (string * string) list option
+
+  let compareElt (x1, y1) (x2, y2) =
+    match compare x1 x2 with
+      | 0 -> compare y1 y2
+      | ret -> ret
+
+  let compare x y = match x, y with
+    | None, None -> 0
+    | _, None -> -1
+    | None, _ -> 1
+    | Some x, Some y ->
+      match (List.length x) - (List.length y) with
+        | 0 ->
+          let [x;y] = List.map (List.sort compareElt) [x;y] in
+          listFold2 (fun a x y -> match a with
+            | 0 -> compareElt x y
+            | _ -> a) 0 x y
+        | ret -> ret
+
+  let default = None
+end
+
+module G = Graph.Persistent.Digraph.AbstractLabeled(MyVertex)(MyEdge)
 module Traverser = Graph.Traverse.Dfs(G)
 
 module DisplayAttrib = struct
   let graph_attributes _ = []
-  let default_vertex_attributes _ = []
-  let vertex_attributes _ = [`Fontname "Courier"; `Shape `Box]
-  let default_edge_attributes _ = []
-  let edge_attributes e = []
+  let default_vertex_attributes _ = [`Fontname "Courier"; `Shape `Box]
+  let vertex_attributes _ = []
+  let default_edge_attributes _ = [`Fontname "Courier"]
+
   let get_subgraph _ = None
 end
 
 module Display = struct
   include G
   include DisplayAttrib
-  let vertex_name v = "\"" ^ (printHornTerm (V.label v)) ^ "\""
-end
-
-module DisplayA = struct
-  include GA
-  include DisplayAttrib
   let vertex_name v = "\"" ^ (string_of_int (V.hash v)) ^ ": " ^
     (printHornTerm (V.label v)) ^ "\""
+  let edge_attributes e =
+    match E.label e with
+      | None -> []
+      | Some x ->  [`Label (String.concat ", "
+                           (List.map (fun (x, y) -> x ^ "=" ^ y) x)) ]
 end
 
 module Dot = Graph.Graphviz.Dot(Display)
-module DotA = Graph.Graphviz.Dot(DisplayA)
 
 let display output g =
   let dot = Filename.temp_file "graph" ".dot" in
@@ -234,4 +256,3 @@ let display output g =
   Sys.remove ps
 
 let display_with_gv = display Dot.output_graph
-let display_with_gvA = display DotA.output_graph
