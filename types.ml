@@ -16,6 +16,13 @@ end
 
 module MI = MapEx.Make(MyInt)
 
+module MyIntArray = struct
+  type t = int list
+  let compare = compare
+end
+
+module MIA = MapEx.Make(MyIntArray)
+
 type operator =
     | EQ
     | NEQ
@@ -189,7 +196,7 @@ let (+++) (o1, c1) (o2, c2) =
 type constr = expr formula
 type space = pexpr * constr
 
-type hornSolSpace = (string list * pexpr formula) M.t * constr
+type hornSolSpace = (string list * pexpr nf) M.t * constr
 type hornSol = (string list * expr formula) M.t
 
 (* Ocamlgraph related types *)
@@ -204,11 +211,6 @@ end
 module MyEdge = struct
   type t = (string * string) list option
 
-  let compareElt (x1, y1) (x2, y2) =
-    match compare x1 x2 with
-      | 0 -> compare y1 y2
-      | ret -> ret
-
   let compare x y = match x, y with
     | None, None -> 0
     | _, None -> -1
@@ -216,9 +218,9 @@ module MyEdge = struct
     | Some x, Some y ->
       match (List.length x) - (List.length y) with
         | 0 ->
-          let [x;y] = List.map (List.sort compareElt) [x;y] in
+          let [x;y] = List.map (List.sort comparePair) [x;y] in
           listFold2 (fun a x y -> match a with
-            | 0 -> compareElt x y
+            | 0 -> comparePair x y
             | _ -> a) 0 x y
         | ret -> ret
 

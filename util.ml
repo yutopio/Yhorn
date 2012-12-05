@@ -100,3 +100,8 @@ let rec repeat f n k =
     let n = n - 1 in
     (repeat f n (f n k))
   else k
+
+let comparePair (x1, y1) (x2, y2) =
+  match compare x1 x2 with
+    | 0 -> compare y1 y2
+    | ret -> ret

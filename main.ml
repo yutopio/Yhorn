@@ -474,42 +474,34 @@ let getSolution (pexprs, constr) =
         M.fold (fun k v l -> (k ^ "=" ^ (string_of_int v))::l) sol [])) ^ "]\n"); *)
 
       (* Construct one interpolant *)
-      M.map (fun (params, x) ->
+      M.map (fun (params, cnf) ->
+        let x = And (List.map (fun x -> Or (List.map (fun x -> Expr x) x)) cnf) in
         params, (mapFormula (assignParameters sol) x)) pexprs
     | None -> raise Not_found
 
-let merge (pmap1, constr1) (pmap2, constr2) =
-  print_endline "\nMerging...";
-  print_endline ("constr1: " ^ (printFormula printExpr constr1));
-  print_endline ("constr2: " ^ (printFormula printExpr constr2));
+let merge (sols, predMap, predCopies) =
+  let predSols, constrs = List.fold_left (fun (predSolsByPred, constrs)
+    (dnfChoice, predSolsByDnf, constr) ->
+      MI.fold (fun pid ->
+        MI.addDefault ([], MIA.empty) (fun (_, m) (param, pexpr) -> param,
+          let (_, groupKey) =
+            (MI.fold (fun k v l ->
+              if List.mem k (MI.find pid predMap) then l
+              else (k, v) :: l) dnfChoice []) |>
+            (List.sort comparePair) |>
+            List.split in
+          MIA.addDefault [] (fun l x -> x :: l) groupKey pexpr m
+        ) pid) predSolsByDnf predSolsByPred,
+      constr :: constrs
+  ) (MI.empty, []) sols in
 
-  (* Implementation of the simple merging. If failed to merge in this
-     algorithm, you must consider using logical operations. *)
-  try
-    let Some constr3 = M.fold (fun pvar (v1, f1) constr ->
-      let (v2, f2) = M.find pvar pmap2 in
+  let predSols = MI.map (fun (param, pexpr) -> param,
+    MIA.fold (fun _ v l -> v :: l) pexpr []) predSols in
 
-      (* Binding parameter names should be all the same because of the renaming. *)
-      assert (v1 = v2);
-
-      (* DEBUG: Simple merge *)
-      let Expr e1, Expr e2 = f1, f2 in
-
-      let addConstr = generateExprMergeConstr e1 e2 in
-      match constr with
-        | None -> Some addConstr
-        | Some x -> Some (x &&& addConstr)) pmap1 None in
-
-    let ret = (pmap1, constr1 &&& constr2 &&& constr3) in
-    ignore(getSolution ret); ret
-  with _ ->
-    (M.fold (M.addDefault ([], Expr (M.empty, M.empty))
-      (fun (v, f1) (_, f2) ->  v, (f1 |||
-          (* DEBUG: TODO: Constant use of ||| is incorrect.
-             Must consider the position of disjunction among whole horn clauses. *)
-          f2))
-    ) pmap1 pmap2),
-    (constr1 &&& constr2)
+  (M.map (fun x ->
+    reduce (fun (p1, e1) (p2, e2) -> assert (p1 = p2); (p1, e1 @ e2))
+      (List.map (fun x -> MI.find x predSols) x)) predCopies),
+  reduce (&&&) constrs
 
 let solveTree (laGroups, predMap, predCopies) =
   let (laIds, laDnfs) = laGroups |>
@@ -519,66 +511,71 @@ let solveTree (laGroups, predMap, predCopies) =
         convertToNF false)) |>
       MI.bindings |> List.split in
 
-  reduce merge (
-    List.map (fun assigns ->
-      (* Give IDs and flatten. *)
-      let exprs = listFold2 (fun t x y ->
-        (List.map (fun z -> (x, z)) y) @ t) [] laIds assigns in
+  (* Give a number inside each LA group. *)
+  let laDnfs = List.map (mapi (fun i x -> (i, x))) laDnfs in
 
-      (* Build the coefficient mapping for all assigned expressions and check
-         the operator of each expression. *)
-      let coefs, constr, ops, exprGroup =
-        List.fold_left (fun (coefs, constr, ops, exprGroup) (gid, (op, coef)) ->
-          let exprId = "p" ^ (string_of_int (new_id ())) in
+  List.map (fun assigns ->
+    (* Give IDs and flatten. *)
+    let dnfChoice, exprs = listFold2 (fun (s, t) x (z, y) ->
+      (MI.add x z s), ((List.map (fun z -> (x, z)) y) @ t))
+      (MI.empty, []) laIds assigns in
 
-          (* DEBUG: *)
-          print_endline ((string_of_int gid) ^ "\t" ^ exprId ^ "\t" ^
-            (printExpr (op, coef)));
+    (* Build the coefficient mapping for all assigned expressions and check
+       the operator of each expression. *)
+    let coefs, constr, ops, exprGroup =
+      List.fold_left (fun (coefs, constr, ops, exprGroup) (gid, (op, coef)) ->
+        let exprId = "p" ^ (string_of_int (new_id ())) in
 
-          (* Building an coefficient mapping in terms of variables *)
-          (M.fold (fun k v -> M.addDefault
-            M.empty (fun m (k, v) -> M.add k v m) k (exprId, v)) coef coefs),
+        (* DEBUG: *)
+        print_endline ((string_of_int gid) ^ "\t" ^ exprId ^ "\t" ^
+          (printExpr (op, coef)));
 
-          (* If the expression is an inequality, its weight should be
-             positive *)
-          (match op with
-            | EQ -> constr
-            | LTE -> Expr(GTE, M.add exprId 1 M.empty) :: constr
-            | _ -> assert false),
+        (* Building an coefficient mapping in terms of variables *)
+        (M.fold (fun k v -> M.addDefault
+          M.empty (fun m (k, v) -> M.add k v m) k (exprId, v)) coef coefs),
 
-          (* The flag to note that the interpolant should be LTE or EQ *)
-          (M.add exprId op ops),
+        (* If the expression is an inequality, its weight should be
+           positive *)
+        (match op with
+          | EQ -> constr
+          | LTE -> Expr(GTE, M.add exprId 1 M.empty) :: constr
+          | _ -> assert false),
 
-          (* Correspondance between expression ID and groupID *)
-          (M.add exprId gid exprGroup)
-        ) (M.empty, [], M.empty, M.empty) exprs in
+        (* The flag to note that the interpolant should be LTE or EQ *)
+        (M.add exprId op ops),
 
-      let predSols = MI.map (fun (params, a) ->
-        (* Parameters have internal names at this moment, so they are renamed
-           to 'a' - 'z' by alphabetical order. Make a renaming map and then
-           apply it. We beleive there are no more than 26 parameters... *)
-        let (i, renameMap) = List.fold_left (fun (i, m) x -> (i + 1),
-          M.add x (String.make 1 (Char.chr (97 + i))) m) (0, M.empty) params in
-        assert (i <= 26);
-        let renameMap = ref renameMap in
+        (* Correspondance between expression ID and groupID *)
+        (M.add exprId gid exprGroup)
+      ) (M.empty, [], M.empty, M.empty) exprs in
 
-        (* Parameter list for the predicate are renamed. *)
-        renameList renameMap params,
+    let predSols = MI.map (fun (params, a) ->
+      (* Parameters have internal names at this moment, so they are renamed
+         to 'a' - 'z' by alphabetical order. Make a renaming map and then
+         apply it. We beleive there are no more than 26 parameters... *)
+      let (i, renameMap) = List.fold_left (fun (i, m) x -> (i + 1),
+        M.add x (String.make 1 (Char.chr (97 + i))) m) (0, M.empty) params in
+      assert (i <= 26);
+      let renameMap = ref renameMap in
 
-        (* Predicate body are built from coefficient mapping by extracting only
-           relating coefficinet and weight. Finally the body is renamed. *)
-        Expr (renameExpr renameMap (ops, coefs |>
-            M.filter (fun k _ -> List.mem k params) |>
-            M.map (M.filter (fun k _ -> List.mem (M.find k exprGroup) a))))
-      ) predMap in
+      (* Parameter list for the predicate are renamed. *)
+      renameList renameMap params,
 
-      (M.map (fun x ->
-        reduce (fun (p1, e1) (p2, e2) -> assert (p1 = p2); (p1, e1 &&& e2))
-          (List.map (fun x -> MI.find x predSols) x)) predCopies),
+      (* Predicate body are built from coefficient mapping by extracting only
+         relating coefficinet and weight. Finally the body is renamed. *)
+      renameExpr renameMap (ops, coefs |>
+          M.filter (fun k _ -> List.mem k params) |>
+          M.map (M.filter (fun k _ -> List.mem (M.find k exprGroup) a)))
+    ) predMap in
 
-      And(M.fold (fun k v -> (@) [ Expr((if k = "" then
-          (if constr = [] then NEQ else GT) else EQ), v) ]) coefs constr)
-  ) (directProduct laDnfs))
+    dnfChoice,
+    predSols,
+    And(M.fold (fun k v -> (@) [ Expr((if k = "" then
+        (if constr = [] then NEQ else GT) else EQ), v) ]) coefs constr)
+  ) (directProduct laDnfs) |>
+
+  (fun x -> x, (MI.map (fun (_, x) -> x) predMap), predCopies) |>
+
+  merge
 
 let preprocLefthand =
   List.fold_left (fun (pvars, la) -> function
