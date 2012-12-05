@@ -563,7 +563,7 @@ let solveTree (laGroups, predMap, predCopies) =
       (* Predicate body are built from coefficient mapping by extracting only
          relating coefficinet and weight. Finally the body is renamed. *)
       renameExpr renameMap (ops, coefs |>
-          M.filter (fun k _ -> List.mem k params) |>
+          M.filter (fun k _ -> List.mem k params || k = "") |>
           M.map (M.filter (fun k _ -> List.mem (M.find k exprGroup) a)))
     ) predMap in
 

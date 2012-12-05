@@ -40,8 +40,8 @@ let negateOp = function
     | GTE -> LT
 
 let string_of_operator = function
-    | EQ -> "=="
-    | NEQ -> "!="
+    | EQ -> "="
+    | NEQ -> "<>"
     | LT -> "<"
     | LTE -> "<="
     | GT -> ">"
@@ -57,24 +57,24 @@ let (~--) = M.map (fun v -> -v)
 type expr = operator * coef
 type pvar = string * string list
 
-let printExpr ?(vars = None) (op, coef) =
-    let z3, vars = match vars with
-        | Some vars -> true, vars
-        | None -> false, ref [] in
+let printTerm coef =
+  let buf = create 1 in
+  let first = ref true in
+  M.iter (fun v c ->
+    if v = "" || c = 0 then () else (
+      if c > 0 && not !first then add_char buf '+' else if c = -1 then add_char buf '-';
+      first := false;
+      if (abs c) <> 1 then add_string buf (string_of_int c);
+      add_string buf v)) coef;
+  if !first then add_string buf "0";
+  contents buf
 
-    let buf = create 1 in
-    let first = ref true in
-    M.iter (fun v c ->
-        if v = "" || c = 0 then () else (
-        if not (List.mem v !vars) then vars := v :: !vars;
-        if c > 0 && not !first then add_char buf '+' else if c = -1 then add_char buf '-';
-        first := false;
-        if (abs c) <> 1 then add_string buf (let c = string_of_int c in if z3 then c ^ "*" else c);
-        add_string buf v)) coef;
-    if !first then add_string buf "0";
-    add_string buf (string_of_operator op);
-    add_string buf (if M.mem "" coef then string_of_int (-(M.find "" coef)) else "0");
-    contents buf
+let printExpr (op, coef) =
+  let buf = create 1 in
+  add_string buf (printTerm coef);
+  add_string buf (string_of_operator op);
+  add_string buf (if M.mem "" coef then string_of_int (-(M.find "" coef)) else "0");
+  contents buf
 
 (** Flips greater-than operators (>, >=) to less-than operators (<, <=) and
     replaces strict inequality (<, >) with not strict ones (<=, >=) by adding 1
@@ -192,6 +192,28 @@ type pexpr = operator M.t * coef M.t
 let (+++) (o1, c1) (o2, c2) =
   (M.simpleMerge o1 o2),
   (coefOp M.simpleMerge M.empty c1 c2)
+
+let printPexprCoef coef =
+  let buf = create 1 in
+  let first = ref true in
+  M.iter (fun v coef ->
+    let term = printTerm coef in
+    if v = "" || term = "0" then () else (
+    if not !first then add_char buf '+';
+    first := false;
+    if (String.contains term '+') || (String.contains term '-') then (
+      add_char buf '(';
+      add_string buf term;
+      add_char buf ')'
+    ) else (
+      add_string buf term;
+      add_char buf '*'
+    );
+    add_string buf v)) coef;
+  if !first then add_string buf "0";
+  add_string buf " ? ";
+  add_string buf (if M.mem "" coef then printTerm (M.find "" coef) else "0");
+  contents buf
 
 type constr = expr formula
 type space = pexpr * constr
