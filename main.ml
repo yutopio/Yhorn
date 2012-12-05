@@ -505,14 +505,16 @@ let merge (sols, predMap, predCopies) =
 
 let solveTree (laGroups, predMap, predCopies) =
   let (laIds, laDnfs) = laGroups |>
-      (MI.map (
+      MI.add (-1) (Expr (LTE, M.add "" (-1) M.empty)) |>
+      MI.map (
         mapFormula normalizeExpr |-
         splitNegation |-
-        convertToNF false)) |>
+        convertToNF false) |>
       MI.bindings |> List.split in
 
   (* Give a number inside each LA group. *)
-  let laDnfs = List.map (mapi (fun i x -> (i, x))) laDnfs in
+  let laDnfs = List.map (mapi (fun i x -> (i,
+    List.filter (fun x -> x <> (EQ, M.empty)) x))) laDnfs in
 
   List.map (fun assigns ->
     (* Give IDs and flatten. *)
