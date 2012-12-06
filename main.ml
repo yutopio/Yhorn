@@ -119,7 +119,7 @@ let getInterpolant sp =
       | None -> print_endline "none");
     ret *)
 
-let generateExprMergeConstr (op1, coef1) (op2, coef2) =
+let generatePexprMergeConstr (op1, coef1) (op2, coef2) =
   (* Consider all variables are present in both *)
   let vars = [] |>
     M.fold (fun k v r -> k :: r) coef1 |>
@@ -151,7 +151,7 @@ let generateExprMergeConstr (op1, coef1) (op2, coef2) =
 
 let rec mergeSpace opAnd sp1 sp2 =
     let mergeSpSp ((op1, coef1), c1) ((op2, coef2), c2) =
-        let c5 = generateExprMergeConstr (op1, coef1) (op2, coef2) in
+        let c5 = generatePexprMergeConstr (op1, coef1) (op2, coef2) in
         let sp = ((M.fold M.add op1 op2), coef1), (c1 &&& c2 &&& c5) in
         match getInterpolant (Expr sp) with
         | Some _ -> Expr sp
@@ -483,20 +483,20 @@ let merge (sols, predMap, predCopies) =
   let predSols, constrs = List.fold_left (fun (predSolsByPred, constrs)
     (dnfChoice, predSolsByDnf, constr) ->
       MI.fold (fun pid ->
-        MI.addDefault ([], MIA.empty) (fun (_, m) (param, pexpr) -> param,
+        MI.addDefault ([], MIL.empty) (fun (_, m) (param, pexpr) -> param,
           let (_, groupKey) =
             (MI.fold (fun k v l ->
               if List.mem k (MI.find pid predMap) then l
               else (k, v) :: l) dnfChoice []) |>
             (List.sort comparePair) |>
             List.split in
-          MIA.addDefault [] (fun l x -> x :: l) groupKey pexpr m
+          MIL.addDefault [] (fun l x -> x :: l) groupKey pexpr m
         ) pid) predSolsByDnf predSolsByPred,
       constr :: constrs
   ) (MI.empty, []) sols in
 
   let predSols = MI.map (fun (param, pexpr) -> param,
-    MIA.fold (fun _ v l -> v :: l) pexpr []) predSols in
+    MIL.fold (fun _ v l -> v :: l) pexpr []) predSols in
 
   (M.map (fun x ->
     reduce (fun (p1, e1) (p2, e2) -> assert (p1 = p2); (p1, e1 @ e2))
@@ -586,7 +586,27 @@ let preprocLefthand =
         | Some y -> x &&& y)
     | PredVar (p, params) -> ((p, params) :: pvars), la) ([], None)
 
-let solve clauses =
+let tryMerge predMerge solution =
+  List.fold_left (fun (fail, (preds, constr as sol)) (p1, p2) ->
+    if fail then (true, sol) else (
+
+      (* Specified predicate variables must exist. *)
+      let [(param1, nf1);(param2, nf2)] = List.map (fun p ->
+        assert (M.mem p preds); M.find p preds) [p1;p2] in
+
+      (* Parameters for the predicate variable must match. It should have been
+         renamed to (a,b, ...) during the solving algorithm, thus here the
+         significance is in the number of the parameters. *)
+      assert (param1 = param2);
+
+      (* Try to merge nf1 and nf2. *)
+
+    (false, sol))
+  ) (false, solution) predMerge |>
+
+  (fun (_, ret) -> ret)
+
+let solve (clauses, predMerge) =
   List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses |>
   buildGraph |>
 
@@ -608,4 +628,6 @@ let solve clauses =
         | Some _, Some _ -> assert false
         | x, None
         | None, x -> x) m1 m2),
-    c1 &&& c2)
+    c1 &&& c2) |>
+
+  tryMerge predMerge

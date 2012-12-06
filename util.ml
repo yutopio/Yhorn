@@ -68,8 +68,8 @@ let rec skip n x =
         | a :: rest -> skip (n - 1) rest
 
 let take n x =
+    assert (n >= 0);
     let rec internal n x ret =
-        assert (n >= 0);
         if n = 0 then List.rev ret
         else match x with
             | [] -> ret

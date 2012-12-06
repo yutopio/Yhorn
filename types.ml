@@ -16,12 +16,12 @@ end
 
 module MI = MapEx.Make(MyInt)
 
-module MyIntArray = struct
+module MyIntList = struct
   type t = int list
   let compare = compare
 end
 
-module MIA = MapEx.Make(MyIntArray)
+module MIL = MapEx.Make(MyIntList)
 
 type operator =
     | EQ
@@ -161,6 +161,7 @@ type hornTerm =
     | LinearExpr of expr formula
     | PredVar of pvar
 type horn = hornTerm list * hornTerm
+type query = horn list * (string * string) list
 
 let printHornTerm = function
     | LinearExpr e -> printFormula printExpr e

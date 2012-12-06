@@ -5,7 +5,7 @@ open Main
 
 let main _ =
   let input = inputUnit token (Lexing.from_channel stdin) in
-  let solSp = solve input in
+  let solSp = solve (input, []) in
   let predAssignments = getSolution solSp in
 
   print_newline ();
