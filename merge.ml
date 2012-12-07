@@ -20,23 +20,10 @@ let compare x y =
         | _ -> ret) 0 x y
     | ret -> ret
 
-let current = ref []
-
-let dump =
-  List.map (
-    List.map string_of_int |-
-    String.concat "," |-
-    (fun x -> "(" ^ x ^ ")")
-  ) |-
-  String.concat "," |-
-  print_endline
-
 let rec f2 f a b c = function
   | d::e ->
-    if (List.fold_left max 0 b) < List.hd d then (
-      let x = a @ [b @ d] @ c @ e in
-      if (compare !current x) < 0 then (current := x; f x b d)
-      else assert false);
+    if reduce max b < List.hd d then
+      f (a @ [b @ d] @ c @ e) b d;
     f2 f a b (c @ [d]) e
   | [] -> ()
 
@@ -51,26 +38,31 @@ let rec merge check n input =
   if n = 0 || List.length input = 0 then input else (
   let next = ref [] in
   List.iter (f1 (fun current m1 m2 ->
-    if check current m1 m2 then next := current :: !next) []) input;
+    if check current m1 m2 then
+      next := current :: !next) []) input;
   merge check (n - 1) (List.rev !next))
 
-let merge_main () =
-  let a = int_of_string (read_line ()) in
-  let b = int_of_string (read_line ()) in
-  let (a, b) = (min a b), (max a b) in
+let rec merge_objLists a b =
+  let [la;lb] = List.map List.length [a;b] in
+  if la > lb then merge_objLists b a else (
 
-  let check current m1 m2 =
-    if a < b then
-      if List.hd m2 < a then false
+  assert (la > 0);
+  let a' = mapi (fun i x -> [i, x]) a in
+  let b' = mapi (fun i x -> [i + la, x]) b in
+  let [b_hd]::_ = b' in
+  let input = a' @ b' in
+
+  let check =
+    if la < lb then fun current _ m2 ->
+      if List.hd m2 < b_hd then false
       else List.fold_left (fun r x ->
-	if List.hd x < a then
-	  if List.length x = 1 then r + 1 else r
-	else r - 1) 0 current <= 0
-    else (* a = b *)
+        if List.hd x < b_hd then
+          if List.length x = 1 then r + 1 else r
+        else r - 1) 0 current <= 0
+    else (* la = lb *) fun _ m1 m2 ->
       match m1, m2 with
-	| [m1], [m2] -> m1 < a && m2 >= a
-	| _ -> false in
+        | [m1, _], [m2, _] -> m1 < la && m2 >= la
+        | _ -> false in
 
-  current := repeat (fun i r -> [i] :: r) (a + b) [];
-  let output = merge check b [ !current ] in
-  List.iter dump output
+  let output = merge check lb [ input ] in
+  List.map (List.map (List.map (fun (_, x) -> x))) output)
