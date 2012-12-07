@@ -35,26 +35,42 @@ let rec f2 f a b c = function
   | d::e ->
     if (List.fold_left max 0 b) < List.hd d then (
       let x = a @ [b @ d] @ c @ e in
-      if (compare !current x) < 0 then (current := x; f x)
+      if (compare !current x) < 0 then (current := x; f x b d)
       else assert false);
     f2 f a b (c @ [d]) e
   | [] -> ()
 
 let rec f1 f a = function
   | b::c ->
-    if List.fold_left (fun f c -> f && List.length c = 1) true c then
+    if not (List.exists (fun x -> List.length x <> 1) c) then
       f2 f a b [] c;
     f1 f (a @ [b]) c
   | [] -> ()
 
-let rec merge input =
-  if List.length input = 0 then () else (
-  print_endline "***";
+let rec merge check n input =
+  if n = 0 || List.length input = 0 then input else (
   let next = ref [] in
-  List.iter (fun x -> dump x; f1 (fun x -> next := x :: !next) [] x) input;
-  merge (List.rev !next))
+  List.iter (f1 (fun current m1 m2 ->
+    if check current m1 m2 then next := current :: !next) []) input;
+  merge check (n - 1) (List.rev !next))
 
 let merge_main () =
-  let x = int_of_string (read_line ()) in
-  current := repeat (fun i r -> [i] :: r) x [];
-  merge [ !current ]
+  let a = int_of_string (read_line ()) in
+  let b = int_of_string (read_line ()) in
+  let (a, b) = (min a b), (max a b) in
+
+  let check current m1 m2 =
+    if a < b then
+      if List.hd m2 < a then false
+      else List.fold_left (fun r x ->
+	if List.hd x < a then
+	  if List.length x = 1 then r + 1 else r
+	else r - 1) 0 current <= 0
+    else (* a = b *)
+      match m1, m2 with
+	| [m1], [m2] -> m1 < a && m2 >= a
+	| _ -> false in
+
+  current := repeat (fun i r -> [i] :: r) (a + b) [];
+  let output = merge check b [ !current ] in
+  List.iter dump output
