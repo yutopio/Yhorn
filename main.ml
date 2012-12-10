@@ -484,12 +484,12 @@ let merge (sols, predMap, predCopies) =
     (dnfChoice, predSolsByDnf, constr) ->
       MI.fold (fun pid ->
         MI.addDefault ([], MIL.empty) (fun (_, m) (param, pexpr) -> param,
-          let (_, groupKey) =
+          let groupKey =
             (MI.fold (fun k v l ->
               if List.mem k (MI.find pid predMap) then l
               else (k, v) :: l) dnfChoice []) |>
             (List.sort comparePair) |>
-            List.split in
+            List.split |> snd in
           MIL.addDefault [] (fun l x -> x :: l) groupKey pexpr m
         ) pid) predSolsByDnf predSolsByPred,
       constr :: constrs
@@ -575,7 +575,7 @@ let solveTree (laGroups, predMap, predCopies) =
         (if constr = [] then NEQ else GT) else EQ), v) ]) coefs constr)
   ) (directProduct laDnfs) |>
 
-  (fun x -> x, (MI.map (fun (_, x) -> x) predMap), predCopies) |>
+  (fun x -> x, (MI.map snd predMap), predCopies) |>
 
   merge
 
@@ -586,25 +586,56 @@ let preprocLefthand =
         | Some y -> x &&& y)
     | PredVar (p, params) -> ((p, params) :: pvars), la) ([], None)
 
+module Pexpr = struct
+  type t = pexpr
+  let compare = compare
+end
+module MP = Merge.Merger(Pexpr)
+
+module PexprList = struct
+  type t = pexpr list
+  let compare = compare
+end
+module MPL = Merge.Merger(PexprList)
+
+let pexprMerge origin _ m1 m2 =
+  let ret = origin &&& generatePexprMergeConstr (List.hd m1) (List.hd m2) in
+  match Z3interface.integer_programming ret with
+    | Some _ -> Some ret
+    | None -> None
+
+let pexprListMerge origin _ m1 m2 =
+  let m1, m2 = List.hd m1, List.hd m2 in
+  match List.fold_left (fun l x ->
+    let ret =
+      MP.merge_twoLists x pexprMerge m1 m2 |>
+      MP.MR.bindings |>
+      List.split |> snd in
+    ret @ l) [] origin with
+    | [] -> None
+    | x -> Some x
+
 let tryMerge predMerge solution =
   List.fold_left (fun (fail, (preds, constr as sol)) (p1, p2) ->
     if fail then (true, sol) else (
 
-      (* Specified predicate variables must exist. *)
-      let [(param1, nf1);(param2, nf2)] = List.map (fun p ->
-        assert (M.mem p preds); M.find p preds) [p1;p2] in
+    (* Specified predicate variables must exist. *)
+    let [(param1, nf1);(param2, nf2)] = List.map (fun p ->
+      assert (M.mem p preds); M.find p preds) [p1;p2] in
 
-      (* Parameters for the predicate variable must match. It should have been
-         renamed to (a,b, ...) during the solving algorithm, thus here the
-         significance is in the number of the parameters. *)
-      assert (param1 = param2);
+    (* Parameters for the predicate variable must match. It should have been
+       renamed to (a,b, ...) during the solving algorithm, thus here the
+       significance is in the number of the parameters. *)
+    assert (param1 = param2);
 
-      (* Try to merge nf1 and nf2. *)
-
-    (false, sol))
-  ) (false, solution) predMerge |>
-
-  (fun (_, ret) -> ret)
+    (* Try to merge nf1 and nf2. Randomly choose the first constraint if
+       succeeds. *)
+    let ret = MPL.merge_twoLists [constr] pexprListMerge nf1 nf2 in
+    if MPL.MR.cardinal ret > 0 then
+      (false, (preds, constr &&& List.hd (snd (MPL.MR.choose ret))))
+    else
+      (true, sol))
+  ) (false, solution) predMerge |> snd
 
 let solve (clauses, predMerge) =
   List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses |>
