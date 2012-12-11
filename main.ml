@@ -602,25 +602,43 @@ module PexprList = struct
 end
 module MPL = Merge.Merger(PexprList)
 
-let pexprMerge origin _ m1 m2 =
-  (* TODO: Consider the different combinations of pairs among elements in
-     (m1,m2) to avoid issuing useless Z3 queries.  *)
-  let ret = origin &&& generatePexprMergeConstr (List.hd m1) (List.hd m2) in
+
+let combinationCheck lookup f a b c d e =
+  let rec choose f a ((bi, bl) as b) c ((di, dl) as d) e = function
+    | (i,x)::rest ->
+      (choose f a (i, x::bl) c d e rest) &&
+      (choose f a b c (i, x::dl) e rest)
+    | [] ->
+      (bi * di < 0) || (
+      List.sort (fun (x,_) (y,_) -> x-y) ([b;d] @ c) |>
+      List.split |> (fun (_,x) -> f (a @ x @ e))) in
+  let b' = List.map (fun x -> lookup x, x) b in
+  let c' = List.map (fun x -> (List.hd x |> lookup), x) c in
+  choose f a (-1, []) c' (-1, d) e (List.rev b')
+
+let pexprMerge lookup input origin _ a b c d e =
+  if not (combinationCheck lookup (
+    fun x -> MP.M.mem x input) a b c d e) then None else
+
+  let ret = MP.M.find origin input &&&
+    generatePexprMergeConstr (List.hd b) (List.hd d) in
 
   (* Test wether the constraint is satisfiable or not. *)
   match Z3interface.integer_programming ret with
     | Some _ -> Some ret
     | None -> None
 
-let pexprListMerge origin _ m1 m2 =
-  (* TODO: Ditto. *)
-  let m1, m2 = List.hd m1, List.hd m2 in
+let pexprListMerge lookup input origin _ a b c d e =
+  if not (combinationCheck lookup (
+    fun x -> MPL.M.mem x input) a b c d e) then None else
+
+  let b, d = List.hd b, List.hd d in
   match List.fold_left (fun l x ->
     let ret =
-      MP.merge_twoLists x pexprMerge m1 m2 |>
-      MP.MR.bindings |>
+      MP.merge_twoLists x pexprMerge b d |>
+      MP.M.bindings |>
       List.split |> snd in
-    ret @ l) [] origin with
+    ret @ l) [] (MPL.M.find origin input) with
     | [] -> None
     | x -> Some x
 
@@ -640,8 +658,8 @@ let tryMerge predMerge solution =
     (* Try to merge nf1 and nf2. Randomly choose the first constraint if
        succeeds. *)
     let ret = MPL.merge_twoLists [constr] pexprListMerge nf1 nf2 in
-    if MPL.MR.cardinal ret > 0 then
-      (false, (preds, List.hd (snd (MPL.MR.choose ret))))
+    if MPL.M.cardinal ret > 0 then
+      (false, (preds, List.hd (snd (MPL.M.choose ret))))
     else
       (true, sol))
   ) (false, solution) predMerge |> snd
