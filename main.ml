@@ -319,53 +319,53 @@ let buildGraph clauses =
     (* Rename all variables to internal names for avoiding name collision. *)
     let nameMap = ref M.empty in
 
-    let dst = match rh with
+    let src = match rh with
       | PredVar (p, l) ->
         if M.mem p !predVertices then (
           (* If the predicate `p` already exists, build a renaming map so that
              the current horn clause become consistent with already built part
              of the graph. *)
-          let dst = M.find p !predVertices in
-          let PredVar (p, binders) = G.V.label dst in
+          let src = M.find p !predVertices in
+          let PredVar (_, binders) = G.V.label src in
           nameMap := listFold2 (fun m a b -> M.add a b m) M.empty l binders;
-          dst
+          src
         ) else (
           (* Otherwise, create a new predicate vertex and remember it. *)
-          let dst = G.V.create (PredVar (p, (renameList nameMap l))) in
-          predVertices := M.add p dst !predVertices;
-          dst)
+          let src = G.V.create (PredVar (p, (renameList nameMap l))) in
+          predVertices := M.add p src !predVertices;
+          src)
       | LinearExpr e ->
         (* If the right-hand of the horn clause is a linear expression, there
            are no special things to consider. Just create a new vertex. *)
         G.V.create (LinearExpr (mapFormula (renameExpr nameMap) e)) in
 
-    (* Following statement has no effect if the vertex `dst` is in the graph. *)
-    let g = G.add_vertex g dst in
+    (* Following statement has no effect if the vertex `src` is in the graph. *)
+    let g = G.add_vertex g src in
 
     let (pvars, la) = lh in
-    let g, srcs = List.fold_left (fun (g, srcs) (p, args) ->
+    let g, dsts = List.fold_left (fun (g, dsts) (p, args) ->
       (* Get (or create if needed) the predicate variable vertex and its binder.
          We will relate this vertex from newly-created predicate variable
          vertices that corrensponds to the application of such predicates. The
          edge will carry binding information. *)
-      let src, binders =
+      let dst, binders =
         if M.mem p !predVertices then
           (* If exists, extract binders from the vertex label. *)
-          let src = M.find p !predVertices in
-          let PredVar (_, binders) = G.V.label src in
-          src, binders
+          let dst = M.find p !predVertices in
+          let PredVar (_, binders) = G.V.label dst in
+          dst, binders
         else (
           (* If not yet exists, create a new vertex with a fresh binder. *)
           let binders = repeat (fun _ l -> (new_name ()) :: l)
             (List.length args) [] in
-          let src = G.V.create (PredVar (p, binders)) in
-          predVertices := M.add p src !predVertices;
-          src, binders) in
+          let dst = G.V.create (PredVar (p, binders)) in
+          predVertices := M.add p dst !predVertices;
+          dst, binders) in
 
       (* Create a vertex which corresponds to the application to the predicate
          variable. *)
       let args = renameList nameMap args in
-      let dst = G.V.create (PredVar (p, args)) in
+      let src = G.V.create (PredVar (p, args)) in
 
       (* Build a name mapping between referred predicate variable (appears on
          the right-hand of Horn clause) and referring one (on the left-hand). *)
@@ -373,28 +373,27 @@ let buildGraph clauses =
 
       (* Add a edge between origin *)
       let g = G.add_edge_e g (G.E.create src (Some renames) dst) in
-      g, (dst :: srcs)
+      g, (src :: dsts)
     ) (g, []) pvars in
 
     (* If a linear expression exists on the left-hand, create a corresponding
        vertex. *)
-    let srcs = match la with
-      | None -> srcs
+    let dsts = match la with
+      | None -> dsts
       | Some x ->
-        (G.V.create (LinearExpr (mapFormula (renameExpr nameMap) x))) :: srcs in
+        (G.V.create (LinearExpr (mapFormula (renameExpr nameMap) x))) :: dsts in
 
     (* Add edges between all left-hand terms and right-hand term. *)
-    List.fold_left (fun g src -> G.add_edge g src dst) g srcs
+    List.fold_left (fun g dst -> G.add_edge g src dst) g dsts
   ) G.empty clauses
 
-(* TODO: Rename this. *)
 let top = Expr (EQ, M.empty)
 
 let flattenGraph g =
   G.fold_vertex (fun v l ->
     (* TODO: This algorithm cannot find the self-looping predicate variable node
        which has no children. *)
-    if G.out_degree g v = 0 then v :: l else l) g [] |>
+    if G.in_degree g v = 0 then v :: l else l) g [] |>
 
   (* Traverse the graph from given starting points to make trees. *)
   List.map (fun v ->
@@ -413,21 +412,21 @@ let flattenGraph g =
     let rec f v nameMap =
       let renamedLabel v = renameHornTerm nameMap (G.V.label v) in
 
-      let (u's, la) = G.fold_pred (fun u (u's, la) ->
+      let (u's, la) = G.fold_succ (fun u (u's, la) ->
         match renamedLabel u with
           | PredVar (p, args) ->
-            (* This prevents `nameMap` sharing over all DFS. *)
+            (* This prevents `nameMap` to be shared over all DFS. *)
             let nameMap = ref (!nameMap) in
 
             (* Every application vertex must have exactly one parent. *)
-            let es = G.fold_pred_e (fun e l -> e :: l) g u [] in
+            let es = G.fold_succ_e (fun e l -> e :: l) g u [] in
             let e = assert (List.length es = 1); List.hd es in
 
             (* Bindings of predicate variables are converted to linear equations
                so that it can be treated easy. Note that the binder and argument
                will have different names even if they have the same one before
                conversion.*)
-            let src, (Some bindings) = (G.E.src e), (G.E.label e) in
+            let dst, (Some bindings) = (G.E.dst e), (G.E.label e) in
             let constr = List.fold_left (fun constr (x, y) ->
               let x' = new_name () in
               let y' = renameVar nameMap y in
@@ -436,7 +435,7 @@ let flattenGraph g =
               [] bindings in
 
             (* Traverse children first to unify predicate variable nodes. *)
-            let u' = f src nameMap in
+            let u' = f dst nameMap in
             (u' @ u's), (if constr = [] then la else la &&& And(constr))
 
           | LinearExpr e ->
@@ -457,6 +456,7 @@ let flattenGraph g =
           u's
 
         | LinearExpr e ->
+          (* NOTE: The vertex 'v' must be the root of traversal. *)
           registerLa (if la <> top then la &&& (!!! e) else !!! e);
           [] (* Doesn't care on what to return. *)
     in
@@ -475,9 +475,11 @@ let getSolution (pexprs, constr) =
 
       (* Construct one interpolant *)
       M.map (fun (params, cnf) ->
-        let x = And (List.map (fun x -> Or (List.map (fun x -> Expr x) x)) cnf) in
+        let x = convertToFormula true cnf in
         params, (mapFormula (assignParameters sol) x)) pexprs
-    | None -> raise Not_found
+    | None ->
+      print_endline "Unsatisfiable problem.";
+      raise Not_found
 
 let merge (sols, predMap, predCopies) =
   let predSols, constrs = List.fold_left (fun (predSolsByPred, constrs)
@@ -512,7 +514,8 @@ let solveTree (laGroups, predMap, predCopies) =
         convertToNF false) |>
       MI.bindings |> List.split in
 
-  (* Give a number inside each LA group. *)
+  (* Give choice IDs to each conjunctions inside DNF. At the same time, filter
+     the inserted tautologies 0=0 during the process. *)
   let laDnfs = List.map (mapi (fun i x -> (i,
     List.filter (fun x -> x <> (EQ, M.empty)) x))) laDnfs in
 
@@ -544,7 +547,7 @@ let solveTree (laGroups, predMap, predCopies) =
           | _ -> assert false),
 
         (* The flag to note that the interpolant should be LTE or EQ *)
-        (M.add exprId op ops),
+        (if op = LTE then M.add exprId op ops else ops),
 
         (* Correspondance between expression ID and groupID *)
         (M.add exprId gid exprGroup)
@@ -572,6 +575,7 @@ let solveTree (laGroups, predMap, predCopies) =
     dnfChoice,
     predSols,
     And(M.fold (fun k v -> (@) [ Expr((if k = "" then
+        (* TODO: Consider completeness of Farkas' Lemma application. *)
         (if constr = [] then NEQ else GT) else EQ), v) ]) coefs constr)
   ) (directProduct laDnfs) |>
 
@@ -584,7 +588,7 @@ let preprocLefthand =
     | LinearExpr x -> pvars, Some (match la with
         | None -> x
         | Some y -> x &&& y)
-    | PredVar (p, params) -> ((p, params) :: pvars), la) ([], None)
+    | PredVar pvar -> (pvar :: pvars), la) ([], None)
 
 module Pexpr = struct
   type t = pexpr
@@ -599,12 +603,17 @@ end
 module MPL = Merge.Merger(PexprList)
 
 let pexprMerge origin _ m1 m2 =
+  (* TODO: Consider the different combinations of pairs among elements in
+     (m1,m2) to avoid issuing useless Z3 queries.  *)
   let ret = origin &&& generatePexprMergeConstr (List.hd m1) (List.hd m2) in
+
+  (* Test wether the constraint is satisfiable or not. *)
   match Z3interface.integer_programming ret with
     | Some _ -> Some ret
     | None -> None
 
 let pexprListMerge origin _ m1 m2 =
+  (* TODO: Ditto. *)
   let m1, m2 = List.hd m1, List.hd m2 in
   match List.fold_left (fun l x ->
     let ret =
@@ -632,7 +641,7 @@ let tryMerge predMerge solution =
        succeeds. *)
     let ret = MPL.merge_twoLists [constr] pexprListMerge nf1 nf2 in
     if MPL.MR.cardinal ret > 0 then
-      (false, (preds, constr &&& List.hd (snd (MPL.MR.choose ret))))
+      (false, (preds, List.hd (snd (MPL.MR.choose ret))))
     else
       (true, sol))
   ) (false, solution) predMerge |> snd
@@ -645,7 +654,7 @@ let solve (clauses, predMerge) =
   (fun g ->
     let cycle = Traverser.has_cycle g in
     print_endline ("Cycle: " ^ (string_of_bool cycle));
-    display_with_gv g;
+    display_with_gv (Operator.mirror g);
     assert (not cycle);
     g) |>
 

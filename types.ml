@@ -188,6 +188,16 @@ let convertToNF cnf formulae =
     | false, Or x -> internal x []
     | _ -> internal [ formulae ] []
 
+let convertToFormula cnf nf =
+  match List.map (fun x ->
+    match List.map (fun x -> Expr x) x with
+      | [] -> assert false
+      | [x] -> x
+      | x -> if cnf then Or x else And x) nf with
+    | [] -> assert false
+    | [x] -> x
+    | x -> if cnf then And x else Or x
+
 (** Solution space of interpolation *)
 type pexpr = operator M.t * coef M.t
 let (+++) (o1, c1) (o2, c2) =
@@ -252,6 +262,7 @@ end
 
 module G = Graph.Persistent.Digraph.AbstractLabeled(MyVertex)(MyEdge)
 module Traverser = Graph.Traverse.Dfs(G)
+module Operator = Graph.Oper.P(G)
 
 module DisplayAttrib = struct
   let graph_attributes _ = []
@@ -270,7 +281,8 @@ module Display = struct
     match E.label e with
       | None -> []
       | Some x ->  [`Label (String.concat ", "
-                           (List.map (fun (x, y) -> x ^ "=" ^ y) x)) ]
+                           (List.map (fun (x, y) -> x ^ "=" ^ y) x));
+                    `Dir `None; `Style `Dotted]
 end
 
 module Dot = Graph.Graphviz.Dot(Display)
