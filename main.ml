@@ -14,11 +14,19 @@ let generatePexprMergeConstr (op1, coef1) (op2, coef2) =
     M.fold (fun k v r -> k :: r) coef2 |>
     distinct in
 
+  (* Generate auxiliary variables. *)
+  let q1, q2 =
+    let f () = "q" ^ string_of_int (new_id ()) in
+    f (), f () in
+  let c3 = Expr(GT , M.add q1 1 M.empty) in (* q1  > 0 *)
+  let c1 = Expr(NEQ, M.add q2 1 M.empty) in (* q2 != 0 *)
+  let c2 = Expr(NEQ, M.add q2 1 M.empty) in (* q2  > 0 *)
+
   (* Coefficients of both interpolants must be the same *)
-  let (c3, c4) = List.fold_left (fun (r1, r2) k ->
+  let mul v coef = M.fold (fun k -> M.add (k ^ "*" ^ v)) coef M.empty in
+  let c3 = List.fold_left (fun r k ->
     let [v1;v2] = List.map (M.findDefault k M.empty) [coef1;coef2] in
-    (Expr(EQ, v1 ++ v2) :: r1),
-    (Expr(EQ, v1 -- v2) :: r2)) ([], []) vars in
+    (Expr(EQ, (mul q1 v1) -- (mul q2 v2)) :: r)) [c3] vars in
 
   (* Check weight variables those for making an interpolant LTE. *)
   let f x =
@@ -28,14 +36,14 @@ let generatePexprMergeConstr (op1, coef1) (op2, coef2) =
     (p, eq) in
   let (p1lte, i1eq), (p2lte, i2eq) = (f op1), (f op2) in
 
-  let [c3;c4;i1eq;i2eq] = List.map (reduce (&&&)) [c3;c4;i1eq;i2eq] in
+  let [c3;i1eq;i2eq] = List.map (fun x -> And x) [c3;i1eq;i2eq] in
 
   (* Constraint for making both interpolant the same operator. *)
   match p1lte, p2lte with
-    | [], [] -> c3 ||| c4
-    | _, [] -> (c3 ||| c4) &&& i1eq
-    | [], _ -> (c3 ||| c4) &&& i2eq
-    | _ -> (i1eq <=> i2eq) &&& (i1eq ==> (c3 ||| c4)) &&& ((!!! i1eq) ==> c4)
+    | [], [] -> c1 &&& c3
+    | _, [] -> c1 &&& c3 &&& i1eq
+    | [], _ -> c1 &&& c3 &&& i2eq
+    | _ -> c3 &&& (i1eq <=> i2eq) &&& (i1eq ==> c1) &&& ((!!! i1eq) ==> c2)
 
 let buildGraph clauses =
   let predVertices = ref M.empty in
@@ -202,7 +210,8 @@ let getSolution (pexprs, constr) =
         let x = convertToFormula true cnf in
         params, (mapFormula (assignParameters sol) x)) pexprs
     | None ->
-      print_endline "Unsatisfiable problem.";
+      (* DEBUG: Print Z3 unsat.
+      print_endline "Unsatisfiable problem.\n"; *)
       raise Not_found
 
 let merge (sols, predMap, predCopies) =
@@ -333,7 +342,7 @@ let combinationCheck lookup f a b c d e =
       (choose f a (i, x::bl) c d e rest) &&
       (choose f a b c (i, x::dl) e rest)
     | [] ->
-      (bi * di < 0) || (
+      bi < 0 || di < 0 || (
       List.sort (fun (x,_) (y,_) -> x-y) ([b;d] @ c) |>
       List.split |> (fun (_,x) -> f (a @ x @ e))) in
   let b' = List.map (fun x -> lookup x, x) b in
@@ -348,9 +357,10 @@ let pexprMerge lookup input origin _ a b c d e =
     generatePexprMergeConstr (List.hd b) (List.hd d) in
 
   (* Test wether the constraint is satisfiable or not. *)
-  match Z3interface.integer_programming ret with
-    | Some _ -> Some ret
-    | None -> None
+  try
+    getSolution (M.empty, ret);
+    Some ret
+  with Not_found -> None
 
 let pexprListMerge lookup input origin _ a b c d e =
   if not (combinationCheck lookup (

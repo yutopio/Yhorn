@@ -9,6 +9,19 @@ let ctx = mk_context [ "MODEL", "true" ]
 let _int = mk_int_sort ctx
 let _bool = mk_bool_sort ctx
 
+let rec splitVars ret x =
+  let (name, rest) =
+    try
+      let i = String.index x '*' in
+      let name = String.sub x 0 i in
+      let rest = String.sub x (i + 1) (String.length x - i - 1) in
+      (name, Some rest)
+    with Not_found -> (x, None) in
+  let ret = (mk_const ctx (mk_string_symbol ctx name) _int) :: ret in
+  match rest with
+    | Some x -> splitVars ret x
+    | None -> ret
+
 let rec convert = function
   | Expr (op, coef) -> (
     let (l, r) = M.fold (fun k v (l, r) ->
@@ -20,9 +33,10 @@ let rec convert = function
         let _ =
           if k = "" then t := v :: !t
           else
-            let k = mk_const ctx (mk_string_symbol ctx k) _int in
-            if vp = 1 then t := k :: !t
-            else t := (mk_mul ctx [| k; v |]) :: !t in
+	    match vp, (splitVars [] k) with
+	      | 1, [k] -> t := k :: !t
+	      | 1, k -> t := (mk_mul ctx (Array.of_list k)) :: !t
+	      | _, k -> t := (mk_mul ctx (Array.of_list (v::k))) :: !t in
         (!l, !r)) coef ([], []) in
     let [ l; r ] = List.map (function
       | [] -> mk_int ctx 0 _int
