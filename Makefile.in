@@ -47,7 +47,7 @@ OFLAGS = $(INCLUDES)
 # main target
 #############
 
-NAME=yint
+NAME=yhorn
 all: byte $(OCAMLBEST)
 
 # bytecode and native-code compilation
@@ -57,38 +57,38 @@ CMO = 	version error util mapEx types merge parser lexer z3interface main
 CMO :=  $(patsubst %, $(SRCDIR)/%.cmo, $(CMO))
 
 CMX = $(CMO:.cmo=.cmx)
-CMA = yint.cma
-CMXA = yint.cmxa
+CMA = $(NAME).cma
+CMXA = $(NAME).cmxa
 
 GENERATED = META version.ml parser.ml parser.mli lexer.ml
 
-$(CMX): OFLAGS += -for-pack Yint
+$(CMX): OFLAGS += -for-pack Yhorn
 
 byte: $(CMA)
 opt: $(CMXA)
 
-yint.cma: yint.cmo
+$(NAME).cma: $(NAME).cmo
 	$(OCAMLC) $(INCLUDES) -a -g -o $@ $^
 
-yint.cmxa: yint.cmx
+$(NAME).cmxa: $(NAME).cmx
 	$(OCAMLOPT) $(INCLUDES) -a -o $@ $^
 
-yint.cmi: yint.cmo
-yint.o: yint.cmx
+$(NAME).cmi: $(NAME).cmo
+$(NAME).o:   $(NAME).cmx
 
-yint.cmo: $(CMO)
+$(NAME).cmo: $(CMO)
 	$(OCAMLC) $(INCLUDES) -pack -g -o $@ $^
 
-yint.cmx: $(CMX)
+$(NAME).cmx: $(CMX)
 	$(OCAMLOPT) $(INCLUDES) -pack -o $@ $^
 
-yint.byte: $(CMO) interactive.cmo
+$(NAME).byte: $(CMO) interactive.cmo
 	$(OCAMLC) $(INCLUDES) -g -unsafe -o $@ unix.cma z3.cma graph.cma $^
 
-yint.opt: $(CMX) interactive.cmx
+$(NAME).opt: $(CMX) interactive.cmx
 	$(OCAMLOPT) $(INCLUDES) -unsafe -inline 100 -o $@ unix.cmxa z3.cmxa graph.cmxa $^
 
-VERSION=0.1
+VERSION=0.2
 
 version.ml: Makefile
 	rm -f $@
@@ -103,17 +103,32 @@ META: META.in Makefile
 ###############
 
 DOCFILES=$(NAME).ps $(NAME).html
+DOCDIR=doc
 
 NODOC	= parser lexer version
 NODOC	:= $(patsubst %, $(SRCDIR)/%.cmo, $(NODOC))
 DOC_CMO	= $(filter-out $(NODOC), $(CMO))
-DOC_SRC	= $(DOC_CMO:.cmo=.ml) main.mli
+DOC_SRC	= $(DOC_CMO:.cmo=.ml) mapEx.mli merge.mli z3interface.mli main.mli
 
 .PHONY: doc
-doc: $(DOC_CMO)
-	mkdir -p doc
-	rm -f doc/*
-	$(OCAMLDOC) -d doc -html $(DOC_SRC)
+
+doc: $(DOCDIR)/index.html
+depgraph: $(DOCDIR)/$(NAME).ps
+	gv $(DOCDIR)/$(NAME).ps
+
+$(DOCDIR)/index.html: $(DOC_CMO)
+	mkdir -p $(DOCDIR)
+	rm -f $(DOCDIR)/*.html
+	$(OCAMLDOC) $(INCLUDES) -d $(DOCDIR) -html $(DOC_SRC)
+
+$(DOCDIR)/$(NAME).ps: $(DOCDIR)/$(NAME).dot
+	dot -Tps $(DOCDIR)/$(NAME).dot > $(DOCDIR)/$(NAME).ps
+	gv doc/$(NAME).ps
+
+$(DOCDIR)/$(NAME).dot: $(DOC_CMO)
+	mkdir -p $(DOCDIR)
+	rm -f $(DOCDIR)/*.dot
+	$(OCAMLDOC) $(INCLUDES) -o doc/$(NAME).dot -dot $(DOC_SRC)
 
 wc:
 	ocamlwc -p $(SRCDIRC)/*.mli $(SRCDIRC)/*.ml
@@ -184,7 +199,7 @@ clean:
 	  rm -f $$d/*.cm[iox] $$d/*$(OBJEXT) $$d/*~ $$d/*.annot; \
 	done
 	rm -f $(GENERATED)
-	rm -f yint.*a yint.cm* yint.o yint$(LIBEXT)
+	rm -f $(NAME).*a $(NAME).cm* $(NAME).o $(NAME)$(LIBEXT)
 
 dist-clean distclean:: clean
 	rm -f Makefile config.cache config.log config.status *.byte *.opt

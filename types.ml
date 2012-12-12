@@ -171,6 +171,15 @@ let renameHornTerm m = function
     | LinearExpr e -> LinearExpr (mapFormula (renameExpr m) e)
     | PredVar (p, param) -> PredVar (p, renameList m param)
 
+let printHorn (lh, rh) =
+  String.concat " & " (List.map printHornTerm lh) ^ " -> " ^
+    printHornTerm rh ^ "."
+
+let printQuery (clauses, merges) =
+  String.concat "\n" (List.map printHorn clauses) ^ "\n" ^
+    "[" ^ String.concat "," (List.map (
+      fun (a, b) -> a ^ "-" ^ b) merges) ^ "]"
+
 (** Normal form of element *)
 type 'a nf = 'a list list
 

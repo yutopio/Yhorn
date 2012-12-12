@@ -2,12 +2,7 @@ open Util
 open Types
 
 module Merger (X: Map.OrderedType) : sig
-  module Key : sig
-    type t = X.t list list
-    val compare : t -> t -> int
-  end
-
-  module M : MapEx.S with type key = Key.t
+  module M : MapEx.S with type key = X.t list list
 
   val merge_twoLists :
     'a ->             (* default value *)
