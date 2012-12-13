@@ -303,8 +303,7 @@ let display output g =
   output oc g;
   close_out oc;
   ignore (Sys.command ("dot -Tps " ^ dot ^ " > " ^ ps));
-  ignore (Sys.command ("gv " ^ ps ^ " 2>/dev/null"));
-  Sys.remove dot;
-  Sys.remove ps
+  ignore (Sys.command ("open " ^ ps));
+  Sys.remove dot
 
 let display_with_gv = display Dot.output_graph

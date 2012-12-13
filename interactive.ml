@@ -1,6 +1,6 @@
 open Util
 open Types
-open Main
+open Horn
 
 let main _ =
   Parser.inputUnit Lexer.token (Lexing.from_channel stdin) |>
