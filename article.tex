@@ -1,15 +1,14 @@
-\documentclass[a4paper,12pt]{article}
+\documentclass{llncs}
 
-\usepackage[utf8]{inputenc}
 \usepackage{fullpage,url}
 \usepackage{algorithm}
 \usepackage{algorithmic}
 \usepackage{listings}
-\usepackage{amssymb,amsmath,amsthm}
-\usepackage{color}
+\usepackage{syntax}
 
 \title{How to make a delicious pizza}
-\author{Yuto Takei \\ The University of Tokyo}
+\author{Yuto Takei}
+\institute{The University of Tokyo}
 
 \begin{document}
 
@@ -35,24 +34,38 @@ Advantages
 * Solution space consideration
 
 
-* Why do we limit to integer space?
+Discussion on Real space
 
 
 \section{Algorithm Overview}
 
 \subsection{Preliminaries}
 
-$ <num> ::= ... | -2 | -1 | 0 | 1 | 2 | ... $ .
-$ <var> ::= x | y | ... $
-$ <term> ::= <num> \cdot <var> $
-$ <expr> ::=  <term> + <term> + \cdots + <num> >= 0 $
-$ <la> ::= <expr>
-         | <la> \wedge <la> $
-$ <pvar> ::= A | B | ... $
-$ <pred> ::= <pvar> ( <var>, <var>, ... ) $
-$ <hornTerm> ::= <pvar> | <pred> $
-$ <horn> ::= <hornTerm> \wedge <hornTerm> \wedge \cdots \longrightarrow
-         <hornTerm> $
+\setlength{\grammarparsep}{-2pt}
+\setlength{\grammarindent}{6em}
+\begin{grammar}
+
+<num> ::= All integers
+
+<var> ::= Arithmetic variables
+
+<term> ::= $<num> \cdot <var>$
+
+<expr> ::=  $<term> + <term> + \cdots + <num> \leq 0$
+
+<la> ::= $<expr>$ | $<la> \wedge <la>$
+
+<pvar> ::= Predicate variables
+
+<pred> ::= $<pvar> ( <var>, <var>, ... )$
+
+<hTerm> ::= <la> | <pred>
+
+<horn> ::= $<hTerm> \wedge <hTerm> \wedge \cdots \longrightarrow <hTerm>$
+
+\end{grammar}
+
+
 
 * We consider inequalities.
 ** NOTE: Even we have =, <>, >, <=, we can normalize to >=
@@ -65,7 +78,7 @@ $ <horn> ::= <hornTerm> \wedge <hornTerm> \wedge \cdots \longrightarrow
 By receiving Horn clauses as an input for the algorithm, we build a
 implication tree.
 
-Def <Implication Tree>:
+Def <Resolution Tree>:
 
 Implication tree is such a tree that every node is labeled by logical
 atoms. The label of every node is implied by the conjunction of its
@@ -102,10 +115,10 @@ conjunctively connected.
 We extend our inequalities to include disjunctions in the linear
 equations.
 
-$ <la> ::= <expr>
-         | <la> \wedge <la>
-         | <la> \vee <la> $
-
+\setlength{\grammarindent}{2em}
+\begin{grammar}
+<la> ::= <expr> | $<la> \wedge <la>$ | $<la> \vee <la>$
+\end{grammar}
 
 * Predicates on the direct path from the leaf with disjunction to the
 root are connected by disjunction
@@ -127,7 +140,14 @@ No limitation Horn clause solving
 
 * Merging pred-pred between looped same name
 
+
+\section{Completeness and Complexity}
+
+
 \section{Experiment}
+
+We limited to integer space
+
 \section{Future Work}
 \section{Conclusion}
 
