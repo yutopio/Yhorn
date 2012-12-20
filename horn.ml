@@ -2,10 +2,10 @@ open Util
 open Types
 
 let assignParameters assign (op, expr) =
-  (M.fold (fun k v o -> if v <> 0 && M.findDefault k EQ op = LTE then
+  (M.fold (fun k v o -> if v <> 0 && M.findDefault EQ k op = LTE then
       (assert (v > 0); LTE) else o) assign EQ),
   (M.map (fun v -> M.fold (fun k v -> (+) ((
-    M.findDefault k 1 assign) * v)) v 0) expr)
+    M.findDefault 1 k assign) * v)) v 0) expr)
 
 let generatePexprMergeConstr (op1, coef1) (op2, coef2) =
   (* Consider all variables are present in both *)
@@ -25,7 +25,7 @@ let generatePexprMergeConstr (op1, coef1) (op2, coef2) =
   (* Coefficients of both interpolants must be the same *)
   let mul v coef = M.fold (fun k -> M.add (k ^ "*" ^ v)) coef M.empty in
   let c3 = List.fold_left (fun r k ->
-    let [v1;v2] = List.map (M.findDefault k M.empty) [coef1;coef2] in
+    let [v1;v2] = List.map (M.findDefault M.empty k) [coef1;coef2] in
     (Expr(EQ, (mul q1 v1) -- (mul q2 v2)) :: r)) [c3] vars in
 
   (* Check weight variables those for making an interpolant LTE. *)

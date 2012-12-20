@@ -310,7 +310,6 @@ let display output_graph g =
   close_out oc;
   ignore (Sys.command ("dot -Tps " ^ dot ^ " > " ^ ps));
   if uname <> "Darwin" then (
-    print_endline uname;
     ignore (Sys.command ("gv " ^ ps ^ " 2>/dev/null"));
     Sys.remove ps
   ) else
