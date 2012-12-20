@@ -296,14 +296,25 @@ end
 
 module Dot = Graph.Graphviz.Dot(Display)
 
-let display output g =
+let uname =
+  let (i, o) as p = Unix.open_process "uname" in
+  let ret = input_line i in
+  Unix.close_process p;
+  ret
+
+let display output_graph g =
   let dot = Filename.temp_file "graph" ".dot" in
   let ps = Filename.temp_file "graph" ".ps" in
   let oc = open_out dot in
-  output oc g;
+  output_graph oc g;
   close_out oc;
   ignore (Sys.command ("dot -Tps " ^ dot ^ " > " ^ ps));
-  ignore (Sys.command ("open " ^ ps));
+  if uname <> "Darwin" then (
+    print_endline uname;
+    ignore (Sys.command ("gv " ^ ps ^ " 2>/dev/null"));
+    Sys.remove ps
+  ) else
+    ignore (Sys.command ("open " ^ ps));
   Sys.remove dot
 
 let display_with_gv = display Dot.output_graph
