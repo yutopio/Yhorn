@@ -377,7 +377,28 @@ let pexprListMerge lookup input origin _ a b c d e =
     | [] -> None
     | x -> Some x
 
+let validateMergeGroups predMerge =
+  (* Use Jean-Christophe Filliâtre's Union-Find tree implementation. *)
+  let m = ref M.empty in
+  let puf = ref (Puf.create (2 * List.length predMerge)) in
+  let get x =
+    if M.mem x !m then
+      M.find x !m
+    else (
+      let v = M.cardinal !m in
+      m := M.add x v !m; v) in
+  let union x y = puf := Puf.union !puf (get x) (get y) in
+  let find x = Puf.find !puf (get x) in
+
+  (* Reduce merge groups to meaningful ones. *)
+  List.filter (fun (a, b) ->
+    let ret = (find a) <> (find b) in
+    if ret then union a b;
+    ret) predMerge
+
 let tryMerge predMerge solution =
+  validateMergeGroups predMerge |>
+
   List.fold_left (fun (fail, (preds, constr as sol)) (p1, p2) ->
     if fail then (true, sol) else (
 
@@ -397,7 +418,7 @@ let tryMerge predMerge solution =
       (false, (preds, List.hd (snd (MPL.M.choose ret))))
     else
       (true, sol))
-  ) (false, solution) predMerge |> snd
+  ) (false, solution) |> snd
 
 let solve ((clauses, predMerge) as query) =
   assert (List.length clauses > 0);
