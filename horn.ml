@@ -122,25 +122,25 @@ let buildGraph clauses =
 let top = Expr (EQ, M.empty)
 
 let flattenGraph g =
+  (* Keep track of linear expressions with giving a unique ID. *)
+  let laGroups = ref MI.empty in
+
+  (* After splitting a graph into a tree, one predicate variable may appear
+     multiple times in the tree. Thus, each appearance will be remembered by
+     the ID. `predMap` tracks the mapping between such predicate ID and linear
+     expression IDs appearing above the predicate. `predCopies` remembers the
+     correspondance between the original name of predicate variable and
+     predicate IDs. *)
+  let predMap = ref MI.empty in
+  let predCopies = ref M.empty in
+
   G.fold_vertex (fun v l ->
     (* TODO: This algorithm cannot find the self-looping predicate variable node
        which has no children. *)
     if G.in_degree g v = 0 then v :: l else l) g [] |>
 
   (* Traverse the graph from given starting points to make trees. *)
-  List.map (fun v ->
-    (* Keep track of linear expressions with giving a unique ID. *)
-    let laGroups = ref MI.empty in
-
-    (* After splitting a graph into a tree, one predicate variable may appear
-       multiple times in the tree. Thus, each appearance will be remembered by
-       the ID. `predMap` tracks the mapping between such predicate ID and linear
-       expression IDs appearing above the predicate. `predCopies` remembers the
-       correspondance between the original name of predicate variable and
-       predicate IDs. *)
-    let predMap = ref MI.empty in
-    let predCopies = ref M.empty in
-
+  List.iter (fun v ->
     let rec f v nameMap =
       let renamedLabel v = renameHornTerm nameMap (G.V.label v) in
 
@@ -192,8 +192,9 @@ let flattenGraph g =
           registerLa (if la <> top then la &&& (!!! e) else !!! e);
           [] (* Doesn't care on what to return. *)
     in
-    ignore(f v (ref M.empty));
-    !laGroups, !predMap, !predCopies)
+    ignore(f v (ref M.empty)));
+
+  !laGroups, !predMap, !predCopies
 
 let getSolution (pexprs, constr) =
   (* DEBUG: Dump Z3 problem.
@@ -413,15 +414,5 @@ let solve ((clauses, predMerge) as query) =
     g) |>
 
   flattenGraph |>
-  List.map solveTree |>
-
-  reduce (fun (m1, c1) (m2, c2) ->
-    (M.merge (fun _ a b ->
-      match a, b with
-        | None, None
-        | Some _, Some _ -> assert false
-        | x, None
-        | None, x -> x) m1 m2),
-    c1 &&& c2) |>
-
+  solveTree |>
   tryMerge predMerge
