@@ -439,8 +439,9 @@ let solve ((clauses, predMerge) as query) =
   reduce (fun (m1, c1) (m2, c2) ->
     (M.merge (fun _ a b ->
       match a, b with
-        | None, None
-        | Some _, Some _ -> assert false
+        | None, None -> assert false
+        | Some (p1, e1), Some (p2, e2) ->
+          assert (p1 = p2); Some (p1, (e1 @ e2))
         | x, None
         | None, x -> x) m1 m2),
     c1 &&& c2) |>
