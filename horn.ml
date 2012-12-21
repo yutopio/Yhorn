@@ -119,8 +119,6 @@ let buildGraph clauses =
     List.fold_left (fun g dst -> G.add_edge g src dst) g dsts
   ) G.empty clauses
 
-let top = Expr (EQ, M.empty)
-
 let flattenGraph g =
   G.fold_vertex (fun v l ->
     (* TODO: This algorithm cannot find the self-looping predicate variable node
@@ -159,21 +157,21 @@ let flattenGraph g =
                will have different names even if they have the same one before
                conversion.*)
             let dst, (Some bindings) = (G.E.dst e), (G.E.label e) in
-            let constr = List.fold_left (fun constr (x, y) ->
-              let x' = new_name () in
+            List.iter (fun (x, y) ->
               let y' = renameVar nameMap y in
-              nameMap := M.add x x' !nameMap;
-              Expr (EQ, M.add x' 1 (M.add y' (-1) M.empty)) :: constr)
-              [] bindings in
+              nameMap := M.add x y' !nameMap) bindings;
 
             (* Traverse children first to unify predicate variable nodes. *)
             let u' = f dst nameMap in
-            (u' @ u's), (if constr = [] then la else la &&& And(constr))
+            (u' @ u's), la
 
-          | LinearExpr e ->
-            (* NOTE: Linear expressions must appear only once. *)
-            u's, (la &&& e)
-      ) g v ([], top) in
+          | LinearExpr e -> (
+            match la with
+              | None -> u's, Some e
+              | Some _ ->
+                (* NOTE: Linear expressions must appear only once. *)
+                assert false)
+      ) g v ([], None) in
 
       let registerLa la =
         let key = MI.cardinal !laGroups in
@@ -182,14 +180,18 @@ let flattenGraph g =
       match (renamedLabel v) with
         | PredVar (p, param) ->
           let pid = (new_id ()) in
-          let u's = if la <> top then (registerLa la) :: u's else u's in
+          let u's = match la with
+            | Some x -> (registerLa x) :: u's
+            | None -> u's in
           predMap := MI.add pid (param, u's) !predMap;
           predCopies := M.addDefault [] (fun l x -> x :: l) p pid !predCopies;
           u's
 
         | LinearExpr e ->
           (* NOTE: The vertex 'v' must be the root of traversal. *)
-          registerLa (if la <> top then la &&& (!!! e) else !!! e);
+          registerLa (match la with
+            | Some x -> x &&& (!!! e)
+            | None -> !!! e);
           [] (* Doesn't care on what to return. *)
     in
     ignore(f v (ref M.empty));
