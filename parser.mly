@@ -21,7 +21,7 @@ open Types
 %left PLUS MINUS
 
 %start inputUnit
-%type <Types.query> inputUnit
+%type <Types.horn list * (string * string) list> inputUnit
 
 %%
 

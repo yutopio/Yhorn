@@ -46,6 +46,7 @@ let generatePexprMergeConstr (op1, coef1) (op2, coef2) =
     | _ -> c3 &&& (i1eq <=> i2eq) &&& (i1eq ==> c1) &&& ((!!! i1eq) ==> c2)
 
 let buildGraph clauses =
+  (* TODO: Handle props without assumptions, and props that imply nothing. *)
   let predVertices = ref M.empty in
   List.fold_left (fun g (lh, rh) ->
     (* Rename all variables to internal names for avoiding name collision. *)
@@ -195,28 +196,27 @@ let flattenGraph g =
     ignore(f v (ref M.empty));
     !laGroups, !predMap, !predCopies)
 
-let getSolution (pexprs, constr) =
+let getSolution (pexprs, (_, _, constrs)) =
   (* DEBUG: Dump Z3 problem.
   print_endline ("Z3 problem: " ^ (printFormula printExpr constr)); *)
 
-  match Z3interface.integer_programming constr with
-    | Some sol ->
-      (* DEBUG: Dump Z3 solution.
-      print_endline ("Z3 solution: [" ^ (String.concat ", " (
-        M.fold (fun k v l -> (k ^ "=" ^ (string_of_int v))::l) sol [])) ^ "]\n"); *)
+  let sol = MI.fold (fun _ constr m ->
+    match Z3interface.integer_programming constr with
+      | Some sol -> M.simpleMerge sol m
+      | None -> raise Not_found) constrs M.empty in
 
-      (* Construct one interpolant *)
-      M.map (fun (params, cnf) ->
-        let x = convertToFormula true cnf in
-        params, (mapFormula (assignParameters sol) x)) pexprs
-    | None ->
-      (* DEBUG: Print Z3 unsat.
-      print_endline "Unsatisfiable problem.\n"; *)
-      raise Not_found
+  (* DEBUG: Dump Z3 solution.
+  print_endline ("Z3 solution: [" ^ (String.concat ", " (
+    M.fold (fun k v l -> (k ^ "=" ^ (string_of_int v))::l) sol [])) ^ "]\n"); *)
+
+  (* Construct one interpolant *)
+  M.map (fun (params, cnf) ->
+    let x = convertToFormula true cnf in
+    params, (mapFormula (assignParameters sol) x)) pexprs
 
 let merge (sols, predMap, predCopies) =
-  let predSols, constrs = List.fold_left (fun (predSolsByPred, constrs)
-    (dnfChoice, predSolsByDnf, constr) ->
+  let predSols, maxIds, constrs = List.fold_left (fun (predSolsByPred, maxIds, constrs)
+    (dnfChoice, predSolsByDnf, maxId, constr) ->
       MI.fold (fun pid ->
         MI.addDefault ([], MIL.empty) (fun (_, m) (param, pexpr) -> param,
           let groupKey =
@@ -227,8 +227,9 @@ let merge (sols, predMap, predCopies) =
             List.split |> snd in
           MIL.addDefault [] (fun l x -> x :: l) groupKey pexpr m
         ) pid) predSolsByDnf predSolsByPred,
-      constr :: constrs
-  ) (MI.empty, []) sols in
+      maxId :: maxIds,
+      MI.add (List.length maxIds) constr constrs
+  ) (MI.empty, [], MI.empty) sols in
 
   let predSols = MI.map (fun (param, pexpr) -> param,
     MIL.fold (fun _ v l -> v :: l) pexpr []) predSols in
@@ -236,7 +237,8 @@ let merge (sols, predMap, predCopies) =
   (M.map (fun x ->
     reduce (fun (p1, e1) (p2, e2) -> assert (p1 = p2); (p1, e1 @ e2))
       (List.map (fun x -> MI.find x predSols) x)) predCopies),
-  reduce (&&&) constrs
+  (List.rev maxIds),
+  constrs
 
 let solveTree (laGroups, predMap, predCopies) =
   let (laIds, laDnfs) = laGroups |>
@@ -305,11 +307,14 @@ let solveTree (laGroups, predMap, predCopies) =
           M.map (M.filter (fun k _ -> List.mem (M.find k exprGroup) a)))
     ) predMap in
 
+    let constr = M.fold (fun k v -> (@) [ Expr((if k = "" then
+        (* TODO: Consider completeness of Farkas' Lemma application. *)
+        (if constr = [] then NEQ else GT) else EQ), v) ]) coefs constr in
+
     dnfChoice,
     predSols,
-    And(M.fold (fun k v -> (@) [ Expr((if k = "" then
-        (* TODO: Consider completeness of Farkas' Lemma application. *)
-        (if constr = [] then NEQ else GT) else EQ), v) ]) coefs constr)
+    new_id (), (* sentinel for merger *)
+    (match constr with [c] -> c | _ -> And constr)
   ) (directProduct laDnfs) |>
 
   (fun x -> x, (MI.map snd predMap), predCopies) |>
@@ -353,14 +358,47 @@ let pexprMerge lookup input origin _ a b c d e =
   if not (combinationCheck lookup (
     fun x -> MP.M.mem x input) a b c d e) then None else
 
-  let ret = MP.M.find origin input &&&
-    generatePexprMergeConstr (List.hd b) (List.hd d) in
-
   (* Test wether the constraint is satisfiable or not. *)
-  try
-    getSolution (M.empty, ret);
-    Some ret
-  with Not_found -> None
+  let test x = not (Z3interface.integer_programming x = None) in
+
+  let (ids, puf, constrs) as sol = MP.M.find origin input in
+
+  (* Extract one parameter each from two parameterized expression. *)
+  List.map (
+    tryPick (fun (op, coefs) ->
+      tryPick (function
+        | x :: _ -> Some (int_of_string (String.sub x 1 (String.length x - 1)))
+        | _ -> None)
+        ((M.keys op) :: (List.map M.keys (M.values coefs)))) |-
+    (function
+      | Some x ->
+        List.fold_left (fun i y -> if x < y then i else i + 1) 0 ids |>
+        Puf.find puf
+      | None -> -1)) [b;d] |>
+
+  function
+    | [-1;-1] -> Some sol
+    | [-1;gx]
+    | [gx;-1] ->
+      let add = generatePexprMergeConstr (List.hd b) (List.hd d) in
+      let pgx = Puf.find puf gx in
+      let constr = add &&& MI.find pgx constrs in
+      if test constr then
+        Some (ids, puf, MI.add pgx constr constrs)
+      else None
+
+    | [gb;gd] as g ->
+      let add = generatePexprMergeConstr (List.hd b) (List.hd d) in
+      let (constr, constrs) =
+        List.map (Puf.find puf) g |>
+        List.fold_left (fun (constr, constrs) x ->
+          constr &&& (MI.find x constrs),
+          MI.remove x constrs) (add, constrs) in
+      if test constr then
+        let puf = Puf.union puf gb gd in
+        let constr = MI.add (Puf.find puf gb) constr constrs in
+        Some (ids, puf, constrs)
+      else None
 
 let pexprListMerge lookup input origin _ a b c d e =
   if not (combinationCheck lookup (
@@ -419,8 +457,9 @@ let tryMerge predMerge solution =
       (true, sol))
   ) (false, solution) |> snd
 
-let solve ((clauses, predMerge) as query) =
+let solve clauses =
   assert (List.length clauses > 0);
+  reset_id ();
 
   List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses |>
   buildGraph |>
@@ -436,7 +475,7 @@ let solve ((clauses, predMerge) as query) =
   flattenGraph |>
   List.map solveTree |>
 
-  reduce (fun (m1, c1) (m2, c2) ->
+  reduce (fun (m1, i1, c1) (m2, i2, c2) ->
     (M.merge (fun _ a b ->
       match a, b with
         | None, None -> assert false
@@ -444,6 +483,10 @@ let solve ((clauses, predMerge) as query) =
           assert (p1 = p2); Some (p1, (e1 @ e2))
         | x, None
         | None, x -> x) m1 m2),
-    c1 &&& c2) |>
+    i1 @ i2,
+    let l1 = List.length i1 in
+    MI.fold (fun k -> MI.add (k + l1)) c2 c1) |>
 
-  tryMerge predMerge
+  (fun (m, i, c) -> (m, (i, Puf.create (List.length i), c)))
+
+let getSolution = tryMerge ||- getSolution

@@ -3,6 +3,8 @@ open Util
 module type S = sig
   include Map.S
 
+  val keys: 'a t -> key list
+  val values: 'a t -> 'a list
   val findDefault: 'a -> key -> 'a t -> 'a
   val addDefault: 'a -> ('a -> 'b -> 'a) -> key -> 'b -> 'a t -> 'a t
   val simpleMerge: 'a t -> 'a t -> 'a t
@@ -10,6 +12,9 @@ end
 
 module Make(Ord: Map.OrderedType) = struct
   include Map.Make(Ord)
+
+  let keys m = fold (fun k _ l -> k :: l) m []
+  let values m = fold (fun _ v l -> v :: l) m []
 
   let findDefault d k m =
     if mem k m then find k m else d

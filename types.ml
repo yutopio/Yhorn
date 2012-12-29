@@ -161,7 +161,6 @@ type hornTerm =
     | LinearExpr of expr formula
     | PredVar of pvar
 type horn = hornTerm list * hornTerm
-type query = horn list * (string * string) list
 
 let printHornTerm = function
     | LinearExpr e -> printFormula printExpr e
@@ -174,11 +173,6 @@ let renameHornTerm m = function
 let printHorn (lh, rh) =
   String.concat " & " (List.map printHornTerm lh) ^ " -> " ^
     printHornTerm rh ^ "."
-
-let printQuery (clauses, merges) =
-  String.concat "\n" (List.map printHorn clauses) ^ "\n" ^
-    "[" ^ String.concat "," (List.map (
-      fun (a, b) -> a ^ "-" ^ b) merges) ^ "]"
 
 (** Normal form of element *)
 type 'a nf = 'a list list
@@ -238,7 +232,8 @@ let printPexprCoef coef =
 type constr = expr formula
 type space = pexpr * constr
 
-type hornSolSpace = (string list * pexpr nf) M.t * constr
+type constrSet = int list * Puf.t * constr MI.t
+type hornSolSpace = (string list * pexpr nf) M.t * constrSet
 type hornSol = (string list * expr formula) M.t
 
 (* Ocamlgraph related types *)

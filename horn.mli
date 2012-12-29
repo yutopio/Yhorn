@@ -1,4 +1,4 @@
 open Types
 
-val getSolution : hornSolSpace -> hornSol
-val solve : query -> hornSolSpace
+val solve : horn list -> hornSolSpace
+val getSolution : (string * string) list -> hornSolSpace -> hornSol
