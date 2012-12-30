@@ -71,3 +71,16 @@ let integer_programming constrs =
       Some m
     | L_FALSE -> None (* unsatisfiable *)
     | L_UNDEF -> assert false
+
+(* DEBUG:
+let integer_programming constr =
+  print_endline ("Z3 problem: " ^ (printFormula printExpr constr));
+  let ret = integer_programming constr in
+  (match ret with
+    | Some sol ->
+      print_endline ("Z3 solution: [" ^ (String.concat ", " (
+        M.fold (fun k v l -> (k ^ "=" ^ (string_of_int v))::l) sol [])) ^ "]\n")
+    | None ->
+      print_endline ("Z3 solution: Unsatisfiable"));
+  ret
+*)

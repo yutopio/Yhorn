@@ -197,17 +197,10 @@ let flattenGraph g =
     !laGroups, !predMap, !predCopies)
 
 let getSolution (pexprs, (_, _, constrs)) =
-  (* DEBUG: Dump Z3 problem.
-  print_endline ("Z3 problem: " ^ (printFormula printExpr constr)); *)
-
   let sol = MI.fold (fun _ constr m ->
     match Z3interface.integer_programming constr with
       | Some sol -> M.simpleMerge sol m
       | None -> raise Not_found) constrs M.empty in
-
-  (* DEBUG: Dump Z3 solution.
-  print_endline ("Z3 solution: [" ^ (String.concat ", " (
-    M.fold (fun k v l -> (k ^ "=" ^ (string_of_int v))::l) sol [])) ^ "]\n"); *)
 
   (* Construct one interpolant *)
   M.map (fun (params, cnf) ->
@@ -376,29 +369,34 @@ let pexprMerge lookup input origin _ a b c d e =
         Puf.find puf
       | None -> -1)) [b;d] |>
 
-  function
-    | [-1;-1] -> Some sol
+  (function
+    | [-1;-1] -> `A
     | [-1;gx]
-    | [gx;-1] ->
+    | [gx;-1] -> `B gx
+    | [gb;gd] -> if gb = gd then `B gb else `C (gb, gd)
+    | _ -> assert false) |>
+
+  (function
+    | `A -> Some sol
+    | `B gx ->
       let add = generatePexprMergeConstr (List.hd b) (List.hd d) in
       let pgx = Puf.find puf gx in
       let constr = add &&& MI.find pgx constrs in
       if test constr then
         Some (ids, puf, MI.add pgx constr constrs)
       else None
-
-    | [gb;gd] as g ->
+    | `C (gb, gd) ->
       let add = generatePexprMergeConstr (List.hd b) (List.hd d) in
       let (constr, constrs) =
-        List.map (Puf.find puf) g |>
+        List.map (Puf.find puf) [gb;gd] |>
         List.fold_left (fun (constr, constrs) x ->
           constr &&& (MI.find x constrs),
           MI.remove x constrs) (add, constrs) in
       if test constr then
         let puf = Puf.union puf gb gd in
-        let constr = MI.add (Puf.find puf gb) constr constrs in
+        let constrs = MI.add (Puf.find puf gb) constr constrs in
         Some (ids, puf, constrs)
-      else None
+      else None)
 
 let pexprListMerge lookup input origin _ a b c d e =
   if not (combinationCheck lookup (
