@@ -235,7 +235,8 @@ let merge (sols, predMap, predCopies) =
 
 let solveTree (laGroups, predMap, predCopies) =
   let (laIds, laDnfs) = laGroups |>
-      MI.add (-1) (Expr (LTE, M.add "" (-1) M.empty)) |>
+      (* TODO: Should this be done at merging?
+      MI.add (-1) (Expr (LTE, M.add "" (-1) M.empty)) |> *)
       MI.map (
         mapFormula normalizeExpr |-
         splitNegation |-
