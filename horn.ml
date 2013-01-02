@@ -251,8 +251,10 @@ let solveTree (g, laGroups, predMap, predCopies) =
         convertToNF false) |>
       MI.bindings |> List.split in
 
-  (* Give choice IDs to each conjunctions inside DNF. *)
-  let laDnfs = List.map (mapi (fun i x -> (i, x))) laDnfs in
+  (* Give choice IDs to each conjunctions inside DNF. At the same time, filter
+     the inserted tautologies 0=0 during the process. *)
+  let laDnfs = List.map (mapi (fun i x -> (i,
+    List.filter (fun x -> x <> (EQ, M.empty)) x))) laDnfs in
 
   List.map (fun assigns ->
     (* Give IDs and flatten. *)
@@ -460,10 +462,14 @@ let tryMerge predMerge solution =
     let [(param1, nf1);(param2, nf2)] = List.map (fun p ->
       assert (M.mem p preds); M.find p preds) [p1;p2] in
 
-    (* Parameters for the predicate variable must match. It should have been
-       renamed to (a,b, ...) during the solving algorithm, thus here the
-       significance is in the number of the parameters. *)
-    assert (param1 = param2);
+    (* Parameters for the predicate variable must match. *)
+    assert (List.length param1 = List.length param2);
+    let preds, nf2 =
+      if param1 = param2 then preds, nf2 else
+        let m = ref (listFold2 (fun m a b -> M.add a b m)
+          M.empty param1 param2) in
+        let nf2 = List.map (List.map (renameExpr m)) nf2 in
+        M.add p2 (param1, nf2) preds, nf2 in
 
     (* Try to merge nf1 and nf2. Randomly choose the first constraint if
        succeeds. *)
