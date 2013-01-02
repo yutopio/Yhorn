@@ -43,7 +43,7 @@ let generatePexprMergeConstr (op1, coef1) (op2, coef2) =
     | [], [] -> c1 &&& c3
     | _, [] -> c1 &&& c3 &&& i1eq
     | [], _ -> c1 &&& c3 &&& i2eq
-    | _ -> c3 &&& (i1eq <=> i2eq) &&& (i1eq ==> c1) &&& ((!!! i1eq) ==> c2)
+    | _ -> c3 &&& (i1eq <=> i2eq) &&& (i1eq ==> c1) &&& ((!!!i1eq) ==> c2)
 
 let buildGraph clauses =
   (* TODO: Handle props without assumptions, and props that imply nothing. *)
@@ -120,8 +120,6 @@ let buildGraph clauses =
     List.fold_left (fun g dst -> G.add_edge g src dst) g dsts
   ) G.empty clauses
 
-let top = Expr (EQ, M.empty)
-
 let flattenGraph g =
   G.fold_vertex (fun v l ->
     (* TODO: This algorithm cannot find the self-looping predicate variable node
@@ -142,11 +140,18 @@ let flattenGraph g =
     let predMap = ref MI.empty in
     let predCopies = ref M.empty in
 
-    let rec f v nameMap =
-      let renamedLabel v = renameHornTerm nameMap (G.V.label v) in
+    let rec f v nameMap g' =
+      let registerLa la =
+        let key = MI.cardinal !laGroups in
+        laGroups := MI.add key la !laGroups; key in
 
-      let (u's, la) = G.fold_succ (fun u (u's, la) ->
-        match renamedLabel u with
+      (* Renaming of right-hand must be done before processing left-hand because
+         left-hand terms will have copy of renaming map.
+         TODO: Do we have better way to handle this? *)
+      ignore(renameHornTerm nameMap (G.V.label v));
+
+      let (g', u's, u'keys, _) = G.fold_succ (fun u (g', u's, u'keys, hadLa) ->
+        match G.V.label u with
           | PredVar (p, args) ->
             (* This prevents `nameMap` to be shared over all DFS. *)
             let nameMap = ref (!nameMap) in
@@ -159,42 +164,46 @@ let flattenGraph g =
                so that it can be treated easy. Note that the binder and argument
                will have different names even if they have the same one before
                conversion.*)
-            let dst, (Some bindings) = (G.E.dst e), (G.E.label e) in
-            let constr = List.fold_left (fun constr (x, y) ->
-              let x' = new_name () in
-              let y' = renameVar nameMap y in
-              nameMap := M.add x x' !nameMap;
-              Expr (EQ, M.add x' 1 (M.add y' (-1) M.empty)) :: constr)
-              [] bindings in
+            let dst, bindings = (G.E.dst e), (G.E.label e) in
+            (match bindings with
+              | None -> assert false
+              | Some bindings ->
+                List.iter (fun (x, y) ->
+                  let y' = renameVar nameMap y in
+                  nameMap := M.add x y' !nameMap) bindings);
 
             (* Traverse children first to unify predicate variable nodes. *)
-            let u' = f dst nameMap in
-            (u' @ u's), (if constr = [] then la else la &&& And(constr))
+            let (g', u', u'keys') = f dst nameMap g' in
+            g', ((u', bindings) :: u's), u'keys' @ u'keys, hadLa
 
           | LinearExpr e ->
-            (* NOTE: Linear expressions must appear only once. *)
-            u's, (la &&& e)
-      ) g v ([], top) in
+            if hadLa then
+              (* NOTE: Linear expressions must appear only once. *)
+              assert false
+            else
+              let laKey = registerLa (e, !nameMap) in
+              g', (G'.V.create (La laKey), None) :: u's, laKey :: u'keys, true
+      ) g v (g', [], [], false) in
 
-      let registerLa la =
-        let key = MI.cardinal !laGroups in
-        laGroups := MI.add key la !laGroups; key in
+      let v' = G'.V.create (
+        match G.V.label v with
+          | PredVar (p, param) ->
+            let pid = (new_id ()) in
+            predMap := MI.add pid (param, u'keys) !predMap;
+            predCopies := M.addDefault [] (fun l x -> x :: l) p pid !predCopies;
+            Pid pid
 
-      match (renamedLabel v) with
-        | PredVar (p, param) ->
-          let pid = (new_id ()) in
-          let u's = if la <> top then (registerLa la) :: u's else u's in
-          predMap := MI.add pid (param, u's) !predMap;
-          predCopies := M.addDefault [] (fun l x -> x :: l) p pid !predCopies;
-          u's
+          | LinearExpr e ->
+            (* NOTE: The vertex 'v' must be the root of traversal. *)
+            La (registerLa (!!!e, !nameMap))) in
 
-        | LinearExpr e ->
-          (* NOTE: The vertex 'v' must be the root of traversal. *)
-          registerLa (if la <> top then la &&& (!!! e) else !!! e);
-          [] (* Doesn't care on what to return. *)
+      (* Add edges between new left-hand nodes and right-hand node. *)
+      let g' = List.fold_left (fun g' (u', lb) ->
+        G'.E.create u' lb v' |> G'.add_edge_e g') g' u's in
+      g', v', u'keys
     in
-    ignore(f v (ref M.empty));
-    !laGroups, !predMap, !predCopies)
+    let (g', _, _) = f v (ref M.empty) G'.empty in
+    g', !laGroups, !predMap, !predCopies)
 
 let getSolution (pexprs, (_, _, constrs)) =
   let sol = MI.fold (fun _ constr m ->
@@ -208,7 +217,8 @@ let getSolution (pexprs, (_, _, constrs)) =
     params, (mapFormula (assignParameters sol) x)) pexprs
 
 let merge (sols, predMap, predCopies) =
-  let predSols, maxIds, constrs = List.fold_left (fun (predSolsByPred, maxIds, constrs)
+  let predSols, maxIds, constrs = List.fold_left (fun
+    (predSolsByPred, maxIds, constrs)
     (dnfChoice, predSolsByDnf, maxId, constr) ->
       MI.fold (fun pid ->
         MI.addDefault ([], MIL.empty) (fun (_, m) (param, pexpr) -> param,
@@ -233,32 +243,39 @@ let merge (sols, predMap, predCopies) =
   (List.rev maxIds),
   constrs
 
-let solveTree (laGroups, predMap, predCopies) =
+let solveTree (g, laGroups, predMap, predCopies) =
+  (* Perform topological sort. *)
+  let pvs = List.rev (Sorter.fold (fun v l ->
+    match G'.V.label v with Pid _ -> v :: l | _ -> l) g []) in
+
   let (laIds, laDnfs) = laGroups |>
-      (* TODO: Should this be done at merging?
-      MI.add (-1) (Expr (LTE, M.add "" (-1) M.empty)) |> *)
       MI.map (
+        fst |-
         mapFormula normalizeExpr |-
         splitNegation |-
         convertToNF false) |>
       MI.bindings |> List.split in
 
-  (* Give choice IDs to each conjunctions inside DNF. At the same time, filter
-     the inserted tautologies 0=0 during the process. *)
-  let laDnfs = List.map (mapi (fun i x -> (i,
-    List.filter (fun x -> x <> (EQ, M.empty)) x))) laDnfs in
+  (* Give choice IDs to each conjunctions inside DNF. *)
+  let laDnfs = List.map (mapi (fun i x -> (i, x))) laDnfs in
 
   List.map (fun assigns ->
     (* Give IDs and flatten. *)
     let dnfChoice, exprs = listFold2 (fun (s, t) x (z, y) ->
-      (MI.add x z s), ((List.map (fun z -> (x, z)) y) @ t))
+      (MI.add x z s), ((List.map (fun z ->
+        (x, "p" ^ (string_of_int (new_id ())), z)) y) @ t))
       (MI.empty, []) laIds assigns in
+
+    (* Create a new copy of renaming maps for each group. This must be done here
+       inside this loop because the renaming map must be shared inside the group
+       and must not be shared across different DNF choices. *)
+    let laRenames = MI.map (fun x -> ref (snd x)) laGroups in
 
     (* Build the coefficient mapping for all assigned expressions and check
        the operator of each expression. *)
     let coefs, constr, ops, exprGroup =
-      List.fold_left (fun (coefs, constr, ops, exprGroup) (gid, (op, coef)) ->
-        let exprId = "p" ^ (string_of_int (new_id ())) in
+      List.fold_left (fun (coefs, constr, ops, exprGroup) (gid, exprId, expr) ->
+        let (op, coef) = renameExpr (MI.find gid laRenames) expr in
 
         (* DEBUG: *)
         print_endline ((string_of_int gid) ^ "\t" ^ exprId ^ "\t" ^
@@ -282,7 +299,12 @@ let solveTree (laGroups, predMap, predCopies) =
         (M.add exprId gid exprGroup)
       ) (M.empty, [], M.empty, M.empty) exprs in
 
-    let predSols = MI.map (fun (params, a) ->
+    let predSols = List.fold_left (fun m pv ->
+
+(* DEBUG: Right now, we disable renaming. This is because we need to know the
+   original internal variable name in order to apply renaming list. This is done
+   at line 327 below. However, this causes the assertion error at line 485.
+
       (* Parameters have internal names at this moment, so they are renamed
          to 'a' - 'z' by alphabetical order. Make a renaming map and then
          apply it. We beleive there are no more than 26 parameters... *)
@@ -290,16 +312,31 @@ let solveTree (laGroups, predMap, predCopies) =
         M.add x (String.make 1 (Char.chr (97 + i))) m) (0, M.empty) params in
       assert (i <= 26);
       let renameMap = ref renameMap in
+*)
 
-      (* Parameter list for the predicate are renamed. *)
-      renameList renameMap params,
+      let Pid pid = G'.V.label pv in
+      let (params, a) = MI.find pid predMap in
 
       (* Predicate body are built from coefficient mapping by extracting only
-         relating coefficinet and weight. Finally the body is renamed. *)
-      renameExpr renameMap (ops, coefs |>
-          M.filter (fun k _ -> List.mem k params || k = "") |>
-          M.map (M.filter (fun k _ -> List.mem (M.find k exprGroup) a)))
-    ) predMap in
+         relating coefficinet and weight. *)
+      let x = G'.fold_pred_e (fun e x -> x +++ (
+        match G'.V.label (G'.E.src e), G'.E.label e with
+          | Pid pid', Some bindings ->
+            let _, (_, pcoefs) = MI.find pid' m in
+            M.fold (fun k v m ->
+              let k = try List.assoc k bindings with Not_found -> k in
+              (M.add k v M.empty) +++ m) pcoefs M.empty
+          | La laId, None ->
+            List.fold_left (fun coefs (gid, exprId, (_, coef)) ->
+              if gid <> laId then coefs else
+              M.fold (fun k v -> M.addDefault
+                M.empty (fun m (k, v) -> M.add k v m) k (exprId, v)) coef coefs
+            ) M.empty exprs
+          | _ -> assert false)
+      ) g pv M.empty in
+
+      MI.add pid (params, (ops, x)) m
+    ) MI.empty pvs in
 
     let constr = M.fold (fun k v -> (@) [ Expr((if k = "" then
         (* TODO: Consider completeness of Farkas' Lemma application. *)

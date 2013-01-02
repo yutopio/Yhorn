@@ -203,9 +203,7 @@ let convertToFormula cnf nf =
 
 (** Solution space of interpolation *)
 type pexpr = operator M.t * coef M.t
-let (+++) (o1, c1) (o2, c2) =
-  (M.simpleMerge o1 o2),
-  (coefOp M.simpleMerge M.empty c1 c2)
+let (+++) = coefOp (++) M.empty
 
 let printPexprCoef coef =
   let buf = create 1 in
@@ -245,6 +243,14 @@ module MyVertex = struct
   let equal = (=)
 end
 
+type hornTermId = La of int | Pid of int
+module MyVertex' = struct
+  type t = hornTermId
+  let compare = compare
+  let hash _ = 0 (* TODO: *)
+  let equal = (=)
+end
+
 module MyEdge = struct
   type t = (string * string) list option
 
@@ -265,8 +271,10 @@ module MyEdge = struct
 end
 
 module G = Graph.Persistent.Digraph.AbstractLabeled(MyVertex)(MyEdge)
+module G' = Graph.Persistent.Digraph.AbstractLabeled(MyVertex')(MyEdge)
 module Traverser = Graph.Traverse.Dfs(G)
 module Operator = Graph.Oper.P(G)
+module Sorter = Graph.Topological.Make(G')
 
 module DisplayAttrib = struct
   let graph_attributes _ = []
