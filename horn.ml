@@ -97,7 +97,10 @@ let buildGraph clauses =
           g, dst, args) in
 
       (* Build a name mapping between referred predicate variable (appears on
-         the right-hand of Horn clause) and referring one (on the left-hand). *)
+         the right-hand of Horn clause) and referring one (on the left-hand).
+
+         NOTE: You must not omit same-name bindings such as (x,x). Otherwise, it
+         will harm renaming during building constraints around line 156-158. *)
       let renames = listFold2 (fun l a b -> (a, b) :: l) [] binders args in
 
       (* Add a edge between origin *)
@@ -292,20 +295,6 @@ let solveTree (g, laGroups, predMap, predCopies) =
       ) (M.empty, [], M.empty, M.empty) exprs in
 
     let predSols = List.fold_left (fun m pv ->
-
-(* DEBUG: Right now, we disable renaming. This is because we need to know the
-   original internal variable name in order to apply renaming list. This is done
-   at line 327 below. However, this causes the assertion error at line 485.
-
-      (* Parameters have internal names at this moment, so they are renamed
-         to 'a' - 'z' by alphabetical order. Make a renaming map and then
-         apply it. We beleive there are no more than 26 parameters... *)
-      let (i, renameMap) = List.fold_left (fun (i, m) x -> (i + 1),
-        M.add x (String.make 1 (Char.chr (97 + i))) m) (0, M.empty) params in
-      assert (i <= 26);
-      let renameMap = ref renameMap in
-*)
-
       let Pid pid = G'.V.label pv in
       let (params, a) = MI.find pid predMap in
 
