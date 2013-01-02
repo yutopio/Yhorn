@@ -5,7 +5,8 @@ open Z3
 (* Calling `preload` will trigger callback registration *)
 let _ = preload ()
 
-let ctx = mk_context [ "MODEL", "true" ]
+let timeout = 5000 (* milliseconds *)
+let ctx = mk_context [ ]
 let _int = mk_int_sort ctx
 let _bool = mk_bool_sort ctx
 
@@ -33,10 +34,10 @@ let rec convert = function
         let _ =
           if k = "" then t := v :: !t
           else
-	    match vp, (splitVars [] k) with
-	      | 1, [k] -> t := k :: !t
-	      | 1, k -> t := (mk_mul ctx (Array.of_list k)) :: !t
-	      | _, k -> t := (mk_mul ctx (Array.of_list (v::k))) :: !t in
+            match vp, (splitVars [] k) with
+              | 1, [k] -> t := k :: !t
+              | 1, k -> t := (mk_mul ctx (Array.of_list k)) :: !t
+              | _, k -> t := (mk_mul ctx (Array.of_list (v::k))) :: !t in
         (!l, !r)) coef ([], []) in
     let [ l; r ] = List.map (function
       | [] -> mk_int ctx 0 _int
@@ -55,27 +56,42 @@ let rec convert = function
 let integer_programming constrs =
   let ast = convert constrs in
   let s = mk_solver ctx in
+  let params = mk_params ctx in
+  params_set_uint ctx params (mk_string_symbol ctx ":timeout") timeout;
+  solver_set_params ctx s params;
   solver_assert ctx s ast;
-  match solver_check ctx s with
-    | L_TRUE ->
-      let md = solver_get_model ctx s in
-      let mdn = model_get_num_consts ctx md in
-      let m = repeat (fun i m ->
-        let fd = model_get_const_decl ctx md i in
-        let name = get_symbol_string ctx (get_decl_name ctx fd) in
-        match model_get_const_interp ctx md fd with
-          | Some ast ->
-            let ok, value = get_numeral_int ctx ast in
-            M.add name value m
-          | None -> m) mdn M.empty in
-      Some m
-    | L_FALSE -> None (* unsatisfiable *)
-    | L_UNDEF -> assert false
+  try
+    match solver_check ctx s with
+      | L_TRUE ->
+        let md = solver_get_model ctx s in
+        let mdn = model_get_num_consts ctx md in
+        let m = repeat (fun i m ->
+          let fd = model_get_const_decl ctx md i in
+          let name = get_symbol_string ctx (get_decl_name ctx fd) in
+          match model_get_const_interp ctx md fd with
+            | Some ast ->
+              let ok, value = get_numeral_int ctx ast in
+              M.add name value m
+            | None -> m) mdn M.empty in
+        Some m
+      | L_FALSE -> None (* unsatisfiable *)
+      | L_UNDEF -> (* timeout? *)
+        print_endline ("Z3 returned L_UNDEF: " ^
+                          (solver_get_reason_unknown ctx s));
+        None
+  with Error (c, e) ->
+    print_string "Z3 Error: ";
+    print_endline (try get_error_msg c e with _ -> "unknown");
+    None
 
 (* DEBUG:
 let integer_programming constr =
   print_endline ("Z3 problem: " ^ (printFormula printExpr constr));
+  let _start = Sys.time () in
   let ret = integer_programming constr in
+  let _end = Sys.time () in
+  print_endline ("Z3 elapsed time: " ^
+    (string_of_float (_end -. _start)) ^ " sec.");
   (match ret with
     | Some sol ->
       print_endline ("Z3 solution: [" ^ (String.concat ", " (
