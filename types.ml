@@ -288,16 +288,31 @@ end
 module Display = struct
   include G
   include DisplayAttrib
-  let vertex_name v = "\"" ^ (printHornTerm (V.label v)) ^ "\""
+  let vertex_name v = "\"" ^ (string_of_int (V.hash v)) ^ ":" ^
+                             (printHornTerm (V.label v)) ^ "\""
   let edge_attributes e =
     match E.label e with
       | None -> []
       | Some x ->  [`Label (String.concat ", "
-                           (List.map (fun (x, y) -> x ^ "=" ^ y) x));
-                    `Dir `None; `Style `Dotted]
+                           (List.map (fun (x, y) -> x ^ "=" ^ y) x))]
+end
+
+module Display' = struct
+  include G'
+  include DisplayAttrib
+  let vertex_name v = "\"" ^
+    (match V.label v with
+      | La x -> "La " ^ (string_of_int x)
+      | Pid x -> "Pid " ^ (string_of_int x)) ^ "\""
+  let edge_attributes e =
+    match E.label e with
+      | None -> []
+      | Some x ->  [`Label (String.concat ", "
+                           (List.map (fun (x, y) -> x ^ "=" ^ y) x))]
 end
 
 module Dot = Graph.Graphviz.Dot(Display)
+module Dot' = Graph.Graphviz.Dot(Display')
 
 let uname =
   let (i, o) as p = Unix.open_process "uname" in
@@ -319,4 +334,9 @@ let display output_graph g =
     ignore (Sys.command ("open " ^ ps));
   Sys.remove dot
 
+let display_with_gv _ = ()
+let display_with_gv' _ = ()
+
+(* DEBUG: *)
 let display_with_gv = display Dot.output_graph
+let display_with_gv' = display Dot'.output_graph
