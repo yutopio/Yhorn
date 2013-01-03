@@ -171,7 +171,8 @@ let renameHornTerm m = function
     | PredVar (p, param) -> PredVar (p, renameList m param)
 
 let printHorn (lh, rh) =
-  String.concat " & " (List.map printHornTerm lh) ^ " -> " ^
+  let preds, la = List.partition (function PredVar _ -> true | _ -> false) lh in
+  String.concat " & " (List.map printHornTerm (preds @ la)) ^ " -> " ^
     printHornTerm rh ^ "."
 
 (** Normal form of element *)

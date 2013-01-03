@@ -480,9 +480,37 @@ let tryMerge predMerge solution =
       (true, sol))
   ) (false, solution) |> snd
 
+let renameClauses =
+  List.fold_left (fun (clauses, pm) (lh, rh) ->
+    let vm = ref M.empty in
+    let pm = ref pm in
+    let f = function
+      | PredVar (p, l) ->
+        let p' = M.findDefault ("P" ^ string_of_int (M.cardinal !pm)) p !pm in
+        pm := M.add p p' !pm;
+        ignore(renameList vm l);
+        PredVar (p', l)
+      | LinearExpr e ->
+        ignore(mapFormula (renameExpr vm) e);
+        LinearExpr e in
+    let terms = List.map f (rh::lh) in
+    let i = ref 0 in
+    vm := M.map (fun v -> "x" ^ string_of_int (incr i; !i)) !vm;
+    let rh::lh = List.map (renameHornTerm vm) terms in
+    (lh, rh) :: clauses, !pm
+  ) ([], M.empty)
+
 let solve clauses =
   assert (List.length clauses > 0);
   reset_id ();
+
+  (* DEBUG: *)
+  print_newline ();
+  print_endline "Yhorn\n";
+  let clauses, pm = renameClauses clauses in
+  let pm = M.fold (fun k v -> M.add v k) pm M.empty in
+  print_endline (
+    String.concat "\n" (List.map printHorn clauses) ^ "\n");
 
   List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses |>
   buildGraph |>
@@ -510,6 +538,8 @@ let solve clauses =
     let l1 = List.length i1 in
     MI.fold (fun k -> MI.add (k + l1)) c2 c1) |>
 
-  (fun (m, i, c) -> (m, (i, Puf.create (List.length i), c)))
+  fun (m, i, c) ->
+    M.fold (fun k -> M.add (M.find k pm)) m M.empty,
+    (i, Puf.create (List.length i), c)
 
 let getSolution = tryMerge ||- getSolution
