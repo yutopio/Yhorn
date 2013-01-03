@@ -81,13 +81,22 @@ let printExpr (op, coef) =
     on constant term. Any variables with 0-weight are eliminated. Returns the
     operator and the coefficient mapping. *)
 let normalizeExpr (op, coef) =
-    let op, coef =
-        match op with
-        | LT -> LTE, (M.addDefault 0 (+) "" 1 coef)
-        | GT -> LTE, (M.addDefault 0 (+) "" 1 (~-- coef))
-        | GTE -> LTE, (~-- coef)
-        | _ -> op, coef in
-    op, (M.filter (fun _ v -> v <> 0) coef)
+  let op, coef =
+    match op with
+      | LT -> LTE, (M.addDefault 0 (+) "" 1 coef)
+      | GT -> LTE, (M.addDefault 0 (+) "" 1 (~-- coef))
+      | GTE -> LTE, (~-- coef)
+      | _ -> op, coef in
+  let coef = M.filter (fun _ v -> v <> 0) coef in
+  if M.cardinal coef = 1 && M.mem "" coef then
+    match op with
+      | EQ -> NEQ, M.empty
+      | NEQ -> EQ, M.empty
+      | LTE ->
+        if M.find "" coef <= 0 then EQ, M.empty
+        else LTE, M.add "" 1 M.empty
+  else
+    op, coef
 
 let negateExpr (op, coef) = (negateOp op, coef)
 
