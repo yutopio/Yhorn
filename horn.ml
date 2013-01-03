@@ -138,6 +138,17 @@ let flattenGraph g =
     let predMap = ref MI.empty in
     let predCopies = ref M.empty in
 
+    let g, v, nameMap = match G.V.label v with
+      | LinearExpr e ->
+        let nameMap = ref M.empty in
+        ignore(mapFormula (renameExpr nameMap) e);
+        g, v, M.fold (fun k v -> M.add k k) !nameMap M.empty
+      | PredVar (_, l) ->
+        let top = G.V.create (LinearExpr (Expr (EQ, M.empty))) in
+        G.add_edge_e g (G.E.create top (Some (
+          List.map (fun x -> (x, x)) l)) v), top, M.empty
+    in
+
     let rec f v nameMap g' =
       let registerLa la =
         let key = MI.cardinal !laGroups in
@@ -189,12 +200,6 @@ let flattenGraph g =
         G'.E.create u' lb v' |> G'.add_edge_e g') g' u's in
       g', v', u'keys
     in
-    let nameMap = match G.V.label v with
-      | LinearExpr e ->
-        let nameMap = ref M.empty in
-        ignore(mapFormula (renameExpr nameMap) e);
-        M.fold (fun k v -> M.add k k) !nameMap M.empty
-      | _ -> assert false in
     let (g', _, _) = f v (ref nameMap) G'.empty in
     g', !laGroups, !predMap, !predCopies)
 
