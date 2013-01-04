@@ -159,6 +159,8 @@ let rec splitNegation = function
     | Or x -> reduce (|||) (List.map splitNegation x)
     | Expr (NEQ, coef) -> Or (
       List.map (fun x -> Expr (normalizeExpr (x, coef))) [LT;GT])
+    | Expr (EQ, coef) -> And (
+      List.map (fun x -> Expr (normalizeExpr (x, coef))) [LTE;GTE])
     | Expr e -> Expr e
 
 let rec countFormula = function
@@ -347,6 +349,7 @@ let display output_graph g =
 let display_with_gv _ = ()
 let display_with_gv' _ = ()
 
-(* DEBUG: *)
+(* DEBUG:
 let display_with_gv = display Dot.output_graph
 let display_with_gv' = display Dot'.output_graph
+*)

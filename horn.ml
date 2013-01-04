@@ -505,33 +505,49 @@ let renameClauses =
     (lh, rh) :: clauses, !pm
   ) ([], M.empty)
 
+(* DEBUG: Timer *)
+let prev = ref 0.0
+let timer () =
+  let now = Sys.time () in
+  let ret = string_of_float (now -. !prev) ^ " sec." in
+  prev := now; ret
+
 let solve clauses =
   assert (List.length clauses > 0);
   reset_id ();
 
   (* DEBUG: *)
   print_newline ();
-  print_endline "Yhorn\n";
+  print_endline "---Yhorn---\n";
   let renClauses, pm = renameClauses clauses in
   let pm = M.fold (fun k v -> M.add v k) pm M.empty in
   print_endline (
     String.concat "\n" (List.map printHorn renClauses) ^ "\n");
 
-  List.map (fun (lh, rh) -> (preprocLefthand lh), rh) renClauses |>
-  buildGraph |>
+  prev := Sys.time ();
+  print_string "Starting preprocess... ";
+  let c = List.map (fun (lh, rh) -> (preprocLefthand lh), rh) renClauses in
+  print_endline (timer ());
 
-  (* DEBUG: Show the constructed graph. *)
-  (fun g ->
-    let cycle = Traverser.has_cycle g in
-    print_endline ("Cycle: " ^ (string_of_bool cycle));
-    display_with_gv (Operator.mirror g);
-    assert (not cycle);
-    g) |>
+  print_string "Building graph... ";
+  let g = buildGraph c in
+  print_endline (timer ());
 
-  flattenGraph |>
-  List.map solveTree |>
+  print_string "Checking absence of cycle... ";
+  assert (not (Traverser.has_cycle g));
+  print_endline (timer ());
 
-  reduce (fun (m1, i1, c1) (m2, i2, c2) ->
+  print_string "Flattening graph... ";
+  let g = flattenGraph g in
+  print_endline (timer ());
+
+  print_endline ("# of trees :" ^ string_of_int (List.length g));
+  print_endline "Generating constraints:";
+  let sol = List.map solveTree g in
+  print_endline ("Constraints generation done: " ^ timer ());
+
+  print_string "Merging trees... ";
+  let m, i, c = reduce (fun (m1, i1, c1) (m2, i2, c2) ->
     (M.merge (fun _ a b ->
       match a, b with
         | None, None -> assert false
@@ -541,19 +557,27 @@ let solve clauses =
         | None, x -> x) m1 m2),
     i1 @ i2,
     let l1 = List.length i1 in
-    MI.fold (fun k -> MI.add (k + l1)) c2 c1) |>
+    MI.fold (fun k -> MI.add (k + l1)) c2 c1) sol in
+  print_endline (timer ());
 
-  fun (m, i, c) ->
-    clauses,
-    M.fold (fun k -> M.add (M.find k pm)) m M.empty,
-    (i, Puf.create (List.length i), c)
+  clauses,
+  M.fold (fun k -> M.add (M.find k pm)) m M.empty,
+  (i, Puf.create (List.length i), c)
 
 let getSolution a (clauses, b, c) =
-  let sol = tryMerge a (b, c) |> getSolution in
+  prev := Sys.time ();
+
+  print_string "Generating unification constraints... ";
+  let m = tryMerge a (b, c) in
+  print_endline (timer ());
+
+  print_endline "Getting solution:\n";
+  let sol = getSolution m in
+  print_endline ("Solution retrieval done: " ^ timer ());
 
   (* DEBUG: Solution verification. *)
-  print_endline "\nVerification";
+  print_endline "\nVerifing:";
   assert (List.for_all (Z3interface.check_clause sol) clauses);
-  print_newline ();
+  print_endline ("Solution verification done: " ^ timer ());
 
   sol

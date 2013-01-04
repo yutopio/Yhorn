@@ -5,7 +5,7 @@ open Z3
 (* Calling `preload` will trigger callback registration *)
 let _ = preload ()
 
-let timeout = 5000 (* milliseconds *)
+let timeout = 20000 (* milliseconds *)
 let ctx = mk_context [ ]
 let _int = mk_int_sort ctx
 let _bool = mk_bool_sort ctx
@@ -89,7 +89,6 @@ let integer_programming constrs =
     print_endline (try get_error_msg c e with _ -> "unknown");
     None
 
-(* DEBUG:
 let integer_programming constr =
   print_endline ("Z3 problem: " ^ (printFormula printExpr constr));
   let _start = Sys.time () in
@@ -104,7 +103,6 @@ let integer_programming constr =
     | None ->
       print_endline ("Z3 solution: Unsatisfiable"));
   ret
-*)
 
 let check_clause pred (lh, rh) =
   let terms = List.map (function
