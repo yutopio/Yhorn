@@ -53,16 +53,21 @@ let rec convert = function
   | And x -> mk_and ctx (Array.of_list (List.map convert x))
   | Or x -> mk_or ctx (Array.of_list (List.map convert x))
 
-let integer_programming constrs =
-  let ast = convert constrs in
+let check ast =
   let s = mk_solver ctx in
   let params = mk_params ctx in
   params_set_uint ctx params (mk_string_symbol ctx ":timeout") timeout;
   solver_set_params ctx s params;
   solver_assert ctx s ast;
+  s, solver_check ctx s
+let check ast =
+  print_endline ("Z3 AST: " ^ ast_to_string ctx ast);
+  check ast
+
+let integer_programming constrs =
   try
-    match solver_check ctx s with
-      | L_TRUE ->
+    match check (convert constrs) with
+      | s, L_TRUE ->
         let md = solver_get_model ctx s in
         let mdn = model_get_num_consts ctx md in
         let m = repeat (fun i m ->
@@ -74,8 +79,8 @@ let integer_programming constrs =
               M.add name value m
             | None -> m) mdn M.empty in
         Some m
-      | L_FALSE -> None (* unsatisfiable *)
-      | L_UNDEF -> (* timeout? *)
+      | _, L_FALSE -> None (* unsatisfiable *)
+      | s, L_UNDEF -> (* timeout? *)
         print_endline ("Z3 returned L_UNDEF: " ^
                           (solver_get_reason_unknown ctx s));
         None
@@ -100,3 +105,34 @@ let integer_programming constr =
       print_endline ("Z3 solution: Unsatisfiable"));
   ret
 *)
+
+let check_clause pred (lh, rh) =
+  let terms = List.map (function
+    | PredVar (p, args) ->
+      let (binder, la) = M.find p pred in
+      let renames = listFold2 (fun m a b -> M.add a b m) M.empty binder args in
+      mapFormula (renameExpr (ref renames)) la
+    | LinearExpr x -> x) (rh::lh) in
+
+  let vm = ref M.empty in
+  ignore(List.map (mapFormula (renameExpr vm)) terms);
+
+  let i = ref 0 in
+  vm := M.map (fun v -> "x" ^ string_of_int (incr i; !i)) !vm;
+  let symbols = Array.of_list (
+    List.map (mk_string_symbol ctx) (M.values !vm)) in
+  let sort = Array.make (Array.length symbols) _int in
+  let rh::lh = List.map (mapFormula (renameExpr vm)) terms in
+  let lh = reduce (&&&) lh in
+
+  let ast =
+    mk_forall ctx 0 [| |] sort symbols
+      (mk_implies ctx (convert lh) (convert rh)) in
+  try
+    match check ast with
+      | _, L_TRUE -> true
+      | _ -> false
+  with Error (c, e) ->
+    print_string "Z3 Error: ";
+    print_endline (try get_error_msg c e with _ -> "unknown");
+    false

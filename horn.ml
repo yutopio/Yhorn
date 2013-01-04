@@ -512,12 +512,12 @@ let solve clauses =
   (* DEBUG: *)
   print_newline ();
   print_endline "Yhorn\n";
-  let clauses, pm = renameClauses clauses in
+  let renClauses, pm = renameClauses clauses in
   let pm = M.fold (fun k v -> M.add v k) pm M.empty in
   print_endline (
-    String.concat "\n" (List.map printHorn clauses) ^ "\n");
+    String.concat "\n" (List.map printHorn renClauses) ^ "\n");
 
-  List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses |>
+  List.map (fun (lh, rh) -> (preprocLefthand lh), rh) renClauses |>
   buildGraph |>
 
   (* DEBUG: Show the constructed graph. *)
@@ -544,7 +544,16 @@ let solve clauses =
     MI.fold (fun k -> MI.add (k + l1)) c2 c1) |>
 
   fun (m, i, c) ->
+    clauses,
     M.fold (fun k -> M.add (M.find k pm)) m M.empty,
     (i, Puf.create (List.length i), c)
 
-let getSolution = tryMerge ||- getSolution
+let getSolution a (clauses, b, c) =
+  let sol = tryMerge a (b, c) |> getSolution in
+
+  (* DEBUG: Solution verification. *)
+  print_endline "\nVerification";
+  assert (List.for_all (Z3interface.check_clause sol) clauses);
+  print_newline ();
+
+  sol
