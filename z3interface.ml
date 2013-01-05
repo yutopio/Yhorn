@@ -60,9 +60,11 @@ let check ast =
   solver_set_params ctx s params;
   solver_assert ctx s ast;
   s, solver_check ctx s
+
+(* DEBUG: Show the assertion AST for Z3 before passing to solver.
 let check ast =
   print_endline ("Z3 AST: " ^ ast_to_string ctx ast);
-  check ast
+  check ast *)
 
 let integer_programming constrs =
   try
