@@ -323,7 +323,7 @@ let solveTree (g, laGroups, predMap, predCopies) =
                   assert (not (M.mem k m));
                   M.add k v m) k (exprId, v)) coef M.empty)
           | _ -> assert false)
-      ) g pv [] in
+      ) g pv [M.empty] in
 
       MI.add pid (params, (ops, reduce (+++) x)) m
     ) MI.empty pvs in
@@ -475,7 +475,7 @@ let tryMerge predMerge solution =
       if param1 = param2 then preds, nf2 else
         let m = ref (listFold2 (fun m a b -> M.add a b m)
           M.empty param1 param2) in
-        let nf2 = List.map (List.map (renameExpr m)) nf2 in
+        let nf2 = List.map (List.map (renamePexpr m)) nf2 in
         M.add p2 (param1, nf2) preds, nf2 in
 
     (* Try to merge nf1 and nf2. Randomly choose the first constraint if

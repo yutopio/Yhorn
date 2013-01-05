@@ -106,7 +106,9 @@ let rec renameVar m k =
     m := M.add k (new_name ()) !m;
   M.find k !m
 and renameExpr m (op, coef) = op,
-  M.fold (fun k -> M.add (if k = "" then "" else renameVar m k)) coef M.empty
+  M.fold (fun k ->
+    let k = if k = "" then "" else renameVar m k in
+    M.addDefault 0 (+) k) coef M.empty
 and renameList m = List.map (renameVar m)
 
 let printPvar (name, params) =
@@ -215,6 +217,10 @@ let convertToFormula cnf nf =
 type pexpr = operator M.t * coef M.t
 let (+++) = coefOp (++) M.empty
 
+let renamePexpr m (op, coef) = op,
+  M.fold (fun k ->
+    let k = if k = "" then "" else renameVar m k in
+    M.addDefault M.empty (++) k) coef M.empty
 let printPexprCoef coef =
   let buf = create 1 in
   let first = ref true in
