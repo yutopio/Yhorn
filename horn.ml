@@ -259,7 +259,8 @@ let solveTree (g, laGroups, predMap, predCopies) =
   (* Give choice IDs to each conjunctions inside DNF. At the same time, filter
      the inserted tautologies 0=0 during the process. *)
   let laDnfs = List.map (mapi (fun i x -> (i,
-    List.filter (fun x -> x <> (EQ, M.empty)) x))) laDnfs in
+    List.filter (fun x -> x <> (EQ, M.empty) &&
+                          x <> (LTE, M.empty)) x))) laDnfs in
 
   List.map (fun assigns ->
     (* Give IDs and flatten. *)
@@ -303,27 +304,28 @@ let solveTree (g, laGroups, predMap, predCopies) =
 
     let predSols = List.fold_left (fun m pv ->
       let Pid pid = G'.V.label pv in
-      let (params, a) = MI.find pid predMap in
+      let (params, _) = MI.find pid predMap in
 
       (* Predicate body are built from coefficient mapping by extracting only
          relating coefficinet and weight. *)
-      let x = G'.fold_pred_e (fun e x -> x +++ (
+      let x = G'.fold_pred_e (fun e x -> x @ (
         match G'.V.label (G'.E.src e), G'.E.label e with
           | Pid pid', Some bindings ->
             let _, (_, pcoefs) = MI.find pid' m in
-            M.fold (fun k v m ->
+            M.fold (fun k v l ->
               let k = try List.assoc k bindings with Not_found -> k in
-              (M.add k v M.empty) +++ m) pcoefs M.empty
+              (M.add k v M.empty) :: l) pcoefs []
           | La laId, None ->
-            List.fold_left (fun coefs (gid, exprId, (_, coef)) ->
-              if gid <> laId then coefs else
+            List.filter (fun (gid, _, _) -> gid = laId) exprs |>
+            List.map (fun (_, exprId, (_, coef)) ->
               M.fold (fun k v -> M.addDefault
-                M.empty (fun m (k, v) -> M.add k v m) k (exprId, v)) coef coefs
-            ) M.empty exprs
+                M.empty (fun m (k, v) ->
+                  assert (not (M.mem k m));
+                  M.add k v m) k (exprId, v)) coef M.empty)
           | _ -> assert false)
-      ) g pv M.empty in
+      ) g pv [] in
 
-      MI.add pid (params, (ops, x)) m
+      MI.add pid (params, (ops, reduce (+++) x)) m
     ) MI.empty pvs in
 
     let constr = M.fold (fun k v -> (@) [ Expr((if k = "" then
