@@ -361,24 +361,7 @@ module PexprList = struct
 end
 module MPL = Merge.Merger(PexprList)
 
-
-let combinationCheck lookup f a b c d e =
-  let rec choose f a ((bi, bl) as b) c ((di, dl) as d) e = function
-    | (i,x)::rest ->
-      (choose f a (i, x::bl) c d e rest) &&
-      (choose f a b c (i, x::dl) e rest)
-    | [] ->
-      bi < 0 || di < 0 || (
-      List.sort (fun (x,_) (y,_) -> x-y) ([b;d] @ c) |>
-      List.split |> (fun (_,x) -> f (a @ x @ e))) in
-  let b' = List.map (fun x -> lookup x, x) b in
-  let c' = List.map (fun x -> (List.hd x |> lookup), x) c in
-  choose f a (-1, []) c' (-1, d) e (List.rev b')
-
-let pexprMerge lookup input origin _ a b c d e =
-  if not (combinationCheck lookup (
-    fun x -> MP.M.mem x input) a b c d e) then None else
-
+let pexprMerge input origin _ a b c d e =
   (* Test wether the constraint is satisfiable or not. *)
   let test x = not (Z3interface.integer_programming x = None) in
 
@@ -426,10 +409,7 @@ let pexprMerge lookup input origin _ a b c d e =
         Some (ids, puf, constrs)
       else None)
 
-let pexprListMerge lookup input origin _ a b c d e =
-  if not (combinationCheck lookup (
-    fun x -> MPL.M.mem x input) a b c d e) then None else
-
+let pexprListMerge input origin _ a b c d e =
   let b, d = List.hd b, List.hd d in
   match List.fold_left (fun l x ->
     let ret =
@@ -440,10 +420,10 @@ let pexprListMerge lookup input origin _ a b c d e =
     | [] -> None
     | x -> Some x
 
-let validateMergeGroups predMerge =
+let validateUnificationGroups unify =
   (* Use Jean-Christophe Filliâtre's Union-Find tree implementation. *)
   let m = ref M.empty in
-  let puf = ref (Puf.create (2 * List.length predMerge)) in
+  let puf = ref (Puf.create (2 * List.length unify)) in
   let get x =
     if M.mem x !m then
       M.find x !m
@@ -457,35 +437,43 @@ let validateMergeGroups predMerge =
   List.filter (fun (a, b) ->
     let ret = (find a) <> (find b) in
     if ret then union a b;
-    ret) predMerge
+    ret) unify
 
-let tryMerge predMerge solution =
-  validateMergeGroups predMerge |>
+let tryUnify (p1, p2) (preds, constr) =
+  (* Specified predicate variables must exist. *)
+  let [(param1, nf1);(param2, nf2)] = List.map (fun p ->
+    assert (M.mem p preds); M.find p preds) [p1;p2] in
 
-  List.fold_left (fun (fail, (preds, constr as sol)) (p1, p2) ->
-    if fail then (true, sol) else (
+  (* Parameters for the predicate variable must match. *)
+  assert (List.length param1 = List.length param2);
+  let preds, nf2 =
+    if param1 = param2 then preds, nf2 else
+      let m = ref (listFold2 (fun m a b -> M.add a b m)
+        M.empty param1 param2) in
+      let nf2 = List.map (List.map (renamePexpr m)) nf2 in
+      M.add p2 (param1, nf2) preds, nf2 in
 
-    (* Specified predicate variables must exist. *)
-    let [(param1, nf1);(param2, nf2)] = List.map (fun p ->
-      assert (M.mem p preds); M.find p preds) [p1;p2] in
+  (* Try to unify nf1 and nf2. Randomly choose the first constraint if
+     succeeds. *)
+  let ret = MPL.merge_twoLists [constr] pexprListMerge nf1 nf2 in
+  if MPL.M.cardinal ret > 0 then
+    Some (preds, List.hd (snd (MPL.M.choose ret)))
+  else
+    None
 
-    (* Parameters for the predicate variable must match. *)
-    assert (List.length param1 = List.length param2);
-    let preds, nf2 =
-      if param1 = param2 then preds, nf2 else
-        let m = ref (listFold2 (fun m a b -> M.add a b m)
-          M.empty param1 param2) in
-        let nf2 = List.map (List.map (renamePexpr m)) nf2 in
-        M.add p2 (param1, nf2) preds, nf2 in
+let trySimplify p (preds, constr) =
+  (* Specified predicate variables must exist. *)
+  let param, nf = assert (M.mem p preds); M.find p preds in
 
-    (* Try to merge nf1 and nf2. Randomly choose the first constraint if
-       succeeds. *)
-    let ret = MPL.merge_twoLists [constr] pexprListMerge nf1 nf2 in
-    if MPL.M.cardinal ret > 0 then
-      (false, (preds, List.hd (snd (MPL.M.choose ret))))
-    else
-      (true, sol))
-  ) (false, solution) |> snd
+  (* Try to unify nf1 and nf2. Randomly choose the first constraint if
+     succeeds. *)
+  let ret = MPL.merge [constr] pexprListMerge nf 1 in
+  if MPL.M.cardinal ret > 0 then
+    let k, v = MPL.M.choose ret in
+    let preds = M.add p (param, List.map List.hd k) preds in
+    Some (preds, List.hd v)
+  else
+    None
 
 let renameClauses =
   List.fold_left (fun (clauses, pm) (lh, rh) ->
@@ -550,8 +538,17 @@ let solve clauses =
     M.fold (fun k -> M.add (M.find k pm)) m M.empty,
     (i, Puf.create (List.length i), c)
 
+let tryUnify predUnify solution =
+  validateUnificationGroups predUnify |>
+  List.fold_left (fun (fail, solution) pair ->
+  if fail then (true, solution) else
+    match tryUnify pair solution with
+      | Some x -> (false, solution)
+      | None -> (true, solution)
+    ) (false, solution) |> snd
+
 let getSolution a (clauses, b, c) =
-  let sol = tryMerge a (b, c) |> getSolution in
+  let sol = tryUnify a (b, c) |> getSolution in
 
   (* DEBUG: Solution verification. *)
   print_endline "\nVerification";

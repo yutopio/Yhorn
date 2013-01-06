@@ -21,6 +21,19 @@ let compare compare x y =
         | _ -> ret) 0 x y
     | ret -> ret
 
+let combinationCheck lookup f a b c d e =
+  let rec choose f a ((bi, bl) as b) c ((di, dl) as d) e = function
+    | (i,x)::rest ->
+      (choose f a (i, x::bl) c d e rest) &&
+      (choose f a b c (i, x::dl) e rest)
+    | [] ->
+      bi < 0 || di < 0 || (
+      List.sort (fun (x,_) (y,_) -> x-y) ([b;d] @ c) |>
+      List.split |> (fun (_,x) -> f (a @ x @ e))) in
+  let b' = List.map (fun x -> lookup x, x) b in
+  let c' = List.map (fun x -> (List.hd x |> lookup), x) c in
+  choose f a (-1, []) c' (-1, d) e (List.rev b')
+
 let rec f2 l f a b c = function
   | d::e ->
     if List.fold_left (fun m x -> max m (l x)) 0 b < l (List.hd d) then
@@ -49,18 +62,21 @@ module Merger(X: Map.OrderedType) = struct
     let next = ref M.empty in
     M.iter (fun k _ ->
       f1 lookup (fun x y a b c d e ->
-        match eval input x y a b c d e with
-          | Some z -> next := M.add y z !next
-          | None -> ()) [] k) input;
+        if combinationCheck lookup (
+          fun x -> M.mem x input) a b c d e then
+          match eval input x y a b c d e with
+            | Some z -> next := M.add y z !next
+            | None -> ()) [] k) input;
     merge lookup eval (n - 1) !next)
 
-  let merge_twoLists dft merger ((a, la), (b, lb)) =
+  let create_lookup x =
+    let (_, (input, map)) = List.fold_left (fun (i, (l, map)) x ->
+      i + 1, ([x] :: l, MX.add x i map)) (0, ([], MX.empty)) x in
+    (List.rev input), (fun x -> MX.find x map)
+
+  let merge_twoLists seed merger ((a, la), (b, lb)) =
     assert (la > 0);
-    let input, m = List.fold_left (fun (i, (l, m)) x ->
-      i + 1, ([x] :: l, MX.add x i m)) (0, ([], MX.empty)) (a @ b) |>
-      snd in
-    let lookup x = MX.find x m in
-    let input = List.rev input in
+    let input, lookup = create_lookup (a @ b) in
 
     let check =
       if la < lb then
@@ -78,14 +94,19 @@ module Merger(X: Map.OrderedType) = struct
 
     let merger input x y a b c d e =
       if check y b d then
-        merger lookup input x y a b c d e
+        merger input x y a b c d e
       else None in
 
-    merge lookup merger lb (M.add input dft M.empty)
+    merge lookup merger lb (M.add input seed M.empty)
 
-  let merge_twoLists dft merger a b =
+  let merge seed merger a n =
+    let input, lookup = create_lookup a in
+    merge lookup merger n (M.add input seed M.empty)
+
+  let merge_twoLists seed merger a b =
+    (* Gurantee that a is shorter (or equal-length) than b. *)
     let [la;lb] = List.map List.length [a;b] in
     let a, b = (a, la), (b, lb) in
-    merge_twoLists dft merger (if la > lb then b, a else a, b)
+    merge_twoLists seed merger (if la > lb then b, a else a, b)
 
 end

@@ -221,7 +221,7 @@ let renamePexpr m (op, coef) = op,
   M.fold (fun k ->
     let k = if k = "" then "" else renameVar m k in
     M.addDefault M.empty (++) k) coef M.empty
-let printPexprCoef coef =
+let printPexpr (_, coef) =
   let buf = create 1 in
   let first = ref true in
   M.iter (fun v coef ->
