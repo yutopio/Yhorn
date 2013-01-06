@@ -456,9 +456,14 @@ let tryUnify (p1, p2) (preds, constr) =
   (* Try to unify nf1 and nf2. Randomly choose the first constraint if
      succeeds. *)
   let ret = MPL.merge_twoLists [constr] pexprListMerge nf1 nf2 in
-  if MPL.M.cardinal ret > 0 then
-    Some (preds, List.hd (snd (MPL.M.choose ret)))
-  else
+  let cardinal = MPL.M.cardinal ret in
+  if cardinal > 0 then (
+    print_endline ("Unified choices: " ^ string_of_int cardinal);
+    let constr = List.nth (MPL.M.values ret) (Random.int cardinal) in
+    let length = List.length constr in
+    print_endline ("Constraint choices: " ^ string_of_int length);
+    Some (preds, List.nth constr (Random.int length))
+  ) else
     None
 
 let trySimplify p (preds, constr) =
