@@ -31,6 +31,14 @@ let distinct l =
         | [] -> l in
     internal [] l
 
+let sorted_distinct l =
+  List.rev (
+    let rec f ret = function
+      | [] -> ret
+      | [x] -> x::ret
+      | x::y::z -> f (if x = y then ret else x::ret) (y::z) in
+    f [] l)
+
 (** [reduce f [ x1 ; x2 ; ...; xn] ] returns f ... (f (f x1 x2) x3) ... xn. *)
 let reduce f = function
     | x :: rest -> List.fold_left f x rest
