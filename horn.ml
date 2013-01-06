@@ -554,6 +554,88 @@ let solve clauses =
   M.fold (fun k -> M.add (M.find k pm)) m M.empty,
   (i, Puf.create (List.length i), c)
 
+let rec debug_choice predUnify (preds, constr as sol) =
+  let stat = ref `Continue in
+  while !stat = `Continue do
+
+    print_newline ();
+    M.iter (fun p (param, cnf) ->
+      let formula = convertToFormula true cnf in
+      print_endline (p ^ "(" ^ String.concat "," param ^ "): " ^
+                     printFormula printPexpr formula)
+    ) preds;
+    if List.length predUnify <> 0 then
+      print_endline ("Unify: [" ^ String.concat "," (
+        List.map (fun (x, y) -> x ^ "-" ^ y) predUnify) ^ "]");
+
+    let input = ref (`Unknown) in
+    let predUnify = ref predUnify in
+    let predKeys = M.keys preds in
+    while !input = `Unknown do
+      print_string (
+        if List.length predKeys <> 1 then
+          "choice (Done / Unify / Simplify / Revert) [D/U/S/R]? "
+        else
+          "choice (Done / Simplify / Revert) [D/S/R]? ");
+      try
+        match String.uppercase (read_line ()) with
+          | "D" -> input := `Done
+          | "U" when List.length predKeys <> 1 ->
+            print_string "Which predicate to unify? ";
+            let a, b =
+              if List.length !predUnify > 0 then (
+                let a, b as ret = List.hd !predUnify in
+                print_string ("\nEmpty for default (" ^ a ^ "-" ^ b ^ "): ");
+                ret
+              ) else "", "" in
+
+            let read = read_line () in
+            let a, b =
+              if read = "" && a <> "" && b <> "" then
+                a, b
+              else
+                let i = String.index read '-' in
+                let a = String.sub read 0 i in
+                let b = String.sub read (i + 1) (String.length read - i - 1) in
+                if String.contains b '-' then raise Not_found;
+                ignore(List.find ((=) a) predKeys);
+                ignore(List.find ((=) b) predKeys);
+                a, b in
+
+            if List.length !predUnify > 0 then (
+              let hd = List.hd !predUnify in
+              if hd = (a, b) || hd = (b, a) then
+                predUnify := List.tl !predUnify);
+
+            input := `Unify (tryUnify (a, b))
+          | "S" ->
+            print_string "Which predicate to simplify? ";
+            let a = read_line () in
+            ignore(List.find ((=) a) predKeys);
+            input := `Unify (trySimplify a)
+          | "R" -> input := `Revert
+      with Not_found -> print_endline "Huh?"
+    done;
+
+    match !input with
+      | `Done -> stat := `Done sol
+      | `Unify f -> (
+        prev := Sys.time ();
+        let result = f sol in
+        print_endline ("Elapsed: " ^ timer ());
+        match result with
+          | Some x ->
+            stat := debug_choice !predUnify x
+          | _ ->
+            print_endline "Failed.")
+      | `Revert -> stat := `Revert
+      | _ -> ()
+  done;
+
+  match !stat with
+    | `Revert -> `Continue
+    | x -> x
+
 let tryUnify predUnify solution =
   validateUnificationGroups predUnify |>
   List.fold_left (fun (fail, solution) pair ->
@@ -563,13 +645,20 @@ let tryUnify predUnify solution =
       | None -> (true, solution)
     ) (false, solution) |> snd
 
-let getSolution a (clauses, b, c) =
+let getSolution predUnify (clauses, b, c) =
+  List.iter (fun (x, y) -> assert (M.mem x b && M.mem y b)) predUnify;
+
+  let predUnify = validateUnificationGroups predUnify in
+  let ret = ref None in
+  while !ret = None do
+    match debug_choice predUnify (b, c) with
+      | `Done x -> ret := Some x
+      | `Revert -> assert false
+      | `Continue -> print_endline "No more to revert"
+  done;
+  let Some m = !ret in
+
   prev := Sys.time ();
-
-  print_string "Generating unification constraints... ";
-  let m = tryUnify a (b, c) in
-  print_endline (timer ());
-
   print_endline "Getting solution:\n";
   let sol = getSolution m in
   print_endline ("Solution retrieval done: " ^ timer ());
