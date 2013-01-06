@@ -572,49 +572,93 @@ let rec debug_choice predUnify (preds, constr as sol) =
     let predUnify = ref predUnify in
     let predKeys = M.keys preds in
     while !input = `Unknown do
-      print_string (
-        if List.length predKeys <> 1 then
-          "choice (Done / Unify / Simplify / Revert) [D/U/S/R]? "
-        else
-          "choice (Done / Simplify / Revert) [D/S/R]? ");
-      try
-        match String.uppercase (read_line ()) with
-          | "D" -> input := `Done
-          | "U" when List.length predKeys <> 1 ->
-            print_string "Which predicate to unify? ";
-            let a, b =
-              if List.length !predUnify > 0 then (
-                let a, b as ret = List.hd !predUnify in
-                print_string ("\nEmpty for default (" ^ a ^ "-" ^ b ^ "): ");
-                ret
-              ) else "", "" in
-
-            let read = read_line () in
-            let a, b =
-              if read = "" && a <> "" && b <> "" then
-                a, b
-              else
-                let i = String.index read '-' in
-                let a = String.sub read 0 i in
-                let b = String.sub read (i + 1) (String.length read - i - 1) in
-                if String.contains b '-' then raise Not_found;
-                ignore(List.find ((=) a) predKeys);
-                ignore(List.find ((=) b) predKeys);
-                a, b in
-
+      let choices = [
+        ("Done", fun () -> input := `Done);
+        ("Unify", fun () ->
+          assert (List.length predKeys <> 1);
+          print_string "Which predicate to unify? ";
+          let a, b =
             if List.length !predUnify > 0 then (
-              let hd = List.hd !predUnify in
-              if hd = (a, b) || hd = (b, a) then
-                predUnify := List.tl !predUnify);
+              let a, b as ret = List.hd !predUnify in
+              print_string ("\nEmpty for default (" ^ a ^ "-" ^ b ^ "): ");
+              ret
+            ) else "", "" in
 
-            input := `Unify (tryUnify (a, b))
-          | "S" ->
+          let read = read_line () in
+          let a, b =
+            if read = "" && a <> "" && b <> "" then
+              a, b
+            else
+              let i = String.index read '-' in
+              let a = String.sub read 0 i in
+              let b = String.sub read (i + 1) (String.length read - i - 1) in
+              if String.contains b '-' then raise Not_found;
+              ignore(List.find ((=) a) predKeys);
+              ignore(List.find ((=) b) predKeys);
+              a, b in
+
+          if List.length !predUnify > 0 then (
+            let hd = List.hd !predUnify in
+            if hd = (a, b) || hd = (b, a) then
+              predUnify := List.tl !predUnify);
+
+          input := `Unify (tryUnify (a, b)));
+
+        ("Simplify", fun () ->
+          let a = ref (List.hd predKeys) in
+          if List.length predKeys <> 1 then (
             print_string "Which predicate to simplify? ";
-            let a = read_line () in
-            ignore(List.find ((=) a) predKeys);
-            input := `Unify (trySimplify a)
-          | "R" -> input := `Revert
-      with Not_found -> print_endline "Huh?"
+            a := read_line ();
+            ignore(List.find ((=) !a) predKeys));
+
+          input := `Unify (trySimplify !a));
+
+        ("Constraint", fun () ->
+          print_endline "Type additional constraint:";
+          let constr = Parser.exprs Lexer.token (Lexing.from_channel stdin) in
+
+          let m = ref M.empty in
+          ignore(mapFormula (renameExpr m) constr);
+          let expr_ids = M.keys !m |>
+            List.map (fun x ->
+              assert (String.get x 0 = 'p');
+              assert (String.contains "0123456789" (String.get x 1));
+              int_of_string (String.sub x 1 (String.length x - 1))) |>
+            List.fast_sort compare |>
+            sorted_distinct in
+          assert (List.length expr_ids > 0);
+
+          input := `Constraint (expr_ids, constr));
+
+        ("Get solution", fun () ->
+          M.iter (fun k (params, x) ->
+            print_endline (k ^ "(" ^ (String.concat "," params) ^ ") : " ^
+                           (printFormula printExpr x)))
+            (getSolution sol));
+
+        ("Revert", fun () -> input := `Revert)] in
+
+      let choices =
+        if List.length predKeys = 1 then
+          List.remove_assoc "Unify" choices
+        else choices in
+
+      let choiceKeys = List.map fst choices in
+      print_string (
+        "What to do (" ^
+          String.concat " / " choiceKeys ^ ") [" ^
+          String.concat "/" (List.map (
+            fun x -> String.sub x 0 1) choiceKeys) ^ "]? ");
+
+      try
+        let input = String.lowercase (read_line ()) in
+        let Some func = tryPick (fun (key, value) ->
+          if String.lowercase (String.sub key 0 (String.length input))
+            = input then
+            Some value
+          else None) choices in
+        func ()
+      with _ -> print_endline "Huh?"
     done;
 
     match !input with
@@ -628,6 +672,29 @@ let rec debug_choice predUnify (preds, constr as sol) =
             stat := debug_choice !predUnify x
           | _ ->
             print_endline "Failed.")
+      | `Constraint (expr_ids, constr') ->
+        let ids, puf, constrs = constr in
+        let groups = expr_ids |>
+          List.map (fun x -> List.fold_left (
+            fun i y -> if x < y then i else i + 1) 0 ids) |>
+          sorted_distinct in
+        let sol = match groups with
+          | [x] ->
+            let id = Puf.find puf x in
+            let constrs = MI.add id (
+              (MI.find id constrs) &&& constr') constrs in
+            (ids, puf, constrs)
+          | x::rest ->
+            let (constr, constrs) =
+              List.map (Puf.find puf) groups |>
+              List.fold_left (fun (constr, constrs) x ->
+                constr &&& (MI.find x constrs),
+                MI.remove x constrs) (constr', constrs) in
+            let puf = List.fold_left (fun puf y ->
+              Puf.union puf x y) puf rest in
+            let constrs = MI.add (Puf.find puf x) constr constrs in
+            (ids, puf, constrs) in
+        stat := debug_choice !predUnify (preds, sol)
       | `Revert -> stat := `Revert
       | _ -> ()
   done;

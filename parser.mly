@@ -22,6 +22,8 @@ open Types
 
 %start inputUnit
 %type <Types.horn list * (string * string) list> inputUnit
+%start exprs
+%type <Types.expr Types.formula> exprs
 
 %%
 
