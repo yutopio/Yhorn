@@ -109,30 +109,18 @@ let integer_programming constr =
 *)
 
 let check_clause pred (lh, rh) =
-  let terms = List.map (function
+  let rh::lh = List.map (function
     | PredVar (p, args) ->
       let (binder, la) = M.find p pred in
       let renames = listFold2 (fun m a b -> M.add a b m) M.empty binder args in
       mapFormula (renameExpr (ref renames)) la
     | LinearExpr x -> x) (rh::lh) in
-
-  let vm = ref M.empty in
-  ignore(List.map (mapFormula (renameExpr vm)) terms);
-
-  let i = ref 0 in
-  vm := M.map (fun v -> "x" ^ string_of_int (incr i; !i)) !vm;
-  let symbols = Array.of_list (
-    List.map (mk_string_symbol ctx) (M.values !vm)) in
-  let sort = Array.make (Array.length symbols) _int in
-  let rh::lh = List.map (mapFormula (renameExpr vm)) terms in
   let lh = reduce (&&&) lh in
 
-  let ast =
-    mk_forall ctx 0 [| |] sort symbols
-      (mk_implies ctx (convert lh) (convert rh)) in
+  let ast = mk_not ctx (mk_implies ctx (convert lh) (convert rh)) in
   try
     match check ast with
-      | _, L_TRUE -> true
+      | _, L_FALSE -> true
       | _ -> false
   with Error (c, e) ->
     print_string "Z3 Error: ";
