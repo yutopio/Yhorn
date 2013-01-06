@@ -20,7 +20,7 @@ let generatePexprMergeConstr (op1, coef1) (op2, coef2) =
     f (), f () in
   let c3 = Expr(GT , M.add q1 1 M.empty) in (* q1  > 0 *)
   let c1 = Expr(NEQ, M.add q2 1 M.empty) in (* q2 != 0 *)
-  let c2 = Expr(NEQ, M.add q2 1 M.empty) in (* q2  > 0 *)
+  let c2 = Expr(GT , M.add q2 1 M.empty) in (* q2  > 0 *)
 
   (* Coefficients of both interpolants must be the same *)
   let mul v coef = M.fold (fun k -> M.add (k ^ "*" ^ v)) coef M.empty in
