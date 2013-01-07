@@ -89,6 +89,7 @@ expr:
 
 terms:
     | term              { $1 }
+    | MINUS term        { M.empty -- $2 }
     | terms PLUS  term  { $1 ++ $3 }
     | terms MINUS term  { $1 -- $3 }
 ;

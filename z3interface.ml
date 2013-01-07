@@ -103,7 +103,7 @@ let integer_programming constr =
       print_endline ("Z3 solution: [" ^ (String.concat ", " (
         M.fold (fun k v l -> (k ^ "=" ^ (string_of_int v))::l) sol [])) ^ "]\n")
     | None ->
-      print_endline ("Z3 solution: Unsatisfiable"));
+      print_endline ("Z3 solution: Unsatisfiable\n"));
   ret
 
 let check_clause pred (lh, rh) =
