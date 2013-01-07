@@ -349,23 +349,9 @@ let preprocLefthand =
         | Some y -> x &&& y)
     | PredVar pvar -> (pvar :: pvars), la) ([], None)
 
-module Pexpr = struct
-  type t = pexpr
-  let compare = compare
-end
-module MP = Merge.Merger(Pexpr)
-
-module PexprList = struct
-  type t = pexpr list
-  let compare = compare
-end
-module MPL = Merge.Merger(PexprList)
-
-let pexprMerge input origin _ a b c d e =
+let pexprMerge (ids, puf, constrs as sol) a b c d e =
   (* Test wether the constraint is satisfiable or not. *)
   let test x = not (Z3interface.integer_programming x = None) in
-
-  let (ids, puf, constrs) as sol = MP.M.find origin input in
 
   (* Extract one parameter each from two parameterized expression. *)
   List.map (
@@ -409,14 +395,13 @@ let pexprMerge input origin _ a b c d e =
         Some (ids, puf, constrs)
       else None)
 
-let pexprListMerge input origin _ a b c d e =
+let pexprListMerge original a b c d e =
   let b, d = List.hd b, List.hd d in
   match List.fold_left (fun l x ->
     let ret =
-      MP.merge_twoLists x pexprMerge b d |>
-      MP.M.bindings |>
+      Merge.lists x pexprMerge b d |>
       List.split |> snd in
-    ret @ l) [] (MPL.M.find origin input) with
+    ret @ l) [] original with
     | [] -> None
     | x -> Some x
 
@@ -455,9 +440,11 @@ let tryUnify (p1, p2) (preds, constr) =
 
   (* Try to unify nf1 and nf2. Randomly choose the first constraint if
      succeeds. *)
-  let ret = MPL.merge_twoLists [constr] pexprListMerge nf1 nf2 in
-  if MPL.M.cardinal ret > 0 then
-    Some (preds, List.hd (snd (MPL.M.choose ret)))
+  let ret = Merge.lists [constr] pexprListMerge nf1 nf2 in
+  let choices = List.flatten (List.map snd ret) in
+  let length = List.length choices in
+  if length > 0 then
+    Some (preds, List.hd choices)
   else
     None
 
@@ -465,11 +452,10 @@ let trySimplify p (preds, constr) =
   (* Specified predicate variables must exist. *)
   let param, nf = assert (M.mem p preds); M.find p preds in
 
-  (* Try to unify nf1 and nf2. Randomly choose the first constraint if
-     succeeds. *)
-  let ret = MPL.merge [constr] pexprListMerge nf 1 in
-  if MPL.M.cardinal ret > 0 then
-    let k, v = MPL.M.choose ret in
+  (* Try to simplify nf. Randomly choose the first constraint if succeeds. *)
+  let choices = Merge.elements [constr] pexprListMerge nf 1 in
+  if List.length choices > 0 then
+    let k, v = List.hd choices in
     let preds = M.add p (param, List.map List.hd k) preds in
     Some (preds, List.hd v)
   else
