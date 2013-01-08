@@ -1,0 +1,26 @@
+
+val elements :
+  'a ->                     (* seed value *)
+  ('a ->                    (* intermediate value before grouping *)
+   'b list list ->          (* a *)
+   'b list ->               (* b *)
+   'b list list ->          (* c *)
+   'b list ->               (* d *)
+   'b list list ->          (* e *)
+   'a option) ->            (* evaluation of group *)
+  'b list ->                (* input list *)
+  int ->                    (* depth (iteration count) *)
+  ('b list list * 'a) list  (* result *)
+
+val lists :
+  'a ->                     (* seed value *)
+  ('a ->                    (* intermediate value before pairing *)
+   'b list list ->          (* a *)
+   'b list ->               (* b *)
+   'b list list ->          (* c *)
+   'b list ->               (* d *)
+   'b list list ->          (* e *)
+   'a option) ->            (* evaluation of pair *)
+  'b list ->                (* 1st list *)
+  'b list ->                (* 2nd list *)
+  ('b list list * 'a) list  (* result *)

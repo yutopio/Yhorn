@@ -7,7 +7,7 @@ let assignParameters assign (op, expr) =
   (M.map (fun v -> M.fold (fun k v -> (+) ((
     M.findDefault 1 k assign) * v)) v 0) expr)
 
-let generatePexprMergeConstr (op1, coef1) (op2, coef2) =
+let generatePexprUnifyConstr (op1, coef1) (op2, coef2) =
   (* Consider all variables are present in both *)
   let vars = [] |>
     M.fold (fun k v r -> k :: r) coef1 |>
@@ -334,23 +334,9 @@ let preprocLefthand =
         | Some y -> x &&& y)
     | PredVar pvar -> (pvar :: pvars), la) ([], None)
 
-module Pexpr = struct
-  type t = pexpr
-  let compare = compare
-end
-module MP = Merge.Merger(Pexpr)
-
-module PexprList = struct
-  type t = pexpr list
-  let compare = compare
-end
-module MPL = Merge.Merger(PexprList)
-
-let pexprMerge input origin _ a b c d e =
+let pexprUnify (ids, puf, constrs as sol) a b c d e =
   (* Test wether the constraint is satisfiable or not. *)
   let test x = not (Z3interface.integer_programming x = None) in
-
-  let (ids, puf, constrs) as sol = MP.M.find origin input in
 
   (* Extract one parameter each from two parameterized expression. *)
   List.map (
@@ -375,14 +361,14 @@ let pexprMerge input origin _ a b c d e =
   (function
     | `A -> Some sol
     | `B gx ->
-      let add = generatePexprMergeConstr (List.hd b) (List.hd d) in
+      let add = generatePexprUnifyConstr (List.hd b) (List.hd d) in
       let pgx = Puf.find puf gx in
       let constr = add &&& MI.find pgx constrs in
       if test constr then
         Some (ids, puf, MI.add pgx constr constrs)
       else None
     | `C (gb, gd) ->
-      let add = generatePexprMergeConstr (List.hd b) (List.hd d) in
+      let add = generatePexprUnifyConstr (List.hd b) (List.hd d) in
       let (constr, constrs) =
         List.map (Puf.find puf) [gb;gd] |>
         List.fold_left (fun (constr, constrs) x ->
@@ -394,14 +380,13 @@ let pexprMerge input origin _ a b c d e =
         Some (ids, puf, constrs)
       else None)
 
-let pexprListMerge input origin _ a b c d e =
+let pexprListUnify original a b c d e =
   let b, d = List.hd b, List.hd d in
   match List.fold_left (fun l x ->
     let ret =
-      MP.merge_twoLists x pexprMerge b d |>
-      MP.M.bindings |>
+      Combine.lists x pexprUnify b d |>
       List.split |> snd in
-    ret @ l) [] (MPL.M.find origin input) with
+    ret @ l) [] original with
     | [] -> None
     | x -> Some x
 
@@ -440,14 +425,12 @@ let tryUnify (p1, p2) (preds, constr) =
 
   (* Try to unify nf1 and nf2. Randomly choose the first constraint if
      succeeds. *)
-  let ret = MPL.merge_twoLists [constr] pexprListMerge nf1 nf2 in
-  let cardinal = MPL.M.cardinal ret in
-  if cardinal > 0 then (
-    print_endline ("Unified choices: " ^ string_of_int cardinal);
-    let constr = List.nth (MPL.M.values ret) (Random.int cardinal) in
-    let length = List.length constr in
+  let ret = Combine.lists [constr] pexprListUnify nf1 nf2 in
+  let choices = List.flatten (List.map snd ret) in
+  let length = List.length choices in
+  if length > 0 then (
     print_endline ("Constraint choices: " ^ string_of_int length);
-    Some (preds, List.nth constr (Random.int length))
+    Some (preds, List.hd choices)
   ) else
     None
 
@@ -455,11 +438,10 @@ let trySimplify p (preds, constr) =
   (* Specified predicate variables must exist. *)
   let param, nf = assert (M.mem p preds); M.find p preds in
 
-  (* Try to unify nf1 and nf2. Randomly choose the first constraint if
-     succeeds. *)
-  let ret = MPL.merge [constr] pexprListMerge nf 1 in
-  if MPL.M.cardinal ret > 0 then
-    let k, v = MPL.M.choose ret in
+  (* Try to simplify nf. Randomly choose the first constraint if succeeds. *)
+  let choices = Combine.elements [constr] pexprListUnify nf 1 in
+  if List.length choices > 0 then
+    let k, v = List.hd choices in
     let preds = M.add p (param, List.map List.hd k) preds in
     Some (preds, List.hd v)
   else
