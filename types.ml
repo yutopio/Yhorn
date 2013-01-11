@@ -62,18 +62,21 @@ let printTerm coef =
   let first = ref true in
   M.iter (fun v c ->
     if v = "" || c = 0 then () else (
-      if c > 0 && not !first then add_char buf '+' else if c = -1 then add_char buf '-';
+      if c > 0 && not !first then add_char buf '+'
+      else if c = -1 then add_char buf '-';
       first := false;
       if (abs c) <> 1 then add_string buf (string_of_int c);
       add_string buf v)) coef;
-  if !first then add_string buf "0";
+  let c = M.findDefault 0 "" coef in
+  if not !first && c > 0 then add_char buf '+';
+  if !first || c <> 0 then add_string buf (string_of_int c);
   contents buf
 
 let printExpr (op, coef) =
   let buf = create 1 in
   add_string buf (printTerm coef);
   add_string buf (string_of_operator op);
-  add_string buf (if M.mem "" coef then string_of_int (-(M.find "" coef)) else "0");
+  add_char buf '0';
   contents buf
 
 (** Flips greater-than operators (>, >=) to less-than operators (<, <=) and

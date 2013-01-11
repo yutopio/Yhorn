@@ -22,7 +22,8 @@ let generatePexprUnifyConstr (op1, coef1) (op2, coef2) =
   let c2 = Expr(GT , M.add q2 1 M.empty) in (* q2  > 0 *)
 
   (* Coefficients of both interpolants must be the same *)
-  let mul v coef = M.fold (fun k -> M.add (k ^ "*" ^ v)) coef M.empty in
+  let mul v coef = M.fold (fun k -> M.add (
+    if k = "" then v else k ^ "*" ^ v)) coef M.empty in
   let c3 = List.fold_left (fun r k ->
     let [v1;v2] = List.map (M.findDefault M.empty k) [coef1;coef2] in
     (Expr(EQ, (mul q1 v1) -- (mul q2 v2)) :: r)) [c3] vars in
@@ -188,6 +189,24 @@ let flattenGraph g =
     let (g', _, _) = f v (ref nameMap) G'.empty in
     g', !laGroups, !predMap, !predCopies)
 
+let simplifyCNF =
+  let simplifyDF =
+    List.fold_left (fun (tautology, exprs) (op, coef as expr) ->
+      if tautology || M.cardinal coef = 0 then true, []
+      else if M.cardinal coef > 1 || not (M.mem "" coef) then
+        false, expr :: exprs
+      else
+        let c = M.find "" coef in
+        (match op with
+          | EQ -> c = 0
+          | LTE -> c <= 0), exprs) (false, []) in
+
+  List.fold_left (fun (contradiction, clauses) clause ->
+    let tautology, exprs = simplifyDF clause in
+    if tautology then contradiction, clauses
+    else if contradiction || List.length exprs = 0 then true, []
+    else false, exprs :: clauses) (false, [])
+
 let getSolution (pexprs, (_, _, constrs)) =
   let sol = MI.fold (fun _ constr m ->
     match Z3interface.integer_programming constr with
@@ -196,8 +215,13 @@ let getSolution (pexprs, (_, _, constrs)) =
 
   (* Construct one interpolant *)
   M.map (fun (params, cnf) ->
-    let x = convertToFormula true cnf in
-    params, (mapFormula (assignParameters sol) x)) pexprs
+    let cnf = List.map (List.map (assignParameters sol)) cnf in
+    let cntrdct, clauses = simplifyCNF cnf in
+    let formula =
+      if cntrdct then Expr (EQ, M.add "" 1 M.empty)
+      else if List.length clauses = 0 then Expr (EQ, M.empty)
+      else convertToFormula true clauses in
+    params, formula) pexprs
 
 let merge (sols, predMap, predCopies) =
   let predSols, maxIds, constrs = List.fold_left (fun
@@ -341,9 +365,10 @@ let pexprUnify (ids, puf, constrs as sol) a b c d e =
   (* Extract one parameter each from two parameterized expression. *)
   List.map (
     tryPick (fun (op, coefs) ->
-      tryPick (function
-        | x :: _ -> Some (int_of_string (String.sub x 1 (String.length x - 1)))
-        | _ -> None)
+      tryPick (
+	tryPick (fun x ->
+	  if x = "" then None
+	  else Some (int_of_string (String.sub x 1 (String.length x - 1)))))
         ((M.keys op) :: (List.map M.keys (M.values coefs)))) |-
     (function
       | Some x ->
@@ -474,6 +499,31 @@ let timer () =
   let ret = string_of_float (now -. !prev) ^ " sec." in
   prev := now; ret
 
+let simplifyPCNF clauses =
+  let simplifyPDF exprs =
+    assert (List.length exprs > 0);
+    let tautology = List.exists (fun (_, coef) ->
+      (* NOTE: We don't need to consider operator because only EQ and LTE are
+         used. If there is no coefficient, it must be tautology. *)
+      List.length (M.keys coef) = 0) exprs in
+    if tautology then []
+    else
+      (* Add [bot] in front of all other expressions. It should be the head of
+         the list to achieve better performance.
+         TODO: Consider unification constraint of operator. *)
+      (M.empty, M.add "" (M.add "" 1 M.empty) M.empty) :: exprs in
+
+  assert (List.length clauses > 0);
+  let filtered = List.fold_left (fun l x ->
+    let x = simplifyPDF x in
+    if x = [] then l else x :: l) [] clauses in
+  if List.length filtered = 0 then [[M.empty, M.empty]] (* Tautology *)
+  else
+    (* Add (false \/ true) in front of all other clauses. Same as simplifyDNF.
+       TODO: Ditto. *)
+    [M.empty, M.add "" (M.add "" 1 M.empty) M.empty;
+     M.empty, M.empty] :: filtered
+
 let solve clauses =
   assert (List.length clauses > 0);
   reset_id ();
@@ -523,7 +573,7 @@ let solve clauses =
   print_endline (timer ());
 
   clauses,
-  M.fold (fun k -> M.add (M.find k pm)) m M.empty,
+  M.fold (fun k (p, v) -> M.add (M.find k pm) (p, simplifyPCNF v)) m M.empty,
   (i, Puf.create (List.length i), c)
 
 let rec debug_choice predUnify (preds, constr as sol) =
