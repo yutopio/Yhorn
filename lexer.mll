@@ -8,13 +8,11 @@ open Parser
 let br = ['\r' '\n']
 let sp = [' ' '\t']
 let digit = ['0'-'9']
-let lower = ['a'-'z']
-let upper = ['A'-'Z']
-let letter = lower | upper
+let letter = ['a'-'z' 'A'-'Z']
 let nonEscChars = [^ '"' '\'' '\\' '0' 'n' 'r' 't']
+let identStartChar = letter | '_'
 let identChar = letter | digit | '_'
-let lowerIdent = (lower | '_') identChar*
-let upperIdent = (upper | '_') identChar*
+let ident = identStartChar identChar*
 
 rule token = parse
     | sp+               { token lexbuf }
@@ -32,16 +30,11 @@ rule token = parse
     | '-'               { MINUS }
     | '('               { LPAREN }
     | ')'               { RPAREN }
-    | '['               { LBRACK }
-    | ']'               { RBRACK }
     | '&'               { AND }
     | '|'               { OR }
     | '!'               { NOT }
-    | '.'               { DOT }
-    | "->"              { ARROW }
-    | ','               { COMMA }
-    | lowerIdent        { VAR(Id.from_string (lexeme lexbuf)) }
-    | upperIdent        { PRED(Id.from_string (lexeme lexbuf)) }
+    | ';'               { SEMICOLON }
+    | ident             { IDENT(Id.from_string (lexeme lexbuf)) }
     | digit+            { INT(int_of_string(lexeme lexbuf)) }
     | eof               { EOF }
     | _                 { unrecToken (lexeme lexbuf) }

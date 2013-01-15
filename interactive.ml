@@ -1,6 +1,4 @@
-open Util
 open Types
-open Horn
 
 let main _ =
   let input =
@@ -8,20 +6,18 @@ let main _ =
       | 1 -> stdin
       | 2 -> let filename = Sys.argv.(1) in open_in (filename)
       | _ -> assert false in
+    let [a;b] = Parser.inputUnit Lexer.token (Lexing.from_channel input) in
 
-  let clauses, merges =
-    Parser.inputUnit Lexer.token (Lexing.from_channel input) in
+    print_string "A: ";
+    print_endline (printFormula printExpr a);
+    print_string "B: ";
+    print_endline (printFormula printExpr b);
 
-  print_endline (
-    String.concat "\n" (List.map printHorn clauses) ^ "\n" ^
-      "[" ^ String.concat "," (List.map (
-        fun (a, b) -> Id.print a ^ "-" ^ Id.print b) merges) ^ "]");
+    let space = Interpolation.interpolate (a, b) in
 
-  solve clauses |>
-  getSolution merges |>
-
-  M.iter (fun k (params, x) ->
-    print_endline (Id.print k ^ "(" ^ (String.concat "," (List.map Id.print params)) ^ ") : "
-                   ^ (printFormula printExpr x)))
+    let t = Interpolation.getInterpolant space in
+    Interpolation.verifyInterpolant (a, b) t;
+    print_string "Solution:\n\t";
+    print_endline (printFormula printExpr t)
 
 let _ = main ()
