@@ -250,7 +250,7 @@ type constr = expr formula
 type space = pexpr * constr
 
 type constrSet = int list * Puf.t * constr MI.t
-type hornSolSpace = horn list * (string list * pexpr nf) M.t * constrSet
+type hornSolSpace = horn list * ((string list * pexpr nf) M.t * constrSet)
 type hornSol = (string list * expr formula) M.t
 
 (* Ocamlgraph related types *)
