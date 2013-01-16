@@ -2,9 +2,6 @@ open Util
 open Types
 
 let pexprUnify (ids, puf, constrs as sol) a b c d e =
-  (* Test wether the constraint is satisfiable or not. *)
-  let test x = not (Z3interface.integer_programming x = None) in
-
   (* Extract one parameter each from two parameterized expression. *)
   List.map (
     tryPick (fun (op, coefs) ->
@@ -28,25 +25,26 @@ let pexprUnify (ids, puf, constrs as sol) a b c d e =
 
   (function
     | `A -> Some sol
-    | `B gx ->
-      let add = Unify.generatePexprUnifyConstr ~nl:true (List.hd b) (List.hd d) in
+    | `B gx -> (
       let pgx = Puf.find puf gx in
-      let constr = add &&& MI.find pgx constrs in
-      if test constr then
+      let constr = MI.find pgx constrs in
+      try
+        let constr = Unify.generatePexprUnifyConstr [List.hd b; List.hd d] constr in
         Some (ids, puf, MI.add pgx constr constrs)
-      else None
+      with Not_found -> None)
     | `C (gb, gd) ->
-      let add = Unify.generatePexprUnifyConstr ~nl:true (List.hd b) (List.hd d) in
       let (constr, constrs) =
         List.map (Puf.find puf) [gb;gd] |>
         List.fold_left (fun (constr, constrs) x ->
-          constr &&& (MI.find x constrs),
-          MI.remove x constrs) (add, constrs) in
-      if test constr then
+          (MI.find x constrs) :: constr,
+          MI.remove x constrs) ([], constrs) in
+      let constr = reduce (&&&) constr in
+      try
+        let constr = Unify.generatePexprUnifyConstr [List.hd b; List.hd d] constr in
         let puf = Puf.union puf gb gd in
         let constrs = MI.add (Puf.find puf gb) constr constrs in
         Some (ids, puf, constrs)
-      else None)
+      with Not_found -> None)
 
 let pexprListUnify original a b c d e =
   let b, d = List.hd b, List.hd d in

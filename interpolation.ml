@@ -86,9 +86,9 @@ let getInterpolant x =
   with _ -> None
 
 let rec mergeSpace opAnd sp1 sp2 =
-    let mergeSpSp ((op1, coef1), c1) ((op2, coef2), c2) =
-        let c5 = Unify.generatePexprUnifyConstr (op1, coef1) (op2, coef2) in
-        let sp = ((M.fold M.add op1 op2), coef1), (c1 &&& c2 &&& c5) in
+    let mergeSpSp ((op1, coef1 as p1), c1) ((op2, coef2 as p2), c2) =
+        let c5 = Unify.generatePexprUnifyConstr [ p1; p2 ] (c1 &&& c2) in
+        let sp = ((M.fold M.add op1 op2), coef1), c5 in
         match getInterpolant (Expr sp) with
         | Some _ -> Expr sp
         | None ->
