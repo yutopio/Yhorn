@@ -30,24 +30,12 @@ module MyIntListList = struct
       | ret -> ret
 end
 
-module M = MapEx.Make(MyIntListList)
-
-let check input a b c d e =
-  let c = List.map (fun x -> List.hd x, x) c in
-  let rec choose (bi, bl as b) (di, dl as d) = function
-    | x::rest ->
-      (choose (x, x::bl) d rest) &&
-      (choose b (x, x::dl) rest)
-    | [] ->
-      bi < 0 || di < 0 || (
-      List.sort (fun (x,_) (y,_) -> x-y) ([b;d] @ c) |>
-      List.split |> (fun (_,x) -> M.mem (a @ x @ e) input)) in
-  choose (-1, []) (-1, d) (List.rev b)
+module S = Set.Make(MyIntListList)
 
 let rec f2 f a b c = function
   | d::e ->
     if List.fold_left (fun m x -> max m x) 0 b < List.hd d then
-      f (a @ [b] @ c @ [d] @ e) (a @ [b @ d] @ c @ e) a b c d e;
+      f (a @ [b @ d] @ c @ e) b d;
     f2 f a b (c @ [d]) e
   | [] -> ()
 
@@ -59,36 +47,33 @@ let rec f1 f a = function
   | [] -> ()
 
 let rec combine eval n input =
-  if n = 0 || M.cardinal input = 0 then input else (
-    let next = ref M.empty in
-    M.iter (fun k _ ->
-      f1 (fun x y a b c d e ->
-        if check input a b c d e then
-          match eval input x y a b c d e with
-            | Some z -> next := M.add y z !next
-            | None -> ()) [] k) input;
+  if n = 0 || S.cardinal input = 0 then input else (
+    let next = ref S.empty in
+    S.iter (fun k ->
+      f1 (fun y b d ->
+        if eval y b d then next := S.add y !next) [] k) input;
     combine eval (n - 1) !next)
 
 let convL x = List.map x
 let convLL x = List.map (convL x)
-let convM x = M.bindings |- List.map (fun (k, v) -> convLL x k, v)
+let convM x = S.elements |- List.map (fun k -> convLL x k)
 
-let combine lookup eval n input seed =
-  combine eval n (M.add input seed M.empty) |> convM lookup
+let combine lookup eval n input =
+  combine eval n (S.add input S.empty) |> convM lookup
 
 let create_lookup x =
   let (_, (input, map)) = List.fold_left (fun (i, (l, map)) x ->
     i + 1, ([i] :: l, MI.add i x map)) (0, ([], MI.empty)) x in
   (List.rev input), (fun x -> MI.find x map)
 
-let lists seed eval ((a, la), (b, lb)) =
+let lists ((a, la), (b, lb)) =
   assert (la > 0);
   let input, lookup = create_lookup (a @ b) in
 
   let check =
     if la < lb then
-      fun current _ m2 ->
-        if List.hd m2 < la then false
+      fun current m1 m2 ->
+        if List.hd m1 >= la || List.hd m2 < la then false
         else List.fold_left (fun r x ->
           if List.hd x < la then
             if List.length x = 1 then r + 1 else r
@@ -98,28 +83,18 @@ let lists seed eval ((a, la), (b, lb)) =
         match m1, m2 with
           | [m1], [m2] -> m1 < la && m2 >= la
           | _ -> false in
-
-  (* I admit that this code is stupid... *)
-  let convL, convLL = convL lookup, convLL lookup in
-  let eval input x y a b c d e =
-    if check y b d then
-      eval (M.find x input) (convLL a) (convL b) (convLL c) (convL d) (convLL e)
-    else None in
-
-  combine lookup eval lb input seed
+  combine lookup check lb input
 
 (* Below are exposed functions. *)
 
-let elements seed eval a n =
+let elements a n =
   let input, lookup = create_lookup a in
-  let convL, convLL = convL lookup, convLL lookup in
-  let eval input x _ a b c d e =
-    eval (M.find x input)
-      (convLL a) (convL b) (convLL c) (convL d) (convLL e) in
-  combine lookup eval n input seed
+  let eval _ _ _ = true in
+  combine lookup eval n input
 
-let lists seed eval a b =
+let lists a b =
   (* Gurantee that a is shorter (or equal-length) than b. *)
   let [la;lb] = List.map List.length [a;b] in
   let a, b = (a, la), (b, lb) in
-  lists seed eval (if la > lb then b, a else a, b)
+  lists (if la > lb then b, a else a, b)
+

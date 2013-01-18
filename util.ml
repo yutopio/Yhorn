@@ -103,11 +103,13 @@ let mapi f l =
     let _, r = List.fold_left (fun (i, l) x -> i + 1, (f i x) :: l) (0, []) l in
     List.rev r
 
-let rec repeat f n k =
-  if n > 0 then
-    let n = n - 1 in
-    (repeat f n (f n k))
-  else k
+let repeat f n k =
+  assert (n >= 0);
+  let rec repeat f i n k =
+    if i < n then
+      repeat f (i + 1) n (f i k)
+    else k in
+  repeat f 0 n k
 
 let comparePair (x1, y1) (x2, y2) =
   match compare x1 x2 with

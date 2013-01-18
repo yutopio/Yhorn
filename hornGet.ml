@@ -1,60 +1,41 @@
 open Util
 open Types
 
-let pexprUnify (ids, puf, constrs as sol) a b c d e =
+let unify (nfs:pexpr nf list) (ids, puf, constrs as sol) =
   (* Extract one parameter each from two parameterized expression. *)
-  List.map (
-    tryPick (fun (op, coefs) ->
-      tryPick (
-        tryPick (fun x ->
-          if x = "" then None
-          else Some (int_of_string (String.sub x 1 (String.length x - 1)))))
-        ((M.keys op) :: (List.map M.keys (M.values coefs)))) |-
-    (function
-      | Some x ->
-        List.fold_left (fun i y -> if x < y then i else i + 1) 0 ids |>
-        Puf.find puf
-      | None -> -1)) [b;d] |>
+  List.flatten (List.flatten nfs) |>
+  List.map (fun (op, coefs) ->
+    tryPick (
+      tryPick (fun x ->
+        if x = "" then None
+        else Some (int_of_string (String.sub x 1 (String.length x - 1)))))
+      ((M.keys op) :: (List.map M.keys (M.values coefs)))) |>
+  List.map (function
+    | Some x ->
+      List.fold_left (fun i y -> if x < y then i else i + 1) 0 ids |>
+      Puf.find puf
+    | None -> -1)  |>
+
+  List.filter ((<>) (-1)) |>
+  distinct |>
 
   (function
-    | [-1;-1] -> `A
-    | [-1;gx]
-    | [gx;-1] -> `B gx
-    | [gb;gd] -> if gb = gd then `B gb else `C (gb, gd)
-    | _ -> assert false) |>
-
-  (function
-    | `A -> Some sol
-    | `B gx -> (
-      let pgx = Puf.find puf gx in
-      let constr = MI.find pgx constrs in
-      try
-        let constr = Unify.generatePexprUnifyConstr [List.hd b; List.hd d] constr in
-        Some (ids, puf, MI.add pgx constr constrs)
-      with Not_found -> None)
-    | `C (gb, gd) ->
+    | [] -> Some sol
+    | baseId::rest as constrIds ->
       let (constr, constrs) =
-        List.map (Puf.find puf) [gb;gd] |>
+        List.map (Puf.find puf) constrIds |>
         List.fold_left (fun (constr, constrs) x ->
           (MI.find x constrs) :: constr,
           MI.remove x constrs) ([], constrs) in
       let constr = reduce (&&&) constr in
       try
-        let constr = Unify.generatePexprUnifyConstr [List.hd b; List.hd d] constr in
-        let puf = Puf.union puf gb gd in
-        let constrs = MI.add (Puf.find puf gb) constr constrs in
-        Some (ids, puf, constrs)
+        match Template.unify constr ~maxSize:5 nfs with
+          | Some constr ->
+            let puf = List.fold_left (fun puf x -> Puf.union puf baseId x) puf rest in
+            let constrs = MI.add (Puf.find puf baseId) constr constrs in
+            Some (ids, puf, constrs)
+          | None -> None
       with Not_found -> None)
-
-let pexprListUnify original a b c d e =
-  let b, d = List.hd b, List.hd d in
-  match List.fold_left (fun l x ->
-    let ret =
-      Combine.lists x pexprUnify b d |>
-      List.split |> snd in
-    ret @ l) [] original with
-    | [] -> None
-    | x -> Some x
 
 let tryUnify (p1, p2) (preds, constr) =
   (* Specified predicate variables must exist. *)
@@ -70,15 +51,10 @@ let tryUnify (p1, p2) (preds, constr) =
       let nf2 = List.map (List.map (renamePexpr m)) nf2 in
       M.add p2 (param1, nf2) preds, nf2 in
 
-  (* Try to unify nf1 and nf2. Randomly choose the first constraint if
-     succeeds. *)
-  let ret = Combine.lists [constr] pexprListUnify nf1 nf2 in
-  let choices = List.flatten (List.map snd ret) in
-  let length = List.length choices in
-  if length > 0 then
-    Some (preds, List.hd choices)
-  else
-    None
+  (* Try to unify nf1 and nf2. *)
+  match unify [nf1;nf2] constr with
+    | Some constr -> Some (preds, constr)
+    | None -> None
 
 let tryUnify unify solution =
   (* Use Jean-Christophe Filliâtre's Union-Find tree implementation. *)
@@ -105,19 +81,6 @@ let tryUnify unify solution =
       | Some x -> (false, x)
       | None -> (true, solution)
     ) (false, solution) |> snd
-
-let trySimplify p (preds, constr) =
-  (* Specified predicate variables must exist. *)
-  let param, nf = assert (M.mem p preds); M.find p preds in
-
-  (* Try to simplify nf. Randomly choose the first constraint if succeeds. *)
-  let choices = Combine.elements [constr] pexprListUnify nf 1 in
-  if List.length choices > 0 then
-    let k, v = List.hd choices in
-    let preds = M.add p (param, List.map List.hd k) preds in
-    Some (preds, List.hd v)
-  else
-    None
 
 let assignParameters assign (op, expr) =
   (M.fold (fun k v o -> if v <> 0 && M.findDefault EQ k op = LTE then

@@ -37,7 +37,7 @@ let generatePexprUnifyConstr exprs constr =
       List.filter (fun x -> x <> Expr(EQ, M.empty)) |>
       distinct in
     match eqs with
-      | [] -> assert false
+      | [] -> Expr (EQ, M.empty) (* assert false *)
       | [x] -> constr &&& x
       | _ -> constr &&& And eqs) en in
   let constrs = And (constr :: constrs) in
@@ -68,7 +68,7 @@ let generatePexprUnifyConstr exprs constr =
       List.filter (fun x -> x <> Expr(EQ, M.empty)) |>
       distinct in
     match eqs with
-      | [] -> assert false
+      | [] -> Expr (EQ, M.empty) (* assert false *)
       | [x] -> constrs &&& x
       | _ -> constrs &&& And eqs) exprs in
   let allConstrs = reduce (&&&) (constr :: allConstrs) in

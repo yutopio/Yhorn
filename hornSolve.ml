@@ -289,22 +289,14 @@ let simplifyPCNF clauses =
          used. If there is no coefficient, it must be tautology. *)
       List.length (M.keys coef) = 0) exprs in
     if tautology then []
-    else
-      (* Add [bot] in front of all other expressions. It should be the head of
-         the list to achieve better performance.
-         TODO: Consider unification constraint of operator. *)
-      (M.empty, M.add "" (M.add "" 1 M.empty) M.empty) :: exprs in
+    else exprs in
 
   assert (List.length clauses > 0);
   let filtered = List.fold_left (fun l x ->
     let x = simplifyPDF x in
     if x = [] then l else x :: l) [] clauses in
   if List.length filtered = 0 then [[M.empty, M.empty]] (* Tautology *)
-  else
-    (* Add (false \/ true) in front of all other clauses. Same as simplifyDNF.
-       TODO: Ditto. *)
-    [M.empty, M.add "" (M.add "" 1 M.empty) M.empty;
-     M.empty, M.empty] :: filtered
+  else [M.empty, M.empty] :: filtered
 
 let renameClauses =
   List.fold_left (fun (clauses, pm) (lh, rh) ->
