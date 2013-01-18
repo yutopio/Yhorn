@@ -104,7 +104,7 @@ let tryUnify unify solution =
   List.fold_left (fun (fail, solution) pair ->
   if fail then (true, solution) else
     match tryUnify pair solution with
-      | Some x -> (false, solution)
+      | Some x -> (false, x)
       | None -> (true, solution)
     ) (false, solution) |> snd
 
