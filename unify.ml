@@ -47,7 +47,7 @@ let generatePexprUnifyConstr exprs constr =
 
   let allConstrs = List.map (fun (pop, pcoef) ->
     let m = ref M.empty in
-    ignore(mapFormula (renameExpr m) constr);
+    ignore(mapFormula (renameExpr m) constrs);
     m := M.map (fun v -> "x" ^ string_of_int (new_id ())) !m;
 
     (* Rename all space information. *)
@@ -71,7 +71,7 @@ let generatePexprUnifyConstr exprs constr =
       | [] -> assert false
       | [x] -> constrs &&& x
       | _ -> constrs &&& And eqs) exprs in
-  let allConstrs = reduce (&&&) allConstrs in
+  let allConstrs = reduce (&&&) (constr :: allConstrs) in
 
   (* Check whether it is satisfiable. *)
   if z3test allConstrs then allConstrs
