@@ -108,6 +108,19 @@ let integer_programming constr =
   ret
 *)
 
+let check_interpolant (a, b) i =
+  let ast = mk_or ctx [|
+    mk_not ctx (mk_implies ctx (convert a) (convert i));
+    mk_and ctx [| (convert i); (convert b) |] |] in
+  try
+    match check ast with
+      | _, L_FALSE -> true
+      | _ -> false
+  with Error (c, e) ->
+    print_string "Z3 Error: ";
+    print_endline (try get_error_msg c e with _ -> "unknown");
+    false
+
 let check_clause pred (lh, rh) =
   let rh::lh = List.map (function
     | PredVar (p, args) ->

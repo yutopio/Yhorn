@@ -78,46 +78,12 @@ let getSpace exprs =
         M.fold (fun k v -> (@) [ Expr((if k = "" then
             (if constrs = [] then NEQ else GT) else EQ), v) ]) m constrs))
 
-let assignParameters assign (op, expr) =
-  (M.fold (fun k v o -> if v <> 0 && M.findDefault EQ k op = LTE then
-      (assert (v > 0); LTE) else o) assign EQ),
-  (M.map (fun v -> M.fold (fun k v -> (+) ((
-    M.findDefault 1 k assign) * v)) v 0) expr)
-
-let rec getInterpolant sp =
-    match sp with
-    | Expr (pexpr, constraints) -> (
-        (* DEBUG: Z3 integer programming constraint.
-        print_endline (printFormula printExpr constraints); *)
-
-        match Z3interface.integer_programming constraints with
-        | Some sol ->
-            (* DEBUG: Dump Z3 solution.
-            print_endline ("Z3 solution: [" ^ (String.concat ", " (
-            M.fold (fun k v l -> (k ^ "=" ^ (string_of_int v)) :: l) sol [])) ^ "]"); *)
-
-            (* Construct one interpolant *)
-            Some(Expr (assignParameters sol pexpr))
-        | None -> None)
-    | And sps -> getInterpolantList true sps
-    | Or sps -> getInterpolantList false sps
-and getInterpolantList opAnd sps =
-    (* If the space is expressed by the union of spaces, take one interpolant from each space *)
-    try
-        let is = List.map (fun x ->
-            match getInterpolant x with
-            | Some x -> x
-            | None -> raise Not_found) sps in
-        Some (if opAnd then And is else Or is)
-    with Not_found -> None
-
-(* DEBUG: Uncomment following lines to dump intermediate interpolants
-let getInterpolant sp =
-    let ret = getInterpolant sp in
-    (match ret with
-      | Some x -> print_endline (printFormula printExpr x)
-      | None -> print_endline "none");
-    ret *)
+let getInterpolantExpr (pexpr, constr) =
+  let Some sol = Z3interface.integer_programming constr in
+  normalizeExpr (HornGet.assignParameters sol pexpr)
+let getInterpolant x =
+  try Some (mapFormula getInterpolantExpr x)
+  with _ -> None
 
 let rec mergeSpace opAnd sp1 sp2 =
     let mergeSpSp ((op1, coef1), c1) ((op2, coef2), c2) =
@@ -282,3 +248,21 @@ let rec transpose xss = (
             (Printexc.to_string e) ^
             ")");
         assert false
+
+let verifyInterpolant input output =
+  (* Check of free variable. *)
+  let a_s, b_s = input in
+  let [va; vb; vI] =
+    List.map (fun x ->
+      let m = ref M.empty in
+      ignore (mapFormula (renameExpr m) x);
+      M.keys !m)
+      [ a_s; b_s; output] in
+  let usable = List.filter (fun x -> List.exists ((=) x) va) vb in
+  assert (List.for_all (fun x -> List.exists ((=) x) usable) vI);
+
+  (* Logical check. *)
+  assert (Z3interface.check_interpolant input output);
+
+  (* Test passed. *)
+  ()
