@@ -7,67 +7,109 @@ let size_of_nf = List.fold_left (fun ret x -> ret + List.length x) 0
 let template_of_nf x = List.sort compare (List.map List.length x)
 let size_of_tmpl = reduce (+)
 
-let apply_template tmpl pexprNf =
-  assert (List.length tmpl <= List.length pexprNf);
-  Combine.lists
-    (List.map (fun x -> `A x) tmpl)
-    (List.map (fun x -> `B (List.map (fun x -> `D x) x)) pexprNf) |>
-  List.fold_left (fun l combs ->
-    try
-      (* NOTE: Because of the implementation of module Combine, the first
-         element in this case must be a template and others are parameterized
-         epxressions. *)
-      (mapi (fun i comb ->
-        let hd::clauses = comb in
-        let x = match hd with `A x -> x | `B _ -> assert false in
-        let ids = repeat (fun j k -> (`C (i+1, (x-j)))::k) x [] in
+type 'a t1 =
+  | Template of int * (int * int) list
+  | Clause of int * 'a list
 
-        List.map (function
-          | `A _ -> assert false
-          | `B clause ->
-            if List.length clause < x then raise Not_found;
-            Combine.lists ids clause |>
-            List.map (
-              List.map (fun comb ->
-                let hd::terms = comb in
-                let x, y = match hd with
-                  | `C x -> x
-                  | `D _ -> assert false in
-                List.map (function
-                  | `C _ -> assert false
-                  | `D pexpr -> pexpr, x, y) terms) |-
-              List.flatten)
-        ) clauses |> (* combinations , choices , clauses *)
-	directProduct |>
-        List.map List.flatten) combs |>
-      directProduct |>
-      List.map List.flatten)
-      @ l
-    with _ -> l
-  ) []
+let enumerate_application f templ nf =
+  let length = List.sort compare templ in
+  let comp =
+    List.fold_left (fun (i, l) x -> i + 1,
+      match l with
+        | [] -> [x, [i,0]]
+        | (j, l')::rest ->
+          if j = x then (i, (i,0)::l')::rest
+          else (x, [i,0])::l
+    ) (0, []) templ |>
+    snd |>
+    List.rev |>
+    List.map (fun (x, l) -> x, Template (x, List.rev l)) in
+  let nfLen = List.length nf in
+  let clauses = mapi (fun i x -> List.length x, Clause (nfLen - i, x)) nf in
 
-module MII = MapEx.Make(
-  struct
-    type t = int * int
-    let compare = compare
-  end)
+  (* NOTE: Assume List.sort uses a stable sort algorithm. *)
+  let x = List.sort compare (comp @ clauses) |> List.split |> snd in
 
-let unify_template constr pnf tmpl =
-  let apps = List.map (apply_template tmpl) pnf in
-  let choices = directProduct apps in
+  (* Ready for distribution tricks. *)
+  let rec choose (vacant, choosingVacant, templs, assigns) = function
+    | [] ->
+      assert (vacant == 0);
+      f assigns
+    | Template (size, indices) :: rest ->
+      assert (not choosingVacant);
+      let vacant = vacant + List.length indices in
+      let templs = MI.add size indices templs in
+      choose (vacant, false, templs, assigns) rest
+    | Clause (numClausesRemaining, pexprs) :: rest ->
+      if vacant = numClausesRemaining then
+        let templs =
+          if not choosingVacant then
+            MI.map (List.filter (fun (_, l) -> l = 0)) templs |>
+            MI.filter (fun _ indices -> List.length indices <> 0) 
+          else templs in
+        MI.iter (fun k ((place,_)::rest') ->
+          let assigns = (place, pexprs) :: assigns in
+          let templs = (
+            if rest = [] then MI.remove k
+            else MI.add k rest') templs in
+          choose (vacant - 1, true, templs, assigns) rest) templs
+      else
+        MI.iter (fun k indices ->
+          let rec g = function
+            | [] -> ()
+            | (place, count)::rest' ->
+              let assigns = (place, pexprs) :: assigns in
+              let templs = MI.add k ((place, count+1)::rest') templs in
+              if count = 0 then
+                choose (vacant - 1, false, templs, assigns) rest
+              else (
+                choose (vacant, false, templs, assigns) rest;
+                g rest') in
+          g indices) templs in
+
+  choose (0, false, MI.empty, []) x
+
+type t2 =
+  | Placeholder of int
+  | Pexpr of pexpr
+
+let unify_template constr pnfs templ =
+  List.map (fun pnf -> 
+    let ret = ref [] in
+    enumerate_application (fun app -> ret := app :: !ret) templ pnf;
+    !ret) pnfs |>
+  directProduct |>
+  List.map (List.flatten) |>
   tryPick (fun choice ->
-    let m = List.fold_left (List.fold_left (fun m (pexpr, x, y) ->
-      MII.addDefault [] (fun l x -> x::l) (x, y) pexpr m)) MII.empty choice in
+    let m = List.fold_left (fun m (k, v) ->
+      MI.addDefault [] (fun l x -> x::l) k v m) MI.empty choice in
     try
-      MII.fold (fun (x,y) pexprs () ->
-        print_endline ("Unify [" ^ (string_of_int x) ^ "," ^ (string_of_int y) ^ "]: {" ^
-          String.concat "}, {" (List.map printPexpr pexprs) ^ "}")) m ();
-      print_newline ();
+      Some (MI.fold (fun x clauses constr ->
+        let size = List.nth templ x in
+        let places = repeat (fun j k -> (Placeholder (size-j))::k) size [] in
 
-      Some (MII.fold (fun _ -> Unify.generatePexprUnifyConstr) m constr)
-    with Not_found ->
-      None
-  ) choices
+        let choices =
+          List.map (
+            List.map (fun x -> Pexpr x) |-
+            Combine.lists places |-
+            List.map (
+              List.map (fun ((Placeholder y)::terms) ->
+                List.map (fun (Pexpr pexpr) -> y, pexpr) terms) |-
+              List.flatten)) clauses |>
+          directProduct |>
+          List.map List.flatten in
+
+        let ret = tryPick (fun choice ->
+          let m = List.fold_left (fun m (k, v) ->
+            MI.addDefault [] (fun l x -> x::l) k v m) MI.empty choice in
+          try
+            Some (MI.fold (fun _ -> Unify.generatePexprUnifyConstr) m constr)
+          with Not_found -> None) choices in
+
+        match ret with
+          | Some x -> x
+          | None -> raise Not_found) m constr)
+    with Not_found -> None)
 
 let rec incr_tmpl = function
   | [] -> assert false
@@ -90,7 +132,7 @@ let rec repeat_tmpl f i max =
     let rec g current =
       print_endline ("Template: " ^ String.concat "," (List.map string_of_int current));
       try
-	let Some x as sol = f current in sol
+        let Some x as sol = f current in sol
       with _ -> g (incr_tmpl current) in
     g seed
   with Not_found -> repeat_tmpl f (i + 1) max
