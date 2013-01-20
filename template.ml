@@ -9,29 +9,29 @@ let size_of_tmpl = reduce (+)
 
 type 'a t1 =
   | Template of int * (int * int) list
-  | Clause of int * 'a list
+  | Clause of 'a list
 
 let enumerate_application f templ nf =
-  let length = List.sort compare templ in
   let comp =
     List.fold_left (fun (i, l) x -> i + 1,
       match l with
         | [] -> [x, [i,0]]
         | (j, l')::rest ->
-          if j = x then (i, (i,0)::l')::rest
+          if j = x then (j, (i,0)::l')::rest
           else (x, [i,0])::l
     ) (0, []) templ |>
     snd |>
     List.rev |>
     List.map (fun (x, l) -> x, Template (x, List.rev l)) in
-  let nfLen = List.length nf in
-  let clauses = mapi (fun i x -> List.length x, Clause (nfLen - i, x)) nf in
+  let clauses = mapi (fun i x -> List.length x, Clause x) nf in
 
-  (* NOTE: Assume List.sort uses a stable sort algorithm. *)
-  let x = List.sort compare (comp @ clauses) |> List.split |> snd in
+  (* NOTE: Assume List.sort uses a stablem sort algorithm. *)
+  let x =
+    List.sort (fun (x, _) (y, _) -> x - y) (comp @ clauses) |>
+    List.split |> snd in
 
   (* Ready for distribution tricks. *)
-  let rec choose (vacant, choosingVacant, templs, assigns) = function
+  let rec choose (vacant, clausesLeft, choosingVacant, templs, assigns) = function
     | [] ->
       assert (vacant == 0);
       f assigns
@@ -39,35 +39,40 @@ let enumerate_application f templ nf =
       assert (not choosingVacant);
       let vacant = vacant + List.length indices in
       let templs = MI.add size indices templs in
-      choose (vacant, false, templs, assigns) rest
-    | Clause (numClausesRemaining, pexprs) :: rest ->
-      if vacant = numClausesRemaining then
+      choose (vacant, clausesLeft, false, templs, assigns) rest
+    | Clause pexprs :: rest ->
+      let chooseVacant = vacant = clausesLeft in
+      let clausesLeft = clausesLeft - 1 in
+      if chooseVacant then
         let templs =
           if not choosingVacant then
             MI.map (List.filter (fun (_, l) -> l = 0)) templs |>
             MI.filter (fun _ indices -> List.length indices <> 0) 
           else templs in
         MI.iter (fun k ((place,_)::rest') ->
+	  let vacant = vacant - 1 in
           let assigns = (place, pexprs) :: assigns in
           let templs = (
             if rest = [] then MI.remove k
             else MI.add k rest') templs in
-          choose (vacant - 1, true, templs, assigns) rest) templs
+          choose (vacant, clausesLeft, true, templs, assigns) rest) templs
       else
         MI.iter (fun k indices ->
-          let rec g = function
+          let rec g finished = function
             | [] -> ()
             | (place, count)::rest' ->
               let assigns = (place, pexprs) :: assigns in
-              let templs = MI.add k ((place, count+1)::rest') templs in
+              let templs = MI.add k (
+                finished @ ((place, count+1)::rest')) templs in
               if count = 0 then
-                choose (vacant - 1, false, templs, assigns) rest
+                let vacant = vacant - 1 in
+                choose (vacant, clausesLeft, false, templs, assigns) rest
               else (
-                choose (vacant, false, templs, assigns) rest;
-                g rest') in
-          g indices) templs in
+                choose (vacant, clausesLeft, false, templs, assigns) rest;
+                g (finished @ [place, count]) rest') in
+          g [] indices) templs in
 
-  choose (0, false, MI.empty, []) x
+  choose (0, List.length nf, false, MI.empty, []) x
 
 type t2 =
   | Placeholder of int
