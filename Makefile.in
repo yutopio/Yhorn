@@ -19,7 +19,6 @@ datarootdir=@datarootdir@
 BINDIR	=$(DESTDIR)@bindir@
 
 # Other variables set by ./configure
-OCAMLC   = @OCAMLC@
 OCAMLOPT = @OCAMLOPT@
 OCAMLDEP = @OCAMLDEP@ -slash
 OCAMLDOC = @OCAMLDOC@
@@ -48,7 +47,7 @@ OFLAGS = $(INCLUDES)
 #############
 
 NAME=yhorn
-all: byte $(OCAMLBEST)
+all: $(CMXA)
 
 # bytecode and native-code compilation
 ######################################
@@ -65,26 +64,14 @@ GENERATED = META version.ml parser.ml parser.mli lexer.ml
 
 $(CMX): OFLAGS += -for-pack Yhorn
 
-byte: $(CMA)
-opt: $(CMXA)
-
-$(NAME).cma: $(NAME).cmo
-	$(OCAMLC) $(INCLUDES) -a -g -o $@ $^
-
 $(NAME).cmxa: $(NAME).cmx
 	$(OCAMLOPT) $(INCLUDES) -a -o $@ $^
 
 $(NAME).cmi: $(NAME).cmo
 $(NAME).o:   $(NAME).cmx
 
-$(NAME).cmo: $(CMO)
-	$(OCAMLC) $(INCLUDES) -pack -g -o $@ $^
-
 $(NAME).cmx: $(CMX)
 	$(OCAMLOPT) $(INCLUDES) -pack -o $@ $^
-
-$(NAME).byte: $(CMO) interactive.cmo
-	$(OCAMLC) $(INCLUDES) -g -unsafe -o $@ unix.cma z3.cma graph.cma $^
 
 $(NAME).opt: $(CMX) interactive.cmx
 	$(OCAMLOPT) $(INCLUDES) -unsafe -inline 100 -o $@ unix.cmxa z3.cmxa graph.cmxa $^
@@ -140,10 +127,7 @@ wc:
 .SUFFIXES: .mli .ml .cmi .cmo .cmx .mll .mly
 
 .mli.cmi:
-	$(OCAMLC) -c $(BFLAGS) $<
-
-.ml.cmo:
-	$(OCAMLC) -c $(BFLAGS) $<
+	$(OCAMLOPT) -c $(BFLAGS) $<
 
 .ml.o:
 	$(OCAMLOPT) -c $(OFLAGS) $<
