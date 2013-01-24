@@ -3,7 +3,7 @@ open Types
 
 let pexprUnify (ids, puf, constrs as sol) a b c d e =
   (* Test wether the constraint is satisfiable or not. *)
-  let test x = not (Z3interface.integer_programming x = None) in
+  let test x = not (Z3interface.solve x = None) in
 
   (* Extract one parameter each from two parameterized expression. *)
   List.map (
@@ -147,7 +147,7 @@ let simplifyCNF =
 
 let getSolution (pexprs, (_, _, constrs)) =
   let sol = MI.fold (fun _ constr m ->
-    match Z3interface.integer_programming constr with
+    match Z3interface.solve constr with
       | Some sol -> M.simpleMerge sol m
       | None -> raise Not_found) constrs M.empty in
 

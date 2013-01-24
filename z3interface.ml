@@ -7,7 +7,7 @@ let _ = preload ()
 
 let timeout = 5000 (* milliseconds *)
 let ctx = mk_context [ ]
-let _int = mk_int_sort ctx
+let _real = mk_real_sort ctx
 let _bool = mk_bool_sort ctx
 
 let rec splitVars ret x =
@@ -18,7 +18,7 @@ let rec splitVars ret x =
       let rest = String.sub x (i + 1) (String.length x - i - 1) in
       (name, Some rest)
     with Not_found -> (x, None) in
-  let ret = (mk_const ctx (mk_string_symbol ctx name) _int) :: ret in
+  let ret = (mk_const ctx (mk_string_symbol ctx name) _real) :: ret in
   match rest with
     | Some x -> splitVars ret x
     | None -> ret
@@ -30,7 +30,7 @@ let rec convert = function
       else
         let l, r = (ref l), (ref r) in
         let t, vp = if v > 0 then l, v else r, (-v) in
-        let v = mk_int ctx vp _int in
+        let v = mk_real ctx vp 1 in
         let _ =
           if k = "" then t := v :: !t
           else
@@ -40,7 +40,7 @@ let rec convert = function
               | _, k -> t := (mk_mul ctx (Array.of_list (v::k))) :: !t in
         (!l, !r)) coef ([], []) in
     let [ l; r ] = List.map (function
-      | [] -> mk_int ctx 0 _int
+      | [] -> mk_real ctx 0 1
       | [x] -> x
       | l -> mk_add ctx (Array.of_list l)) [ l; r ] in
     match op with
@@ -66,21 +66,25 @@ let check ast =
   print_endline ("Z3 AST: " ^ ast_to_string ctx ast);
   check ast *)
 
-let integer_programming constrs =
+let solve constrs =
   try
     match check (convert constrs) with
       | s, L_TRUE ->
         let md = solver_get_model ctx s in
         let mdn = model_get_num_consts ctx md in
-        let m = repeat (fun i m ->
+        let m, denomi = repeat (fun i (m, denomi) ->
           let fd = model_get_const_decl ctx md i in
           let name = get_symbol_string ctx (get_decl_name ctx fd) in
           match model_get_const_interp ctx md fd with
             | Some ast ->
-              let ok, value = get_numeral_int ctx ast in
-              M.add name value m
-            | None -> m) mdn M.empty in
-        Some m
+              let get_num f ast =
+                let ok, ret = get_numeral_int ctx (f ctx ast) in
+                assert ok; ret in
+              let x = get_num get_numerator ast in
+              let y = get_num get_denominator ast in
+              M.add name (x, y) m, lcm denomi y
+            | None -> m, denomi) mdn (M.empty, 1) in
+        Some (M.map (fun (x, y) -> x * denomi / y) m)
       | _, L_FALSE -> None (* unsatisfiable *)
       | s, L_UNDEF -> (* timeout? *)
         print_endline ("Z3 returned L_UNDEF: " ^
@@ -92,10 +96,10 @@ let integer_programming constrs =
     None
 
 (* DEBUG:
-let integer_programming constr =
+let solve constr =
   print_endline ("Z3 problem: " ^ (printFormula printExpr constr));
   let _start = Sys.time () in
-  let ret = integer_programming constr in
+  let ret = solve constr in
   let _end = Sys.time () in
   print_endline ("Z3 elapsed time: " ^
     (string_of_float (_end -. _start)) ^ " sec.");

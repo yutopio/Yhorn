@@ -79,7 +79,7 @@ let getSpace exprs =
             (if constrs = [] then NEQ else GT) else EQ), v) ]) m constrs))
 
 let getInterpolantExpr (pexpr, constr) =
-  let Some sol = Z3interface.integer_programming constr in
+  let Some sol = Z3interface.solve constr in
   normalizeExpr (HornGet.assignParameters sol pexpr)
 let getInterpolant x =
   try Some (mapFormula getInterpolantExpr x)

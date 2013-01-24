@@ -24,6 +24,16 @@ let new_id () = incr _id; !_id
 let reset_id () = _id := 0
 let new_name () = "$" ^ string_of_int (new_id ())
 
+let gcd x y =
+  let rec gcd x y =
+    if y = 0 then x
+    else gcd y (x mod y) in
+  assert (x <> 0 && y <> 0);
+  let x = if x > 0 then x else -x in
+  let y = if y > 0 then y else -y in
+  if x > y then gcd x y else gcd y x
+let lcm x y = x * y / gcd x y
+
 let distinct l =
     let rec internal l = function
         | x :: rest ->
