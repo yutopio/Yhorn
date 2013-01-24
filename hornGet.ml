@@ -1,45 +1,6 @@
 open Util
 open Types
 
-let generatePexprUnifyConstr (op1, coef1) (op2, coef2) =
-  (* Consider all variables are present in both *)
-  let vars = [] |>
-    M.fold (fun k v r -> k :: r) coef1 |>
-    M.fold (fun k v r -> k :: r) coef2 |>
-    distinct in
-
-  (* Generate auxiliary variables. *)
-  let q1, q2 =
-    let f () = "q" ^ string_of_int (new_id ()) in
-    f (), f () in
-  let c3 = Expr(GT , M.add q1 1 M.empty) in (* q1  > 0 *)
-  let c1 = Expr(NEQ, M.add q2 1 M.empty) in (* q2 != 0 *)
-  let c2 = Expr(GT , M.add q2 1 M.empty) in (* q2  > 0 *)
-
-  (* Coefficients of both interpolants must be the same *)
-  let mul v coef = M.fold (fun k -> M.add (
-    if k = "" then v else k ^ "*" ^ v)) coef M.empty in
-  let c3 = List.fold_left (fun r k ->
-    let [v1;v2] = List.map (M.findDefault M.empty k) [coef1;coef2] in
-    (Expr(EQ, (mul q1 v1) -- (mul q2 v2)) :: r)) [c3] vars in
-
-  (* Check weight variables those for making an interpolant LTE. *)
-  let f x =
-    let p = M.fold (fun k v p -> if v = LTE then k :: p else p) x [] in
-    let eq = List.fold_left (fun c x ->
-      (Expr (EQ, M.add x 1 M.empty)) :: c) [] p in
-    (p, eq) in
-  let (p1lte, i1eq), (p2lte, i2eq) = (f op1), (f op2) in
-
-  let [c3;i1eq;i2eq] = List.map (fun x -> And x) [c3;i1eq;i2eq] in
-
-  (* Constraint for making both interpolant the same operator. *)
-  match p1lte, p2lte with
-    | [], [] -> c1 &&& c3
-    | _, [] -> c1 &&& c3 &&& i1eq
-    | [], _ -> c1 &&& c3 &&& i2eq
-    | _ -> c3 &&& (i1eq <=> i2eq) &&& (i1eq ==> c1) &&& ((!!!i1eq) ==> c2)
-
 let pexprUnify (ids, puf, constrs as sol) a b c d e =
   (* Test wether the constraint is satisfiable or not. *)
   let test x = not (Z3interface.integer_programming x = None) in
@@ -68,14 +29,14 @@ let pexprUnify (ids, puf, constrs as sol) a b c d e =
   (function
     | `A -> Some sol
     | `B gx ->
-      let add = generatePexprUnifyConstr (List.hd b) (List.hd d) in
+      let add = Unify.generatePexprUnifyConstr ~nl:true (List.hd b) (List.hd d) in
       let pgx = Puf.find puf gx in
       let constr = add &&& MI.find pgx constrs in
       if test constr then
         Some (ids, puf, MI.add pgx constr constrs)
       else None
     | `C (gb, gd) ->
-      let add = generatePexprUnifyConstr (List.hd b) (List.hd d) in
+      let add = Unify.generatePexprUnifyConstr ~nl:true (List.hd b) (List.hd d) in
       let (constr, constrs) =
         List.map (Puf.find puf) [gb;gd] |>
         List.fold_left (fun (constr, constrs) x ->

@@ -119,39 +119,9 @@ let getInterpolant sp =
       | None -> print_endline "none");
     ret *)
 
-let generatePexprMergeConstr (op1, coef1) (op2, coef2) =
-  (* Consider all variables are present in both *)
-  let vars = [] |>
-    M.fold (fun k v r -> k :: r) coef1 |>
-    M.fold (fun k v r -> k :: r) coef2 |>
-    distinct in
-
-  (* Coefficients of both interpolants must be the same *)
-  let (c3, c4) = List.fold_left (fun (r1, r2) k ->
-    let [v1;v2] = List.map (M.findDefault M.empty k) [coef1;coef2] in
-    (Expr(EQ, v1 ++ v2) :: r1),
-    (Expr(EQ, v1 -- v2) :: r2)) ([], []) vars in
-
-  (* Check weight variables those for making an interpolant LTE. *)
-  let f x =
-    let p = M.fold (fun k v p -> if v = LTE then k :: p else p) x [] in
-    let eq = List.fold_left (fun c x ->
-      (Expr (EQ, M.add x 1 M.empty)) :: c) [] p in
-    (p, eq) in
-  let (p1lte, i1eq), (p2lte, i2eq) = (f op1), (f op2) in
-
-  let [c3;c4;i1eq;i2eq] = List.map (reduce (&&&)) [c3;c4;i1eq;i2eq] in
-
-  (* Constraint for making both interpolant the same operator. *)
-  match p1lte, p2lte with
-    | [], [] -> c3 ||| c4
-    | _, [] -> (c3 ||| c4) &&& i1eq
-    | [], _ -> (c3 ||| c4) &&& i2eq
-    | _ -> (i1eq <=> i2eq) &&& (i1eq ==> (c3 ||| c4)) &&& ((!!! i1eq) ==> c4)
-
 let rec mergeSpace opAnd sp1 sp2 =
     let mergeSpSp ((op1, coef1), c1) ((op2, coef2), c2) =
-        let c5 = generatePexprMergeConstr (op1, coef1) (op2, coef2) in
+        let c5 = Unify.generatePexprUnifyConstr (op1, coef1) (op2, coef2) in
         let sp = ((M.fold M.add op1 op2), coef1), (c1 &&& c2 &&& c5) in
         match getInterpolant (Expr sp) with
         | Some _ -> Expr sp
