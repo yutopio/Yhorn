@@ -10,6 +10,10 @@ let ctx = mk_context [ ]
 let _int = mk_int_sort ctx
 let _bool = mk_bool_sort ctx
 
+let show_error (Error (c, e)) =
+  print_string "Z3 Error: ";
+  print_endline (try get_error_msg c e with _ -> "unknown")
+
 let rec convert = function
   | Expr (op, coef) -> (
     let (l, r) = M.fold (fun k v (l, r) ->
@@ -52,6 +56,14 @@ let check ast =
   print_endline ("Z3 AST: " ^ ast_to_string ctx ast);
   check ast *)
 
+let check_formula formula =
+  try
+    match check (convert formula) with
+      | _, L_TRUE -> Some true
+      | _, L_FALSE -> Some false
+      | _, L_UNDEF -> None
+  with e -> (show_error e; None)
+
 let integer_programming constrs =
   try
     match check (convert constrs) with
@@ -72,10 +84,7 @@ let integer_programming constrs =
         print_endline ("Z3 returned L_UNDEF: " ^
                           (solver_get_reason_unknown ctx s));
         None
-  with Error (c, e) ->
-    print_string "Z3 Error: ";
-    print_endline (try get_error_msg c e with _ -> "unknown");
-    None
+  with e -> (show_error e; None)
 
 (* DEBUG:
 let integer_programming constr =
@@ -102,10 +111,7 @@ let check_interpolant (a, b) i =
     match check ast with
       | _, L_FALSE -> true
       | _ -> false
-  with Error (c, e) ->
-    print_string "Z3 Error: ";
-    print_endline (try get_error_msg c e with _ -> "unknown");
-    false
+  with e -> (show_error e; false)
 
 let check_clause pred (lh, rh) =
   let rh::lh = List.map (function
@@ -121,7 +127,4 @@ let check_clause pred (lh, rh) =
     match check ast with
       | _, L_FALSE -> true
       | _ -> false
-  with Error (c, e) ->
-    print_string "Z3 Error: ";
-    print_endline (try get_error_msg c e with _ -> "unknown");
-    false
+  with e -> (show_error e; false)
