@@ -29,9 +29,11 @@ let unify (nfs:pexpr nf list) (ids, puf, constrs as sol) =
           MI.remove x constrs) ([], constrs) in
       let constr = reduce (&&&) constr in
       try
-        match Template.unify constr ~maxSize:5 nfs with
+        match Template.unify Unify.generatePexprUnifyConstr
+          constr ~maxSize:5 nfs with
           | Some constr ->
-            let puf = List.fold_left (fun puf x -> Puf.union puf baseId x) puf rest in
+            let puf = List.fold_left (
+              fun puf x -> Puf.union puf baseId x) puf rest in
             let constrs = MI.add (Puf.find puf baseId) constr constrs in
             Some (ids, puf, constrs)
           | None -> None

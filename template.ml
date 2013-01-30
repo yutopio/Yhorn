@@ -1,9 +1,9 @@
-open Types
 open Util
+open Types
 
 type template = int list
 
-let size_of_nf = List.fold_left (fun ret x -> ret + List.length x) 0
+let size_of_nf x = List.fold_left (fun ret x -> ret + List.length x) 0 x
 let template_of_nf x = List.sort compare (List.map List.length x)
 let size_of_tmpl = reduce (+)
 
@@ -31,7 +31,8 @@ let enumerate_application f templ nf =
     List.split |> snd in
 
   (* Ready for distribution tricks. *)
-  let rec choose (vacant, clausesLeft, choosingVacant, templs, assigns) = function
+  let rec choose (vacant, clausesLeft,
+                  choosingVacant, templs, assigns) = function
     | [] ->
       assert (vacant == 0);
       f assigns
@@ -74,47 +75,46 @@ let enumerate_application f templ nf =
 
   choose (0, List.length nf, false, MI.empty, []) x
 
-type t2 =
+type 'a t2 =
   | Placeholder of int
-  | Pexpr of pexpr
+  | Pexpr of 'a
 
-let unify_template constr pnfs templ =
-  List.map (fun pnf -> 
-    let ret = ref [] in
-    enumerate_application (fun app -> ret := app :: !ret) templ pnf;
-    !ret) pnfs |>
-  directProduct |>
-  List.map (List.flatten) |>
-  tryPick (fun choice ->
+let rec unify_template unifier f value templ apps = function
+  | x::rest ->
+    enumerate_application (fun app ->
+      unify_template unifier f value templ (app @ apps) rest
+    ) templ x
+  | [] ->
     let m = List.fold_left (fun m (k, v) ->
-      MI.addDefault [] (fun l x -> x::l) k v m) MI.empty choice in
-    try
-      Some (MI.fold (fun x clauses constr ->
+      MI.addDefault [] (fun l x -> x::l) k v m) MI.empty apps |>
+      MI.bindings in
+    let rec f_ value = function
+      | [] -> f value
+      | (x, clauses) :: rest ->
         let size = List.nth templ x in
         let places = repeat (fun j k -> (Placeholder (size-j))::k) size [] in
 
-        let choices =
-          List.map (
-            List.map (fun x -> Pexpr x) |-
-            Combine.lists places |-
+        let rec g_ apps = function
+          | clause :: rest ->
+            List.map (fun x -> Pexpr x) clause |>
+            Combine.lists places |>
             List.map (
               List.map (fun ((Placeholder y)::terms) ->
                 List.map (fun (Pexpr pexpr) -> y, pexpr) terms) |-
-              List.flatten)) clauses |>
-          directProduct |>
-          List.map List.flatten in
-
-        let ret = tryPick (fun choice ->
-          let m = List.fold_left (fun m (k, v) ->
-            MI.addDefault [] (fun l x -> x::l) k v m) MI.empty choice in
-          try
-            Some (MI.fold (fun _ -> Unify.generatePexprUnifyConstr) m constr)
-          with Not_found -> None) choices in
-
-        match ret with
-          | Some x -> x
-          | None -> raise Not_found) m constr)
-    with Not_found -> None)
+              List.flatten) |>
+            List.iter (fun x -> g_ (x @ apps) rest)
+          | [] ->
+            let m = List.fold_left (fun m (k, v) ->
+              MI.addDefault [] (fun l x -> x::l) k v m) MI.empty apps in
+            let value =
+              try Some (MI.fold (fun _ -> unifier) m value)
+              with Not_found -> None in
+            match value with
+              | Some value -> f_ value rest
+              | None -> () in
+        g_ [] clauses in
+    f_ value m
+let unify_template a b c d = unify_template a b c d []
 
 let rec incr_tmpl = function
   | [] -> assert false
@@ -131,42 +131,36 @@ let rec incr_tmpl = function
 
 let rec repeat_tmpl f i max =
   assert (max > 0);
-  if i > max then None else
-  try
+  if i > max then None
+  else
     let seed = repeat (fun _ l -> 1::l) i [] in
     let rec g current =
-      print_endline ("Template: " ^ String.concat "," (List.map string_of_int current));
-      try
-        let Some x as sol = f current in sol
-      with _ -> g (incr_tmpl current) in
+      match f current with
+        | Some x as sol -> sol
+        | None ->
+          let next =
+            try Some (incr_tmpl current)
+            with Not_found -> None in
+          match next with
+            | Some x -> g x
+            | None -> repeat_tmpl f (i + 1) max in
     g seed
-  with Not_found -> repeat_tmpl f (i + 1) max
 
-let unify constr ?tmpl ?maxSize pnf =
-  (* DEBUG: *)
-  print_endline "Try unify:";
-  List.iter (fun x ->
-    print_endline (printFormula printPexpr (convertToFormula true x))) pnf;
-  print_newline ();
+exception Stop
+let unify unifier value ?tmpl ?maxSize nfs =
+  let ret = ref value in
+  let f templ =
+    try unify_template unifier (fun x ->
+      ret := x; raise Stop
+    ) value templ nfs; None
+    with Stop -> Some !ret in
 
   let maxSize =
     match maxSize with
       | Some x -> x
-      | None -> reduce min (List.map size_of_nf pnf) in
+      | None -> reduce min (List.map size_of_nf nfs) in
   match tmpl with
     | Some x ->
-      if size_of_tmpl x > maxSize then None
-      else unify_template constr pnf x
+      if size_of_tmpl x > maxSize then None else f x
     | None ->
-      repeat_tmpl (unify_template constr pnf) 1 (maxSize + 1)
-
-let simplify constr ?tmpl ?maxSize t =
-  match tmpl with
-  | Some x -> (
-    match maxSize with
-    | Some y -> unify constr ~tmpl:x ~maxSize:y [t]
-    | None -> unify constr ~tmpl:x [t])
-  | None -> (
-    match maxSize with
-    | Some y -> unify constr ~maxSize:y [t]
-    | None -> unify constr [t])
+      repeat_tmpl f 1 (maxSize + 1)
