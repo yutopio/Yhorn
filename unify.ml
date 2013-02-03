@@ -4,6 +4,57 @@ open Types
 (* Test wether the constraint is satisfiable or not. *)
 let z3test x = not (Z3interface.integer_programming x = None)
 
+(** Unification algorithm for interpolants. *)
+let equal pexprs constrSet =
+  (* Make a constraint for unifing interpolants with all coefficients equal. *)
+  if List.length pexprs = 1 then constrSet else (
+
+  assert (List.length pexprs >= 2);
+
+  (* Consider all variables are present in all pexprs. *)
+  let vars =
+    List.fold_left (fun l (_, coef) -> (M.keys coef) @ l) [] pexprs |>
+    sort_distinct in
+
+  let f (op1, coef1) l (op2, coef2) =
+    (* Coefficients of both interpolants must be the same *)
+    let (c1, c2) = List.fold_left (fun (r1, r2) k ->
+      let [v1;v2] = List.map (M.findDefault M.empty k) [coef1;coef2] in
+      (Expr(EQ, v1 ++ v2) :: r1),
+      (Expr(EQ, v1 -- v2) :: r2)) ([], []) vars in
+
+    (* Check weight variables those for making an interpolant LTE. *)
+    let f x =
+      M.fold (fun k v p -> if v = LTE then k :: p else p) x [] |>
+      List.fold_left (fun c x -> (Expr (EQ, M.add x 1 M.empty)) :: c) [] in
+    let i1eq, i2eq = (f op1), (f op2) in
+
+    let [c1;c2;i1eq;i2eq] = List.map (fun x -> And x) [c1;c2;i1eq;i2eq] in
+
+    (* Constraint for making both interpolant the same operator. *)
+    let has_eq = i1eq ||| i2eq in
+    (has_eq ==> (c1 ||| c2)) :: (!!! has_eq ==> c2) :: l in
+
+  let rec fold ret = function
+    | x::(_::_ as l) -> fold (List.fold_left (f x) ret l) l
+    | [_] -> ret
+    | _ -> assert false in
+  let additional = And (fold [] pexprs) in
+
+  let pvarIds =
+    List.map Constr.pollPVarId pexprs |>
+    List.filter ((<>) None) |>
+    List.map (fun (Some x) -> x) in
+  let newId, (ids, puf, constrs) = Constr.mergeConstrs pvarIds constrSet in
+  let constr = MI.find (Puf.find puf newId) constrs in
+  let constr = constr &&& additional in
+
+  (* Check whether it is satisfiable. *)
+  if not (z3test constr) then raise Not_found;
+
+  let constrs = MI.add (Puf.find puf newId) constr constrs in
+  ids, puf, constrs)
+
 let generatePexprUnifyConstr exprs constr =
   assert (List.length exprs >= 2);
 
@@ -71,8 +122,8 @@ let generatePexprUnifyConstr exprs constr =
       | [] -> Expr (EQ, M.empty) (* assert false *)
       | [x] -> constrs &&& x
       | _ -> constrs &&& And eqs) exprs in
-  let allConstrs = reduce (&&&) (constr :: allConstrs) in
+  let allConstrs = reduce (&&&) allConstrs in
 
   (* Check whether it is satisfiable. *)
-  if z3test allConstrs then allConstrs
+  if z3test (constr &&& allConstrs) then allConstrs
   else raise Not_found

@@ -246,10 +246,11 @@ let printPexpr (_, coef) =
   add_string buf (if M.mem "" coef then printTerm (M.find "" coef) else "0");
   contents buf
 
-type constr = expr formula
-type space = pexpr * constr
 
+(* TODO: Should have been moved to constr.ml *)
+type constr = expr formula
 type constrSet = int list * Puf.t * constr MI.t
+
 type hornSolSpace = horn list * ((string list * pexpr nf) M.t * constrSet)
 type hornSol = (string list * expr formula) M.t
 

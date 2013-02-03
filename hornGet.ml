@@ -1,43 +1,29 @@
 open Util
 open Types
 
-let unify (nfs:pexpr nf list) (ids, puf, constrs as sol) =
+let unify nfs constr =
   (* Extract one parameter each from two parameterized expression. *)
-  List.flatten (List.flatten nfs) |>
-  List.map (fun (op, coefs) ->
-    tryPick (
-      tryPick (fun x ->
-        if x = "" then None
-        else Some (int_of_string (String.sub x 1 (String.length x - 1)))))
-      ((M.keys op) :: (List.map M.keys (M.values coefs)))) |>
-  List.map (function
-    | Some x ->
-      List.fold_left (fun i y -> if x < y then i else i + 1) 0 ids |>
-      Puf.find puf
-    | None -> -1)  |>
+  let pvarIds =
+    List.flatten (List.flatten nfs) |>
+    List.map Constr.pollPVarId |>
+    List.filter ((<>) None) |>
+    List.map (fun (Some x) -> x) in
 
-  List.filter ((<>) (-1)) |>
-  distinct |>
-
-  (function
-    | [] -> Some sol
-    | baseId::rest as constrIds ->
-      let (constr, constrs) =
-        List.map (Puf.find puf) constrIds |>
-        List.fold_left (fun (constr, constrs) x ->
-          (MI.find x constrs) :: constr,
-          MI.remove x constrs) ([], constrs) in
-      let constr = reduce (&&&) constr in
+  let newId, (ids, puf, constrs) = Constr.mergeConstrs pvarIds constr in
+  match newId with
+    | (-1) -> Some constr
+    | _ ->
+      (* TODO: Will be replaced not to handle constraint set directly. *)
+      let constr = MI.find (Puf.find puf newId) constrs in
       try
         match Template.unify Unify.generatePexprUnifyConstr
           constr ~maxSize:5 nfs with
-          | Some constr ->
-            let puf = List.fold_left (
-              fun puf x -> Puf.union puf baseId x) puf rest in
-            let constrs = MI.add (Puf.find puf baseId) constr constrs in
+          | Some additional ->
+            let constr = constr &&& additional in
+            let constrs = MI.add (Puf.find puf newId) constr constrs in
             Some (ids, puf, constrs)
           | None -> None
-      with Not_found -> None)
+      with Not_found -> None
 
 let tryUnify (p1, p2) (preds, constr) =
   (* Specified predicate variables must exist. *)
@@ -108,11 +94,8 @@ let simplifyCNF =
     else if contradiction || List.length exprs = 0 then true, []
     else false, exprs :: clauses) (false, [])
 
-let getSolution (pexprs, (_, _, constrs)) =
-  let sol = MI.fold (fun _ constr m ->
-    match Z3interface.integer_programming constr with
-      | Some sol -> M.simpleMerge sol m
-      | None -> raise Not_found) constrs M.empty in
+let getSolution (pexprs, constr) =
+  let sol = Constr.solve constr in
 
   (* Construct one interpolant *)
   M.map (fun (params, cnf) ->
