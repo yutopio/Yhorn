@@ -7,6 +7,8 @@ let size_of_nf x = List.fold_left (fun ret x -> ret + List.length x) 0 x
 let template_of_nf x = List.sort compare (List.map List.length x)
 let size_of_tmpl = reduce (+)
 
+let print_template tmpl = String.concat "," (List.map string_of_int tmpl)
+
 type 'a t1 =
   | Template of int * (int * int) list
   | Clause of 'a list
@@ -25,22 +27,20 @@ let enumerate_application f templ nf =
     List.map (fun (x, l) -> x, Template (x, List.rev l)) in
   let clauses = mapi (fun i x -> List.length x, Clause x) nf in
 
-  (* NOTE: Assume List.sort uses a stablem sort algorithm. *)
   let x =
-    List.sort (fun (x, _) (y, _) -> x - y) (comp @ clauses) |>
+    List.stable_sort (fun (x, _) (y, _) -> x - y) (comp @ clauses) |>
     List.split |> snd in
 
   (* Ready for distribution tricks. *)
   let rec choose (vacant, clausesLeft,
                   choosingVacant, templs, assigns) = function
     | [] ->
-      assert (vacant == 0);
-      f assigns
+      if vacant == 0 then f assigns
     | Template (size, indices) :: rest ->
-      assert (not choosingVacant);
-      let vacant = vacant + List.length indices in
-      let templs = MI.add size indices templs in
-      choose (vacant, clausesLeft, false, templs, assigns) rest
+      if not choosingVacant then
+        let vacant = vacant + List.length indices in
+        let templs = MI.add size indices templs in
+        choose (vacant, clausesLeft, false, templs, assigns) rest
     | Clause pexprs :: rest ->
       let chooseVacant = vacant = clausesLeft in
       let clausesLeft = clausesLeft - 1 in
@@ -54,7 +54,7 @@ let enumerate_application f templ nf =
 	  let vacant = vacant - 1 in
           let assigns = (place, pexprs) :: assigns in
           let templs = (
-            if rest = [] then MI.remove k
+            if rest' = [] then MI.remove k
             else MI.add k rest') templs in
           choose (vacant, clausesLeft, true, templs, assigns) rest) templs
       else
@@ -149,7 +149,7 @@ let rec repeat_tmpl f i max =
 exception Stop
 let unify unifier value ?tmpl ?maxSize nfs =
   let ret = ref value in
-  let f templ =
+  let try_template templ =
     try unify_template unifier (fun x ->
       ret := x; raise Stop
     ) value templ nfs; None
@@ -161,6 +161,6 @@ let unify unifier value ?tmpl ?maxSize nfs =
       | None -> reduce min (List.map size_of_nf nfs) in
   match tmpl with
     | Some x ->
-      if size_of_tmpl x > maxSize then None else f x
+      if size_of_tmpl x > maxSize then None else try_template x
     | None ->
-      repeat_tmpl f 1 (maxSize + 1)
+      repeat_tmpl try_template 1 (maxSize + 1)
