@@ -2,6 +2,8 @@ open Util
 open Types
 open Constr
 
+exception Satisfiable of (string * int) list
+
 type space = pexpr nf * constrSet
 
 (* Try to calculate an interpolant from given expressions. All expressions are
@@ -52,15 +54,9 @@ let interpolateSimple exprs =
     (if k = "" then if constrs = [] then NEQ else GT else EQ), v)::c) m constrs)
 
 let getInterpolant (pexpr, constrSet) =
-  let unify = Template.unify Unify.equal constrSet [ pexpr ] in
-  let pexpr, constrs =
-    match unify with
-      | Some x -> x
-      | None ->
-        (* We don't specify max size for a unification template, so None must
-           not occur. *)
-        assert false in
-
+  (* We don't specify max size for a unification template, so None must not
+     occur. *)
+  let Some (pexpr, constrs) = Template.unify Unify.equal constrSet [ pexpr ] in
   let sol = Constr.solve constrs in
   let ret = List.map (List.map (fun pexpr ->
     normalizeExpr (HornGet.assignParameters sol pexpr))) pexpr in
@@ -98,6 +94,12 @@ let interpolate (a, b) =
            B. *)
         let constrs = ref [] in
         let pexprCnf = List.map (fun b -> List.map (fun a ->
+          (* Satisfiability check. *)
+          (match Z3interface.integer_programming (
+            And (List.map (fun x -> Expr x) (a @ b))) with
+            | Some x -> raise (Satisfiable (M.bindings x))
+            | _ -> ());
+
           let a = List.map (fun x -> true, x) a in
           let b = List.map (fun x -> false, x) b in
           let pexpr, constr = interpolateSimple (a @ b) in
@@ -109,10 +111,12 @@ let interpolate (a, b) =
         let _, constrs = List.fold_left (fun (i, m) x -> i + 1, MI.add i x m)
           (0, MI.empty) constrs in
         pexprCnf, (ids, puf, constrs)
-  ) with e ->
-    print_endline ("Yint: Unhandled exception (" ^
-                   (Printexc.to_string e) ^ ")");
-    assert false
+  ) with
+    | Satisfiable x as e -> raise e
+    | e ->
+      print_endline ("Yint: Unhandled exception (" ^
+                        (Printexc.to_string e) ^ ")");
+      assert false
 
 let verifyInterpolant input output =
   (* Check of free variable. *)
