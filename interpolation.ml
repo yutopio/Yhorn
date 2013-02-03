@@ -2,7 +2,7 @@ open Util
 open Types
 open Constr
 
-exception Satisfiable of (string * int) list
+exception Satisfiable of (Id.t * int) list
 
 type space = pexpr nf * constrSet
 
@@ -14,14 +14,13 @@ type space = pexpr nf * constrSet
    or EQ. Any other are considered as LTE. *)
 let interpolateSimple exprs =
   (* Add 0 <= 1 constraint for completeness. *)
-  let exprs = (true, (LTE, M.add "" (-1) M.empty)) :: exprs in
+  let exprs = (true, (LTE, M.add Id.const (-1) M.empty)) :: exprs in
 
   (* Build the coefficient mapping for the first, and at the same time, check
      the operator of each expression. *)
   let m, constrs, (a, b), op =
     List.fold_left (fun (m, constrs, (a, b), ipOp) (c, (op, coef)) ->
-      let id = string_of_int (new_id ()) in
-      let pi = "p" ^ id in
+      let pi = Id.create () in
 
       (* Building an coefficient mapping in terms of variables *)
       (M.fold (fun k v -> M.addDefault
@@ -51,7 +50,7 @@ let interpolateSimple exprs =
      inconsistency. Otherwise, i.e., LTE inequalities involved, the sum must
      be greater than zero. *)
   And(M.fold (fun k v c -> Expr(
-    (if k = "" then if constrs = [] then NEQ else GT else EQ), v)::c) m constrs)
+    (if k = Id.const then if constrs = [] then NEQ else GT else EQ), v)::c) m constrs)
 
 let getInterpolant (pexpr, constrSet) =
   (* We don't specify max size for a unification template, so None must not
@@ -78,14 +77,15 @@ let interpolate (a, b) =
       | [], [] ->
         (* Returns the interpolant space x=0 where x can be anything.
            Equivalent of (0=0 | 0=1). *)
-        [[M.empty, M.add "" (M.add "x" 1 M.empty) M.empty]],
+        [[M.empty, M.add Id.const (M.add (Id.create ()) 1 M.empty) M.empty]],
         ([], Puf.create 0, MI.empty)
       | [], _ ->
         (* Returns the interpolant space x=0 where x is not equal to 0.
            Equivalent of 0=1. *)
-        (* TODO: May cause bugs in future! ID (-1) is not a clever solution. *)
-        [[M.empty, M.add "" (M.add "p-1" 1 M.empty) M.empty]],
-        ([-1], Puf.create 1, MI.add 0 (Expr (NEQ, M.add "p-1" 1 M.empty)) MI.empty)
+        (* TODO: Sentinel method is not a good idea!! *)
+        let x = Id.create () in
+        [[M.empty, M.add Id.const (M.add x 1 M.empty) M.empty]],
+        ([x], Puf.create 1, MI.add 0 (Expr (NEQ, M.add x 1 M.empty)) MI.empty)
       | _, [] ->
         (* Returns the interpolant space 0=0. *)
         [[M.empty, M.empty]], ([], Puf.create 0, MI.empty)
@@ -103,7 +103,7 @@ let interpolate (a, b) =
           let a = List.map (fun x -> true, x) a in
           let b = List.map (fun x -> false, x) b in
           let pexpr, constr = interpolateSimple (a @ b) in
-          constrs := (new_id (), constr) :: !constrs;
+          constrs := (Id.create () (* sentinel *), constr) :: !constrs;
           pexpr
         ) a_s) b_s in
         let ids, constrs = List.rev !constrs |> List.split in

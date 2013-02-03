@@ -1,6 +1,6 @@
 open Types
 
-exception Satisfiable of (string * int) list
+exception Satisfiable of (Id.t * int) list
 
 type space (* = pexpr nf * Constr.constrSet *)
 

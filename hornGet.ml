@@ -80,10 +80,10 @@ let simplifyCNF =
   let simplifyDF =
     List.fold_left (fun (tautology, exprs) (op, coef as expr) ->
       if tautology || M.cardinal coef = 0 then true, []
-      else if M.cardinal coef > 1 || not (M.mem "" coef) then
+      else if M.cardinal coef > 1 || not (M.mem Id.const coef) then
         false, expr :: exprs
       else
-        let c = M.find "" coef in
+        let c = M.find Id.const coef in
         (match op with
           | EQ -> c = 0
           | LTE -> c <= 0), exprs) (false, []) in
@@ -102,7 +102,7 @@ let getSolution (pexprs, constr) =
     let cnf = List.map (List.map (assignParameters sol)) cnf in
     let cntrdct, clauses = simplifyCNF cnf in
     let formula =
-      if cntrdct then Expr (EQ, M.add "" 1 M.empty)
+      if cntrdct then Expr (EQ, M.add Id.const 1 M.empty)
       else if List.length clauses = 0 then Expr (EQ, M.empty)
       else convertToFormula true clauses in
     params, formula) pexprs

@@ -19,10 +19,8 @@ let (|>) x f = f x
     is not None. *)
 let tryPick f = List.fold_left (fun ret x -> if ret = None then f x else ret) None
 
-let _id = ref 0
-let new_id () = incr _id; !_id
-let reset_id () = _id := 0
-let new_name () = "$" ^ string_of_int (new_id ())
+(* let new_name () = "$" ^ string_of_int (new_id ())
+let new_name () = assert false *)
 
 let distinct l =
     let rec internal l = function

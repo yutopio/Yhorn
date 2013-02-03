@@ -42,10 +42,10 @@ let buildGraph clauses =
           (* If not yet exists, create a new vertex with a fresh binder. [bot]
              implies the predicate symbol. This means that this predicate
              variable has no implication in input Horn clauses. *)
-          let binders = repeat (fun _ l -> (new_name ()) :: l)
+          let binders = repeat (fun _ l -> (Id.create ()) :: l)
             (List.length args) [] in
           let dst = G.V.create (PredVar (p, binders)) in
-          let bot = G.V.create (LinearExpr (Expr (EQ, M.add "" 1 M.empty))) in
+          let bot = G.V.create (LinearExpr (Expr (EQ, M.add Id.const 1 M.empty))) in
           let g = G.add_edge g dst bot in
           predVertices := M.add p dst !predVertices;
           g, dst, args) in
@@ -89,7 +89,7 @@ let flattenGraph g =
        expression IDs appearing above the predicate. `predCopies` remembers the
        correspondance between the original name of predicate variable and
        predicate IDs. *)
-    let predMap = ref MI.empty in
+    let predMap = ref M.empty in
     let predCopies = ref M.empty in
 
     let g, v, nameMap = match G.V.label v with
@@ -140,8 +140,8 @@ let flattenGraph g =
       let v' = G'.V.create (
         match G.V.label v with
           | PredVar (p, param) ->
-            let pid = (new_id ()) in
-            predMap := MI.add pid (param, u'keys) !predMap;
+            let pid = Id.create () in
+            predMap := M.add pid (param, u'keys) !predMap;
             predCopies := M.addDefault [] (fun l x -> x :: l) p pid !predCopies;
             Pid pid
 
@@ -182,7 +182,7 @@ let solveTree (g, laGroups, predMap, predCopies) =
     (* Give IDs and flatten. *)
     let dnfChoice, exprs = listFold2 (fun (s, t) x (z, y) ->
       (MI.add x z s), ((List.map (fun z ->
-        (x, "p" ^ (string_of_int (new_id ())), z)) y) @ t))
+        (x, Id.create (), z)) y) @ t))
       (MI.empty, []) laIds assigns in
 
     (* Create a new copy of renaming maps for each group. This must be done here
@@ -197,7 +197,7 @@ let solveTree (g, laGroups, predMap, predCopies) =
         let (op, coef) = renameExpr (MI.find gid laRenames) expr in
 
         (* DEBUG: *)
-        print_endline ((string_of_int gid) ^ "\t" ^ exprId ^ "\t" ^
+        print_endline ((string_of_int gid) ^ "\t" ^ Id.print exprId ^ "\t" ^
           (printExpr (op, coef)));
 
         (* Building an coefficient mapping in terms of variables *)
@@ -220,14 +220,14 @@ let solveTree (g, laGroups, predMap, predCopies) =
 
     let predSols = List.fold_left (fun m pv ->
       let Pid pid = G'.V.label pv in
-      let (params, _) = MI.find pid predMap in
+      let (params, _) = M.find pid predMap in
 
       (* Predicate body are built from coefficient mapping by extracting only
          relating coefficinet and weight. *)
       let x = G'.fold_pred_e (fun e x -> x @ (
         match G'.V.label (G'.E.src e), G'.E.label e with
           | Pid pid', Some bindings ->
-            let _, (_, pcoefs) = MI.find pid' m in
+            let _, (_, pcoefs) = M.find pid' m in
             M.fold (fun k v l ->
               let k = try List.assoc k bindings with Not_found -> k in
               (M.add k v M.empty) :: l) pcoefs []
@@ -241,28 +241,28 @@ let solveTree (g, laGroups, predMap, predCopies) =
           | _ -> assert false)
       ) g pv [M.empty] in
 
-      MI.add pid (params, (ops, reduce (+++) x)) m
-    ) MI.empty pvs in
+      M.add pid (params, (ops, reduce (+++) x)) m
+    ) M.empty pvs in
 
-    let constr = M.fold (fun k v -> (@) [ Expr((if k = "" then
+    let constr = M.fold (fun k v -> (@) [ Expr((if k = Id.const then
         (* TODO: Consider completeness of Farkas' Lemma application. *)
         (if constr = [] then NEQ else GT) else EQ), v) ]) coefs constr in
 
     dnfChoice,
     predSols,
-    new_id (), (* sentinel for merger *)
+    Id.create (), (* sentinel for merger *)
     (match constr with [c] -> c | _ -> And constr)
   ) (directProduct laDnfs) in
 
-  let predMap = MI.map snd predMap in
+  let predMap = M.map snd predMap in
   let predSols, maxIds, constrs = List.fold_left (fun
     (predSolsByPred, maxIds, constrs)
     (dnfChoice, predSolsByDnf, maxId, constr) ->
-      MI.fold (fun pid ->
-        MI.addDefault ([], MIL.empty) (fun (_, m) (param, pexpr) -> param,
+      M.fold (fun pid ->
+        M.addDefault ([], MIL.empty) (fun (_, m) (param, pexpr) -> param,
           let groupKey =
             (MI.fold (fun k v l ->
-              if List.mem k (MI.find pid predMap) then l
+              if List.mem k (M.find pid predMap) then l
               else (k, v) :: l) dnfChoice []) |>
             (List.sort comparePair) |>
             List.split |> snd in
@@ -270,14 +270,14 @@ let solveTree (g, laGroups, predMap, predCopies) =
         ) pid) predSolsByDnf predSolsByPred,
       maxId :: maxIds,
       MI.add (List.length maxIds) constr constrs
-  ) (MI.empty, [], MI.empty) sols in
+  ) (M.empty, [], MI.empty) sols in
 
-  let predSols = MI.map (fun (param, pexpr) -> param,
+  let predSols = M.map (fun (param, pexpr) -> param,
     MIL.fold (fun _ v l -> v :: l) pexpr []) predSols in
 
   (M.map (fun x ->
     reduce (fun (p1, e1) (p2, e2) -> assert (p1 = p2); (p1, e1 @ e2))
-      (List.map (fun x -> MI.find x predSols) x)) predCopies),
+      (List.map (fun x -> M.find x predSols) x)) predCopies),
   (List.rev maxIds),
   constrs
 
@@ -304,7 +304,8 @@ let renameClauses =
     let pm = ref pm in
     let f = function
       | PredVar (p, l) ->
-        let p' = M.findDefault ("P" ^ string_of_int (M.cardinal !pm)) p !pm in
+        let p' = M.findDefault (Id.from_string (
+          "P" ^ string_of_int (M.cardinal !pm))) p !pm in
         pm := M.add p p' !pm;
         ignore(renameList vm l);
         PredVar (p', l)
@@ -313,14 +314,13 @@ let renameClauses =
         LinearExpr e in
     let terms = List.map f (rh::lh) in
     let i = ref 0 in
-    vm := M.map (fun v -> "x" ^ string_of_int (incr i; !i)) !vm;
+    vm := M.map (fun v -> Id.from_string ("x" ^ string_of_int (incr i; !i))) !vm;
     let rh::lh = List.map (renameHornTerm vm) terms in
     (lh, rh) :: clauses, !pm
   ) ([], M.empty)
 
 let solve clauses =
   assert (List.length clauses > 0);
-  reset_id ();
 
   (* DEBUG: *)
   print_newline ();

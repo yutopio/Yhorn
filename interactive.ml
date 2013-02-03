@@ -15,13 +15,13 @@ let main _ =
   print_endline (
     String.concat "\n" (List.map printHorn clauses) ^ "\n" ^
       "[" ^ String.concat "," (List.map (
-        fun (a, b) -> a ^ "-" ^ b) merges) ^ "]");
+        fun (a, b) -> Id.print a ^ "-" ^ Id.print b) merges) ^ "]");
 
   solve clauses |>
   getSolution merges |>
 
   M.iter (fun k (params, x) ->
-    print_endline (k ^ "(" ^ (String.concat "," params) ^ ") : "
+    print_endline (Id.print k ^ "(" ^ (String.concat "," (List.map Id.print params)) ^ ") : "
                    ^ (printFormula printExpr x)))
 
 let _ = main ()

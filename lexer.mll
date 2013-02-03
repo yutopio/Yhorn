@@ -40,8 +40,8 @@ rule token = parse
     | '.'               { DOT }
     | "->"              { ARROW }
     | ','               { COMMA }
-    | lowerIdent        { VAR(lexeme lexbuf) }
-    | upperIdent        { PRED(lexeme lexbuf) }
+    | lowerIdent        { VAR(Id.from_string (lexeme lexbuf)) }
+    | upperIdent        { PRED(Id.from_string (lexeme lexbuf)) }
     | digit+            { INT(int_of_string(lexeme lexbuf)) }
     | eof               { EOF }
     | _                 { unrecToken (lexeme lexbuf) }

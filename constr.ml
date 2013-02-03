@@ -2,12 +2,11 @@ open Types
 open Util
 
 let pollPVarId (op, coefs) =
-  let getId = function
-    | "" -> None
-    | x -> Some (int_of_string (String.sub x 1 (String.length x - 1))) in
-  match tryPick getId (M.keys op) with
-    | Some x -> Some x
-    | None -> tryPick (M.keys |- tryPick getId) (M.values coefs)
+  try Some (List.find ((<>) Id.const) (M.keys op))
+  with Not_found ->
+    tryPick (fun x ->
+      try Some (List.find ((<>) Id.const) (M.keys x))
+      with Not_found -> None) (M.values coefs)
 
 let mergeConstrs pvarIds (ids, puf, constrs as sol) =
   let constrIds =

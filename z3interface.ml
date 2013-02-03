@@ -23,9 +23,11 @@ let rec convert = function
         let t, vp = if v > 0 then l, v else r, (-v) in
         let v = mk_int ctx vp _int in
         let _ =
-          if k = "" then t := v :: !t
+          if k = Id.const then t := v :: !t
           else
-            let k = mk_const ctx (mk_string_symbol ctx k) _int in
+            let k = mk_const ctx (
+              try mk_string_symbol ctx (Id.string_of k)
+              with _ -> mk_int_symbol ctx (Id.int_of k)) _int in
             if vp = 1 then t := k :: !t
             else t := (mk_mul ctx [| k; v |]) :: !t in
         (!l, !r)) coef ([], []) in
@@ -72,11 +74,16 @@ let integer_programming constrs =
         let mdn = model_get_num_consts ctx md in
         let m = repeat (fun i m ->
           let fd = model_get_const_decl ctx md i in
-          let name = get_symbol_string ctx (get_decl_name ctx fd) in
+          let symbol = get_decl_name ctx fd in
+          let id = match get_symbol_kind ctx symbol with
+            | INT_SYMBOL ->
+              Id.from_int (get_symbol_int ctx symbol)
+            | STRING_SYMBOL ->
+              Id.from_string (get_symbol_string ctx symbol) in
           match model_get_const_interp ctx md fd with
             | Some ast ->
               let ok, value = get_numeral_int ctx ast in
-              M.add name value m
+              M.add id value m
             | None -> m) mdn M.empty in
         Some m
       | _, L_FALSE -> None (* unsatisfiable *)

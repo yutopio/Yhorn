@@ -2,7 +2,7 @@ open Buffer
 open Util
 
 module MyString = struct
-  type t = string
+  type t = Id.t
   let compare = compare
 end
 
@@ -55,19 +55,19 @@ let (--) x y = coefOp (-) 0 y x (* Note that the operands need to be reversed. *
 let (~--) = M.map (fun v -> -v)
 
 type expr = operator * coef
-type pvar = string * string list
+type pvar = Id.t * Id.t list
 
 let printTerm coef =
   let buf = create 1 in
   let first = ref true in
   M.iter (fun v c ->
-    if v = "" || c = 0 then () else (
+    if v = Id.const || c = 0 then () else (
       if c > 0 && not !first then add_char buf '+'
       else if c = -1 then add_char buf '-';
       first := false;
       if (abs c) <> 1 then add_string buf (string_of_int c);
-      add_string buf v)) coef;
-  let c = M.findDefault 0 "" coef in
+      add_string buf (Id.print v))) coef;
+  let c = M.findDefault 0 Id.const coef in
   if not !first && c > 0 then add_char buf '+';
   if !first || c <> 0 then add_string buf (string_of_int c);
   contents buf
@@ -86,36 +86,36 @@ let printExpr (op, coef) =
 let normalizeExpr (op, coef) =
   let op, coef =
     match op with
-      | LT -> LTE, (M.addDefault 0 (+) "" 1 coef)
-      | GT -> LTE, (M.addDefault 0 (+) "" 1 (~-- coef))
+      | LT -> LTE, (M.addDefault 0 (+) Id.const 1 coef)
+      | GT -> LTE, (M.addDefault 0 (+) Id.const 1 (~-- coef))
       | GTE -> LTE, (~-- coef)
       | _ -> op, coef in
   let coef = M.filter (fun _ v -> v <> 0) coef in
-  if M.cardinal coef = 1 && M.mem "" coef then
+  if M.cardinal coef = 1 && M.mem Id.const coef then
     match op with
       | EQ -> NEQ, M.empty
       | NEQ -> EQ, M.empty
       | LTE ->
-        if M.find "" coef <= 0 then EQ, M.empty
-        else LTE, M.add "" 1 M.empty
+        if M.find Id.const coef <= 0 then EQ, M.empty
+        else LTE, M.add Id.const 1 M.empty
   else
     op, coef
 
 let negateExpr (op, coef) = (negateOp op, coef)
 
-let rec renameVar m k =
-  assert (k <> "");
-  if not (M.mem k !m) then
-    m := M.add k (new_name ()) !m;
-  M.find k !m
-and renameExpr m (op, coef) = op,
-  M.fold (fun k ->
-    let k = if k = "" then "" else renameVar m k in
-    M.addDefault 0 (+) k) coef M.empty
-and renameList m = List.map (renameVar m)
+let renameVar m k =
+  if k = Id.const then Id.const
+  else (
+    if not (M.mem k !m) then
+      m := M.add k (Id.create ()) !m;
+    M.find k !m)
+let renameExpr m (op, coef) = op,
+  M.fold (renameVar m |- M.addDefault 0 (+)) coef M.empty
+let renameList m = List.map (renameVar m)
 
 let printPvar (name, params) =
-    name ^ "(" ^ String.concat "," params ^ ")"
+  (Id.print name) ^ "(" ^
+    String.concat "," (List.map Id.print params) ^ ")"
 
 type 'a formula =
     | Expr of 'a
@@ -221,15 +221,13 @@ type pexpr = operator M.t * coef M.t
 let (+++) = coefOp (++) M.empty
 
 let renamePexpr m (op, coef) = op,
-  M.fold (fun k ->
-    let k = if k = "" then "" else renameVar m k in
-    M.addDefault M.empty (++) k) coef M.empty
+  M.fold (renameVar m |- M.addDefault M.empty (++)) coef M.empty
 let printPexpr (_, coef) =
   let buf = create 1 in
   let first = ref true in
   M.iter (fun v coef ->
     let term = printTerm coef in
-    if v = "" || term = "0" then () else (
+    if v = Id.const || term = "0" then () else (
     if not !first then add_char buf '+';
     first := false;
     if (String.contains term '+') || (String.contains term '-') then (
@@ -240,19 +238,19 @@ let printPexpr (_, coef) =
       add_string buf term;
       add_char buf '*'
     );
-    add_string buf v)) coef;
+    add_string buf (Id.print v))) coef;
   if !first then add_string buf "0";
   add_string buf " ? ";
-  add_string buf (if M.mem "" coef then printTerm (M.find "" coef) else "0");
+  add_string buf (if M.mem Id.const coef then printTerm (M.find Id.const coef) else "0");
   contents buf
 
 
 (* TODO: Should have been moved to constr.ml *)
 type constr = expr formula
-type constrSet = int list * Puf.t * constr MI.t
+type constrSet = Id.t list * Puf.t * constr MI.t
 
-type hornSolSpace = horn list * ((string list * pexpr nf) M.t * constrSet)
-type hornSol = (string list * expr formula) M.t
+type hornSolSpace = horn list * ((Id.t list * pexpr nf) M.t * constrSet)
+type hornSol = (Id.t list * expr formula) M.t
 
 (* Ocamlgraph related types *)
 
@@ -263,7 +261,7 @@ module MyVertex = struct
   let equal = (=)
 end
 
-type hornTermId = La of int | Pid of int
+type hornTermId = La of int | Pid of Id.t
 module MyVertex' = struct
   type t = hornTermId
   let compare = compare
@@ -272,7 +270,7 @@ module MyVertex' = struct
 end
 
 module MyEdge = struct
-  type t = (string * string) list option
+  type t = (Id.t * Id.t) list option
 
   let compare x y = match x, y with
     | None, None -> 0
@@ -314,7 +312,7 @@ module Display = struct
     match E.label e with
       | None -> []
       | Some x ->  [`Label (String.concat ", "
-                           (List.map (fun (x, y) -> x ^ "=" ^ y) x))]
+                           (List.map (fun (x, y) -> Id.print x ^ "=" ^ Id.print y) x))]
 end
 
 module Display' = struct
@@ -323,12 +321,12 @@ module Display' = struct
   let vertex_name v = "\"" ^
     (match V.label v with
       | La x -> "La " ^ (string_of_int x)
-      | Pid x -> "Pid " ^ (string_of_int x)) ^ "\""
+      | Pid x -> "Pid " ^ (Id.print x)) ^ "\""
   let edge_attributes e =
     match E.label e with
       | None -> []
       | Some x ->  [`Label (String.concat ", "
-                           (List.map (fun (x, y) -> x ^ "=" ^ y) x))]
+                           (List.map (fun (x, y) -> Id.print x ^ "=" ^ Id.print y) x))]
 end
 
 module Dot = Graph.Graphviz.Dot(Display)

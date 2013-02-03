@@ -64,18 +64,15 @@ let generatePexprUnifyConstr exprs constr =
       if List.exists ((=) k) r then r else k :: r) pcoef l)) [] exprs in
 
   let (pop1,pcoef1)::en = exprs in
-  let i = ref 0 in
   let constrs = List.map (fun (pop, pcoef) ->
     let m = ref M.empty in
-    ignore(mapFormula (renameExpr m) constr);
-    m := M.map (fun v -> "t" ^ string_of_int (incr i; !i)) !m;
 
     (* Rename all space information. *)
     let constr = mapFormula (renameExpr m) constr in
     let pop = M.fold (fun k ->
-      M.add (if k = "" then "" else renameVar m k)) pop M.empty in
+      M.add (renameVar m k)) pop M.empty in
     let pcoef = M.map (fun v -> M.fold (fun k ->
-      M.add (if k = "" then "" else renameVar m k)) v M.empty) pcoef in
+      M.add (renameVar m k)) v M.empty) pcoef in
 
     (* TODO: We need to consider operator equality between parameterized
        expressions.  pop <---> pop1 *)
@@ -98,15 +95,13 @@ let generatePexprUnifyConstr exprs constr =
 
   let allConstrs = List.map (fun (pop, pcoef) ->
     let m = ref M.empty in
-    ignore(mapFormula (renameExpr m) constrs);
-    m := M.map (fun v -> "x" ^ string_of_int (new_id ())) !m;
 
     (* Rename all space information. *)
     let constrs = mapFormula (renameExpr m) constrs in
     let pop1 = M.fold (fun k ->
-      M.add (if k = "" then "" else renameVar m k)) pop1 M.empty in
+      M.add (renameVar m k)) pop1 M.empty in
     let pcoef1 = M.map (fun v -> M.fold (fun k ->
-      M.add (if k = "" then "" else renameVar m k)) v M.empty) pcoef1 in
+      M.add (renameVar m k)) v M.empty) pcoef1 in
 
     (* TODO: We need to consider operator equality between parameterized
        expressions (again!).  pop <---> pop1 *)

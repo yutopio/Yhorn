@@ -3,8 +3,8 @@ open Error
 open Types
 %}
 
-%token <string> VAR
-%token <string> PRED
+%token <Id.t> VAR
+%token <Id.t> PRED
 %token <int> INT
 %token <Types.operator> OP
 %token PLUS MINUS
@@ -21,7 +21,7 @@ open Types
 %left PLUS MINUS
 
 %start inputUnit
-%type <Types.horn list * (string * string) list> inputUnit
+%type <Types.horn list * (Id.t * Id.t) list> inputUnit
 
 %%
 
@@ -95,7 +95,7 @@ terms:
 ;
 
 term:
-    | num       { M.add "" $1 M.empty }
+    | num       { M.add Id.const $1 M.empty }
     | num VAR   { M.add $2 $1 M.empty }
     |     VAR   { M.add $1 1 M.empty }
 ;
