@@ -88,8 +88,8 @@ let rec unify_template unifier f value templ apps = function
     let m = List.fold_left (fun m (k, v) ->
       MI.addDefault [] (fun l x -> x::l) k v m) MI.empty apps |>
       MI.bindings in
-    let rec f_ value = function
-      | [] -> f value
+    let rec f_ value built = function
+      | [] -> f value built
       | (x, clauses) :: rest ->
         let size = List.nth templ x in
         let places = repeat (fun j k -> (Placeholder (size-j))::k) size [] in
@@ -110,10 +110,11 @@ let rec unify_template unifier f value templ apps = function
               try Some (MI.fold (fun _ -> unifier) m value)
               with Not_found -> None in
             match value with
-              | Some value -> f_ value rest
+              | Some value -> f_ value ((MI.map List.hd m |>
+		  MI.bindings |> List.split |> snd) :: built) rest
               | None -> () in
         g_ [] clauses in
-    f_ value m
+    f_ value [] m
 let unify_template a b c d = unify_template a b c d []
 
 let rec incr_tmpl = function
@@ -148,10 +149,10 @@ let rec repeat_tmpl f i max =
 
 exception Stop
 let unify unifier value ?tmpl ?maxSize nfs =
-  let ret = ref value in
+  let ret = ref ([], value) in
   let try_template templ =
-    try unify_template unifier (fun x ->
-      ret := x; raise Stop
+    try unify_template unifier (fun x y ->
+      ret := (y, x); raise Stop
     ) value templ nfs; None
     with Stop -> Some !ret in
 

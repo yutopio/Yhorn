@@ -18,7 +18,7 @@ let unify nfs constr =
       try
         match Template.unify Unify.generatePexprUnifyConstr
           constr ~maxSize:5 nfs with
-          | Some additional ->
+          | Some (_, additional) ->
             let constr = constr &&& additional in
             let constrs = MI.add (Puf.find puf newId) constr constrs in
             Some (ids, puf, constrs)
@@ -41,7 +41,7 @@ let tryUnify (p1, p2) (preds, constr) =
 
   (* Try to unify nf1 and nf2. *)
   match unify [nf1;nf2] constr with
-    | Some constr -> Some (preds, constr)
+    | Some constr -> Some (M.add p2 (param1, nf1) preds, constr)
     | None -> None
 
 let tryUnify unify solution =

@@ -53,7 +53,7 @@ let interpolateSimple exprs =
 
 let getInterpolant (pexpr, constrSet) =
   let unify = Template.unify Unify.equal constrSet [ pexpr ] in
-  let constrs =
+  let pexpr, constrs =
     match unify with
       | Some x -> x
       | None ->
