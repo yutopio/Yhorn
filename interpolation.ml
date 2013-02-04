@@ -4,7 +4,7 @@ open Constr
 
 exception Satisfiable of (Id.t * int) list
 
-type space = pexpr nf * constrSet
+type space = pexpr nf list * constrSet
 
 (* Try to calculate an interpolant from given expressions. All expressions are
    to be represented as (consider : bool, (operator, coefficients : int M.t)).
@@ -52,15 +52,6 @@ let interpolateSimple exprs =
   And(M.fold (fun k v c -> Expr(
     (if k = Id.const then if constrs = [] then NEQ else GT else EQ), v)::c) m constrs)
 
-let getInterpolant (pexpr, constrSet) =
-  (* We don't specify max size for a unification template, so None must not
-     occur. *)
-  let Some (pexpr, constrs) = Template.unify Unify.equal constrSet [ pexpr ] in
-  let sol = Constr.solve constrs in
-  let ret = List.map (List.map (fun pexpr ->
-    normalizeExpr (HornGet.assignParameters sol pexpr))) pexpr in
-  convertToFormula true ret
-
 let interpolate (a, b) =
   try (
     let [a_s; b_s] = List.map (
@@ -77,18 +68,17 @@ let interpolate (a, b) =
       | [], [] ->
         (* Returns the interpolant space x=0 where x can be anything.
            Equivalent of (0=0 | 0=1). *)
-        [[M.empty, M.add Id.const (M.add (Id.create ()) 1 M.empty) M.empty]],
+        [[[M.empty, M.add Id.const (M.add (Id.create ()) 1 M.empty) M.empty]]],
         ([], Puf.create 0, MI.empty)
       | [], _ ->
         (* Returns the interpolant space x=0 where x is not equal to 0.
            Equivalent of 0=1. *)
-        (* TODO: Sentinel method is not a good idea!! *)
         let x = Id.create () in
-        [[M.empty, M.add Id.const (M.add x 1 M.empty) M.empty]],
+        [[[M.empty, M.add Id.const (M.add x 1 M.empty) M.empty]]],
         ([x], Puf.create 1, MI.add 0 (Expr (NEQ, M.add x 1 M.empty)) MI.empty)
       | _, [] ->
         (* Returns the interpolant space 0=0. *)
-        [[M.empty, M.empty]], ([], Puf.create 0, MI.empty)
+        [[[M.empty, M.empty]]], ([], Puf.create 0, MI.empty)
       | _, _ ->
         (* Calculate the interpolant space between each conjunctions from A and
            B. *)
@@ -110,13 +100,29 @@ let interpolate (a, b) =
         let puf = Puf.create (List.length constrs) in
         let _, constrs = List.fold_left (fun (i, m) x -> i + 1, MI.add i x m)
           (0, MI.empty) constrs in
-        pexprCnf, (ids, puf, constrs)
+        [pexprCnf], (ids, puf, constrs)
   ) with
     | Satisfiable x as e -> raise e
     | e ->
       print_endline ("Yint: Unhandled exception (" ^
                         (Printexc.to_string e) ^ ")");
       assert false
+
+let intersect l =
+  let pexprs, constrs = List.split l in
+  List.flatten pexprs, reduce Constr.merge constrs
+
+let getInterpolant (pexprs, constrSet) =
+  match Template.unify Unify.equal constrSet pexprs with
+    | Some (pexpr, constrs) ->
+      let sol = Constr.solve constrs in
+      let ret = List.map (List.map (fun pexpr ->
+        normalizeExpr (HornGet.assignParameters sol pexpr))) pexpr in
+      convertToFormula true ret
+    | None ->
+      (* If a solution space is an intersection of other spaces, template
+         unification may fail. *)
+      raise Not_found
 
 let verifyInterpolant input output =
   (* Check of free variable. *)
