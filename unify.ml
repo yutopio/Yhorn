@@ -33,7 +33,7 @@ let equal pexprs constrSet =
 
     (* Constraint for making both interpolant the same operator. *)
     let has_eq = i1eq ||| i2eq in
-    (has_eq ==> (c1 ||| c2)) :: (!!! has_eq ==> c2) :: l in
+    (i1eq <=> i2eq) :: (i1eq ==> (c1 ||| c2)) :: (!!! i1eq ==> c2) :: l in
 
   let rec fold ret = function
     | x::(_::_ as l) -> fold (List.fold_left (f x) ret l) l
