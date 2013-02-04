@@ -45,15 +45,18 @@ let equal pexprs constrSet =
     List.map Constr.pollPVarId pexprs |>
     List.filter ((<>) None) |>
     List.map (fun (Some x) -> x) in
-  let newId, (ids, puf, constrs) = Constr.mergeConstrs pvarIds constrSet in
-  let constr = MI.find (Puf.find puf newId) constrs in
-  let constr = constr &&& additional in
+  match pvarIds with
+    | [] -> constrSet
+    | _ ->
+      let newId, (ids, puf, constrs) = Constr.mergeConstrs pvarIds constrSet in
+      let constr = MI.find (Puf.find puf newId) constrs in
+      let constr = constr &&& additional in
 
-  (* Check whether it is satisfiable. *)
-  if not (z3test constr) then raise Not_found;
+      (* Check whether it is satisfiable. *)
+      if not (z3test constr) then raise Not_found;
 
-  let constrs = MI.add (Puf.find puf newId) constr constrs in
-  ids, puf, constrs)
+      let constrs = MI.add (Puf.find puf newId) constr constrs in
+      ids, puf, constrs)
 
 let generatePexprUnifyConstr exprs constr =
   assert (List.length exprs >= 2);

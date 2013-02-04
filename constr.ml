@@ -11,7 +11,7 @@ let pollPVarId (op, coefs) =
 let mergeConstrs pvarIds (ids, puf, constrs as sol) =
   let constrIds =
     List.map (fun x ->
-      List.fold_left (fun i y -> if x < y then i else i + 1) 0 ids |>
+      List.fold_left (fun i y -> if x <= y then i else i + 1) 0 ids |>
       Puf.find puf) pvarIds |>
     sort_distinct in
 

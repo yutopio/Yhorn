@@ -68,8 +68,9 @@ let interpolate (a, b) =
       | [], [] ->
         (* Returns the interpolant space x=0 where x can be anything.
            Equivalent of (0=0 | 0=1). *)
-        [[[M.empty, M.add Id.const (M.add (Id.create ()) 1 M.empty) M.empty]]],
-        ([], Puf.create 0, MI.empty)
+        let x = Id.create () in
+        [[[M.empty, M.add Id.const (M.add x 1 M.empty) M.empty]]],
+        ([x], Puf.create 1, MI.add 0 (Expr (EQ, M.empty)) MI.empty)
       | [], _ ->
         (* Returns the interpolant space x=0 where x is not equal to 0.
            Equivalent of 0=1. *)
