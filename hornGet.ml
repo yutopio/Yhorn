@@ -70,10 +70,10 @@ let tryUnify unify solution =
       | None -> (true, solution)
     ) (false, solution) |> snd
 
-let assignParameters assign (op, expr) =
+let assignParameters assign (op, expr) = normalizeExpr (
   (M.fold (fun k v o -> if v <> 0 && M.findDefault EQ k op = LTE then
       (assert (v > 0); LTE) else o) assign EQ),
-  (M.map (fun v -> M.fold (fun k v -> (+) ((
+  M.map (fun v -> M.fold (fun k v -> (+) ((
     M.findDefault 1 k assign) * v)) v 0) expr)
 
 let simplifyCNF =
