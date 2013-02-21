@@ -79,14 +79,22 @@ let assignParameters assign (op, expr) = normalizeExpr (
 let simplifyCNF =
   let simplifyDF =
     List.fold_left (fun (tautology, exprs) (op, coef as expr) ->
-      if tautology || M.cardinal coef = 0 then true, []
+      if tautology then true, []
+      else if M.cardinal coef = 0 then
+        match op with
+          | EQ | LTE | GTE -> true, []
+          | NEQ | LT | GT -> false, exprs
       else if M.cardinal coef > 1 || not (M.mem Id.const coef) then
         false, expr :: exprs
-      else
+      else (
         let c = M.find Id.const coef in
-        (match op with
+        match op with
           | EQ -> c = 0
-          | LTE -> c <= 0), exprs) (false, []) in
+          | LTE -> c <= 0
+          | GTE -> c >= 0
+          | NEQ -> c <> 0
+          | LT -> c < 0
+          | GT -> c > 0), exprs) (false, []) in
 
   List.fold_left (fun (contradiction, clauses) clause ->
     let tautology, exprs = simplifyDF clause in

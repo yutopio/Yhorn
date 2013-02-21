@@ -104,7 +104,7 @@ let integer_programming constr =
   (match ret with
     | Some sol ->
       print_endline ("Z3 solution: [" ^ (String.concat ", " (
-        M.fold (fun k v l -> (k ^ "=" ^ (string_of_int v))::l) sol [])) ^ "]\n")
+        M.fold (fun k v l -> (Id.print k ^ "=" ^ (string_of_int v))::l) sol [])) ^ "]\n")
     | None ->
       print_endline ("Z3 solution: Unsatisfiable\n"));
   ret

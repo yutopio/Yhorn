@@ -234,10 +234,7 @@ let solveTree (g, laGroups, predMap, predCopies) =
           | La laId, None ->
             List.filter (fun (gid, _, _) -> gid = laId) exprs |>
             List.map (fun (_, exprId, (_, coef)) ->
-              M.fold (fun k v -> M.addDefault
-                M.empty (fun m (k, v) ->
-                  assert (not (M.mem k m));
-                  M.add k v m) k (exprId, v)) coef M.empty)
+              M.map (fun v -> M.add exprId v M.empty) coef)
           | _ -> assert false)
       ) g pv [M.empty] in
 
