@@ -11,45 +11,36 @@
 #                                                                        #
 ##########################################################################
 
-# Where to install the binaries
-DESTDIR	=
-prefix	=@prefix@
-exec_prefix=@exec_prefix@
-datarootdir=@datarootdir@
-BINDIR	=$(DESTDIR)@bindir@
 
-# Other variables set by ./configure
-OCAMLOPT = @OCAMLOPT@
-OCAMLDEP = @OCAMLDEP@ -slash
-OCAMLDOC = @OCAMLDOC@
-OCAMLLEX = @OCAMLLEX@
-OCAMLYACC= @OCAMLYACC@ -v
-OCAMLWIN32 = @OCAMLWIN32@
+# OCaml tools
+OCAMLC    = @OCAMLC@
+OCAMLOPT  = @OCAMLOPT@
+OCAMLDEP  = @OCAMLDEP@ -slash
+OCAMLDOC  = @OCAMLDOC@
+OCAMLLEX  = @OCAMLLEX@
+OCAMLYACC = @OCAMLYACC@ -v
 OCAMLFIND = @OCAMLFIND@
-EXE = @EXE@
-LIBEXT = @LIBEXT@
-OBJEXT = @OBJEXT@
+
+# Libraries
 Z3ML = @Z3ML@
 OCAMLGRAPH = @OCAMLGRAPH@
 
-# Others global variables
-SRCDIR = .
-
-INCLUDES= -I $(SRCDIR) -I $(Z3ML) -I $(OCAMLGRAPH)
+INCLUDES = -I $(Z3ML) -I $(OCAMLGRAPH)
+BFLAGS = $(INCLUDES) -g -w -8 -annot
 OFLAGS = $(INCLUDES) -w -8 -annot
 
 # main target
 #############
 
-NAME=yhorn
-all: opt
+NAME = yhorn
+all: byte opt
 
 # bytecode and native-code compilation
 ######################################
 
 CMO = version error id util mapEx puf combine types parser lexer z3interface \
       constr unify hornSolve template hornGet interpolation horn
-CMO :=  $(patsubst %, $(SRCDIR)/%.cmo, $(CMO))
+CMO :=  $(patsubst %, %.cmo, $(CMO))
 
 CMX = $(CMO:.cmo=.cmx)
 CMA = $(NAME).cma
@@ -59,21 +50,30 @@ GENERATED = META version.ml parser.ml parser.mli lexer.ml
 
 $(CMX): OFLAGS += -for-pack Yhorn
 
+byte: $(CMA)
 opt: $(CMXA)
+
+$(NAME).cma: $(NAME).cmo
+	$(OCAMLC) $(INCLUDES) -a -g -o $@ $^
 
 $(NAME).cmxa: $(NAME).cmx
 	$(OCAMLOPT) $(INCLUDES) -a -o $@ $^
 
-$(NAME).cmi: $(NAME).cmo
-$(NAME).o:   $(NAME).cmx
+$(NAME).cmo: $(CMI) $(CMO)
+	$(OCAMLC) $(INCLUDES) -pack -g -o $@ $^
 
-$(NAME).cmx: $(CMX)
+$(NAME).cmx: $(CMI) $(CMX)
 	$(OCAMLOPT) $(INCLUDES) -pack -o $@ $^
 
-$(NAME).opt: $(CMX) interactive.cmx
-	$(OCAMLOPT) $(INCLUDES) -unsafe -inline 100 -o $@ unix.cmxa z3.cmxa graph.cmxa $^
+$(NAME).byte: $(CMI) $(CMO) interactive.cmo
+	$(OCAMLC) $(INCLUDES) -g -o $@ \
+		unix.cma z3.cma graph.cma $^
 
-VERSION=0.2
+$(NAME).opt: $(CMI) $(CMX) interactive.cmx
+	$(OCAMLOPT) $(INCLUDES) -unsafe -inline 100 -o $@ \
+		unix.cmxa z3.cmxa graph.cmxa $^
+
+VERSION = 0.3
 
 version.ml: Makefile
 	rm -f $@
@@ -87,15 +87,15 @@ META: META.in Makefile
 # documentation
 ###############
 
-DOCFILES=$(NAME).ps $(NAME).html
-DOCDIR=doc
+DOCFILES = $(NAME).ps $(NAME).html
+DOCDIR   = doc
 
-NODOC	= parser lexer version
+NODOC	 = parser lexer version
 NODOC	:= $(patsubst %, $(SRCDIR)/%.cmo, $(NODOC))
-DOC_CMO	= $(filter-out $(NODOC), $(CMO))
-DOC_SRC	= $(DOC_CMO:.cmo=.ml) $(wildcard *.mli)
+DOC_CMO	 = $(filter-out $(NODOC), $(CMO))
+DOC_SRC	 = $(DOC_CMO:.cmo=.ml) $(wildcard *.mli)
 
-.PHONY: doc
+.PHONY: doc depgraph
 
 doc: $(DOCDIR)/index.html
 depgraph: $(DOCDIR)/$(NAME).ps
@@ -108,15 +108,11 @@ $(DOCDIR)/index.html: $(DOC_CMO)
 
 $(DOCDIR)/$(NAME).ps: $(DOCDIR)/$(NAME).dot
 	dot -Tps $(DOCDIR)/$(NAME).dot > $(DOCDIR)/$(NAME).ps
-	gv doc/$(NAME).ps
 
 $(DOCDIR)/$(NAME).dot: $(DOC_CMO)
 	mkdir -p $(DOCDIR)
 	rm -f $(DOCDIR)/*.dot
 	$(OCAMLDOC) $(INCLUDES) -o doc/$(NAME).dot -dot $(DOC_SRC)
-
-wc:
-	ocamlwc -p $(SRCDIRC)/*.mli $(SRCDIRC)/*.ml
 
 # generic rules
 ###############
@@ -124,7 +120,10 @@ wc:
 .SUFFIXES: .mli .ml .cmi .cmo .cmx .mll .mly
 
 .mli.cmi:
-	$(OCAMLOPT) -c $(BFLAGS) $<
+	$(OCAMLC) -c $(BFLAGS) $<
+
+.ml.cmo:
+	$(OCAMLC) -c $(BFLAGS) $<
 
 .ml.o:
 	$(OCAMLOPT) -c $(OFLAGS) $<
@@ -140,22 +139,6 @@ wc:
 
 .mly.mli:
 	$(OCAMLYACC) -v $<
-
-# Emacs tags
-############
-
-otags:
-	otags -r .
-
-tags:
-	find . -name "*.ml*" | sort -r | xargs \
-	etags "--regex=/let[ \t]+\([^ \t]+\)/\1/" \
-	      "--regex=/let[ \t]+rec[ \t]+\([^ \t]+\)/\1/" \
-	      "--regex=/and[ \t]+\([^ \t]+\)/\1/" \
-	      "--regex=/type[ \t]+\([^ \t]+\)/\1/" \
-              "--regex=/exception[ \t]+\([^ \t]+\)/\1/" \
-	      "--regex=/val[ \t]+\([^ \t]+\)/\1/" \
-	      "--regex=/module[ \t]+\([^ \t]+\)/\1/"
 
 # Makefile is rebuilt whenever Makefile.in or configure.in is modified
 ######################################################################
@@ -176,18 +159,17 @@ configure: configure.in
 
 clean:
 	rm -f *~
-	for d in $(SRCDIR); \
-	do \
-	  rm -f $$d/*.cm[iox] $$d/*$(OBJEXT) $$d/*~ $$d/*.annot; \
-	done
+	rm -f *.cm[iox] *.annot *.o
 	rm -f $(GENERATED)
-	rm -f $(NAME).*a $(NAME).cm* $(NAME).o $(NAME)$(LIBEXT)
+	rm -f $(NAME).*a $(NAME).cm* $(NAME).o $(NAME).byte $(NAME).opt
 
-dist-clean distclean:: clean
+dist-clean distclean: clean
 	rm -f Makefile config.cache config.log config.status *.byte *.opt
 
-gitclean git-clean:: dist-clean
-	rm -f config.* configure configure.lineno
+git-clean gitclean:
+	rm .gitignore
+	git clean -df
+	git checkout .gitignore
 
 # depend
 ########
@@ -195,6 +177,6 @@ gitclean git-clean:: dist-clean
 .PHONY: depend
 .depend depend: $(GENERATED)
 	rm -f .depend
-	$(OCAMLDEP) $(INCLUDES) $(SRCDIR)/*.ml $(SRCDIR)/*.mli > .depend
+	$(OCAMLDEP) $(INCLUDES) *.ml *.mli > .depend
 
 include .depend
