@@ -1,3 +1,4 @@
+open ListEx
 open Util
 open Types
 
@@ -238,7 +239,7 @@ let solveTree (g, laGroups, predMap, predCopies) =
           | _ -> assert false)
       ) g pv [M.empty] in
 
-      M.add pid (params, (ops, reduce (+++) x)) m
+      M.add pid (params, (ops, List.reduce (+++) x)) m
     ) M.empty pvs in
 
     let constr = M.fold (fun k v -> (@) [ Expr((if k = Id.const then
@@ -273,7 +274,7 @@ let solveTree (g, laGroups, predMap, predCopies) =
     MIL.fold (fun _ v l -> v :: l) pexpr []) predSols in
 
   (M.map (fun x ->
-    reduce (fun (p1, e1) (p2, e2) -> assert (p1 = p2); (p1, e1 @ e2))
+    List.reduce (fun (p1, e1) (p2, e2) -> assert (p1 = p2); (p1, e1 @ e2))
       (List.map (fun x -> M.find x predSols) x)) predCopies),
   (List.rev maxIds),
   constrs
@@ -345,7 +346,7 @@ let solve clauses =
   flattenGraph |>
   List.map solveTree |>
 
-  reduce (fun (m1, i1, c1) (m2, i2, c2) ->
+  List.reduce (fun (m1, i1, c1) (m2, i2, c2) ->
     (M.merge (fun _ a b ->
       match a, b with
         | None, None -> assert false

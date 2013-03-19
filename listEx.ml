@@ -2,6 +2,10 @@
 module List = struct
   include List
 
+  let reduce compare = function
+    | [] -> failwith "reduce"
+    | seed :: rest -> fold_left compare seed rest
+
   let sorted_multimap compare f lists =
     (* Give IDs to lists. *)
     let (_, lists) =

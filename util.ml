@@ -38,11 +38,6 @@ let sort_distinct l =
   f [] |>
   List.rev
 
-(** [reduce f [ x1 ; x2 ; ...; xn] ] returns f ... (f (f x1 x2) x3) ... xn. *)
-let reduce f = function
-    | x :: rest -> List.fold_left f x rest
-    | _ -> assert false
-
 (** Gets the all possible combinations of elements each of those are chosen from
     every list. For example, [directProduct [[A;B]; [C;D]] ] returns [ [A;C];
     [A;D]; [B;C]; [B;D] ]. *)

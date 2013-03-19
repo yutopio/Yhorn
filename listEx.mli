@@ -45,6 +45,10 @@ val stable_sort : ('a -> 'a -> int) -> 'a list -> 'a list
 val fast_sort : ('a -> 'a -> int) -> 'a list -> 'a list
 val merge : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list
 
+  val reduce : ('a -> 'a -> 'a) -> 'a list -> 'a
+  (** [reduce f [ x1 ; x2 ; ...; xn] ] is [f ... (f (f x1 x2) x3) ... xn].
+      Raise [Failure "reduce"] if the list is empty. *)
+
   val sorted_multimap :
     ('a -> 'a -> int) ->
     ('a -> (int * 'b) list -> 'c option) ->

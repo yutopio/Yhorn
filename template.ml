@@ -1,3 +1,4 @@
+open ListEx
 open Util
 open Types
 
@@ -5,7 +6,7 @@ type template = int list
 
 let size_of_nf x = List.fold_left (fun ret x -> ret + List.length x) 0 x
 let template_of_nf x = List.sort compare (List.map List.length x)
-let size_of_tmpl = reduce (+)
+let size_of_tmpl = List.reduce (+)
 
 let print_template tmpl = String.concat "," (List.map string_of_int tmpl)
 
@@ -159,7 +160,7 @@ let unify unifier value ?tmpl ?maxSize nfs =
   let maxSize =
     match maxSize with
       | Some x -> x
-      | None -> reduce min (List.map size_of_nf nfs) in
+      | None -> List.reduce min (List.map size_of_nf nfs) in
   match tmpl with
     | Some x ->
       if size_of_tmpl x > maxSize then None else try_template x

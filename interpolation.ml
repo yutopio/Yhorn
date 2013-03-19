@@ -1,3 +1,4 @@
+open ListEx
 open Util
 open Types
 open Constr
@@ -111,7 +112,7 @@ let interpolate (a, b) =
 
 let intersect l =
   let pexprs, constrs = List.split l in
-  List.flatten pexprs, reduce Constr.merge constrs
+  List.flatten pexprs, List.reduce Constr.merge constrs
 
 let getInterpolant (pexprs, constrSet) =
   match Template.unify Unify.equal constrSet pexprs with

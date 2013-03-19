@@ -1,4 +1,5 @@
 open Buffer
+open ListEx
 open Util
 
 module MyString = struct
@@ -160,8 +161,8 @@ let (==>) x y = (!!! x) ||| y
 let (<=>) x y = (x ==> y) &&& (y ==> x)
 
 let rec splitNegation = function
-    | And x -> reduce (&&&) (List.map splitNegation x)
-    | Or x -> reduce (|||) (List.map splitNegation x)
+    | And x -> List.reduce (&&&) (List.map splitNegation x)
+    | Or x -> List.reduce (|||) (List.map splitNegation x)
     | Expr (NEQ, coef) -> Or (
       List.map (fun x -> Expr (normalizeExpr (x, coef))) [LT;GT])
     | Expr e -> Expr e

@@ -1,5 +1,6 @@
-open Types
+open ListEx
 open Util
+open Types
 
 let pollPVarId (op, coefs) =
   try Some (List.find ((<>) Id.const) (M.keys op))
@@ -22,7 +23,7 @@ let mergeConstrs pvarIds (ids, puf, constrs as sol) =
         List.fold_left (fun (constr, constrs) x ->
           (MI.find x constrs) :: constr,
           MI.remove x constrs) ([], constrs) constrIds in
-      let constr = reduce (&&&) constr in
+      let constr = List.reduce (&&&) constr in
       let puf = List.fold_left (
         fun puf x -> Puf.union puf baseId x) puf rest in
 

@@ -1,4 +1,5 @@
 open Types
+open ListEx
 open Util
 open Z3
 
@@ -127,7 +128,7 @@ let check_clause pred (lh, rh) =
       let renames = listFold2 (fun m a b -> M.add a b m) M.empty binder args in
       mapFormula (renameExpr (ref renames)) la
     | LinearExpr x -> x) (rh::lh) in
-  let lh = reduce (&&&) lh in
+  let lh = List.reduce (&&&) lh in
 
   let ast = mk_not ctx (mk_implies ctx (convert lh) (convert rh)) in
   try
