@@ -6,6 +6,14 @@ module List = struct
     | [] -> failwith "reduce"
     | seed :: rest -> fold_left compare seed rest
 
+  let max = function
+    | [] -> failwith "max"
+    | l -> reduce max l
+
+  let min = function
+    | [] -> failwith "min"
+    | l -> reduce min l
+
   let sorted_multimap compare f lists =
     (* Give IDs to lists. *)
     let (_, lists) =

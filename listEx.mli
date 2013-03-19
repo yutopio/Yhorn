@@ -49,6 +49,14 @@ val merge : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list
   (** [reduce f [ x1 ; x2 ; ...; xn] ] is [f ... (f (f x1 x2) x3) ... xn].
       Raise [Failure "reduce"] if the list is empty. *)
 
+  val max : 'a list -> 'a
+  (** Choose the maximum value among the list. Raise [Failure "max"] if the
+      list is empty. *)
+
+  val min : 'a list -> 'a
+  (** Choose the minimum value among the list. Raise [Failure "min"] if the
+      list is empty. *)
+
   val sorted_multimap :
     ('a -> 'a -> int) ->
     ('a -> (int * 'b) list -> 'c option) ->
