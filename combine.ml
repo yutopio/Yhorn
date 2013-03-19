@@ -1,11 +1,12 @@
 open Util
+open MapEx
 
 module MyInt = struct
   type t = int
   let compare = compare
 end
 
-module MI = MapEx.Make(MyInt)
+module MI = Map.Make(MyInt)
 
 module MyIntListList = struct
   type t = int list list

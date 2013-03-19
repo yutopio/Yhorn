@@ -1,12 +1,13 @@
 open Buffer
 open Util
+open MapEx
 
 module MyString = struct
   type t = Id.t
   let compare = compare
 end
 
-module M = MapEx.Make(MyString)
+module M = Map.Make(MyString)
 module S = Set.Make(MyString)
 
 module MyInt = struct
@@ -14,14 +15,14 @@ module MyInt = struct
   let compare = compare
 end
 
-module MI = MapEx.Make(MyInt)
+module MI = Map.Make(MyInt)
 
 module MyIntList = struct
   type t = int list
   let compare = compare
 end
 
-module MIL = MapEx.Make(MyIntList)
+module MIL = Map.Make(MyIntList)
 
 type operator =
     | EQ

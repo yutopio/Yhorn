@@ -1,5 +1,7 @@
 open Util
 
+module Map = struct
+
 module type S = sig
   include Map.S
 
@@ -29,4 +31,6 @@ module Make(Ord: Map.OrderedType) = struct
   (** [simpleMerge a b] merges two maps with distinct keys. If both maps have
       bindings from the same key, a binding from [a] is considered. *)
   let simpleMerge a = merge (fun _ a b -> tryPick id [a;b]) a
+end
+
 end
