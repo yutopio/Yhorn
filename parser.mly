@@ -7,7 +7,7 @@ open Types
 %token <Id.t> PRED
 %token <int> INT
 %token <Types.operator> OP
-%token PLUS MINUS
+%token PLUS MINUS ASTERISK
 %token AND OR NOT
 %token LPAREN RPAREN
 %token LBRACK RBRACK
@@ -18,6 +18,7 @@ open Types
 %left CAND
 %left AND OR
 %right NOT
+%left ASTERISK
 %left PLUS MINUS
 
 %start inputUnit
@@ -96,12 +97,13 @@ terms:
 
 term:
     | num       { M.add Id.const $1 M.empty }
-    | num VAR   { M.add $2 $1 M.empty }
+    | INT VAR   { M.add $2 $1 M.empty }
     |     VAR   { M.add $1 1 M.empty }
 ;
 
-num:
-    |       INT { $1 }
-    | PLUS  INT { $2 }
-    | MINUS INT { -($2) }
+vars:
+    | INT               { }
+    | VAR               { }
+    | INT VAR           { }
+    | vars ASTERISK VAR { }
 ;

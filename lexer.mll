@@ -30,6 +30,7 @@ rule token = parse
     | '='               { OP(EQ) }
     | '+'               { PLUS }
     | '-'               { MINUS }
+    | '*'               { ASTERISK }
     | '('               { LPAREN }
     | ')'               { RPAREN }
     | '['               { LBRACK }
