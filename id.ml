@@ -11,6 +11,8 @@ let print = function
   | StrId x -> x
   | Special -> "~"
 
+let compare = compare
+
 let create () = incr id; NumId !id
 
 let from_string x = StrId x

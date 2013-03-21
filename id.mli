@@ -2,6 +2,7 @@
 type t
 
 val print : t -> string
+val compare : t -> t -> int
 
 (* Constructor *)
 val create : unit -> t

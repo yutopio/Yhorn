@@ -1,13 +1,9 @@
 open Buffer
 open Util
 
-module MyString = struct
-  type t = Id.t
-  let compare = compare
-end
-
-module M = MapEx.Make(MyString)
-module S = Set.Make(MyString)
+module M = MapEx.Make(Id)
+module S = Set.Make(Id)
+module MS = Multiset.Make(Id)
 
 module MyInt = struct
   type t = int
