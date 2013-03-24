@@ -9,12 +9,14 @@ end
 module M = MapEx.Make(MyString)
 module S = Set.Make(MyString)
 
-module MyInt = struct
+module Integer = struct
   type t = int
   let compare = compare
+  let hash x = x
+  let equal = (=)
 end
 
-module MI = MapEx.Make(MyInt)
+module MI = MapEx.Make(Integer)
 
 module MyIntList = struct
   type t = int list
@@ -310,7 +312,7 @@ module Display = struct
                              (printHornTerm (V.label v)) ^ "\""
   let edge_attributes e =
     match E.label e with
-      | None -> []
+      | None -> [`Style `Dashed]
       | Some x ->  [`Label (String.concat ", "
                            (List.map (fun (x, y) -> Id.print x ^ "=" ^ Id.print y) x))]
 end

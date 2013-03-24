@@ -72,6 +72,163 @@ let buildGraph clauses =
       G.add_edge_e g (G.E.create src label dst)) g dsts
   ) G.empty clauses
 
+
+module GI = Graph.Persistent.Digraph.Concrete(Integer)
+module MV = Map.Make(G.V)
+module SV = Set.Make(G.V)
+module TraverseGI = Graph.Traverse.Dfs(GI)
+module TopologicalGI = Graph.Topological.Make(GI)
+
+let extractCutpoints g =
+  (* Unno's method. *)
+  G.fold_vertex (fun v s ->
+    if G.in_degree g v > 1 then SV.add v s else s) g SV.empty
+
+let cutGraph g cutpoints =
+  (* If no cutpoints are defined, do nothing. *)
+  if SV.cardinal cutpoints = 0 then [g] else (
+
+  (* Create a mapping from a vertex to an integer ID, and extract vertices to
+     start traversal. They have no incoming edges. *)
+  let _, ids, start = G.fold_vertex (fun v (i, m, s) ->
+    (i + 1), (MV.add v i m),
+    if G.out_degree g v = 0 then SV.add v s else s) g (0, MV.empty, SV.empty) in
+  let lookup v = MV.find v ids in
+
+  (* Create an Union-Find tree for decomposing tree. *)
+  let p = Puf.create (G.nb_vertex g) in
+
+  (* Compute connected components after cutting and relations between them. *)
+  let rec step next visited puf link =
+    if SV.is_empty next then
+      (* If all the vertices are visited, return the result after converting
+         vertex ID to its component ID. *)
+      let find = Puf.find puf in
+      MV.map find ids,
+      List.map (fun (x, y) -> find x, find y) link
+    else
+      (* Randmoly pick one vertex to visit next as [u]. *)
+      let u = SV.choose next in
+      let next = SV.remove u next in
+      let visited = SV.add u visited in
+
+      (* If [u] is a cutpoint, all predecessor vertices should be in the same
+         tree. *)
+      let puf =
+        if SV.mem u cutpoints then
+          match G.succ g u with
+            | [] -> failwith "Invalid cutpoint specification."
+            | [_] -> puf
+            | u::rest -> List.fold_left (fun puf v ->
+              Puf.union puf (lookup u) (lookup v)) puf rest
+        else puf in
+
+      (* Its successors are to be visited for future. *)
+      let next, puf, link = G.fold_pred (fun v (next, puf, link) ->
+        let next =
+          if SV.mem v next || SV.mem v visited then next
+          else SV.add v next in
+        let puf, link =
+          if SV.mem v cutpoints then puf, (lookup u, lookup v) :: link
+          else Puf.union puf (lookup u) (lookup v), link in
+        next, puf, link) g u (next, puf, link) in
+      step next visited puf link in
+
+  (* cmpMap will have a mapping from a vertex to a component ID which it belongs
+     to. link will have a list of topological relations between components. *)
+  let cmpMap, link = step start SV.empty p [] in
+
+  (* Verify that those components don't have mutural dependency. *)
+  let linkG = List.fold_left (fun g (x, y) -> GI.add_edge g x y) GI.empty link in
+  if TraverseGI.has_cycle linkG then
+    failwith "Invalid choice on cutting points. Mutural dependency introduced.";
+
+  (* Fold over edges to create new graphs for each component. *)
+  let components = G.fold_edges_e (fun e m ->
+    let u = G.E.dst e in
+    let uid = MV.find u cmpMap in
+
+    (* Adding an edge to a subgraph will also add the src and dst vertices of
+       the edge. *)
+    let gg =
+      try MI.find uid m
+      with Not_found -> G.empty in
+    MI.add uid (G.add_edge_e gg e) m) g MI.empty in
+
+  let components =
+    (* NOTE: No need of List.rev *)
+    TopologicalGI.fold (fun v l -> v :: l) linkG [] |>
+    MI.fold (fun k _ l -> if List.mem k l then l else k :: l) components |>
+    List.map (fun k -> MI.find k components) in
+
+  (* Compute at each vertex linear expressions those are ancestors of it. *)
+  let rec computeAncestors visited v =
+    if MV.mem v visited then
+      (* If the vertex is already visited, just return the saved result. *)
+      visited, (MV.find v visited)
+    else
+      G.fold_succ_e (fun e (visited, la) ->
+        (* Conjunction operation on Some. Similar to Maybe Monad. *)
+        let (&&&) x = function
+          | None -> Some x
+          | Some y -> Some (x &&& y) in
+
+        let u = G.E.dst e in
+        match G.E.label e, G.V.label u with
+          | None, LinearExpr ex ->
+            (* No renaming should occur for linear expressions. *)
+            visited, (ex &&& la)
+          | Some rename, PredVar p ->
+            let m = ref (
+              List.fold_left (fun m (x, y) -> M.add x y m) M.empty rename) in
+            if MV.mem u visited then
+              let x = mapFormula (renameExpr m) (MV.find u visited) in
+              visited, (x &&& la)
+            else
+              let visited', x = computeAncestors visited u in
+              let x = mapFormula (renameExpr m) x in
+              visited', (x &&& la)
+      ) g v (visited, None) |>
+      (function
+        | _, None ->
+          (* All nodes without incoming edges are linear expression nodes. *)
+          assert false
+        | visited, Some y ->
+          (* Add traversal result. *)
+          MV.add v y visited, y) in
+
+  let rec step visited next =
+    if SV.is_empty next then visited
+    else
+      let u = SV.choose next in
+      let next = SV.remove u next in
+      let visited, _ = computeAncestors visited u in
+      step visited next in
+
+  let leaves =
+    step MV.empty cutpoints (*|>
+    MV.filter (fun k _ -> SV.mem k cutpoints) *)in
+  let u = MV.cardinal leaves in
+
+  (* Attach ancestor linear expressions to cutpoints in every subgraph. *)
+  let components = List.map (
+    SV.fold (fun v g ->
+      if G.mem_vertex g v && G.out_degree g v = 0 then (
+        assert (MV.mem v leaves);
+        let expr = MV.find v leaves in
+        let u = G.V.create (LinearExpr expr) in
+        G.add_edge g v u)
+      else
+        (* Other cases: Do nothing.
+           not mem_vertex ... Doesn't belong to this subgraph.
+           out_degree = 0 ... It's a root cutpoint.
+           otherwise ........ Invalid cutpoint specification. Ignored. *)
+        g)
+      cutpoints) components in
+
+  (* Return splitted graphs. *)
+  components)
+
 let flattenGraph g =
   G.fold_vertex (fun v l ->
     (* TODO: This algorithm cannot find the self-looping predicate variable node
@@ -331,18 +488,28 @@ let solve clauses =
         | None -> x
         | Some y -> x &&& y)
     | PredVar pvar -> (pvar :: pvars), la) ([], None) in
-  List.map (fun (lh, rh) -> (preprocLefthand lh), rh) renClauses |>
-  buildGraph |>
+
+  let g =
+    List.map (fun (lh, rh) -> (preprocLefthand lh), rh) renClauses |>
+    buildGraph in
 
   (* DEBUG: Show the constructed graph. *)
-  (fun g ->
-    let cycle = Traverser.has_cycle g in
-    print_endline ("Cycle: " ^ (string_of_bool cycle));
-    display_with_gv (Operator.mirror g);
-    assert (not cycle);
-    g) |>
+  let cycle = Traverser.has_cycle g in
+  print_endline ("Cycle: " ^ (string_of_bool cycle));
+  display_with_gv (Operator.mirror g);
+  assert (not cycle);
 
-  flattenGraph |>
+  let cutpoints = extractCutpoints g in
+  let cpl =
+    SV.fold (fun x l ->
+      let PredVar (p, _) = G.V.label x in
+      Id.print p :: l
+    ) cutpoints [] in
+  print_endline ("Cutpoints: " ^ String.concat ", " cpl);
+  let subgraphs = cutGraph g cutpoints in
+  List.iter (Operator.mirror |- display_with_gv) subgraphs;
+
+  flattenGraph g |>
   List.map solveTree |>
 
   reduce (fun (m1, i1, c1) (m2, i2, c2) ->
