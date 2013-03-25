@@ -92,7 +92,7 @@ let cutGraph g cutpoints =
      start traversal. They have no incoming edges. *)
   let _, ids, start = G.fold_vertex (fun v (i, m, s) ->
     (i + 1), (MV.add v i m),
-    if G.out_degree g v = 0 then SV.add v s else s) g (0, MV.empty, SV.empty) in
+    if G.in_degree g v = 0 then SV.add v s else s) g (0, MV.empty, SV.empty) in
   let lookup v = MV.find v ids in
 
   (* Create an Union-Find tree for decomposing tree. *)
@@ -112,24 +112,13 @@ let cutGraph g cutpoints =
       let next = SV.remove u next in
       let visited = SV.add u visited in
 
-      (* If [u] is a cutpoint, all predecessor vertices should be in the same
-         tree. *)
-      let puf =
-        if SV.mem u cutpoints then
-          match G.succ g u with
-            | [] -> failwith "Invalid cutpoint specification."
-            | [_] -> puf
-            | u::rest -> List.fold_left (fun puf v ->
-              Puf.union puf (lookup u) (lookup v)) puf rest
-        else puf in
-
       (* Its successors are to be visited for future. *)
-      let next, puf, link = G.fold_pred (fun v (next, puf, link) ->
+      let next, puf, link = G.fold_succ (fun v (next, puf, link) ->
         let next =
           if SV.mem v next || SV.mem v visited then next
           else SV.add v next in
         let puf, link =
-          if SV.mem v cutpoints then puf, (lookup u, lookup v) :: link
+          if SV.mem v cutpoints then puf, (lookup v, lookup u) :: link
           else Puf.union puf (lookup u) (lookup v), link in
         next, puf, link) g u (next, puf, link) in
       step next visited puf link in
@@ -145,7 +134,7 @@ let cutGraph g cutpoints =
 
   (* Fold over edges to create new graphs for each component. *)
   let components = G.fold_edges_e (fun e m ->
-    let u = G.E.dst e in
+    let u = G.E.src e in
     let uid = MV.find u cmpMap in
 
     (* Adding an edge to a subgraph will also add the src and dst vertices of
