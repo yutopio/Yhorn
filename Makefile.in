@@ -11,7 +11,6 @@
 #                                                                        #
 ##########################################################################
 
-
 # OCaml tools
 OCAMLC    = @OCAMLC@
 OCAMLOPT  = @OCAMLOPT@
@@ -22,10 +21,11 @@ OCAMLYACC = @OCAMLYACC@ -v
 OCAMLFIND = @OCAMLFIND@
 
 # Libraries
-Z3ML = @Z3ML@
 OCAMLGRAPH = @OCAMLGRAPH@
+Z3ML = @Z3ML@
+LIB = unix graph z3
 
-INCLUDES = -I $(Z3ML) -I $(OCAMLGRAPH)
+INCLUDES = -I $(OCAMLGRAPH) -I $(Z3ML)
 BFLAGS = $(INCLUDES) -g -w -8 -annot
 OFLAGS = $(INCLUDES) -w -8 -annot
 
@@ -38,13 +38,17 @@ all: byte opt
 # bytecode and native-code compilation
 ######################################
 
-CMO = version error id util mapEx puf combine types parser lexer z3interface \
-      constr unify hornSolve template hornGet interpolation horn
-CMO :=  $(patsubst %, %.cmo, $(CMO))
-
-CMX = $(CMO:.cmo=.cmx)
-CMA = $(NAME).cma
+MOD  = version error id util mapEx puf combine types parser lexer z3interface \
+       constr unify hornSolve template hornGet interpolation horn
+MLI  = $(wildcard $(patsubst %, %.mli, $(MOD)))
+ML   = $(wildcard $(patsubst %, %.ml, $(MOD)))
+SRC  = $(MLI) $(ML) $(filter %.ml %.mli,$(GENERATED))
+CMO  = $(ML:.ml=.cmo)
+CMX  = $(ML:.ml=.cmx)
+CMA  = $(NAME).cma
 CMXA = $(NAME).cmxa
+LIBCMA := $(patsubst %, %.cma, $(LIB))
+LIBCMXA := $(patsubst %, %.cmxa, $(LIB))
 
 GENERATED = META version.ml parser.ml parser.mli lexer.ml
 
@@ -59,19 +63,17 @@ $(NAME).cma: $(NAME).cmo
 $(NAME).cmxa: $(NAME).cmx
 	$(OCAMLOPT) $(INCLUDES) -a -o $@ $^
 
-$(NAME).cmo: $(CMI) $(CMO)
+$(NAME).cmo: $(CMO)
 	$(OCAMLC) $(INCLUDES) -pack -g -o $@ $^
 
-$(NAME).cmx: $(CMI) $(CMX)
+$(NAME).cmx: $(CMX)
 	$(OCAMLOPT) $(INCLUDES) -pack -o $@ $^
 
-$(NAME).byte: $(CMI) $(CMO) interactive.cmo
-	$(OCAMLC) $(INCLUDES) -g -o $@ \
-		unix.cma z3.cma graph.cma $^
+$(NAME).byte: $(CMO) interactive.cmo
+	$(OCAMLC) $(INCLUDES) -g -o $@ $(LIBCMA) $^
 
-$(NAME).opt: $(CMI) $(CMX) interactive.cmx
-	$(OCAMLOPT) $(INCLUDES) -unsafe -inline 100 -o $@ \
-		unix.cmxa z3.cmxa graph.cmxa $^
+$(NAME).opt: $(CMX) interactive.cmx
+	$(OCAMLOPT) $(INCLUDES) -unsafe -inline 100 -o $@ $(LIBCMXA) $^
 
 VERSION = 0.3
 
@@ -87,32 +89,31 @@ META: META.in Makefile
 # documentation
 ###############
 
-DOCFILES = $(NAME).ps $(NAME).html
 DOCDIR   = doc
 
 NODOC	 = parser lexer version
-NODOC	:= $(patsubst %, $(SRCDIR)/%.cmo, $(NODOC))
-DOC_CMO	 = $(filter-out $(NODOC), $(CMO))
-DOC_SRC	 = $(DOC_CMO:.cmo=.ml) $(wildcard *.mli)
+NODOC	:= $(wildcard $(patsubst %, %.mli, $(NODOC)) $(patsubst %, %.ml, $(NODOC)))
+DOC_SRC  = $(filter-out $(NODOC), $(SRC))
 
-.PHONY: doc depgraph
+.PHONY: doc dot ps depgraph
 
-doc: $(DOCDIR)/index.html
-depgraph: $(DOCDIR)/$(NAME).ps
-	gv $(DOCDIR)/$(NAME).ps
-
-$(DOCDIR)/index.html: $(DOC_CMO)
+$(DOCDIR)/index.html doc:
 	mkdir -p $(DOCDIR)
 	rm -f $(DOCDIR)/*.html
 	$(OCAMLDOC) $(INCLUDES) -d $(DOCDIR) -html $(DOC_SRC)
 
-$(DOCDIR)/$(NAME).ps: $(DOCDIR)/$(NAME).dot
-	dot -Tps $(DOCDIR)/$(NAME).dot > $(DOCDIR)/$(NAME).ps
-
-$(DOCDIR)/$(NAME).dot: $(DOC_CMO)
+$(DOCDIR)/$(NAME).dot:
 	mkdir -p $(DOCDIR)
-	rm -f $(DOCDIR)/*.dot
-	$(OCAMLDOC) $(INCLUDES) -o doc/$(NAME).dot -dot $(DOC_SRC)
+	rm -f $(DOCDIR)/$(NAME).dot
+	$(OCAMLDOC) $(INCLUDES) -o $@ -dot $(DOC_SRC)
+dot: $(DOCDIR)/$(NAME).dot
+
+$(DOCDIR)/$(NAME).ps: $(DOCDIR)/$(NAME).dot
+	dot -Tps $< > $@
+ps: $(DOCDIR)/$(NAME).ps
+
+depgraph: $(DOCDIR)/$(NAME).ps
+	gv $(DOCDIR)/$(NAME).ps
 
 # generic rules
 ###############
@@ -177,6 +178,6 @@ git-clean gitclean:
 .PHONY: depend
 .depend depend: $(GENERATED)
 	rm -f .depend
-	$(OCAMLDEP) $(INCLUDES) *.ml *.mli > .depend
+	$(OCAMLDEP) $(INCLUDES) $(SRC) interactive.ml > .depend
 
-include .depend
+-include .depend
