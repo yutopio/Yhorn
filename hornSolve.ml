@@ -152,6 +152,8 @@ let cutGraph g cutpoints =
 
   (* Compute at each vertex linear expressions those are ancestors of it. *)
   let rec computeAncestors visited v =
+    let PredVar (_, params) = G.V.label v in
+
     if MV.mem v visited then
       (* If the vertex is already visited, just return the saved result. *)
       visited, (MV.find v visited)
@@ -182,9 +184,13 @@ let cutGraph g cutpoints =
         | _, None ->
           (* All nodes without incoming edges are linear expression nodes. *)
           assert false
-        | visited, Some y ->
+        | visited, Some la ->
+          (* Perform quantifier elimination. *)
+          let s = List.fold_left (fun s x -> S.add x s) S.empty params in
+          let la = AtpInterface.integer_qelim s la in
+
           (* Add traversal result. *)
-          MV.add v y visited, y) in
+          MV.add v la visited, la) in
 
   let rec step visited next =
     if SV.is_empty next then visited

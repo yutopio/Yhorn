@@ -41,6 +41,14 @@ let negateOp = function
     | GT -> LTE
     | GTE -> LT
 
+let operator_of_string = function
+    | "=" -> EQ
+    | "<>" -> NEQ
+    | "<" -> LT
+    | "<=" -> LTE
+    | ">" -> GT
+    | ">=" -> GTE
+
 let string_of_operator = function
     | EQ -> "="
     | NEQ -> "<>"
@@ -54,7 +62,7 @@ type coef = int M.t
 let coefOp op d = M.fold (M.addDefault d op)
 let (++) = coefOp (+) 0
 let (--) x y = coefOp (-) 0 y x (* Note that the operands need to be reversed. *)
-let (~--) = M.map (fun v -> -v)
+let (~--) = M.map (~-)
 
 type expr = operator * coef
 type pvar = Id.t * Id.t list
@@ -172,6 +180,14 @@ let rec countFormula = function
     | And x
     | Or x -> List.fold_left (+) 0 (List.map countFormula x)
     | Expr _ -> 1
+
+let rec fvs = function
+  | And x
+  | Or x -> List.fold_left (fun s -> fvs |- S.union s) S.empty x
+  | Expr (_, coef) ->
+    (* TODO: Rewrite M.keys to return a set. *)
+    M.fold (fun k _ -> S.add k) coef S.empty |>
+    S.remove Id.const
 
 type hornTerm =
     | LinearExpr of expr formula
@@ -337,7 +353,7 @@ module Dot' = Graph.Graphviz.Dot(Display')
 let uname =
   let (i, o) as p = Unix.open_process "uname" in
   let ret = input_line i in
-  Unix.close_process p;
+  ignore(Unix.close_process p);
   ret
 
 let display output_graph g =
