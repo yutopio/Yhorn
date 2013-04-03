@@ -65,9 +65,19 @@ let rec formula_of p =
     assert false)
 
 let integer_qelim vars la =
+  let (=>) x y = Atp_batch.tautology (Atp_batch.Imp(x, y)) in
   let vars = S.diff (fvs la) vars in
   of_formula la |>
   S.fold (fun id ast -> Atp_batch.Exists(Id.serialize id, ast)) vars |>
   Atp_batch.integer_qelim |>
   Atp_batch.simplify |>
+  Atp_batch.dnf |>
+  Atp_batch.disjuncts |>
+  (let rec f ret = function
+    | [] -> ret
+    | x :: rest ->
+      if List.exists (fun y -> y => x) rest then f ret rest
+      else f (x :: ret) (List.filter (fun y -> not (x => y)) rest) in
+   f []) |>
+  reduce Atp_batch.mk_or |>
   formula_of
