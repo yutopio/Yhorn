@@ -17,8 +17,7 @@ let main _ =
       "[" ^ String.concat "," (List.map (
         fun (a, b) -> Id.print a ^ "-" ^ Id.print b) merges) ^ "]");
 
-  solve clauses |>
-  getSolution merges |>
+  solve merges clauses |>
 
   M.iter (fun k (params, x) ->
     print_endline (Id.print k ^ "(" ^ (String.concat "," (List.map Id.print params)) ^ ") : "

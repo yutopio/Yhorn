@@ -118,7 +118,7 @@ let getInterpolant (pexprs, constrSet) =
     | Some (pexpr, constrs) ->
       let sol = Constr.solve constrs in
       let ret = List.map (List.map (fun pexpr ->
-        HornGet.assignParameters sol pexpr)) pexpr in
+        Horn.assignParameters sol pexpr)) pexpr in
       convertToFormula true ret
     | None ->
       (* If a solution space is an intersection of other spaces, template
