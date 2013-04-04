@@ -254,6 +254,14 @@ type constrSet = Id.t list * Puf.t * constr MI.t
 type hornSolSpace = horn list * ((Id.t list * pexpr nf) M.t * constrSet)
 type hornSol = (Id.t list * expr formula) M.t
 
+let printHornSol x =
+  let buf = create 1 in
+  M.iter (fun k (params, x) ->
+    Id.print k ^ "(" ^ (String.concat "," (List.map Id.print params)) ^ ") : "
+      ^ (printFormula printExpr x) ^ "\n" |>
+    add_string buf) x;
+  contents buf
+
 (* Ocamlgraph related types *)
 
 module MyVertex = struct
@@ -291,6 +299,7 @@ module MyEdge = struct
 end
 
 module G = Graph.Persistent.Digraph.AbstractLabeled(MyVertex)(MyEdge)
+module SV = Set.Make(G.V)
 module G' = Graph.Persistent.Digraph.AbstractLabeled(MyVertex')(MyEdge)
 module Traverser = Graph.Traverse.Dfs(G)
 module Operator = Graph.Oper.P(G)
@@ -310,6 +319,13 @@ module Display = struct
   include DisplayAttrib
   let vertex_name v = "\"" ^ (string_of_int (V.hash v)) ^ ":" ^
                              (printHornTerm (V.label v)) ^ "\""
+
+  let highlight_vertices = ref SV.empty
+  let vertex_attributes v =
+    if SV.mem v !highlight_vertices then
+      [`Style `Filled ; `Fillcolor 0; `Fontcolor 0xffffff]
+    else []
+
   let edge_attributes e =
     match E.label e with
       | None -> [`Style `Dashed]

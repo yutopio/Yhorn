@@ -1,6 +1,5 @@
 open Util
 open Types
-open Horn
 
 let main _ =
   let input =
@@ -17,10 +16,7 @@ let main _ =
       "[" ^ String.concat "," (List.map (
         fun (a, b) -> Id.print a ^ "-" ^ Id.print b) merges) ^ "]");
 
-  solve merges clauses |>
-
-  M.iter (fun k (params, x) ->
-    print_endline (Id.print k ^ "(" ^ (String.concat "," (List.map Id.print params)) ^ ") : "
-                   ^ (printFormula printExpr x)))
+  Horn.solve clauses merges |>
+  printHornSol |> print_endline
 
 let _ = main ()

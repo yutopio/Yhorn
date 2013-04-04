@@ -524,13 +524,13 @@ let reducePairs p =
     if ret then union a b;
     ret) p
 
-let tryUnify unify solution =
+let tryUnify solution =
   List.fold_left (fun (fail, solution) pair ->
   if fail then (true, solution) else
     match tryUnify pair solution with
       | Some x -> (false, x)
       | None -> (true, solution)
-    ) (false, solution) |> snd
+    ) (false, solution) |- snd
 
 let assignParameters assign (op, expr) = normalizeExpr (
   (M.fold (fun k v o -> if v <> 0 && M.findDefault EQ k op = LTE then
@@ -580,9 +580,7 @@ let getSolution (pexprs, constr) =
 let solve clauses =
   assert (List.length clauses > 0);
 
-  (* DEBUG: *)
-  print_newline ();
-  print_endline "Yhorn\n";
+  print_endline ("Yhorn (" ^ Version.date ^ ")\n");
   let renClauses, pm = renameClauses clauses in
   let pm = M.fold (fun k v -> M.add v k) pm M.empty in
   print_endline (
@@ -597,50 +595,79 @@ let solve clauses =
     List.map (fun (lh, rh) -> (preprocLefthand lh), rh) renClauses |>
     buildGraph in
 
-  (* DEBUG: Show the constructed graph. *)
-  let cycle = Traverser.has_cycle g in
-  print_endline ("Cycle: " ^ (string_of_bool cycle));
-  display_with_gv (Operator.mirror g);
-  assert (not cycle);
+  (* We don't handle cyclic graphs. *)
+  assert (not (Traverser.has_cycle g));
 
+  (* Compute suitable cutpoints. *)
+  (* TODO: Iteratively reduce number of cutpoints if failed. *)
   let cutpoints = extractCutpoints g in
-  let cpl =
-    SV.fold (fun x l ->
-      let PredVar (p, _) = G.V.label x in
-      Id.print p :: l
-    ) cutpoints [] in
-  print_endline ("Cutpoints: " ^ String.concat ", " cpl);
   let subgraphs = cutGraph g cutpoints in
-  List.iter (Operator.mirror |- display_with_gv) subgraphs;
 
-  flattenGraph g |>
-  List.map solveTree |>
+  (* DEBUG: Show the constructed graph. *)
+  Types.Display.highlight_vertices := cutpoints;
+  display_with_gv (Operator.mirror g);
 
-  reduce (fun (m1, i1, c1) (m2, i2, c2) ->
-    (M.merge (fun _ a b ->
-      match a, b with
+  List.fold_left (fun sol g ->
+    print_endline "Solving subgraph";
+    display_with_gv (Operator.mirror g);
+
+    (* Replace known nodes with linear expressions. *)
+    let vReplace = G.fold_vertex (fun v m ->
+      if G.in_degree g v = 0 then
+        match G.V.label v with
+        | PredVar (p, args) ->
+          let (param, sol) = M.find p sol in
+          let rename = ref (listFold2 (
+            fun m u v -> M.add u v m) M.empty param args) in
+          let body = LinearExpr (mapFormula (renameExpr rename) sol) in
+          MV.add v (G.V.create body) m
+        | _ -> m
+      else m) g MV.empty in
+    let g = MV.fold (fun k v ->
+      G.fold_succ_e (fun e g' ->
+        G.add_edge_e g' (G.E.create v (G.E.label e) (G.E.dst e))
+      ) g k |-
+      (fun g' -> G.remove_vertex g' k)
+    ) vReplace g in
+
+    print_endline "Replaced precomputed solution";
+    display_with_gv (Operator.mirror g);
+
+    flattenGraph g |>
+    List.map solveTree |>
+
+    reduce (fun (m1, i1, c1) (m2, i2, c2) ->
+      (M.merge (fun _ a b ->
+        match a, b with
         | None, None -> assert false
         | Some (p1, e1), Some (p2, e2) ->
           assert (p1 = p2); Some (p1, (e1 @ e2))
         | x, None
         | None, x -> x) m1 m2),
-    i1 @ i2,
-    let l1 = List.length i1 in
-    MI.fold (fun k -> MI.add (k + l1)) c2 c1) |>
+      i1 @ i2,
+      let l1 = List.length i1 in
+      MI.fold (fun k -> MI.add (k + l1)) c2 c1) |>
 
-  fun (m, i, c) ->
-    M.fold (fun k (p, v) -> M.add (M.find k pm) (p, simplifyPCNF v)) m M.empty,
-    (i, Puf.create (List.length i), c)
+    (fun (m, i, c) ->
+      M.fold (fun k (p, v) -> M.add k (p, simplifyPCNF v)) m M.empty,
+      (i, Puf.create (List.length i), c)) |>
 
-let solve unify clauses =
-  let sp = solve clauses in
+    getSolution |>
 
-  (* NYI: Unification *)
+    (* TODO: Simple merge is not appropriate here. *)
+    M.simpleMerge sol |>
+
+    (fun x -> print_endline (printHornSol x); x)
+  ) M.empty subgraphs |>
+
+  (fun x -> M.fold (fun k -> M.add (M.find k pm)) x M.empty)
+
+let solve clauses unify =
+  (* NYI: Unification [tryUnify] ? *)
   let unify = reducePairs unify in
   if List.length unify <> 0 then
     failwith "NYI: Unification.";
-
-  let sol = tryUnify unify sp |> getSolution in
+  let sol = solve clauses in
 
   (* DEBUG: Solution verification. *)
   print_endline "\nVerification";
