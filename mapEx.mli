@@ -1,3 +1,5 @@
+module Map : sig
+
 module type S = sig
   include Map.S
 
@@ -9,3 +11,5 @@ module type S = sig
 end
 
 module Make (Ord : Map.OrderedType) : S with type key = Ord.t
+
+end
