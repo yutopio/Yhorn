@@ -241,7 +241,10 @@ let printPexpr (_, coef) =
     add_string buf (Id.print v))) coef;
   if !first then add_string buf "0";
   add_string buf " ? ";
-  add_string buf (if M.mem Id.const coef then printTerm (M.find Id.const coef) else "0");
+  add_string buf (
+    if M.mem Id.const coef then
+      printTerm (~-- (M.find Id.const coef))
+    else "0");
   contents buf
 
 
