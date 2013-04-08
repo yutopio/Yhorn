@@ -164,6 +164,8 @@ let rec splitNegation = function
     | Or x -> reduce (|||) (List.map splitNegation x)
     | Expr (NEQ, coef) -> Or (
       List.map (fun x -> Expr (normalizeExpr (x, coef))) [LT;GT])
+    | Expr (EQ, coef) -> And (
+      List.map (fun x -> Expr (normalizeExpr (x, coef))) [LTE;GTE])
     | Expr e -> Expr e
 
 let rec countFormula = function
