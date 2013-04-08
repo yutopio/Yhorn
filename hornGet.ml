@@ -119,7 +119,9 @@ let getSolution a (clauses, (b, c)) =
   let sol = tryUnify a (b, c) |> getSolution in
 
   (* DEBUG: Solution verification. *)
-  if not (List.for_all (Z3interface.check_clause sol) clauses) then
-    failwith "Verification failed";
+  List.iter (fun x ->
+    print_endline (printHorn x);
+    if not (Z3interface.check_clause sol x) then
+      failwith "Verification failed") clauses;
 
   sol

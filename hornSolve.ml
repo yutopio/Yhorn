@@ -319,19 +319,23 @@ let renameClauses =
 let solve clauses =
   assert (List.length clauses > 0);
 
-  (* DEBUG: *)
+  print_endline ("Yhorn (" ^ Version.date ^ ")\n");
   print_newline ();
-  print_endline "Yhorn\n";
-  let renClauses, pm = renameClauses clauses in
+
+  let clauses, pm =
+    if !Flags.rename_input then renameClauses clauses
+    else clauses, M.empty in
   let pm = M.fold (fun k v -> M.add v k) pm M.empty in
-  print_endline (
-    String.concat "\n" (List.map printHorn renClauses) ^ "\n");
+
+  print_endline (String.concat "\n" (List.map printHorn clauses));
+  print_newline ();
+
   let preprocLefthand = List.fold_left (fun (pvars, la) -> function
     | LinearExpr x -> pvars, Some (match la with
         | None -> x
         | Some y -> x &&& y)
     | PredVar pvar -> (pvar :: pvars), la) ([], None) in
-  List.map (fun (lh, rh) -> (preprocLefthand lh), rh) renClauses |>
+  List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses |>
   buildGraph |>
 
   (* DEBUG: Show the constructed graph. *)
@@ -358,7 +362,8 @@ let solve clauses =
     MI.fold (fun k -> MI.add (k + l1)) c2 c1) |>
 
   fun (m, i, c) ->
-    M.fold (fun k (p, v) -> M.add (M.find k pm) (p, simplifyPCNF v)) m M.empty,
+    M.fold (fun k (p, v) -> M.add
+      (M.findDefault k k pm) (p, simplifyPCNF v)) m M.empty,
     (i, Puf.create (List.length i), c)
 
 let solve x = x, (solve x)

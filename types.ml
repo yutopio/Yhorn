@@ -355,9 +355,5 @@ let display output_graph g =
     ignore (Sys.command ("open " ^ ps));
   Sys.remove dot
 
-let display_with_gv _ = ()
-let display_with_gv' _ = ()
-
-(* DEBUG: *)
-let display_with_gv = display Dot.output_graph
-let display_with_gv' = display Dot'.output_graph
+let display_with_gv = if !Flags.enable_gv then display Dot.output_graph else fun _ -> ()
+let display_with_gv' = if !Flags.enable_gv then display Dot'.output_graph else fun _ -> ()
