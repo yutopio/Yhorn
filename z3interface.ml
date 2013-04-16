@@ -45,13 +45,16 @@ let rec convert = function
   | And x -> mk_and ctx (Array.of_list (List.map convert x))
   | Or x -> mk_or ctx (Array.of_list (List.map convert x))
 
-let check ast =
-  let s = mk_solver ctx in
+let check_ast ast =
+  let s = mk_simple_solver ctx in
   let params = mk_params ctx in
   params_set_uint ctx params (mk_string_symbol ctx ":timeout") timeout;
+  params_set_bool ctx params (mk_string_symbol ctx "unsat_core") false;
   solver_set_params ctx s params;
-  solver_assert ctx s ast;
-  s, solver_check ctx s
+  s, solver_check_assumptions ctx s (Array.of_list ast)
+let check = function
+  | And x -> check_ast (List.map convert x)
+  | x -> check_ast [ convert x ]
 
 (* DEBUG: Show the assertion AST for Z3 before passing to solver.
 let check ast =
@@ -60,15 +63,15 @@ let check ast =
 
 let check_formula formula =
   try
-    match check (convert formula) with
+    match check formula with
       | _, L_TRUE -> Some true
       | _, L_FALSE -> Some false
       | _, L_UNDEF -> None
-  with e -> (show_error e; None)
+  with Error (_, _) as e -> (show_error e; None)
 
 let integer_programming constrs =
   try
-    match check (convert constrs) with
+    match check constrs with
       | s, L_TRUE ->
         let md = solver_get_model ctx s in
         let mdn = model_get_num_consts ctx md in
@@ -86,12 +89,20 @@ let integer_programming constrs =
               M.add id value m
             | None -> m) mdn M.empty in
         Some m
-      | _, L_FALSE -> None (* unsatisfiable *)
+      | s, L_FALSE ->
+	let unsat_core = solver_get_unsat_core ctx s in
+	let size = ast_vector_size ctx unsat_core in
+	let str = repeat (fun i k ->
+	  let ast = ast_vector_get ctx unsat_core i in
+	  let str = ast_to_string ctx ast in
+	  k ^ str ^ "\n") size "" in
+	failwith (string_of_int size);
+	None (* unsatisfiable *)
       | s, L_UNDEF -> (* timeout? *)
         print_endline ("Z3 returned L_UNDEF: " ^
                           (solver_get_reason_unknown ctx s));
         None
-  with e -> (show_error e; None)
+  with Error (_, _) as e -> (show_error e; None)
 
 (* DEBUG:
 let integer_programming constr =
@@ -115,7 +126,7 @@ let check_interpolant (a, b) i =
     mk_not ctx (mk_implies ctx (convert a) (convert i));
     mk_and ctx [| (convert i); (convert b) |] |] in
   try
-    match check ast with
+    match check_ast [ast] with
       | _, L_FALSE -> true
       | _ -> false
   with e -> (show_error e; false)
@@ -131,7 +142,7 @@ let check_clause pred (lh, rh) =
 
   let ast = mk_not ctx (mk_implies ctx (convert lh) (convert rh)) in
   try
-    match check ast with
+    match check_ast [ast] with
       | _, L_FALSE -> true
       | _ -> false
   with e -> (show_error e; false)
