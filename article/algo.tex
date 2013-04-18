@@ -55,61 +55,60 @@ relation $v <^+ v'$ by
 By the assumption that $G$ is acyclic, $<^+$ is a well-founded
 relation.  We assume without loss of generality that $V$ contains the
 least element $v_\bot$ with respect to $<^+$; otherwise we can always
-ignore $v_\bot$ with $\varphi(v_\bot) = true$.
+ignore $v_\bot$ with $\varphi(v_\bot) = 0 \leq 0$.
 
 For each $v \in V$, we define $\Delta(v) = (a_v x \leq b_v, C_v)$,
 where
 \begin{itemize}
 \item $a_v x \leq b_v$ is a linear inequality that may contain
   coefficient variables
-\item $C_v$ is a set of linear inequalities on coefficient variables.
+\item $C_v$ is a set of linear expressions on coefficient variables.
 \end{itemize}
 Intuitively, the pair $(\mathbf{a} \mathbf{x} \leq b, C)$ denotes the
 set of inequalities:
 
-\[ \left\lbrace \mathbf{a} \mathbf{x} \leq b | \exists \neg a,\neg
-b. C \right\rbrace \]
-
-(where $\exists \neg a, \neg b.$ is the existential quantification
-over coefficient variables other than $a$ and $b$.
+\begin{align*}
+\left\lbrace
+ \mathbf{a} \mathbf{x} \leq b |
+ \exists \left( FV(C)
+  \setminus (\mathbf{a} \cup \left\lbrace b \right\rbrace
+ \right). C
+\right\rbrace
+\end{align*}
 
 $\Delta(v)$ is defined by well-founded induction on $v$ with respect
-to the relation $<^+$.
-
-Then,
+to the relation $<^+$. Then,
+$\Delta(v) = \left( \mathbf{a}_v \mathbf{x} \leq b_v, C_v \right)$,
+where
 
 \begin{align*}
-\Delta(v) =
+C_v =
 \begin{cases}
-\begin{split}
-\Bigg(
-\sum_i { a_i a_{0,i} x_i } \leq b b_0,
-\bigwedge_i \left( - a_i a_{0,i} + \sum_{\substack{(u,v) \in E \\ \Delta(u)=\mathbf{a}_u \mathbf{x} \leq b_u}} a_{u,i} = 0 \right) \wedge \\
-\left( \sum_{\substack{(u,v) \in E \\ \Delta(u)=\mathbf{a}_u \mathbf{x} \leq b_u}} b_u - b (b_0+1) < 0 \right) \wedge \\
-\bigwedge_{(u,v) \in E} C_u
-\Bigg)
-& \mbox{if } \varphi(v) = \mathbf{a}_v \mathbf{x} \leq b_v
-\end{split}
- \\
-\begin{split}
-\Bigg(
-\mathbf{a} \mathbf{x} \leq b,
-\bigwedge_i \left( - a_i + \sum_{\substack{(u,v) \in E \\ \Delta(u)=\mathbf{a}_u \mathbf{x} \leq b_u}} a_{u,i} = 0 \right) \wedge \\
-\left( \sum_{\substack{(u,v) \in E \\ \Delta(u)=\mathbf{a}_u \mathbf{x} \leq b_u}} b_u - (b+1) < 0 \right) \wedge \\
-\bigwedge_{(u,v) \in E} C_u
-\Bigg)
-& \mbox{if } \varphi(v) = P(\mathbf{x}).
-\end{split}
+\left\lbrace \mathbf{a}_v = \sum_{(u,v) \in E} \mathbf{a}_u \right\rbrace \cup
+\left\lbrace b_v >= \sum_{(u,v) \in E} b_u \right\rbrace \cup
+\bigcup_{(u,v) \in E} C_u
+& \mbox{if } \varphi(v) = P(\mathbf{x}) \vee v = v_\bot \\
+\left\lbrace \mathbf{a}_v = \lambda_v \mathbf{a}_0 \right\rbrace \cup
+\left\lbrace b_v = \lambda_v b_0 \right\rbrace
+& \mbox{if } \varphi(v) = \mathbf{a}_0 \mathbf{x} \leq b_0
 \end{cases}
 \end{align*}
 
-where $\mathbf{a}$ and $b$ are fresh coefficient variables.
+Given $\varphi(v_\bot) = \mathbf{a}_0 \mathbf{x} \leq b_0$, any
+solution $\sigma$ to the constraint $C_\star = C_{v_\bot} \cup {
+  \mathbf{a}_0 = \mathbf{a}_{v_\bot} } \cup { b_0 = b_{v_\bot} }$
+gives a simple solution for $G$ if $C_\star$ is satisfiable, i.e., we
+should have:
 
-If $C_{v_\bot}$ is satisfiable, then any solution $\sigma$ for it
-gives a simple solution for $G$, i.e., we should have:
-
-If $\models \sigma(C_{v_\bot})$, then $\rho$ defined by
-\[ \rho(v)= \sigma(a_v x <= b_v) \]
+\quote
+If $\models \sigma(C_\star)$, then $\rho$ defined by
+\begin{align*}
+ \rho = \left\lbrace
+  \left( P, \sigma(\mathbf{a}_v \mathbf{x} \leq b_v) \right) |
+  \forall v \in V. \varphi(v) = P(\mathbf{x})
+ \right\rbrace
+\end{align*}
 is a solution of $G$.
+\endquote
 
 \end{document}
