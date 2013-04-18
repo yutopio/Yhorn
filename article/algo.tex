@@ -37,8 +37,8 @@ The solution of $G$ is a map $\rho$ from predicate variables to linear
 predicates of the form $\lambda x_1, \cdots ,x_n. \psi $ (where $\psi$
 is a formula constructed from
 \begin{align*}
-\psi ::= &a_1 x_1 + \cdots + a_n x_n \leq b \vert \\ &\psi \wedge \psi
-\vert \psi \vee \psi \vert true \vert false
+\psi ::= & a_1 x_1 + \cdots + a_n x_n \leq b \mid \\
+& \psi \wedge \psi \mid \psi \vee \psi \mid true \mid false
 \end{align*}
 ), where $\rho[G]$ is a tautology. A solution is \textit{simple} if
 $\rho[P]$ is of the form $a_1 x_1 + \cdots + a_n x_n \leq b$ for every
@@ -69,7 +69,7 @@ set of inequalities:
 
 \begin{align*}
 \left\lbrace
- \mathbf{a} \mathbf{x} \leq b |
+ \mathbf{a} \mathbf{x} \leq b \middle|
  \exists \left( FV(C)
   \setminus (\mathbf{a} \cup \left\lbrace b \right\rbrace
  \right). C
@@ -100,15 +100,62 @@ solution $\sigma$ to the constraint $C_\star = C_{v_\bot} \cup {
 gives a simple solution for $G$ if $C_\star$ is satisfiable, i.e., we
 should have:
 
-\quote
+\begin{quote}
 If $\models \sigma(C_\star)$, then $\rho$ defined by
 \begin{align*}
  \rho = \left\lbrace
-  \left( P, \sigma(\mathbf{a}_v \mathbf{x} \leq b_v) \right) |
+  \left( P, \sigma(\mathbf{a}_v \mathbf{x} \leq b_v) \right) \middle|
   \forall v \in V. \varphi(v) = P(\mathbf{x})
  \right\rbrace
 \end{align*}
 is a solution of $G$.
-\endquote
+\end{quote}
+
+If $C_\star$ is unsatisfiable, there are two possibility for them.
+
+\begin{itemize}
+\item No solution exists for $G$.
+\item No simple solution exists for $G$.
+\end{itemize}
+
+If $G$ has node(s) which has multiple successors, the second case is
+possible. We now consider to give a solution to the such case.
+
+Let $\hat u$ be the (least) vertex on $<^+$ with multiple successors
+denoted by $succ(u)$. For each $v_i \in succ(u)$, we transform the graph
+$G$ with the following operation:
+
+\begin{align*}
+\frac{
+(u, v_i) \in E \wedge \varphi(u) = P(\mathbf{x}) \wedge
+\Delta(u) = \left( \mathbf{a} \mathbf{x} \leq b, C \right)
+}{
+\begin{aligned}
+E & := { (u, v_i'), (v_i', v_i) } \cup ( E \setminus (u, v_i) ) \\
+\varphi(v_i') & := P_i(\mathbf{x}) \\
+\Delta(v_i') & := \left( \mathbf{a}' \mathbf{x} \leq b', \textsc{Copy}(C) \right)
+\end{aligned}
+}
+\end{align*}
+
+The $\textsc{Copy}$ duplicates a given linear constraint by renaming
+all variables to fresh ones. $\mathbf{a'}$ and $b'$ are renamed
+variables from $\mathbf{a}$ and $b$ respectively.
+
+Obtaining $G'$ after the transformation above, if $C_{v_\bot}$ becomes
+satisfiable, a solution $\rho$ to $G$ is given by using solution
+$\rho'$ to $G'$:
+
+\begin{align*}
+ \rho = \rho' \cup \left\lbrace P = \bigwedge_i \rho'[P_i] \middle|
+ \varphi(\hat u) = P(\mathbf{x}) \right\rbrace
+\end{align*}
+
+Note that predicate variables on greater nodes than $\hat u$ may
+also have duplicated assignments, which should be combined in the
+same manner as $P$ above.
+
+If $C_{v_\bot}$ stays unsatisfiable in $G'$, we can repeat the
+transformation until no vertices have multiple successors.
 
 \end{document}
