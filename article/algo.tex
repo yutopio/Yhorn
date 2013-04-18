@@ -1,10 +1,14 @@
 \documentclass[a4paper,12pt]{article}
 
+\usepackage{amsmath}
 \usepackage{algorithm}
 \usepackage{algorithmic}
 \usepackage{listings}
+\usepackage{stmaryrd}
 \usepackage{syntax}
 
+\newcommand{\sembrack}[1]{[\![#1]\!}
+    
 \title{Algorithm explanation}
 \author{Yuto Takei \\ The University of Tokyo}
 
@@ -12,5 +16,100 @@
 \maketitle
 
 \section{Algorithm}
+
+The Horn clause solving algorithm receives an input problem in Horn
+graph. A Horn graph is a labelled directed graph $G=(V,E,\varphi)$
+where V is a set of vertices and E is a set of edges. $\varphi: V
+\rightarrow L$ is a labelling function for nodes, where L is a set of
+elements of a predicate variable $P(x_1, ..., x_n)$ or a linear
+inequality $a_1 x_1 + \cdots + a_n x_n \leq b$.
+
+The meaning $\llbracket G \rrbracket $ of a Horn graph $G$ is a set of
+Horn clauses $\mathcal{HC}_v$ for all vertices $v \in V$.
+
+\begin{align*}
+\mathcal{HC}_v &= \left( \bigwedge_{u \in pred(v)} \varphi(u) \right)
+\Longrightarrow \varphi(v) \\ \llbracket G \rrbracket &= \bigwedge_{v
+  \in V} \mathcal{HC}_v
+\end{align*}
+
+The solution of $G$ is a map $\rho$ from predicate variables to linear
+predicates of the form $\lambda x_1, \cdots ,x_n. \psi $ (where $\psi$
+is a formula constructed from
+\begin{align*}
+\psi ::= &a_1 x_1 + \cdots + a_n x_n \leq b \vert \\ &\psi \wedge \psi
+\vert \psi \vee \psi \vert true \vert false
+\end{align*}
+), where $\rho[G]$ is a tautology. A solution is \textit{simple} if
+$\rho[P]$ is of the form $a_1 x_1 + \cdots + a_n x_n \leq b$ for every
+$P$ in $dom(\rho)$.
+
+The problem of solving Horn clauses (represented by $G$) is to find a
+solution of $G$ (and a simple solution if possible).
+
+We consider below a Horn graph that is acyclic.
+
+Given an acyclic Horn graph (or called a Horn DAG), we define the
+relation $v <^+ v'$ by
+\[ v <^+ v' \Longleftrightarrow (v,v') \in E \]
+By the assumption that $G$ is acyclic, $<^+$ is a well-founded
+relation.  We assume without loss of generality that $V$ contains the
+least element $v_\bot$ with respect to $<^+$; otherwise we can always
+ignore $v_\bot$ with $\varphi(v_\bot) = true$.
+
+For each $v \in V$, we define $\Delta(v) = (a_v x \leq b_v, C_v)$,
+where
+\begin{itemize}
+\item $a_v x \leq b_v$ is a linear inequality that may contain
+  coefficient variables
+\item $C_v$ is a set of linear inequalities on coefficient variables.
+\end{itemize}
+Intuitively, the pair $(\mathbf{a} \mathbf{x} \leq b, C)$ denotes the
+set of inequalities:
+
+\[ \left\lbrace \mathbf{a} \mathbf{x} \leq b | \exists \neg a,\neg
+b. C \right\rbrace \]
+
+(where $\exists \neg a, \neg b.$ is the existential quantification
+over coefficient variables other than $a$ and $b$.
+
+$\Delta(v)$ is defined by well-founded induction on $v$ with respect
+to the relation $<^+$.
+
+Then,
+
+\begin{align*}
+\Delta(v) =
+\begin{cases}
+\begin{split}
+\Bigg(
+\sum_i { a_i a_{0,i} x_i } \leq b b_0,
+\bigwedge_i \left( - a_i a_{0,i} + \sum_{\substack{(u,v) \in E \\ \Delta(u)=\mathbf{a}_u \mathbf{x} \leq b_u}} a_{u,i} = 0 \right) \wedge \\
+\left( \sum_{\substack{(u,v) \in E \\ \Delta(u)=\mathbf{a}_u \mathbf{x} \leq b_u}} b_u - b (b_0+1) < 0 \right) \wedge \\
+\bigwedge_{(u,v) \in E} C_u
+\Bigg)
+& \mbox{if } \varphi(v) = \mathbf{a}_v \mathbf{x} \leq b_v
+\end{split}
+ \\
+\begin{split}
+\Bigg(
+\mathbf{a} \mathbf{x} \leq b,
+\bigwedge_i \left( - a_i + \sum_{\substack{(u,v) \in E \\ \Delta(u)=\mathbf{a}_u \mathbf{x} \leq b_u}} a_{u,i} = 0 \right) \wedge \\
+\left( \sum_{\substack{(u,v) \in E \\ \Delta(u)=\mathbf{a}_u \mathbf{x} \leq b_u}} b_u - (b+1) < 0 \right) \wedge \\
+\bigwedge_{(u,v) \in E} C_u
+\Bigg)
+& \mbox{if } \varphi(v) = P(\mathbf{x}).
+\end{split}
+\end{cases}
+\end{align*}
+
+where $\mathbf{a}$ and $b$ are fresh coefficient variables.
+
+If $C_{v_\bot}$ is satisfiable, then any solution $\sigma$ for it
+gives a simple solution for $G$, i.e., we should have:
+
+If $\models \sigma(C_{v_\bot})$, then $\rho$ defined by
+\[ \rho(v)= \sigma(a_v x <= b_v) \]
+is a solution of $G$.
 
 \end{document}
