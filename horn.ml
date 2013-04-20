@@ -79,12 +79,12 @@ module SV = Set.Make(G.V)
 module TraverseGI = Graph.Traverse.Dfs(GI)
 module TopologicalGI = Graph.Topological.Make(GI)
 
-let extractCutpoints g =
-  (* Unno's method. *)
-  G.fold_vertex (fun v s ->
-    if G.in_degree g v > 1 then SV.add v s else s) g SV.empty
+let cutGraph g =
+  let cutpoints =
+    G.fold_vertex (fun v s ->
+      if G.in_degree g v > 1 then SV.add v s else s) g SV.empty in
+  Types.Display.highlight_vertices := cutpoints;
 
-let cutGraph g cutpoints =
   (* If no cutpoints are defined, do nothing. *)
   if SV.cardinal cutpoints = 0 then [g] else (
 
@@ -129,8 +129,6 @@ let cutGraph g cutpoints =
 
   (* Verify that those components don't have mutural dependency. *)
   let linkG = List.fold_left (fun g (x, y) -> GI.add_edge g x y) GI.empty link in
-  if TraverseGI.has_cycle linkG then
-    failwith "Invalid choice on cutting points. Mutural dependency introduced.";
 
   (* Fold over edges to create new graphs for each component. *)
   let components = G.fold_edges_e (fun e m ->
@@ -195,8 +193,8 @@ let cutGraph g cutpoints =
       step visited next in
 
   let leaves =
-    step MV.empty cutpoints (*|>
-    MV.filter (fun k _ -> SV.mem k cutpoints) *)in
+    step MV.empty cutpoints |>
+    MV.filter (fun k _ -> SV.mem k cutpoints) in
   let u = MV.cardinal leaves in
 
   (* Attach ancestor linear expressions to cutpoints in every subgraph. *)
@@ -599,12 +597,9 @@ let solve clauses =
   assert (not (Traverser.has_cycle g));
 
   (* Compute suitable cutpoints. *)
-  (* TODO: Iteratively reduce number of cutpoints if failed. *)
-  let cutpoints = extractCutpoints g in
-  let subgraphs = cutGraph g cutpoints in
+  let subgraphs = cutGraph g in
 
   (* DEBUG: Show the constructed graph. *)
-  Types.Display.highlight_vertices := cutpoints;
   display_with_gv (Operator.mirror g);
 
   List.fold_left (fun sol g ->
