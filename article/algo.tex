@@ -88,7 +88,7 @@ $\Delta(v) = \left( \mathbf{a}_v \mathbf{x} \leq b_v, C_v \right)$,
 where
 
 \begin{align*}
-C_v = & \bigcup_{(u,v) \in E} C_u
+C_v = & \bigcup_{u <^+ v} C_u
 \\
 & \cup \begin{cases}
 \emptyset
@@ -133,36 +133,64 @@ If $C_{v_\bot}$ is unsatisfiable, there are two possibilities for them.
 \end{itemize}
 
 If $G$ has a vertex which has multiple successors, the second case is
-possible. We now consider to give a solution to the such case.
+possible. We now try to give a solution by relaxing the constraint
+$C_{v_\bot}$.
 
-Let $\hat u$ be a vertex with multiple successors denoted by
-$succ(u)$. We now duplicate to relax the linear constraints.
-
-
-
-
-
-The $\textsc{Copy}$ duplicates a given linear constraint by renaming
-all variables to fresh ones. $\mathbf{a'}$ and $b'$ are renamed
-variables from $\mathbf{a}$ and $b$ respectively.
-
-Obtaining $G'$ after the transformation above, if $C_{v_\top}$ becomes
-satisfiable, a solution $\rho$ to $G$ is given by using solution
-$\rho'$ to $G'$:
+We slightly modify the definition $C_v$. Let $\hat V$ a subset of
+vertices with multiple successors.
 
 \begin{align*}
- \rho = \rho' \cup \left\lbrace P = \bigwedge_i \rho'[P_i] \middle|
- \varphi(\hat u) = P(\mathbf{x}) \right\rbrace
+C_v = & \bigcup_{\substack{u <^+ v \\ u \not\in \hat V}} C_u \cup
+\bigcup_{\substack{u <^+ v \\ u \in \hat V}} \textsc{Copy}_v (C_u)
+\\
+& \cup \begin{cases}
+\emptyset
+& \mbox{if } \nexists u. u <^+ v \\
+\left\lbrace
+ \mathbf{a}_{v,\emptyset} =
+  \sum_{\substack{u <^+ v \\ u \not\in \hat V}} \mathbf{a}_{u,U} +
+  \sum_{\substack{u <^+ v \\ u \in \hat V}} \mathbf{a}_{u,U \cup \left\lbrace v \right\rbrace},
+ b_{v,\emptyset} \geq
+  \sum_{\substack{u <^+ v \\ u \not\in \hat V}} b_{u,U} +
+  \sum_{\substack{u <^+ v \\ u \in \hat V}} b_{u,U \cup \left\lbrace v \right\rbrace}
+\right\rbrace
+& \mbox{otherwise}
+\end{cases}
+\\
+& \cup \begin{cases}
+\emptyset
+& \mbox{if } \varphi(v) = P(\mathbf{x}) \\
+\left\lbrace
+ \lambda_v \geq 0, \mathbf{a}_{v,\emptyset} = \lambda_v \mathbf{a}_0,
+ b_{v,\emptyset} = \lambda_v b_0
+\right\rbrace
+& \mbox{if } \varphi(v) = \mathbf{a}_0 \mathbf{x} \leq b_0
+\end{cases}
 \end{align*}
 
-$\forall u \in V. \path{u}{v} \wedge \varphi(u) = P(\mathbf{x}).
-$
+The procedure $\textsc{Copy}_v$ renames all free variables to avoid
+name collision. Its definition is given as follows.
 
-Note that predicate variables on  than $\hat u$ may
-also have duplicated assignments, which should be combined in the
-same manner as $P$ above.
+\[\textsc{Copy}_{\hat v}(\mathbf{a}_{u,V}) = \mathbf{a}_{u,(V \cup
+  \left\lbrace \hat v \right\rbrace)} \]
 
-If $C_{v_\bot}$ stays unsatisfiable in $G'$, we can repeat the
-transformation until no vertices have multiple successors.
+All variables are then distinguished by the label of copy origin
+nodes. This intuitively means that constraints generated for nodes in
+$\hat V$ are duplicated at their successors. Note that the variables
+without the label should be interpreted as that it has $\emptyset$ for
+origin nodes.
+
+When $C_{v_\bot}$ becomes satisfiable by specifing an appropriate
+$\hat V$, a solution $\rho$ to $G$ is given as follows.
+
+\begin{align*}
+ \rho = \left\lbrace
+  \left( P, \bigwedge_S \sigma(\mathbf{a}_{v,S} \mathbf{x} \leq b_{v,S}) \right) \middle|
+  \forall v \in V. \varphi(v) = P(\mathbf{x})
+ \right\rbrace
+\end{align*}
+
+If $C_{v_\bot}$ stays unsatisfiable, we can add a vertex with multiple
+successors to $\hat V$ until all such nodes are in $\hat V$.
 
 \end{document}
