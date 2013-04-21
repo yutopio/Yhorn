@@ -166,6 +166,8 @@ let rec splitNegation = function
     | Or x -> reduce (|||) (List.map splitNegation x)
     | Expr (NEQ, coef) -> Or (
       List.map (fun x -> Expr (normalizeExpr (x, coef))) [LT;GT])
+    | Expr (EQ, coef) -> And (
+      List.map (fun x -> Expr (normalizeExpr (x, coef))) [LTE;GTE])
     | Expr e -> Expr e
 
 let rec countFormula = function
@@ -243,7 +245,10 @@ let printPexpr (_, coef) =
     add_string buf (Id.print v))) coef;
   if !first then add_string buf "0";
   add_string buf " ? ";
-  add_string buf (if M.mem Id.const coef then printTerm (M.find Id.const coef) else "0");
+  add_string buf (
+    if M.mem Id.const coef then
+      printTerm (~-- (M.find Id.const coef))
+    else "0");
   contents buf
 
 

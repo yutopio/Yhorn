@@ -301,126 +301,105 @@ let flattenGraph g =
     let (g', _, _) = f v (ref nameMap) G'.empty in
     g', !laGroups, !predMap, !predCopies)
 
-let solveTree (g, laGroups, predMap, predCopies) =
-  display_with_gv' g;
+let solveTree g =
+  (* Assign a template to all predicate variables. *)
+  (* TODO: Currently supported template is only [1] in Module Template type.
+           Any larger templates should be available in future. *)
+  let templ =
+    G.fold_vertex (fun v m ->
+      match G.V.label v with
+      | LinearExpr _ -> m
+      | PredVar (p, param) ->
+        let rename =
+          List.fold_left (fun m x -> M.add x (Id.create ()) m) M.empty param |>
+          M.add Id.const (Id.create ()) in
+        M.add p (param, rename) m) g M.empty in
 
-  (* Perform topological sort. *)
-  let pvs = List.rev (Sorter.fold (fun v l ->
-    match G'.V.label v with Pid _ -> v :: l | _ -> l) g []) in
+  let constrs = G.fold_vertex (fun v x ->
+    let l1, l2 = G.fold_succ_e (fun e (l1, l2) ->
+      match G.E.label e, G.V.label (G.E.dst e) with
+      | None, LinearExpr e ->
+        print_endline ("LinE  " ^ printFormula printExpr e);
+        e :: l1, l2
+      | Some rename, PredVar (p, param) ->
+        l1,
+        (* TODO: Currently all template are considered to be LTE. *)
+        let rename = List.fold_left (fun m (a, b) ->
+          M.add a b m) M.empty rename in
+        let _, pm = M.find p templ in
+        let pm = M.fold (fun k -> M.add (
+          if k = Id.const then Id.const
+          else M.find k rename)) pm M.empty in
+        let pexpr = M.empty, M.map (fun x -> M.add x 1 M.empty) pm in
+        (print_endline ("Pred  " ^ printPexpr pexpr);
+        pm :: l2)
+    ) g v ([], []) in
 
-  let (laIds, laDnfs) = laGroups |>
-      MI.map (
-        fst |-
-        mapFormula normalizeExpr |-
-        splitNegation |-
-        convertToNF false) |>
-      MI.bindings |> List.split in
+    if l1 = [] && l2 = [] then x else (
 
-  (* Give choice IDs to each conjunctions inside DNF. At the same time, filter
-     the inserted tautologies 0=0 during the process. *)
-  let laDnfs = List.map (mapi (fun i x -> (i,
-    List.filter (fun x -> x <> (EQ, M.empty) &&
-                          x <> (LTE, M.empty)) x))) laDnfs in
+    let addPcoef = M.addDefault M.empty (fun m (k, v) -> M.add k v m) in
 
-  let sols = List.map (fun assigns ->
-    (* Give IDs and flatten. *)
-    let dnfChoice, exprs = listFold2 (fun (s, t) x (z, y) ->
-      (MI.add x z s), ((List.map (fun z ->
-        (x, Id.create (), z)) y) @ t))
-      (MI.empty, []) laIds assigns in
+    let addLinear x =
+      mapFormula normalizeExpr |-
+      splitNegation |-
+      convertToNF false |-
 
-    (* Create a new copy of renaming maps for each group. This must be done here
-       inside this loop because the renaming map must be shared inside the group
-       and must not be shared across different DNF choices. *)
-    let laRenames = MI.map (fun x -> ref (snd x)) laGroups in
+      (* TODO: Support of disjunctions.
+         We now only consider first conjunction in DNF. *)
+      (function
+      | [x] -> x
+      | [] -> assert false
+      | x::_ ->
+        print_endline "Omitting conjunctions..."; x) |-
 
-    (* Build the coefficient mapping for all assigned expressions and check
-       the operator of each expression. *)
-    let coefs, constr, ops, exprGroup =
-      List.fold_left (fun (coefs, constr, ops, exprGroup) (gid, exprId, expr) ->
-        let (op, coef) = renameExpr (MI.find gid laRenames) expr in
+      (* Filter the inserted tautologies 0=0 during the process. *)
+      List.filter (fun x -> x <> (LTE, M.empty)) |-
 
-        (* DEBUG: *)
-        print_endline ((string_of_int gid) ^ "\t" ^ Id.print exprId ^ "\t" ^
-          (printExpr (op, coef)));
+      (* Add to the variable maps for applying Farkas' Lemma. *)
+      List.fold_left (fun (m, pis) (op, coef) ->
+        let pi = Id.create () in
 
-        (* Building an coefficient mapping in terms of variables *)
-        (M.fold (fun k v -> M.addDefault
-          M.empty (fun m (k, v) -> M.add k v m) k (exprId, v)) coef coefs),
+        (* Building an coefficient mapping in terms of variables. *)
+        (M.fold (fun k v -> addPcoef k (pi, v)) coef m),
 
-        (* If the expression is an inequality, its weight should be
-           positive *)
+        (* TODO: Linear expression must be normalized to LTE. No EQ allowed. *)
         (match op with
-          | EQ -> constr
-          | LTE -> Expr(GTE, M.add exprId 1 M.empty) :: constr
-          | _ -> assert false),
+        | LTE -> pi :: pis
+        | _ -> assert false)) x in
 
-        (* The flag to note that the interpolant should be LTE or EQ *)
-        (if op = LTE then M.add exprId op ops else ops),
+    let m, pis = List.fold_left addLinear (M.empty, []) l1 in
 
-        (* Correspondance between expression ID and groupID *)
-        (M.add exprId gid exprGroup)
-      ) (M.empty, [], M.empty, M.empty) exprs in
+    let m = List.fold_left (fun m pcoef ->
+      (* Building an coefficient mapping in terms of variables. *)
+      (M.fold (fun k v -> addPcoef k (v, 1)) pcoef m))
+      m l2 in
 
-    let predSols = List.fold_left (fun m pv ->
-      let Pid pid = G'.V.label pv in
-      let (params, _) = M.find pid predMap in
+    let m =
+      match G.V.label v with
+      | LinearExpr e ->
+        addLinear (m, []) (!!! e) |> fst
+      | PredVar (p, param) ->
+        (* TODO: Currently all template are considered to be LTE. *)
+        let _, pcoef = M.find p templ in
 
-      (* Predicate body are built from coefficient mapping by extracting only
-         relating coefficinet and weight. *)
-      let x = G'.fold_pred_e (fun e x -> x @ (
-        match G'.V.label (G'.E.src e), G'.E.label e with
-          | Pid pid', Some bindings ->
-            let _, (_, pcoefs) = M.find pid' m in
-            M.fold (fun k v l ->
-              let k = try List.assoc k bindings with Not_found -> k in
-              (M.add k v M.empty) :: l) pcoefs []
-          | La laId, None ->
-            List.filter (fun (gid, _, _) -> gid = laId) exprs |>
-            List.map (fun (_, exprId, (_, coef)) ->
-              M.map (fun v -> M.add exprId v M.empty) coef)
-          | _ -> assert false)
-      ) g pv [M.empty] in
+        (* Building an coefficient mapping in terms of variables. *)
+        M.fold (fun k v -> addPcoef k (v, -1)) pcoef m |>
+        addPcoef Id.const (Id.const, 1) in
 
-      M.add pid (params, (ops, reduce (+++) x)) m
-    ) M.empty pvs in
+    (* Every linear inequality must be weighted non-negative. *)
+    List.fold_left (fun l pi -> Expr (GTE, M.add pi 1 M.empty) :: l) x pis |>
 
-    let constr = M.fold (fun k v -> (@) [ Expr((if k = Id.const then
-        (* TODO: Consider completeness of Farkas' Lemma application. *)
-        (if constr = [] then NEQ else GT) else EQ), v) ]) coefs constr in
+    (* Additionally, add constraints to make totals on every
+       coefficients zero. *)
+    M.fold (fun k v c ->
+      Expr ((if k = Id.const then GT else EQ), v) :: c) m
+    )) g [] in
 
-    dnfChoice,
-    predSols,
-    Id.create (), (* sentinel for merger *)
-    (match constr with [c] -> c | _ -> And constr)
-  ) (directProduct laDnfs) in
-
-  let predMap = M.map snd predMap in
-  let predSols, maxIds, constrs = List.fold_left (fun
-    (predSolsByPred, maxIds, constrs)
-    (dnfChoice, predSolsByDnf, maxId, constr) ->
-      M.fold (fun pid ->
-        M.addDefault ([], MIL.empty) (fun (_, m) (param, pexpr) -> param,
-          let groupKey =
-            (MI.fold (fun k v l ->
-              if List.mem k (M.find pid predMap) then l
-              else (k, v) :: l) dnfChoice []) |>
-            (List.sort comparePair) |>
-            List.split |> snd in
-          MIL.addDefault [] (fun l x -> x :: l) groupKey pexpr m
-        ) pid) predSolsByDnf predSolsByPred,
-      maxId :: maxIds,
-      MI.add (List.length maxIds) constr constrs
-  ) (M.empty, [], MI.empty) sols in
-
-  let predSols = M.map (fun (param, pexpr) -> param,
-    MIL.fold (fun _ v l -> v :: l) pexpr []) predSols in
-
-  (M.map (fun x ->
-    reduce (fun (p1, e1) (p2, e2) -> assert (p1 = p2); (p1, e1 @ e2))
-      (List.map (fun x -> M.find x predSols) x)) predCopies),
-  (List.rev maxIds),
-  constrs
+  M.map (fun (param, v) -> param,
+    [[M.fold (fun _ v -> M.add v LTE) v M.empty,
+      M.map (fun v -> M.add v 1 M.empty) v]]) templ,
+  [ Id.create () ],
+  MI.add 1 (And constrs) MI.empty
 
 let simplifyPCNF clauses =
   let simplifyPDF exprs =
@@ -532,7 +511,7 @@ let tryUnify solution =
 
 let assignParameters assign (op, expr) = normalizeExpr (
   (M.fold (fun k v o -> if v <> 0 && M.findDefault EQ k op = LTE then
-      (assert (v > 0); LTE) else o) assign EQ),
+      LTE else o) assign EQ),
   M.map (fun v -> M.fold (fun k v -> (+) ((
     M.findDefault 1 k assign) * v)) v 0) expr)
 
@@ -628,20 +607,7 @@ let solve clauses =
     print_endline "Replaced precomputed solution";
     display_with_gv (Operator.mirror g);
 
-    flattenGraph g |>
-    List.map solveTree |>
-
-    reduce (fun (m1, i1, c1) (m2, i2, c2) ->
-      (M.merge (fun _ a b ->
-        match a, b with
-        | None, None -> assert false
-        | Some (p1, e1), Some (p2, e2) ->
-          assert (p1 = p2); Some (p1, (e1 @ e2))
-        | x, None
-        | None, x -> x) m1 m2),
-      i1 @ i2,
-      let l1 = List.length i1 in
-      MI.fold (fun k -> MI.add (k + l1)) c2 c1) |>
+    solveTree g |>
 
     (fun (m, i, c) ->
       M.fold (fun k (p, v) -> M.add k (p, simplifyPCNF v)) m M.empty,
@@ -665,8 +631,7 @@ let solve clauses unify =
   let sol = solve clauses in
 
   (* DEBUG: Solution verification. *)
-  print_endline "\nVerification";
-  assert (List.for_all (Z3interface.check_clause sol) clauses);
-  print_newline ();
+  if not (List.for_all (Z3interface.check_clause sol) clauses) then
+    failwith "Verification failed";
 
   sol
