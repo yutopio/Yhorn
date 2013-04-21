@@ -1,6 +1,7 @@
 \documentclass[a4paper,12pt]{article}
 
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{algorithm}
 \usepackage{algorithmic}
 \usepackage{listings}
@@ -58,8 +59,8 @@ relation $u <^+ v$ as follows.
 \[ u <^+ v \Longleftrightarrow \exists \theta. (u,v,\theta) \in E \]
 By the assumption that $G$ is acyclic, $<^+$ is a well-founded
 relation. We assume without loss of generality that $V$ contains the
-least element $v_\bot$ with respect to $<^+$; otherwise we can always
-implicitly assume $\varphi(v_\bot) = 0 \leq -1$.
+greatest element $v_\bot$ with respect to $<^+$; otherwise we can
+always implicitly assume $\varphi(v_\bot) = 0 \leq 0$.
 
 For each $v \in V$, we define
 $\Delta(v) = (\mathbf{a}_v \mathbf{x} \leq b_v, C_v)$
@@ -87,14 +88,19 @@ $\Delta(v) = \left( \mathbf{a}_v \mathbf{x} \leq b_v, C_v \right)$,
 where
 
 \begin{align*}
-C_v =
-\bigcup_{(u,v) \in E} C_u & \cup
-\left\lbrace
- \mathbf{a}_v = \sum_{(u,v) \in E} \mathbf{a}_u,
- b_v \geq \sum_{(u,v) \in E} b_u
-\right\rbrace \cup
+C_v = & \bigcup_{(u,v) \in E} C_u
 \\
-& \begin{cases}
+& \cup \begin{cases}
+\emptyset
+& \mbox{if } \nexists u. u <^+ v \\
+\left\lbrace
+ \mathbf{a}_v = \sum_{u <^+ v} \mathbf{a}_u,
+ b_v \geq \sum_{u <^+ v} b_u
+\right\rbrace
+& \mbox{otherwise}
+\end{cases}
+\\
+& \cup \begin{cases}
 \emptyset
 & \mbox{if } \varphi(v) = P(\mathbf{x}) \\
 \left\lbrace
@@ -105,15 +111,11 @@ C_v =
 \end{cases}
 \end{align*}
 
-Given a set of maximal nodes
-$V_\top = \left\lbrace v \in V \middle| \neg(\exists v'. v <^+ v') \right\rbrace$,
-any model $\sigma$ to the constraint
-$C_{V_\top} = \bigwedge_{v \in V_{\top}} C_v$ gives a
-simple solution for $G$ if $C_{V_\top}$ is satisfiable, i.e., we
-should have:
+Any model $\sigma$ to the constraint $C_{v_\bot}$ gives a simple
+solution for $G$ if $C_{v_\bot}$ is satisfiable, i.e., we should have:
 
 \begin{quote}
-If $\models \sigma(C_{V_\top})$, then $\rho$ defined by
+If $\models \sigma(C_{v_\bot})$, then $\rho$ defined by
 \begin{align*}
  \rho = \left\lbrace
   \left( P, \sigma(\mathbf{a}_v \mathbf{x} \leq b_v) \right) \middle|
@@ -123,7 +125,7 @@ If $\models \sigma(C_{V_\top})$, then $\rho$ defined by
 is a solution of $G$.
 \end{quote}
 
-If $C_{V_\top}$ is unsatisfiable, there are two possibilities for them.
+If $C_{v_\bot}$ is unsatisfiable, there are two possibilities for them.
 
 \begin{itemize}
 \item No solution exists for $G$.
@@ -144,7 +146,7 @@ The $\textsc{Copy}$ duplicates a given linear constraint by renaming
 all variables to fresh ones. $\mathbf{a'}$ and $b'$ are renamed
 variables from $\mathbf{a}$ and $b$ respectively.
 
-Obtaining $G'$ after the transformation above, if $C_{v_\bot}$ becomes
+Obtaining $G'$ after the transformation above, if $C_{v_\top}$ becomes
 satisfiable, a solution $\rho$ to $G$ is given by using solution
 $\rho'$ to $G'$:
 
