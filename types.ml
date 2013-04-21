@@ -1,12 +1,13 @@
 open Buffer
 open Util
+open MapEx
 
 module MyString = struct
   type t = Id.t
   let compare = compare
 end
 
-module M = MapEx.Make(MyString)
+module M = Map.Make(MyString)
 module S = Set.Make(MyString)
 
 module Integer = struct
@@ -16,14 +17,14 @@ module Integer = struct
   let equal = (=)
 end
 
-module MI = MapEx.Make(Integer)
+module MI = Map.Make(Integer)
 
 module MyIntList = struct
   type t = int list
   let compare = compare
 end
 
-module MIL = MapEx.Make(MyIntList)
+module MIL = Map.Make(MyIntList)
 
 type operator =
     | EQ
@@ -375,9 +376,5 @@ let display output_graph g =
     ignore (Sys.command ("open " ^ ps));
   Sys.remove dot
 
-let display_with_gv _ = ()
-let display_with_gv' _ = ()
-
-(* DEBUG: *)
-let display_with_gv = display Dot.output_graph
-let display_with_gv' = display Dot'.output_graph
+let display_with_gv = if !Flags.enable_gv then display Dot.output_graph else fun _ -> ()
+let display_with_gv' = if !Flags.enable_gv then display Dot'.output_graph else fun _ -> ()

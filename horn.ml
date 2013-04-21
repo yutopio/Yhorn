@@ -558,10 +558,16 @@ let solve clauses =
   assert (List.length clauses > 0);
 
   print_endline ("Yhorn (" ^ Version.date ^ ")\n");
-  let renClauses, pm = renameClauses clauses in
+  print_newline ();
+
+  let clauses, pm =
+    if !Flags.rename_input then renameClauses clauses
+    else clauses, M.empty in
   let pm = M.fold (fun k v -> M.add v k) pm M.empty in
-  print_endline (
-    String.concat "\n" (List.map printHorn renClauses) ^ "\n");
+
+  print_endline (String.concat "\n" (List.map printHorn clauses));
+  print_newline ();
+
   let preprocLefthand = List.fold_left (fun (pvars, la) -> function
     | LinearExpr x -> pvars, Some (match la with
         | None -> x
@@ -569,7 +575,7 @@ let solve clauses =
     | PredVar pvar -> (pvar :: pvars), la) ([], None) in
 
   let g =
-    List.map (fun (lh, rh) -> (preprocLefthand lh), rh) renClauses |>
+    List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses |>
     buildGraph in
 
   (* We don't handle cyclic graphs. *)
@@ -621,7 +627,7 @@ let solve clauses =
     (fun x -> print_endline (printHornSol x); x)
   ) M.empty subgraphs |>
 
-  (fun x -> M.fold (fun k -> M.add (M.find k pm)) x M.empty)
+  (fun x -> M.fold (fun k -> M.add (M.findDefault k k pm)) x M.empty)
 
 let solve clauses unify =
   (* NYI: Unification [tryUnify] ? *)
@@ -631,7 +637,9 @@ let solve clauses unify =
   let sol = solve clauses in
 
   (* DEBUG: Solution verification. *)
-  if not (List.for_all (Z3interface.check_clause sol) clauses) then
-    failwith "Verification failed";
+  List.iter (fun x ->
+    print_endline (printHorn x);
+    if not (Z3interface.check_clause sol x) then
+      failwith "Verification failed") clauses;
 
   sol

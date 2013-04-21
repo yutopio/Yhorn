@@ -2,6 +2,8 @@ open Util
 open Types
 
 let main _ =
+  Flags.enable_gv := true;
+
   let input =
     match Array.length (Sys.argv) with
       | 1 -> stdin

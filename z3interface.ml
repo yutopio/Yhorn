@@ -5,7 +5,6 @@ open Z3
 (* Calling `preload` will trigger callback registration *)
 let _ = preload ()
 
-let timeout = 5000 (* milliseconds *)
 let ctx = mk_context [ ]
 let _int = mk_int_sort ctx
 let _bool = mk_bool_sort ctx
@@ -46,17 +45,15 @@ let rec convert = function
   | Or x -> mk_or ctx (Array.of_list (List.map convert x))
 
 let check ast =
+  if !Flags.print_z3_ast then
+    print_endline ("Z3 AST: " ^ ast_to_string ctx ast);
   let s = mk_solver ctx in
   let params = mk_params ctx in
-  params_set_uint ctx params (mk_string_symbol ctx ":timeout") timeout;
+  let timeout_symb = mk_string_symbol ctx ":timeout" in
+  params_set_uint ctx params timeout_symb !Flags.z3_timeout;
   solver_set_params ctx s params;
   solver_assert ctx s ast;
   s, solver_check ctx s
-
-(* DEBUG: Show the assertion AST for Z3 before passing to solver.
-let check ast =
-  print_endline ("Z3 AST: " ^ ast_to_string ctx ast);
-  check ast *)
 
 let check_formula formula =
   try
@@ -93,22 +90,24 @@ let integer_programming constrs =
         None
   with e -> (show_error e; None)
 
-(* DEBUG:
 let integer_programming constr =
-  print_endline ("Z3 problem: " ^ (printFormula printExpr constr));
-  let _start = Sys.time () in
-  let ret = integer_programming constr in
-  let _end = Sys.time () in
-  print_endline ("Z3 elapsed time: " ^
-    (string_of_float (_end -. _start)) ^ " sec.");
-  (match ret with
+  if !Flags.debug_z3_ip then (
+    print_endline ("Z3 problem: " ^ (printFormula printExpr constr));
+    let _start = Sys.time () in
+    let ret = integer_programming constr in
+    let _end = Sys.time () in
+    let elapsed = string_of_float (_end -. _start) in
+    print_endline ("Z3 elapsed time: " ^ elapsed ^ " sec.");
+    (match ret with
     | Some sol ->
-      print_endline ("Z3 solution: [" ^ (String.concat ", " (
-        M.fold (fun k v l -> (Id.print k ^ "=" ^ (string_of_int v))::l) sol [])) ^ "]\n")
+      let conv k v l = (Id.print k ^ "=" ^ string_of_int v) :: l in
+      let sol = String.concat ", " (M.fold conv sol []) in
+      print_endline ("Z3 solution: [" ^ sol ^ "]")
     | None ->
-      print_endline ("Z3 solution: Unsatisfiable\n"));
-  ret
-*)
+      print_endline ("Z3 solution: Unsatisfiable"));
+    print_newline ();
+    ret)
+  else integer_programming constr
 
 let check_interpolant (a, b) i =
   let ast = mk_or ctx [|
