@@ -45,16 +45,15 @@ let buildGraph clauses =
           let binders = repeat (fun _ l -> (Id.create ()) :: l)
             (List.length args) [] in
           let dst = G.V.create (PredVar (p, binders)) in
-          let bot = G.V.create (LinearExpr (Expr (EQ, M.add Id.const 1 M.empty))) in
+          let bot = G.V.create (
+            LinearExpr (Expr (EQ, M.add Id.const 1 M.empty))) in
+
           let g = G.add_edge g dst bot in
           predVertices := M.add p dst !predVertices;
           g, dst, args) in
 
       (* Build a name mapping between referred predicate variable (appears on
-         the right-hand of Horn clause) and referring one (on the left-hand).
-
-         NOTE: You must not omit same-name bindings such as (x,x). Otherwise, it
-         will harm renaming during building constraints around line 156-158. *)
+         the right-hand of Horn clause) and referring one (on the left-hand). *)
       let renames = listFold2 (fun l a b -> (a, b) :: l) [] binders args in
 
       (* Add a edge between origin *)
@@ -72,23 +71,45 @@ let buildGraph clauses =
       G.add_edge_e g (G.E.create src label dst)) g dsts
   ) G.empty clauses
 
+module GE(E: Graph.Sig.EDGE) = struct
+  type t = E.t option
+  let default = None
+  let compare x y =
+    match x, y with
+    | None, None -> 0
+    | Some _, None -> -1
+    | None, Some _ -> 1
+    | Some x, Some y -> E.compare x y
+end
 
 module GI = Graph.Persistent.Digraph.Concrete(Integer)
+module GV = Graph.Persistent.Digraph.AbstractLabeled(G.V)(GE(G.E))
 module MV = Map.Make(G.V)
 module SV = Set.Make(G.V)
 module TopologicalGI = Graph.Topological.Make(GI)
 
-let solveGraph g =
+let addRoot g =
+  assert (not (G.is_empty g));
+
+  let roots = G.fold_vertex (fun v s ->
+    if G.in_degree g v = 0 then SV.add v s else s) g SV.empty in
+
+  if SV.cardinal roots = 1 then
+    g, (SV.choose roots)
+  else
+    let root = G.V.create (LinearExpr (Expr (EQ, M.empty))) in
+    let g = SV.fold (fun v g -> G.add_edge g v root) roots g in
+    g, root
+
+let solveGraph (g, root) =
   let cutpoints =
     G.fold_vertex (fun v s ->
       if G.in_degree g v > 1 then SV.add v s else s) g SV.empty in
   (* DEBUG: *) Types.Display.highlight_vertices := cutpoints;
 
-  (* Create a mapping from a vertex to an integer ID, and extract vertices to
-     start traversal. They have no incoming edges. *)
-  let _, ids, start = G.fold_vertex (fun v (i, m, s) ->
-    (i + 1), (MV.add v i m),
-    if G.in_degree g v = 0 then SV.add v s else s) g (0, MV.empty, SV.empty) in
+  (* Create a mapping from a vertex to an integer ID. *)
+  let _, ids = G.fold_vertex (fun v (i, m) ->
+    (i + 1), (MV.add v i m)) g (0, MV.empty) in
   let lookup v = MV.find v ids in
 
   (* Create an Union-Find tree for decomposing tree. *)
@@ -121,7 +142,7 @@ let solveGraph g =
 
   (* cmpMap will have a mapping from a vertex to a component ID which it belongs
      to. link will have a list of topological relations between components. *)
-  let cmpMap, link = step start SV.empty p [] in
+  let cmpMap, link = step (SV.add root SV.empty) SV.empty p [] in
 
   (* Verify that those components don't have mutural dependency. *)
   let linkG = List.fold_left (
@@ -200,7 +221,7 @@ let solveGraph g =
             (* No renaming should occur for linear expressions. *)
             (* TODO: We should consider disjunctive linear expressions. *)
             visited, (constrs, (addLinear (m, pis) ex))
-          | Some rename, PredVar p ->
+          | Some rename, PredVar (p, param) ->
             (* TODO: We should consider disjunctive templates. *)
             (* TODO: Support parameterized operators. *)
             let visited, (constr, (pop, pcoef)) =
@@ -267,13 +288,21 @@ let solveGraph g =
       computeAncestors x root g |> fst
     ) MV.empty components |>
     MV.filter (fun k _ -> SV.mem k cutpoints) in
-  let u = MV.cardinal leaves in
 
-  let check =
-    SV.fold (fun x -> (&&&) (MV.find x leaves |> fst)) start None |>
-    function
-    | None -> Expr (EQ, M.empty)
-    | Some x -> x in
+  (* Generate split tree. *)
+  let root = assert false in
+  let rootV = GV.V.create root in
+  let st = GV.add_vertex GV.empty rootV in
+
+  let step v =
+    let k = GV.fold_succ (fun v a ->
+      assert false
+    ) st v (assert false) in
+    assert false in
+
+  let ret = step rootV in
+
+  let check = MV.find root leaves |> fst in
 
   (* TODO: Backward compatibility. *)
   M.map (fun (param, v) -> param,
@@ -455,6 +484,7 @@ let solve clauses =
         | Some y -> x &&& y)
     | PredVar pvar -> (pvar :: pvars), la) ([], None) in
 
+  (* Generate the problem graph. *)
   let g =
     List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses |>
     buildGraph in
@@ -462,7 +492,8 @@ let solve clauses =
   (* We don't handle cyclic graphs. *)
   assert (not (Traverser.has_cycle g));
 
-  (* Compute suitable cutpoints. *)
+  (* Generate constraints for solving the graph. *)
+  let g = addRoot g in
   let _ = solveGraph g in
 
   (* Solving constraints. *)
