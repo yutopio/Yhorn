@@ -85,6 +85,7 @@ end
 module GI = Graph.Persistent.Digraph.Concrete(Integer)
 module GV = Graph.Persistent.Digraph.AbstractLabeled(G.V)(GE(G.E))
 module MV = Map.Make(G.V)
+module ME = Map.Make(GE(G.E))
 module SV = Set.Make(G.V)
 module TopologicalGI = Graph.Topological.Make(GI)
 
@@ -207,42 +208,63 @@ let solveGraph (g, root) =
     | None -> Some x
     | Some y -> Some (x &&& y) in
 
+  let duplicate = assert false in
+
   (* Compute at each vertex linear expressions those are ancestors of it. *)
-  let rec computeAncestors visited v g =
-    if MV.mem v visited then
-      (* If the vertex is already visited, just return the saved result. *)
-      visited, (MV.find v visited)
+  let rec computeAncestors templs v g =
+    if MV.mem v templs then
+      (* If the vertex is already registered in the template list, it is a
+         forking predicate variable node. *)
+      let dup, delta = MV.find v templs in
+      let PredVar (p, param) = G.V.label v in
+
+      (* If the predicate is specified for duplication, rename it. *)
+      let delta = (if dup then duplicate else id) delta in
+      MV.add v [delta] MV.empty
     else
-      let visited, (constrs, (m, pis)) =
-        G.fold_succ_e (fun e (visited, (constrs, (m, pis))) ->
+      let ret, constrs, (m, pis) =
+        G.fold_succ_e (fun e (ret, constrs, (m, pis)) ->
           let u = G.E.dst e in
           match G.E.label e, G.V.label u with
           | None, LinearExpr ex ->
             (* No renaming should occur for linear expressions. *)
             (* TODO: We should consider disjunctive linear expressions. *)
-            visited, (constrs, (addLinear (m, pis) ex))
+            ret, constrs, (addLinear (m, pis) ex)
           | Some rename, PredVar (p, param) ->
+            let ret' = computeAncestors templs u g in
+
             (* TODO: We should consider disjunctive templates. *)
             (* TODO: Support parameterized operators. *)
-            let visited, (constr, (pop, pcoef)) =
-              computeAncestors visited u g in
+            let [pop, pcoef, constr] = MV.find u ret' in
 
             let rename = ref (
               List.fold_left (fun m (x, y) -> M.add x y m) M.empty rename) in
             let f k v = addPcoef (renameVar rename k) (v, 1) in
 
-            (* Building an coefficient mapping in terms of variables. *)
-            visited, ((constr &&& constrs), ((M.fold f pcoef m), pis))
-          | _ -> assert false
-        ) g v (visited, (None, (M.empty, []))) in
+            (* Merging returning template. *)
+            let ret = MV.merge (fun _ a b ->
+              match a, b with
+              | None, None -> None (* assert false ? *)
+              | None, Some x
+              | Some x, None -> Some x
+              | Some a, Some b -> Some (a @ b)) ret ret' in
 
-      let (m, pis), (pop, pcoef) =
+            (* Building an coefficient mapping in terms of variables. *)
+            ret, (constr &&& constrs), ((M.fold f pcoef m), pis)
+          | _ -> assert false
+        ) g v (MV.empty, None, (M.empty, [])) in
+
+      let p, (m, pis), (pop, pcoef) =
         match G.V.label v with
         | LinearExpr e ->
+          (* Returning template is specially named Id.const. *)
+          Id.const,
+
           (* Add the current linear expression for Farkas' target. *)
           (addLinear (m, pis) (!!! e)),
 
-          (* Don't care about the returning template. *)
+          (* Should return tautology for performance; will be evaluated at
+             the bottom node. *)
           (M.empty, M.empty)
 
         | PredVar (p, param) ->
@@ -257,7 +279,7 @@ let solveGraph (g, root) =
             M.fold (fun k v -> addPcoef k (v, -1)) pcoef m |>
             addPcoef Id.const (Id.const, 1) in
 
-          (m, pis),
+          p, (m, pis),
           (* TODO: Currently all template are considered to be LTE. *)
           (M.fold (fun _ v -> M.add v LTE) pcoef M.empty, pcoef) in
 
@@ -274,35 +296,41 @@ let solveGraph (g, root) =
         (fun x -> match And x &&& constrs with
         | None -> Expr (EQ, M.empty)
         | Some x -> x)
-
-        (* TODO: Simplification will be done here. *)
       in
 
-      let ret = constrs, (pop, pcoef) in
-      (MV.add v ret visited), ret in
+      MV.add v [pop, pcoef, constrs] ret in
 
-  (* TODO: If you have multiple bottom vertices, check all constraints from
-           them. *)
-  let leaves =
-    List.fold_left (fun x (g, root) ->
-      computeAncestors x root g |> fst
-    ) MV.empty components |>
-    MV.filter (fun k _ -> SV.mem k cutpoints) in
+  let simplifyConstr = assert false in
+
+  (* Create templates and constraints for all predicate variables over the
+     graph. *)
+  let rootTempls, templs =
+    List.fold_left (fun (rootTempls, templs) (g, root) ->
+      let templ = computeAncestors rootTempls root g in
+
+      let name =
+        match G.V.label root with
+        | LinearExpr _ -> Id.const
+        | PredVar (p, _) -> p in
+
+      let [pop, pcoef, constr] = MV.find root templ in
+      (* TODO: Simplification will be done here.
+         let constr = simplifyConstr constr in *)
+
+      (MV.add root (false, (pop, pcoef, constr)) rootTempls),
+      templ :: templs
+    ) (MV.empty, []) components in
+
+  (* Base constraint. *)
+  let _, (_, _, check) = MV.find root rootTempls in
 
   (* Generate split tree. *)
-  let root = assert false in
   let rootV = GV.V.create root in
   let st = GV.add_vertex GV.empty rootV in
 
-  let step v =
-    let k = GV.fold_succ (fun v a ->
-      assert false
-    ) st v (assert false) in
-    assert false in
+  let rec step v = assert false in
 
   let ret = step rootV in
-
-  let check = MV.find root leaves |> fst in
 
   (* TODO: Backward compatibility. *)
   M.map (fun (param, v) -> param,
