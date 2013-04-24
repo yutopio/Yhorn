@@ -1,5 +1,6 @@
 open Util
 open Types
+open MapEx
 
 let buildGraph clauses =
   (* Create predicate symbol vertices in advance. *)
@@ -85,6 +86,7 @@ end
 module GI = Graph.Persistent.Digraph.Concrete(Integer)
 module GV = Graph.Persistent.Digraph.AbstractLabeled(G.V)(GE(G.E))
 module MV = Map.Make(G.V)
+module MVV = Map.Make(GV.V)
 module ME = Map.Make(GE(G.E))
 module SV = Set.Make(G.V)
 module TopologicalGI = Graph.Topological.Make(GI)
@@ -167,7 +169,7 @@ let solveGraph (g, root) =
   let components =
     TopologicalGI.fold (fun v l -> v :: l) linkG [] |>
     MI.fold (fun k _ l -> if List.mem k l then l else k :: l) components |>
-    List.map (fun k -> (MI.find k components), (MI.find k roots)) |>
+    List.map (fun k -> (MI.find k roots), (MI.find k components)) |>
     List.rev in
 
   let addPcoef = M.addDefault M.empty (fun m (k, v) -> M.add k v m) in
@@ -211,15 +213,17 @@ let solveGraph (g, root) =
   let duplicate = assert false in
 
   (* Compute at each vertex linear expressions those are ancestors of it. *)
-  let rec computeAncestors templs v g =
+  let rec computeAncestors templs v e g =
     if MV.mem v templs then
       (* If the vertex is already registered in the template list, it is a
          forking predicate variable node. *)
-      let dup, delta = MV.find v templs in
+      let deltaMap, defDelta, dup = MV.find v templs in
       let PredVar (p, param) = G.V.label v in
 
       (* If the predicate is specified for duplication, rename it. *)
-      let delta = (if dup then duplicate else id) delta in
+      let delta =
+        try ME.find e deltaMap
+        with Not_found -> (if dup then duplicate else id) defDelta in
       MV.add v [delta] MV.empty
     else
       let ret, constrs, (m, pis) =
@@ -231,7 +235,7 @@ let solveGraph (g, root) =
             (* TODO: We should consider disjunctive linear expressions. *)
             ret, constrs, (addLinear (m, pis) ex)
           | Some rename, PredVar (p, param) ->
-            let ret' = computeAncestors templs u g in
+            let ret' = computeAncestors templs u (Some e) g in
 
             (* TODO: We should consider disjunctive templates. *)
             (* TODO: Support parameterized operators. *)
@@ -305,8 +309,8 @@ let solveGraph (g, root) =
   (* Create templates and constraints for all predicate variables over the
      graph. *)
   let rootTempls, templs =
-    List.fold_left (fun (rootTempls, templs) (g, root) ->
-      let templ = computeAncestors rootTempls root g in
+    List.fold_left (fun (rootTempls, templs) (root, g) ->
+      let templ = computeAncestors rootTempls root None g in
 
       let name =
         match G.V.label root with
@@ -317,20 +321,48 @@ let solveGraph (g, root) =
       (* TODO: Simplification will be done here.
          let constr = simplifyConstr constr in *)
 
-      (MV.add root (false, (pop, pcoef, constr)) rootTempls),
+      (MV.add root (ME.empty, (pop, pcoef, constr), false) rootTempls),
       templ :: templs
     ) (MV.empty, []) components in
-
-  (* Base constraint. *)
-  let _, (_, _, check) = MV.find root rootTempls in
 
   (* Generate split tree. *)
   let rootV = GV.V.create root in
   let st = GV.add_vertex GV.empty rootV in
 
-  let rec step v = assert false in
+  (* Traverse the split tree to generate root constraint. *)
+  let rec step v =
+    if GV.out_degree st v = 0 then MVV.empty
+    else
+      let mvv, me = GV.fold_succ_e (fun e (mvv, me) ->
+        let u = GV.E.dst e in
+        let mvv' = step u in
+        MVV.simpleMerge mvv mvv',
+        ME.addDefault [] (fun x y -> y :: x) (GV.E.label e)
+          (GV.V.label u, MVV.find u mvv') me
+      ) st v (MVV.empty, ME.empty) in
 
-  let ret = step rootV in
+      let v' = GV.V.label v in
+      let g' = List.assoc v' components in
+
+      let me = ME.map (fun l ->
+        let templs = List.fold_left (fun mv (v, me) ->
+          (* NOTE: The same v won't appear more than once. *)
+          let (_, templ, _) = MV.find v mv in
+          MV.add v (me, templ, true) mv
+        ) rootTempls l in
+
+        let templ = computeAncestors templs v' None g' in
+        MV.find v' templ |> List.hd) me in
+      MVV.add v me mvv
+  in
+
+  let constrTree = step rootV in
+  let rootConstr = MVV.find rootV constrTree in
+  let check =
+    match ME.cardinal rootConstr with
+    | 0 -> let (_, x, _) = MV.find root rootTempls in x
+    | 1 -> ME.find None rootConstr
+    | _ -> assert false in
 
   (* TODO: Backward compatibility. *)
   M.map (fun (param, v) -> param,
