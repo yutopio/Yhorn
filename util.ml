@@ -114,3 +114,10 @@ let comparePair (x1, y1) (x2, y2) =
   match compare x1 x2 with
     | 0 -> compare y1 y2
     | ret -> ret
+
+let maybeAdd f a b =
+  match a, b with
+  | None, None -> None
+  | None, Some x
+  | Some x, None -> Some x
+  | Some a, Some b -> Some (f a b)

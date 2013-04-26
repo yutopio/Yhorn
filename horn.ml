@@ -205,11 +205,6 @@ let solveGraph (g, root) =
   (* TODO: Currently supported template is only [1] in Module Template type.
            Any larger templates should be available in future. *)
 
-  (* Conjunction operation on Some. Similar to Maybe Monad. *)
-  let (&&&) x = function
-    | None -> Some x
-    | Some y -> Some (x &&& y) in
-
   let duplicate = assert false in
 
   (* Compute at each vertex linear expressions those are ancestors of it. *)
@@ -218,7 +213,6 @@ let solveGraph (g, root) =
       (* If the vertex is already registered in the template list, it is a
          forking predicate variable node. *)
       let deltaMap, defDelta, dup = MV.find v templs in
-      let PredVar (p, param) = G.V.label v in
 
       (* If the predicate is specified for duplication, rename it. *)
       let delta =
@@ -246,24 +240,17 @@ let solveGraph (g, root) =
             let f k v = addPcoef (renameVar rename k) (v, 1) in
 
             (* Merging returning template. *)
-            let ret = MV.merge (fun _ a b ->
-              match a, b with
-              | None, None -> None (* assert false ? *)
-              | None, Some x
-              | Some x, None -> Some x
-              | Some a, Some b -> Some (a @ b)) ret ret' in
+            let ret = MV.merge (fun _ -> maybeAdd (@)) ret ret' in
 
             (* Building an coefficient mapping in terms of variables. *)
-            ret, (constr &&& constrs), ((M.fold f pcoef m), pis)
+            ret, (maybeAdd (&&&) constrs (Some constr)),
+            ((M.fold f pcoef m), pis)
           | _ -> assert false
         ) g v (MV.empty, None, (M.empty, [])) in
 
-      let p, (m, pis), (pop, pcoef) =
+      let (m, pis), (pop, pcoef) =
         match G.V.label v with
         | LinearExpr e ->
-          (* Returning template is specially named Id.const. *)
-          Id.const,
-
           (* Add the current linear expression for Farkas' target. *)
           (addLinear (m, pis) (!!! e)),
 
@@ -283,7 +270,7 @@ let solveGraph (g, root) =
             M.fold (fun k v -> addPcoef k (v, -1)) pcoef m |>
             addPcoef Id.const (Id.const, 1) in
 
-          p, (m, pis),
+          (m, pis),
           (* TODO: Currently all template are considered to be LTE. *)
           (M.fold (fun _ v -> M.add v LTE) pcoef M.empty, pcoef) in
 
@@ -297,9 +284,9 @@ let solveGraph (g, root) =
         M.fold (fun k v c ->
           Expr ((if k = Id.const then GT else EQ), v) :: c) m |>
 
-        (fun x -> match And x &&& constrs with
-        | None -> Expr (EQ, M.empty)
-        | Some x -> x)
+        fun x -> match constrs with
+        | None -> And x
+        | Some y -> (And x) &&& y
       in
 
       MV.add v [pop, pcoef, constrs] ret in
@@ -311,11 +298,6 @@ let solveGraph (g, root) =
   let rootTempls, templs =
     List.fold_left (fun (rootTempls, templs) (root, g) ->
       let templ = computeAncestors rootTempls root None g in
-
-      let name =
-        match G.V.label root with
-        | LinearExpr _ -> Id.const
-        | PredVar (p, _) -> p in
 
       let [pop, pcoef, constr] = MV.find root templ in
       (* TODO: Simplification will be done here.
@@ -331,29 +313,30 @@ let solveGraph (g, root) =
 
   (* Traverse the split tree to generate root constraint. *)
   let rec step v =
-    if GV.out_degree st v = 0 then MVV.empty
-    else
-      let mvv, me = GV.fold_succ_e (fun e (mvv, me) ->
-        let u = GV.E.dst e in
-        let mvv' = step u in
-        MVV.simpleMerge mvv mvv',
-        ME.addDefault [] (fun x y -> y :: x) (GV.E.label e)
-          (GV.V.label u, MVV.find u mvv') me
-      ) st v (MVV.empty, ME.empty) in
+    let mvv, me = GV.fold_succ_e (fun e (mvv, me) ->
+      let u = GV.E.dst e in
+      let mvv' = step u in
+      MVV.simpleMerge mvv mvv',
+      ME.addDefault [] (fun x y -> y :: x)
+        (GV.E.label e) (GV.V.label u, MVV.find u mvv') me
+    ) st v (MVV.empty, ME.empty) in
 
-      let v' = GV.V.label v in
-      let g' = List.assoc v' components in
+    let v' = GV.V.label v in
+    let g' = List.assoc v' components in
 
-      let me = ME.map (fun l ->
-        let templs = List.fold_left (fun mv (v, me) ->
-          (* NOTE: The same v won't appear more than once. *)
-          let (_, templ, _) = MV.find v mv in
-          MV.add v (me, templ, true) mv
-        ) rootTempls l in
+    let me = ME.map (fun l ->
+      let templs = List.fold_left (fun mv (v, me) ->
+        (* NOTE: The same v won't appear more than once. *)
+        let (_, templ, _) = MV.find v mv in
+        MV.add v (me, templ, true) mv
+      ) rootTempls l in
 
-        let templ = computeAncestors templs v' None g' in
-        MV.find v' templ |> List.hd) me in
-      MVV.add v me mvv
+      let templ =
+        computeAncestors templs v' None g' |>
+        MV.find v' in
+      assert (List.length templ = 1);
+      List.hd templ) me in
+    MVV.add v me mvv
   in
 
   let constrTree = step rootV in
@@ -364,11 +347,9 @@ let solveGraph (g, root) =
     | 1 -> ME.find None rootConstr
     | _ -> assert false in
 
-  (* TODO: Backward compatibility. *)
   M.map (fun (param, v) -> param,
     [[M.fold (fun _ v -> M.add v LTE) v M.empty,
       M.map (fun v -> M.add v 1 M.empty) v]]) (assert false),
-  [ Id.create () ],
   MI.add 1 check MI.empty
 
 let simplifyPCNF clauses =
