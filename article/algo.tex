@@ -21,22 +21,42 @@
 \section{Algorithm}
 
 The Horn clause solving algorithm receives an input problem in Horn
-graph. A Horn graph is a labelled directed graph $G=(V,E,\varphi)$,
-where V is a set of vertices and E is a set of labelled
-edges. $\varphi: V \rightarrow L$ is a labelling function for
-vertices, where L is a set of elements of a predicate variable $P(x_1,
-..., x_{n_P})$ or a linear inequality $a_1 x_1 + \cdots + a_n x_n \leq
-b$.  An edge from a vertex $u$ to $v$ is expressed as a 3-tuple
-$(u,v,\theta)$ where $\theta$ is a finite map from variables to
-variables.
+graph. A Horn graph is a labelled directed graph $G=(V,E,\varphi)$.
+\begin{itemize}
+\item $V$ is a union of two sets of vertices; Horn term vertices $V_T$
+  and arrow vertices $V_\Rightarrow$. Each vertex $u \in
+  V_\Rightarrow$ have eactly one outgoing edge to some $v \in V_T$,
+  denoted as $succ(u)$.
+\item $E$ is a set of labelled edges, which are expressed in the form
+  $(u,v,\theta)$ where $\theta$ is a finite map from variables to
+  variables.
+\item $\varphi: V_T \rightarrow L$ is a labelling function for Horn
+  term vertices, where L is a set of elements of a predicate variable
+  in the form $P(x_1, ..., x_{arity(P)})$ or a linear inequality $a_1
+  x_1 + \cdots + a_n x_n \leq b$.
+\end{itemize}
+
+There are two kinds of edges in a Horn graph;
+\begin{itemize}
+\item for $u \in V_T, v \in V_\Rightarrow$, an edge takes a form
+  $(u,v,\theta)$, or,
+\item for $u \in V_\Rightarrow, v \in V_T$, an edge takes a form
+  $(u,v,\emptyset)$, which the mapping is empty.
+\end{itemize}
 
 The meaning $\llbracket G \rrbracket $ of a Horn graph $G$ is a set of
-Horn clauses $\mathcal{HC}_v$ for all vertices $v \in V$.
+Horn clauses $\mathcal{HC}_v$ for all vertices $v \in V_\Rightarrow$.
 
 \begin{align*}
-\mathcal{HC}_v & = \left( \bigwedge_{(u,v,\theta) \in E} \theta \varphi(u) \right) \Longrightarrow \varphi(v) \\
+\mathcal{HC}_v & = \left( \bigwedge_{(u,v,\theta) \in E} \theta \varphi(u) \right) \Longrightarrow \varphi(succ(v)) \\
 \llbracket G \rrbracket & = \bigwedge_{v \in V} \mathcal{HC}_v
 \end{align*}
+
+We implicitly assume each $\mathcal{HC}_v$ is universally quantified
+by its all free variables $FV(\mathcal{HC}_v)$.
+
+Note that we allow multiple appearance of Horn clauses with the same
+predicate variable on their right-hand side.
 
 The solution of $G$ is a map $\rho$ from predicate variables to linear
 predicates of the form $\lambda x_1, \cdots ,x_n. \psi $ (where $\psi$
@@ -55,14 +75,14 @@ solution of $G$ (and a simple solution if possible).
 We consider below a Horn graph that is acyclic.
 
 Given an acyclic Horn graph (or called a Horn DAG), we define the
-relation $u <^+ v$ as follows.
-\[ u <^+ v \Longleftrightarrow \exists \theta. (u,v,\theta) \in E \]
+relation $u <^+ v$ over $V_T$ as follows.
+\[ u <^+ v \Longleftrightarrow \exists a, \theta; \left\lbrace{ (u,a,\theta), (a,v,\emptyset) \right\rbrace \subseteq E \]
 By the assumption that $G$ is acyclic, $<^+$ is a well-founded
-relation. We assume without loss of generality that $V$ contains the
+relation. We assume without loss of generality that $V_T$ contains the
 greatest element $v_\bot$ with respect to $<^+$; otherwise we can
-always implicitly assume $\varphi(v_\bot) = 0 \leq 0$.
+always implicitly assume $\varphi(v_\bot) = 0 \leq 0$ such that $\forall v \in V_\bot; \exists v_a; \left\lbrace (v, v_a, \emptyset), (v_a, v_\bot, \emptyset) \right\rbrace \subseteq E $.
 
-For each $v \in V$, we define
+For each $v \in V_T$, we define
 $\Delta(v) = (\mathbf{a}_v \mathbf{x} \leq b_v, C_v)$
 , where
 \begin{itemize}
@@ -78,7 +98,7 @@ set of inequalities:
  \mathbf{a} \mathbf{x} \leq b \middle|
  \exists \left( FV(C)
   \setminus (\mathbf{a} \cup \left\lbrace b \right\rbrace
- \right). C
+ \right); C
 \right\rbrace
 \end{align*}
 
@@ -92,7 +112,7 @@ C_v = & \bigcup_{u <^+ v} C_u
 \\
 & \cup \begin{cases}
 \emptyset
-& \mbox{if } \nexists u. u <^+ v \\
+& \mbox{if } \nexists u; u <^+ v \\
 \left\lbrace
  \mathbf{a}_v = \sum_{u <^+ v} \mathbf{a}_u,
  b_v \geq \sum_{u <^+ v} b_u
@@ -111,7 +131,7 @@ C_v = & \bigcup_{u <^+ v} C_u
 \end{cases}
 \end{align*}
 
-Any model $\sigma$ of the constraint $C_{v_\bot}$ gives a simple
+Any model $\sigma$ to the constraint $C_{v_\bot}$ gives a simple
 solution for $G$ if $C_{v_\bot}$ is satisfiable, i.e., we should have:
 
 \begin{quote}
@@ -119,7 +139,7 @@ If $\models \sigma(C_{v_\bot})$, then $\rho$ defined by
 \begin{align*}
  \rho = \left\lbrace
   \left( P, \sigma(\mathbf{a}_v \mathbf{x} \leq b_v) \right) \middle|
-  \forall v \in V. \varphi(v) = P(\mathbf{x})
+  \forall v \in V; \varphi(v) = P(\mathbf{x})
  \right\rbrace
 \end{align*}
 is a solution of $G$.
@@ -145,7 +165,7 @@ C_v = & \bigcup_{\substack{u <^+ v \\ u \not\in \hat V}} C_u \cup
 \\
 & \cup \begin{cases}
 \emptyset
-& \mbox{if } \nexists u. u <^+ v \\
+& \mbox{if } \nexists u; u <^+ v \\
 \left\lbrace
  \mathbf{a}_{v,\emptyset} =
   \sum_{\substack{u <^+ v \\ u \not\in \hat V}} \mathbf{a}_{u,U} +
@@ -186,7 +206,7 @@ $\hat V$, a solution $\rho$ to $G$ is given as follows.
 \begin{align*}
  \rho = \left\lbrace
   \left( P, \bigwedge_S \sigma(\mathbf{a}_{v,S} \mathbf{x} \leq b_{v,S}) \right) \middle|
-  \forall v \in V. \varphi(v) = P(\mathbf{x})
+  \forall v \in V; \varphi(v) = P(\mathbf{x})
  \right\rbrace
 \end{align*}
 
