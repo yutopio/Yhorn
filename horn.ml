@@ -72,7 +72,7 @@ let buildGraph clauses =
       G.add_edge_e g (G.E.create src label dst)) g dsts
   ) G.empty clauses
 
-module GE(E: Graph.Sig.EDGE) = struct
+module EOpt(E: Graph.Sig.EDGE) = struct
   type t = E.t option
   let default = None
   let compare x y =
@@ -84,10 +84,10 @@ module GE(E: Graph.Sig.EDGE) = struct
 end
 
 module GI = Graph.Persistent.Digraph.Concrete(Integer)
-module GV = Graph.Persistent.Digraph.AbstractLabeled(G.V)(GE(G.E))
+module GV = Graph.Persistent.Digraph.AbstractLabeled(G.V)(EOpt(G.E))
 module MV = Map.Make(G.V)
 module MVV = Map.Make(GV.V)
-module ME = Map.Make(GE(G.E))
+module ME = Map.Make(EOpt(G.E))
 module SV = Set.Make(G.V)
 module TopologicalGI = Graph.Topological.Make(GI)
 
@@ -103,6 +103,12 @@ let addRoot g =
     let root = G.V.create (LinearExpr (Expr (EQ, M.empty))) in
     let g = SV.fold (fun v g -> G.add_edge g v root) roots g in
     g, root
+
+let assignParameters assign (op, expr) = normalizeExpr (
+  (M.fold (fun k v o -> if v <> 0 && M.findDefault EQ k op = LTE then
+      LTE else o) assign EQ),
+  M.map (fun v -> M.fold (fun k v -> (+) ((
+    M.findDefault 1 k assign) * v)) v 0) expr)
 
 let solveGraph (g, root) =
   let cutpoints =
@@ -205,7 +211,7 @@ let solveGraph (g, root) =
   (* TODO: Currently supported template is only [1] in Module Template type.
            Any larger templates should be available in future. *)
 
-  let duplicate = assert false in
+  let duplicate (pop, pexpr, constr) = assert false in
 
   (* Compute at each vertex linear expressions those are ancestors of it. *)
   let rec computeAncestors templs v e g =
@@ -218,7 +224,7 @@ let solveGraph (g, root) =
       let delta =
         try ME.find e deltaMap
         with Not_found -> (if dup then duplicate else id) defDelta in
-      MV.add v [delta] MV.empty
+      MV.add v [e, delta] MV.empty
     else
       let ret, constrs, (m, pis) =
         G.fold_succ_e (fun e (ret, constrs, (m, pis)) ->
@@ -233,7 +239,7 @@ let solveGraph (g, root) =
 
             (* TODO: We should consider disjunctive templates. *)
             (* TODO: Support parameterized operators. *)
-            let [pop, pcoef, constr] = MV.find u ret' in
+            let [_, (pop, pcoef, constr)] = MV.find u ret' in
 
             let rename = ref (
               List.fold_left (fun m (x, y) -> M.add x y m) M.empty rename) in
@@ -289,23 +295,22 @@ let solveGraph (g, root) =
         | Some y -> (And x) &&& y
       in
 
-      MV.add v [pop, pcoef, constrs] ret in
+      MV.add v [e, (pop, pcoef, constrs)] ret in
 
   let simplifyConstr = assert false in
 
   (* Create templates and constraints for all predicate variables over the
      graph. *)
-  let rootTempls, templs =
-    List.fold_left (fun (rootTempls, templs) (root, g) ->
-      let templ = computeAncestors rootTempls root None g in
+  let rootTempls =
+    List.fold_left (fun templ (root, g) ->
+      let templ' = computeAncestors (MV.map fst templ) root None g in
 
-      let [pop, pcoef, constr] = MV.find root templ in
+      let [_, (pop, pcoef, constr)] = MV.find root templ' in
       (* TODO: Simplification will be done here.
          let constr = simplifyConstr constr in *)
 
-      (MV.add root (ME.empty, (pop, pcoef, constr), false) rootTempls),
-      templ :: templs
-    ) (MV.empty, []) components in
+      MV.add root ((ME.empty, (pop, pcoef, constr), false), templ') templ
+    ) MV.empty components in
 
   (* Generate split tree. *)
   let rootV = GV.V.create root in
@@ -325,32 +330,71 @@ let solveGraph (g, root) =
     let g' = List.assoc v' components in
 
     let me = ME.map (fun l ->
-      let templs = List.fold_left (fun mv (v, me) ->
-        (* NOTE: The same v won't appear more than once. *)
-        let (_, templ, _) = MV.find v mv in
-        MV.add v (me, templ, true) mv
-      ) rootTempls l in
+      let templs =
+        List.fold_left (fun mv (v, me) ->
+          (* NOTE: The same v won't appear more than once. *)
+          let (_, templ, _) = MV.find v mv in
+          let me = ME.map fst me in
+          MV.add v (me, templ, true) mv
+        ) (MV.map fst rootTempls) l in
 
-      let templ =
-        computeAncestors templs v' None g' |>
-        MV.find v' in
-      assert (List.length templ = 1);
-      List.hd templ) me in
+      let templ' = computeAncestors templs v' None g' in
+
+      let [_, (pop, pcoef, constr)] = MV.find v' templ' in
+      (* TODO: Simplification will be done here.
+         let constr = simplifyConstr constr in *)
+
+      (pop, pcoef, constr), templ') me in
     MVV.add v me mvv
   in
 
   let constrTree = step rootV in
-  let rootConstr = MVV.find rootV constrTree in
-  let check =
-    match ME.cardinal rootConstr with
-    | 0 -> let (_, x, _) = MV.find root rootTempls in x
-    | 1 -> ME.find None rootConstr
-    | _ -> assert false in
+  let rec step v (op, coef) =
+    let f v =
+      let (_, x, _), templ = MV.find v rootTempls in
+      (x, templ), MV.empty in
+    let ((pop, pcoef, constr), templ), subprobl =
+      match v with
+      | `A (e, vv) ->
+        let c = MVV.find vv constrTree in (
+        try
+          ME.find e c,
+          GV.fold_succ_e (fun e' m ->
+            if GV.E.label e' = e then
+              let u = GV.E.dst e' in
+              MV.add (GV.V.label u) (u, MVV.find u constrTree) m
+            else m) st vv MV.empty
+        with Not_found -> f (GV.V.label vv))
+      | `B v -> f v in
 
-  M.map (fun (param, v) -> param,
-    [[M.fold (fun _ v -> M.add v LTE) v M.empty,
-      M.map (fun v -> M.add v 1 M.empty) v]]) (assert false),
-  MI.add 1 check MI.empty
+    (* TODO: Fix the assignment. *)
+    let constr = assert false in
+
+    (* Once the root constraint become satisfiable, all subproblems should have
+       a solution. *)
+    let Some sol = Z3interface.integer_programming constr in
+
+    MV.fold (fun k v predSol ->
+      match G.V.label k with
+      | LinearExpr _ -> predSol
+      | PredVar (p, param) ->
+        List.fold_left (fun predSol (e, (pop, pexpr, _)) ->
+          let pexpr = M.map (fun x -> M.add x 1 M.empty) pexpr in
+          let expr = assignParameters sol (pop, pexpr) in
+          let predSol = M.addDefault [] (fun a b -> b :: a) p expr predSol in
+
+          if List.mem_assoc k components then
+            (* This vertex is a cutpoint. *)
+            let predSol' =
+              try
+                let vv, _ = MV.find k subprobl in
+                step (`A (e, vv)) expr
+              with Not_found -> step (`B k) expr in
+            M.merge (fun _ -> maybeAdd (@)) predSol predSol'
+          else predSol
+        ) predSol v
+    ) templ M.empty in
+  step (`A (None, rootV)) (LTE, M.empty)
 
 let simplifyPCNF clauses =
   let simplifyPDF exprs =
@@ -460,12 +504,6 @@ let tryUnify solution =
       | None -> (true, solution)
     ) (false, solution) |- snd
 
-let assignParameters assign (op, expr) = normalizeExpr (
-  (M.fold (fun k v o -> if v <> 0 && M.findDefault EQ k op = LTE then
-      LTE else o) assign EQ),
-  M.map (fun v -> M.fold (fun k v -> (+) ((
-    M.findDefault 1 k assign) * v)) v 0) expr)
-
 let simplifyCNF =
   let simplifyDF =
     List.fold_left (fun (tautology, exprs) (op, coef as expr) ->
@@ -534,11 +572,13 @@ let solve clauses =
   assert (not (Traverser.has_cycle g));
 
   (* Generate constraints for solving the graph. *)
-  let g = addRoot g in
-  let _ = solveGraph g in
-
-  (* Solving constraints. *)
-  let sol = assert false in
+  let sol =
+    addRoot g |>
+    solveGraph |>
+    M.map (fun (exprs) ->
+      (* TODO: Predicate parameters. *)
+      (assert false),
+      (And (List.map (fun x -> Expr x) exprs))) in
 
   (* Rename back to original predicate variable names. *)
   M.fold (fun k -> M.add (M.findDefault k k pm)) sol M.empty
