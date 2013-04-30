@@ -49,11 +49,11 @@ Horn clauses $\mathcal{HC}_v$ for all vertices $v \in V_\Rightarrow$.
 
 \begin{align*}
 \mathcal{HC}_v & = \left( \bigwedge_{(u,v,\theta) \in E} \theta \varphi(u) \right) \Longrightarrow \varphi(succ(v)) \\
-\llbracket G \rrbracket & = \bigwedge_{v \in V} \mathcal{HC}_v
+\llbracket G \rrbracket & = \bigwedge_{v \in V_\Rightarrow} \mathcal{HC}_v
 \end{align*}
 
 We implicitly assume each $\mathcal{HC}_v$ is universally quantified
-by its all free variables $FV(\mathcal{HC}_v)$.
+by its all free variables $\textsc{FV}(\mathcal{HC}_v)$.
 
 Note that we allow multiple appearance of Horn clauses with the same
 predicate variable on their right-hand side.
@@ -76,18 +76,18 @@ We consider below a Horn graph that is acyclic.
 
 Given an acyclic Horn graph (or called a Horn DAG), we define the
 relation $u <^+ v$ over $V_T$ as follows.
-\[ u <^+ v \Longleftrightarrow \exists a, \theta; \left\lbrace{ (u,a,\theta), (a,v,\emptyset) \right\rbrace \subseteq E \]
+\[ u <^+ v \Longleftrightarrow \exists a, \theta; \left\lbrace (u,a,\theta), (a,v,\emptyset) \right\rbrace \subseteq E \]
 By the assumption that $G$ is acyclic, $<^+$ is a well-founded
 relation. We assume without loss of generality that $V_T$ contains the
 greatest element $v_\bot$ with respect to $<^+$; otherwise we can
 always implicitly assume $\varphi(v_\bot) = 0 \leq 0$ such that $\forall v \in V_\bot; \exists v_a; \left\lbrace (v, v_a, \emptyset), (v_a, v_\bot, \emptyset) \right\rbrace \subseteq E $.
 
 For each $v \in V_T$, we define
-$\Delta(v) = (\mathbf{a}_v \mathbf{x} \leq b_v, C_v)$
+$\Delta(v) = (\mathbf{a}_v \mathbf{x}_v \leq b_v, C_v)$
 , where
 \begin{itemize}
-\item $\mathbf{a}_v \mathbf{x} \leq b_v$ is a linear inequality that
-  may contain coefficient variables
+\item $\mathbf{a}_v \mathbf{x}_v \leq b_v$ is a linear inequality that
+  contains coefficient variables $\mathbf{a}_v$, and
 \item $C_v$ is a set of linear expressions on coefficient variables.
 \end{itemize}
 Intuitively, the pair $(\mathbf{a} \mathbf{x} \leq b, C)$ denotes the
@@ -96,16 +96,16 @@ set of inequalities:
 \begin{align*}
 \left\lbrace
  \mathbf{a} \mathbf{x} \leq b \middle|
- \exists \left( FV(C)
+ \exists \left( \textsc{FV}(C)
   \setminus (\mathbf{a} \cup \left\lbrace b \right\rbrace
  \right); C
 \right\rbrace
 \end{align*}
 
 $\Delta(v)$ is defined by well-founded induction on $v$ with respect
-to the relation $<^+$. Then,
-$\Delta(v) = \left( \mathbf{a}_v \mathbf{x} \leq b_v, C_v \right)$,
-where
+to the relation $<^+$. Then, $C_v$ in
+$\Delta(v) = \left( \mathbf{a}_v \mathbf{x}_v \leq b_v, C_v \right)$
+can be shown as follows.
 
 \begin{align*}
 C_v = & \bigcup_{u <^+ v} C_u
@@ -114,7 +114,7 @@ C_v = & \bigcup_{u <^+ v} C_u
 \emptyset
 & \mbox{if } \nexists u; u <^+ v \\
 \left\lbrace
- \mathbf{a}_v = \sum_{u <^+ v} \mathbf{a}_u,
+ \mathbf{a}_v \mathbf{x}_v = \sum_{u <^+ v} \mathbf{a}_u \theta_{u,v} (\mathbf{x}_u),
  b_v \geq \sum_{u <^+ v} b_u
 \right\rbrace
 & \mbox{otherwise}
@@ -130,6 +130,12 @@ C_v = & \bigcup_{u <^+ v} C_u
 & \mbox{if } \varphi(v) = \mathbf{a}_0 \mathbf{x} \leq b_0
 \end{cases}
 \end{align*}
+
+For simplicity, we assume variables $\mathbf{a}_u$, $\mathbf{x}_u$,
+$b_u$ are obtained from $\Delta(u)$ in each $\sum_{u <^+ v}$. Also, a
+renaming function $\theta_{u,v}$ is shorthand for $\theta$ such that
+$\exists a; \left\lbrace (u,a,\theta), (a,v,\emptyset) \right\rbrace
+\subseteq E$, and here we pass a variable vector to it.
 
 Any model $\sigma$ to the constraint $C_{v_\bot}$ gives a simple
 solution for $G$ if $C_{v_\bot}$ is satisfiable, i.e., we should have:
