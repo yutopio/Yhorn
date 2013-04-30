@@ -116,6 +116,19 @@ let solveGraph (g, root) =
       if G.in_degree g v > 1 then SV.add v s else s) g SV.empty in
   (* DEBUG: *) Types.Display.highlight_vertices := cutpoints;
 
+  (* Create a template for all predicate variable vertices. *)
+  let templ = G.fold_vertex (fun v m ->
+    match G.V.label v with
+    | PredVar (p, param) ->
+      (* Create a template. *)
+      let pcoef =
+        List.fold_left (fun m x ->
+          M.add x (Id.create ()) m) M.empty param |>
+        M.add Id.const (Id.create ()) in
+
+      M.add p pcoef m
+    | _ -> m) g M.empty in
+
   (* Create a mapping from a vertex to an integer ID. *)
   let _, ids = G.fold_vertex (fun v (i, m) ->
     (i + 1), (MV.add v i m)) g (0, MV.empty) in
@@ -153,7 +166,7 @@ let solveGraph (g, root) =
      to. link will have a list of topological relations between components. *)
   let cmpMap, link = step (SV.add root SV.empty) SV.empty p [] in
 
-  (* Verify that those components don't have mutural dependency. *)
+  (* Create a dependency graph between subtrees. *)
   let linkG = List.fold_left (
     fun g (x, y) -> GI.add_edge g x y) GI.empty link in
 
@@ -170,13 +183,40 @@ let solveGraph (g, root) =
     MI.add uid (G.add_edge_e gg e) m) g MI.empty in
 
   (* Calculate roots. *)
+  (* NOTE: To be precise, key values to add to the mapping should be evaluated
+           through Puf.find. In this specific case, because of Puf's
+           implementation, all values stay the same on Puf.union order
+           (see line 142). *)
   let roots = SV.fold (fun v -> MI.add (lookup v) v) cutpoints MI.empty in
 
-  let components =
-    TopologicalGI.fold (fun v l -> v :: l) linkG [] |>
-    MI.fold (fun k _ l -> if List.mem k l then l else k :: l) components |>
-    List.map (fun k -> (MI.find k roots), (MI.find k components)) |>
-    List.rev in
+  (* Make a list of subtrees. *)
+  let linkOrder = TopologicalGI.fold (fun v l -> v :: l) linkG [] |> List.rev in
+  let components = linkOrder |>
+    (* NOTE: Because we now have the unique root by addRoot procedure, the
+             following line is no longer required.
+    MI.fold (fun k _ l -> if List.mem k l then l else k :: l) components |> *)
+    List.map (fun k -> (MI.find k roots), (MI.find k components)) in
+
+  (* For simplification purpose, travese the component link graph and compute
+     appropriate quantifiers. *)
+  let (fvs, use) = List.fold_left (fun (fvs, use) x ->
+    let v = MI.find x roots in
+    let fv =
+      match G.V.label v with
+      | LinearExpr _ -> [] (* TODO: Should consider? *)
+      | PredVar (p, param) -> M.find p templ |> M.values in
+    let use' = fv @ (MI.findDefault [] x use |> sort_distinct) in
+    (MI.add x fv fvs),
+    (GI.fold_succ (fun y -> MI.addDefault [] (@) y use') linkG x use)
+  ) (MI.empty, MI.empty) linkOrder in
+  let quant = List.fold_left (fun quant x ->
+    let dup = MI.find x use |>
+      List.fold_left (fun m x -> M.addDefault 0 (+) x 1 m) M.empty in
+    let l1 = M.fold (fun k v l -> if v > 1 then k :: l else l) dup [] in
+    let l2 = MI.find x fvs in
+    let l3 = GI.fold_succ (fun y -> (@) (MI.find y quant)) linkG x [] in
+    MI.add x (sort_distinct (l1 @ l2 @ l3)) quant
+  ) MI.empty (List.rev linkOrder) in
 
   let addPcoef = M.addDefault M.empty (fun m (k, v) -> M.add k v m) in
 
@@ -211,7 +251,12 @@ let solveGraph (g, root) =
   (* TODO: Currently supported template is only [1] in Module Template type.
            Any larger templates should be available in future. *)
 
-  let duplicate (pop, pexpr, constr) = assert false in
+  (* Duplicating templates is done by simple renaming. *)
+  let duplicate (pop, pcoef, constr) =
+    let map = ref M.empty in
+    M.fold (fun k -> M.add (renameVar map k)) pop M.empty,
+    M.fold (fun k -> M.add (renameVar map k)) pcoef M.empty,
+    mapFormula (renameExpr map) constr in
 
   (* Compute at each vertex linear expressions those are ancestors of it. *)
   let rec computeAncestors templs v e g =
@@ -265,11 +310,7 @@ let solveGraph (g, root) =
           (M.empty, M.empty)
 
         | PredVar (p, param) ->
-          (* Give a template. *)
-          let pcoef =
-            List.fold_left (fun m x ->
-              M.add x (Id.create ()) m) M.empty param |>
-            M.add Id.const (Id.create ()) in
+          let pcoef = M.find p templ in
 
           (* Add the atomic current predicate template for Farkas' target. *)
           let m =
@@ -306,8 +347,7 @@ let solveGraph (g, root) =
       let templ' = computeAncestors (MV.map fst templ) root None g in
 
       let [_, (pop, pcoef, constr)] = MV.find root templ' in
-      (* TODO: Simplification will be done here.
-         let constr = simplifyConstr constr in *)
+      let constr = simplifyConstr constr in
 
       MV.add root ((ME.empty, (pop, pcoef, constr), false), templ') templ
     ) MV.empty components in
@@ -376,7 +416,7 @@ let solveGraph (g, root) =
 
     MV.fold (fun k v predSol ->
       match G.V.label k with
-      | LinearExpr _ -> predSol
+      | LinearExpr _ -> (* predSol *) assert false
       | PredVar (p, param) ->
         List.fold_left (fun predSol (e, (pop, pexpr, _)) ->
           let pexpr = M.map (fun x -> M.add x 1 M.empty) pexpr in
