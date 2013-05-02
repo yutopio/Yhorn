@@ -25,7 +25,7 @@ graph. A Horn graph is a labelled directed graph $G=(V,E,\varphi)$.
 \begin{itemize}
 \item $V$ is a union of two sets of vertices; Horn term vertices $V_T$
   and arrow vertices $V_\Rightarrow$. Each vertex $u \in
-  V_\Rightarrow$ have eactly one outgoing edge to some $v \in V_T$,
+  V_\Rightarrow$ has eactly one outgoing edge to some $v \in V_T$,
   denoted as $succ(u)$.
 \item $E$ is a set of labelled edges, which are expressed in the form
   $(u,v,\theta)$ where $\theta$ is a finite map from variables to
@@ -41,7 +41,7 @@ There are two kinds of edges in a Horn graph;
 \item for $u \in V_T, v \in V_\Rightarrow$, an edge takes a form
   $(u,v,\theta)$, or,
 \item for $u \in V_\Rightarrow, v \in V_T$, an edge takes a form
-  $(u,v,\emptyset)$, which the mapping is empty.
+  $(u,v,\emptyset)$, where the mapping is empty.
 \end{itemize}
 
 The meaning $\llbracket G \rrbracket $ of a Horn graph $G$ is a set of
@@ -53,7 +53,10 @@ Horn clauses $\mathcal{HC}_v$ for all vertices $v \in V_\Rightarrow$.
 \end{align*}
 
 We implicitly assume each $\mathcal{HC}_v$ is universally quantified
-by its all free variables $\textsc{FV}(\mathcal{HC}_v)$.
+by its all free variables $\textsc{FV}(\mathcal{HC}_v)$. Without loss
+of generality, we limit occurrence of linear expression on right-hand
+side of Horn clauses to either $0 \leq -1$, meaning $\bot$, or $0 \leq
+0$, meaning $\top$.
 
 Note that we allow multiple appearance of Horn clauses with the same
 predicate variable on their right-hand side.
@@ -63,7 +66,7 @@ predicates of the form $\lambda x_1, \cdots ,x_n. \psi $ (where $\psi$
 is a formula constructed from
 \begin{align*}
 \psi ::= & a_1 x_1 + \cdots + a_n x_n \leq b \mid \\
-& \psi \wedge \psi \mid \psi \vee \psi \mid true \mid false
+& \psi \wedge \psi \mid \psi \vee \psi \mid \top \mid \bot
 \end{align*}
 ), where $\rho[G]$ is a tautology. A solution is \textit{simple} if
 $\rho[P]$ is of the form $a_1 x_1 + \cdots + a_n x_n \leq b$ for every
@@ -74,13 +77,25 @@ solution of $G$ (and a simple solution if possible).
 
 We consider below a Horn graph that is acyclic.
 
+For simplicity of discussion, we define $k_v$ the arity of the
+right-hand side of $\mathcal{HC}_v$. Assuming that variables in every
+Horn clauses are appropriately renamed, the right-hand side of
+$\mathcal{HC}_v$ takes the form $P(x_1,...,x_{k_v})$ where $k_v =
+arity(P)$, or either $\top$ or $\bot$ with $k_v = 0$. Also we let $K$
+denote the maximum of $k_v$ over all $v$.
+
 Given an acyclic Horn graph (or called a Horn DAG), we define the
-relation $u <^+ v$ over $V_T$ as follows.
-\[ u <^+ v \Longleftrightarrow \exists a, \theta; \left\lbrace (u,a,\theta), (a,v,\emptyset) \right\rbrace \subseteq E \]
-By the assumption that $G$ is acyclic, $<^+$ is a well-founded
-relation. We assume without loss of generality that $V_T$ contains the
-greatest element $v_\bot$ with respect to $<^+$; otherwise we can
-always implicitly assume $\varphi(v_\bot) = 0 \leq 0$ such that $\forall v \in V_\bot; \exists v_a; \left\lbrace (v, v_a, \emptyset), (v_a, v_\bot, \emptyset) \right\rbrace \subseteq E $.
+relation $u \xrightarrow{\theta} v$ over $V_T$ as follows.
+\[ u \xrightarrow{\theta} v \Longleftrightarrow
+\exists a \in V_\Rightarrow; \left\lbrace (u,a,\theta), (a,v,\emptyset) \right\rbrace \subseteq E \]
+
+We may omit $\theta$ and write $u \rightarrow v$ for convenience for
+later discussion. By the assumption that $G$ is acyclic,
+$\rightarrow^+$ is a well-founded relation. We assume without loss of
+generality that $V_T$ contains the greatest element $v_\bot$ with
+respect to $\rightarrow^+$; otherwise we can always implicitly assume
+$\varphi(v_\bot) = \top$ such that $\forall v \in V_T; v
+\xrightarrow{\emptyset} v_\bot$.
 
 For each $v \in V_T$, we define
 $\Delta(v) = (\mathbf{a}_v \mathbf{x}_v \leq b_v, C_v)$
@@ -103,39 +118,37 @@ set of inequalities:
 \end{align*}
 
 $\Delta(v)$ is defined by well-founded induction on $v$ with respect
-to the relation $<^+$. Then, $C_v$ in
+to the relation $\rightarrow^+$. Then, $C_v$ in
 $\Delta(v) = \left( \mathbf{a}_v \mathbf{x}_v \leq b_v, C_v \right)$
 can be shown as follows.
 
 \begin{align*}
-C_v = & \bigcup_{u <^+ v} C_u
+C_v = & \bigcup_{u \rightarrow v} C_u
 \\
 & \cup \begin{cases}
 \emptyset
-& \mbox{if } \nexists u; u <^+ v \\
+& \mbox{if } \nexists u; u \rightarrow v \\
 \left\lbrace
- \mathbf{a}_v \mathbf{x}_v = \sum_{u <^+ v} \mathbf{a}_u \theta_{u,v} (\mathbf{x}_u),
- b_v \geq \sum_{u <^+ v} b_u
-\right\rbrace
+ \mathbf{a}_{v,i} = \sum_{u \xrightarrow{\theta} v} \mathbf{a}_{u, \theta^{-1} (i)},
+ b_v \geq \sum_{u \xrightarrow{\theta} v} b_u
+\right\rbrace \cup \\
+\hspace{2cm} \bigcup_{k_v < i \leq K} \left\lbrace \mathbf{a}_{v,i} = 0 \right\rbrace
 & \mbox{otherwise}
 \end{cases}
 \\
 & \cup \begin{cases}
 \emptyset
-& \mbox{if } \varphi(v) = P(\mathbf{x}) \\
+& \mbox{if } \varphi(v) = P(\mathbf{x}_v) \\
 \left\lbrace
  \lambda_v \geq 0, \mathbf{a}_v = \lambda_v \mathbf{a}_0,
  b_v = \lambda_v b_0
 \right\rbrace
-& \mbox{if } \varphi(v) = \mathbf{a}_0 \mathbf{x} \leq b_0
+& \mbox{if } \varphi(v) = \mathbf{a}_0 \mathbf{x}_v \leq b_0
 \end{cases}
 \end{align*}
 
-For simplicity, we assume variables $\mathbf{a}_u$, $\mathbf{x}_u$,
-$b_u$ are obtained from $\Delta(u)$ in each $\sum_{u <^+ v}$. Also, a
-renaming function $\theta_{u,v}$ is shorthand for $\theta$ such that
-$\exists a; \left\lbrace (u,a,\theta), (a,v,\emptyset) \right\rbrace
-\subseteq E$, and here we pass a variable vector to it.
+For simplicity, we assume variables $\mathbf{a}_u$, $b_u$ are obtained
+from $\Delta(u)$.
 
 Any model $\sigma$ to the constraint $C_{v_\bot}$ gives a simple
 solution for $G$ if $C_{v_\bot}$ is satisfiable, i.e., we should have:
@@ -144,53 +157,50 @@ solution for $G$ if $C_{v_\bot}$ is satisfiable, i.e., we should have:
 If $\models \sigma(C_{v_\bot})$, then $\rho$ defined by
 \begin{align*}
  \rho = \left\lbrace
-  \left( P, \sigma(\mathbf{a}_v \mathbf{x} \leq b_v) \right) \middle|
-  \forall v \in V; \varphi(v) = P(\mathbf{x})
+  \left( P, \sigma(\mathbf{a}_v \mathbf{x}_v \leq b_v) \right) \middle|
+  \forall v \in V_T; \varphi(v) = P(\mathbf{x}_v)
  \right\rbrace
 \end{align*}
 is a solution of $G$.
 \end{quote}
 
-If $C_{v_\bot}$ is unsatisfiable, there are two possibilities for them.
-
-\begin{itemize}
-\item No solution exists for $G$.
-\item No simple solution exists for $G$.
-\end{itemize}
-
-If $G$ has a vertex which has multiple successors, the second case is
-possible. We now try to give a solution by relaxing the constraint
+If $C_{v_\bot}$ is unsatisfiable, no simple solution exists for
+$G$. We now try to give a solution by relaxing the constraint
 $C_{v_\bot}$.
 
 We slightly modify the definition $C_v$. Let $\hat V$ a subset of
 vertices with multiple successors.
 
 \begin{align*}
-C_v = & \bigcup_{\substack{u <^+ v \\ u \not\in \hat V}} C_u \cup
-\bigcup_{\substack{u <^+ v \\ u \in \hat V}} \textsc{Copy}_v (C_u)
+C_v = & \bigcup_{\substack{u \rightarrow v \\ u \not\in \hat V}} C_u \cup
+\bigcup_{\substack{u \rightarrow v \\ u \in \hat V}} \textsc{Copy}_v (C_u)
 \\
 & \cup \begin{cases}
 \emptyset
-& \mbox{if } \nexists u; u <^+ v \\
+& \mbox{if } \nexists u; u \rightarrow v \\
 \left\lbrace
- \mathbf{a}_{v,\emptyset} =
-  \sum_{\substack{u <^+ v \\ u \not\in \hat V}} \mathbf{a}_{u,U} +
-  \sum_{\substack{u <^+ v \\ u \in \hat V}} \mathbf{a}_{u,U \cup \left\lbrace v \right\rbrace},
+ \mathbf{a}_{v,\emptyset,i} =
+  \sum_{\substack{u \xrightarrow{\theta} v \\ u \not\in \hat V}} \mathbf{a}_{u,U,\theta^{-1}(i)} +
+  \sum_{\substack{u \xrightarrow{\theta} v \\ u \in \hat V}}
+  \mathbf{a}_{u,U \cup \left\lbrace v \right\rbrace, \theta^{-1}(i)}
+\right\rbrace \cup \\
+\hspace{2cm} \left\lbrace
  b_{v,\emptyset} \geq
-  \sum_{\substack{u <^+ v \\ u \not\in \hat V}} b_{u,U} +
-  \sum_{\substack{u <^+ v \\ u \in \hat V}} b_{u,U \cup \left\lbrace v \right\rbrace}
-\right\rbrace
+  \sum_{\substack{u \rightarrow v \\ u \not\in \hat V}} b_{u,U} +
+  \sum_{\substack{u \rightarrow v \\ u \in \hat V}} b_{u,U \cup \left\lbrace v \right\rbrace}
+\right\rbrace \cup \\
+\hspace{2cm} \bigcup_{k_v < i \leq K} \left\lbrace \mathbf{a}_{v,\emptyset,i} = 0 \right\rbrace
 & \mbox{otherwise}
 \end{cases}
 \\
 & \cup \begin{cases}
 \emptyset
-& \mbox{if } \varphi(v) = P(\mathbf{x}) \\
+& \mbox{if } \varphi(v) = P(\mathbf{x}_v) \\
 \left\lbrace
  \lambda_v \geq 0, \mathbf{a}_{v,\emptyset} = \lambda_v \mathbf{a}_0,
  b_{v,\emptyset} = \lambda_v b_0
 \right\rbrace
-& \mbox{if } \varphi(v) = \mathbf{a}_0 \mathbf{x} \leq b_0
+& \mbox{if } \varphi(v) = \mathbf{a}_0 \mathbf{x}_v \leq b_0
 \end{cases}
 \end{align*}
 
@@ -202,17 +212,17 @@ name collision. Its definition is given as follows.
 
 All variables are then distinguished by the label of copy origin
 nodes. This intuitively means that constraints generated for nodes in
-$\hat V$ are duplicated at their successors. Note that the variables
-without the label should be interpreted as that it has $\emptyset$ for
-origin nodes.
+$\hat V$ are duplicated at their successors. For consistency, the
+variables without the label should be interpreted as that it has
+$\emptyset$ for origin nodes.
 
 When $C_{v_\bot}$ becomes satisfiable by specifing an appropriate
 $\hat V$, a solution $\rho$ to $G$ is given as follows.
 
 \begin{align*}
  \rho = \left\lbrace
-  \left( P, \bigwedge_S \sigma(\mathbf{a}_{v,S} \mathbf{x} \leq b_{v,S}) \right) \middle|
-  \forall v \in V; \varphi(v) = P(\mathbf{x})
+  \left( P, \bigwedge_S \sigma(\mathbf{a}_{v,S} \mathbf{x}_v \leq b_{v,S}) \right) \middle|
+  \forall v \in V_T; \varphi(v) = P(\mathbf{x}_v)
  \right\rbrace
 \end{align*}
 
