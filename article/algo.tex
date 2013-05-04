@@ -21,7 +21,7 @@
 \section{Algorithm}
 
 The Horn clause solving algorithm receives an input problem in Horn
-graph. A Horn graph is a labelled directed graph $G=(V,E,\varphi)$.
+graph. A \textbf{Horn graph} is a labelled directed graph $G=(V,E,\varphi)$.
 \begin{itemize}
 \item $V$ is a union of two sets of vertices; Horn term vertices $V_T$
   and arrow vertices $V_\Rightarrow$. Each vertex $u \in
@@ -88,7 +88,6 @@ Given an acyclic Horn graph (or called a Horn DAG), we define the
 relation $u \xrightarrow{\theta} v$ over $V_T$ as follows.
 \[ u \xrightarrow{\theta} v \Longleftrightarrow
 \exists a \in V_\Rightarrow; \left\lbrace (u,a,\theta), (a,v,\emptyset) \right\rbrace \subseteq E \]
-
 We may omit $\theta$ and write $u \rightarrow v$ for convenience for
 later discussion. By the assumption that $G$ is acyclic,
 $\rightarrow^+$ is a well-founded relation. We assume without loss of
@@ -168,26 +167,52 @@ If $C_{v_\bot}$ is unsatisfiable, no simple solution exists for
 $G$. We now try to give a solution by relaxing the constraint
 $C_{v_\bot}$.
 
-We slightly modify the definition $C_v$. Let $\hat V$ a subset of
-vertices with multiple successors.
+Let $\hat V_T$ a set of Horn term vertices $V_T$ with multiple
+successors.
+\[ \hat V_T = \left\lbrace v \in V_T \middle|
+\exists u, u', \theta, \theta';
+\left\lbrace (v,u,\theta), (v,u',\theta') \right\rbrace \subseteq E \wedge
+(u \ne u' \vee \theta \ne \theta') \right\rbrace \]
+We define \textbf{Copy tree}, which is a tree $T=(V_C,E_C,\xi)$
+rooted at $v_{v_\bot}$.
+\begin{itemize}
+\item $V_C$ is a set of nodes.
+\item $E_C$ is a set of labelled edges, which are expressed in the
+  form $(u,v,e)$, where $e \in E \cup {\bot}$.
+\item $\xi: V_C \rightarrow \hat V_T \cup \left\lbrace v_\bot
+  \right\rbrace$ is a labelling function for nodes. The root node
+  $v_{v_\bot}$ has a label $v_\bot$.
+\end{itemize}
 
+We provide $\textsc{Copy}_v$ procedure to rename all free variables
+for avoiding name collision.
+\[ \textsc{Copy}_v (x_V) = x_{V \cup \left\lbrace v \right\rbrace} \]
+All variables are then distinguished by the label of copy origin
+nodes. For consistency, the variables without the label should be
+interpreted as that it has $\emptyset$ for origin nodes.
+
+We give a constraint function over a copy tree
+$\hat \Delta(v,e)$ for $v \in V_C, e \in E$ as
+\[ \hat \Delta (v,e) = \textsc{Copy}_v (\Delta_{V'} (\xi (v)))
+\text{ such that } V' = \left\lbrace v' \middle| (v, v',e) \in E_S \right\rbrace \]
+extending $\Delta$ function to
+$\Delta_V (v) = (\mathbf{a}_{v,\emptyset} \mathbf{x}_v \leq b_{v,\emptyset}, C_v)$
+as
 \begin{align*}
-C_v = & \bigcup_{\substack{u \rightarrow v \\ u \not\in \hat V}} C_u \cup
-\bigcup_{\substack{u \rightarrow v \\ u \in \hat V}} \textsc{Copy}_v (C_u)
+C_v = & \bigcup_\circ C_u \cup \bigcup_\bullet C_u \cup
 \\
 & \cup \begin{cases}
 \emptyset
 & \mbox{if } \nexists u; u \rightarrow v \\
 \left\lbrace
  \mathbf{a}_{v,\emptyset,i} =
-  \sum_{\substack{u \xrightarrow{\theta} v \\ u \not\in \hat V}} \mathbf{a}_{u,U,\theta^{-1}(i)} +
-  \sum_{\substack{u \xrightarrow{\theta} v \\ u \in \hat V}}
-  \mathbf{a}_{u,U \cup \left\lbrace v \right\rbrace, \theta^{-1}(i)}
+  \sum_\circ \mathbf{a}_{u,U,\theta^{-1}(i)} +
+  \sum_\bullet \mathbf{a}_{u,U, \theta^{-1}(i)}
 \right\rbrace \cup \\
 \hspace{2cm} \left\lbrace
  b_{v,\emptyset} \geq
-  \sum_{\substack{u \rightarrow v \\ u \not\in \hat V}} b_{u,U} +
-  \sum_{\substack{u \rightarrow v \\ u \in \hat V}} b_{u,U \cup \left\lbrace v \right\rbrace}
+  \sum_\circ b_{u,U} +
+  \sum_\bullet b_{u,U}
 \right\rbrace \cup \\
 \hspace{2cm} \bigcup_{k_v < i \leq K} \left\lbrace \mathbf{a}_{v,\emptyset,i} = 0 \right\rbrace
 & \mbox{otherwise}
@@ -203,21 +228,22 @@ C_v = & \bigcup_{\substack{u \rightarrow v \\ u \not\in \hat V}} C_u \cup
 & \mbox{if } \varphi(v) = \mathbf{a}_0 \mathbf{x}_v \leq b_0
 \end{cases}
 \end{align*}
+under
+\[
+\circ = \substack{
+  u \rightarrow v \\
+  \nexists u' \in V; \xi (u') = u \\
+  \Delta_V (u) = (\mathbf{a}_{u,U} \mathbf{x}_u \leq b_{u,U}, C_u)}
+\qquad \bullet = \substack{
+  u \rightarrow v \\
+  \exists u' \in V; \xi (u') = u \\
+  \hat \Delta (u', u \rightarrow v) = (\mathbf{a}_{u,U} \mathbf{x}_u \leq b_{u,U}, C_u)} \]
 
-The procedure $\textsc{Copy}_v$ renames all free variables to avoid
-name collision. Its definition is given as follows.
-
-\[\textsc{Copy}_{\hat v}(\mathbf{a}_{u,V}) = \mathbf{a}_{u,(V \cup
-  \left\lbrace \hat v \right\rbrace)} \]
-
-All variables are then distinguished by the label of copy origin
-nodes. This intuitively means that constraints generated for nodes in
-$\hat V$ are duplicated at their successors. For consistency, the
-variables without the label should be interpreted as that it has
-$\emptyset$ for origin nodes.
-
-When $C_{v_\bot}$ becomes satisfiable by specifing an appropriate
-$\hat V$, a solution $\rho$ to $G$ is given as follows.
+This intuitively means that constraints are duplicated according to
+the shape of copy tree $T$.
+Given the constraint for the root node in the copy tree as
+\[ \hat \Delta (v_{v_\bot}) = (\mathbf{a}_0 \mathbf{x}_{v_\bot} \leq b_0, C_{v_\bot}) \]
+a model to $C_{v_\bot}$ gives a solution $\rho$ to $G$, if one exists.
 
 \begin{align*}
  \rho = \left\lbrace
@@ -226,7 +252,7 @@ $\hat V$, a solution $\rho$ to $G$ is given as follows.
  \right\rbrace
 \end{align*}
 
-If $C_{v_\bot}$ stays unsatisfiable, we can add a vertex with multiple
-successors to $\hat V$ until all such nodes are in $\hat V$.
+If $C_{v_\bot}$ stays unsatisfiable, we let $T$ grow based on the
+unsatisfiable core.
 
 \end{document}
