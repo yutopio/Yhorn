@@ -20,46 +20,46 @@
 
 \section{Algorithm}
 
+\subsection{Preliminaries}
+
 The Horn clause solving algorithm receives an input problem in Horn
 graph. A \textbf{Horn graph} is a labelled directed graph $G=(V,E,\varphi)$.
 \begin{itemize}
-\item $V$ is a union of two sets of vertices; Horn term vertices $V_T$
-  and arrow vertices $V_\Rightarrow$. Each vertex $u \in
-  V_\Rightarrow$ has eactly one outgoing edge to some $v \in V_T$,
-  denoted as $succ(u)$.
+\item $V$ is a union of two disjoint sets of vertices; Horn term
+  vertices $V_T$ and disjunction vertices $V_\vee$. Each vertex $u \in
+  V_\vee$ has eactly one outgoing edge to some $v \in V_T$.
 \item $E$ is a set of labelled edges, which are expressed in the form
   $(u,v,\theta)$ where $\theta$ is a finite map from variables to
   variables.
 \item $\varphi: V_T \rightarrow L$ is a labelling function for Horn
   term vertices, where L is a set of elements of a predicate variable
-  in the form $P(x_1, ..., x_{arity(P)})$ or a linear inequality $a_1
-  x_1 + \cdots + a_n x_n \leq b$.
+  in the form $P(x_1, \ldots, x_{arity(P)})$ or a linear inequality
+  $a_1 x_1 + \cdots + a_n x_n \leq b$.
 \end{itemize}
-
 There are two kinds of edges in a Horn graph;
 \begin{itemize}
-\item for $u \in V_T, v \in V_\Rightarrow$, an edge takes a form
-  $(u,v,\theta)$, or,
-\item for $u \in V_\Rightarrow, v \in V_T$, an edge takes a form
-  $(u,v,\emptyset)$, where the mapping is empty.
+\item for $u \in V_T, v \in V_\vee$, an edge takes a form
+  $(u,v,\theta)$ written $u \xrightarrow{\theta} v$, or,
+\item for $u \in V_\vee, v \in V_T$, an edge takes a form
+  $(u,v,\emptyset)$ written $u \rightarrow v$, where the mapping is
+  empty.
 \end{itemize}
 
 The meaning $\llbracket G \rrbracket $ of a Horn graph $G$ is a set of
-Horn clauses $\mathcal{HC}_v$ for all vertices $v \in V_\Rightarrow$.
+Horn clauses encoded as follows.
 
 \begin{align*}
-\mathcal{HC}_v & = \left( \bigwedge_{(u,v,\theta) \in E} \theta \varphi(u) \right) \Longrightarrow \varphi(succ(v)) \\
-\llbracket G \rrbracket & = \bigwedge_{v \in V_\Rightarrow} \mathcal{HC}_v
+\mathcal{T}_v & = \prod_{u \rightarrow v}
+ \left\lbrace \theta (\varphi (t)) \mid t \xrightarrow{\theta} u \right\rbrace \\
+\mathcal{HC}_{(t_1,\ldots,t_k),t_\star} & = \forall \left(\textsc{FV}(\mathbf{t}) \cup \textsc{FV}(t_\star) \right);
+ \left\lbrace \left( \bigwedge t_i \right) \Longrightarrow t_\star \right\rbrace \\
+\llbracket G \rrbracket & = \bigwedge_{v \in V_T}
+ \left(\bigwedge_{\mathbf{t} \in \mathcal{T}_v} \mathcal{HC}_{\mathbf{t},\varphi (v)} \right)
 \end{align*}
 
-We implicitly assume each $\mathcal{HC}_v$ is universally quantified
-by its all free variables $\textsc{FV}(\mathcal{HC}_v)$. Without loss
-of generality, we limit occurrence of linear expression on right-hand
-side of Horn clauses to either $0 \leq -1$, meaning $\bot$, or $0 \leq
-0$, meaning $\top$.
-
-Note that we allow multiple appearance of Horn clauses with the same
-predicate variable on their right-hand side.
+Without loss of generality, we limit linear expression labels on $V_T$
+vertices with incoming edges to either $0 \leq -1$, meaning $\bot$, or
+$0 \leq 0$, meaning $\top$.
 
 The solution of $G$ is a map $\rho$ from predicate variables to linear
 predicates of the form $\lambda x_1, \cdots ,x_n. \psi $ (where $\psi$
@@ -75,26 +75,34 @@ $P$ in $dom(\rho)$.
 The problem of solving Horn clauses (represented by $G$) is to find a
 solution of $G$ (and a simple solution if possible).
 
-We consider below a Horn graph that is acyclic.
+\subsection{Simple solution}
 
-For simplicity of discussion, we define $k_v$ the arity of the
-right-hand side of $\mathcal{HC}_v$. Assuming that variables in every
-Horn clauses are appropriately renamed, the right-hand side of
-$\mathcal{HC}_v$ takes the form $P(x_1,...,x_{k_v})$ where $k_v =
-arity(P)$, or either $\top$ or $\bot$ with $k_v = 0$. Also we let $K$
-denote the maximum of $k_v$ over all $v$.
+We consider below a Horn graph that is acyclic, and we consider the case
+that all disjunction vertices has exactly one predecessor.
 
-Given an acyclic Horn graph (or called a Horn DAG), we define the
-relation $u \xrightarrow{\theta} v$ over $V_T$ as follows.
-\[ u \xrightarrow{\theta} v \Longleftrightarrow
-\exists a \in V_\Rightarrow; \left\lbrace (u,a,\theta), (a,v,\emptyset) \right\rbrace \subseteq E \]
-We may omit $\theta$ and write $u \rightarrow v$ for convenience for
-later discussion. By the assumption that $G$ is acyclic,
-$\rightarrow^+$ is a well-founded relation. We assume without loss of
-generality that $V_T$ contains the greatest element $v_\bot$ with
-respect to $\rightarrow^+$; otherwise we can always implicitly assume
-$\varphi(v_\bot) = \top$ such that $\forall v \in V_T; v
-\xrightarrow{\emptyset} v_\bot$.
+For simplicity of discussion, we define $k_v$ the effective arity of
+the Horn clause $\mathcal{HC}_{\mathbf{t},\varphi(v)}$.
+\begin{align*}
+k_v =
+\begin{cases}
+arity(P) & \mbox{if } \varphi(v) = P(x_1,...,x_{arity(P)}) \\
+0 & \mbox{if } \varphi(v) = \top \mbox { or } \varphi(v) = \bot
+\end{cases}
+\end{align*}
+We let $K$ denote the maximum of $k_v$ over all $v$.
+
+We define the relation $\leadsto$ over $V_T$ as follows.
+\[ u \mathop{\leadsto}^\theta v \Longleftrightarrow
+\exists a \in V_\vee; \left\lbrace (u,a,\theta), (a,v,\emptyset) \right\rbrace \subseteq E \]
+We may omit $\theta$ and write $u \leadsto v$ for convenience in later
+discussions.
+
+By the assumption that $G$ is acyclic, $\leadsto^+$ is a
+well-founded relation. We assume without loss of generality that $V_T$
+contains the greatest element $v_\bot$ with respect to $\leadsto^+$;
+otherwise we can always implicitly assume $\varphi(v_\bot) = \top$
+such that $\forall v \in V_T \setminus \{v_\bot\}; v
+\mathop{\leadsto}^\emptyset v_\bot$.
 
 For each $v \in V_T$, we define
 $\Delta(v) = (\mathbf{a}_v \mathbf{x}_v \leq b_v, C_v)$
@@ -106,7 +114,6 @@ $\Delta(v) = (\mathbf{a}_v \mathbf{x}_v \leq b_v, C_v)$
 \end{itemize}
 Intuitively, the pair $(\mathbf{a} \mathbf{x} \leq b, C)$ denotes the
 set of inequalities:
-
 \begin{align*}
 \left\lbrace
  \mathbf{a} \mathbf{x} \leq b \middle|
@@ -117,19 +124,19 @@ set of inequalities:
 \end{align*}
 
 $\Delta(v)$ is defined by well-founded induction on $v$ with respect
-to the relation $\rightarrow^+$. Then, $C_v$ in
+to the relation $\leadsto^+$. Then, $C_v$ in
 $\Delta(v) = \left( \mathbf{a}_v \mathbf{x}_v \leq b_v, C_v \right)$
 can be shown as follows.
 
 \begin{align*}
-C_v = & \bigcup_{u \rightarrow v} C_u
+C_v = & \bigcup_{u \leadsto v} C_u
 \\
 & \cup \begin{cases}
 \emptyset
-& \mbox{if } \nexists u; u \rightarrow v \\
+& \mbox{if } \nexists u; u \leadsto v \\
 \left\lbrace
- \mathbf{a}_{v,i} = \sum_{u \xrightarrow{\theta} v} \mathbf{a}_{u, \theta^{-1} (i)},
- b_v \geq \sum_{u \xrightarrow{\theta} v} b_u
+ \mathbf{a}_{v,i} = \sum_{u \mathop{\leadsto}^\theta v} \mathbf{a}_{u, \theta^{-1} (i)},
+ b_v \geq \sum_{u \mathop{\leadsto}^\theta v} b_u
 \right\rbrace \cup \\
 \hspace{2cm} \bigcup_{k_v < i \leq K} \left\lbrace \mathbf{a}_{v,i} = 0 \right\rbrace
 & \mbox{otherwise}
@@ -163,6 +170,8 @@ If $\models \sigma(C_{v_\bot})$, then $\rho$ defined by
 is a solution of $G$.
 \end{quote}
 
+\subsection{DAG problem}
+
 If $C_{v_\bot}$ is unsatisfiable, no simple solution exists for
 $G$. We now try to give a solution by relaxing the constraint
 $C_{v_\bot}$.
@@ -187,8 +196,8 @@ rooted at $v_{v_\bot}$.
 We provide $\textsc{Copy}_v$ procedure to rename all free variables
 for avoiding name collision.
 \[ \textsc{Copy}_v (x_V) = x_{V \cup \left\lbrace v \right\rbrace} \]
-All variables are then distinguished by the label of copy origin
-nodes. For consistency, the variables without the label should be
+All variables with the same name are then distinguished by the label of copy origin
+nodes $V$. For consistency, the variables without the label should be
 interpreted as that it has $\emptyset$ for origin nodes.
 
 We give a constraint function over a copy tree
@@ -231,11 +240,11 @@ C_v = & \bigcup_\circ C_u \cup \bigcup_\bullet C_u \cup
 under
 \[
 \circ = \substack{
-  u \rightarrow v \\
+  u \mathop{\leadsto}^\theta v \\
   \nexists u' \in V; \xi (u') = u \\
   \Delta_V (u) = (\mathbf{a}_{u,U} \mathbf{x}_u \leq b_{u,U}, C_u)}
 \qquad \bullet = \substack{
-  u \rightarrow v \\
+  u \mathop{\leadsto}^\theta v \\
   \exists u' \in V; \xi (u') = u \\
   \hat \Delta (u', u \rightarrow v) = (\mathbf{a}_{u,U} \mathbf{x}_u \leq b_{u,U}, C_u)} \]
 
@@ -247,12 +256,27 @@ a model to $C_{v_\bot}$ gives a solution $\rho$ to $G$, if one exists.
 
 \begin{align*}
  \rho = \left\lbrace
-  \left( P, \bigwedge_S \sigma(\mathbf{a}_{v,S} \mathbf{x}_v \leq b_{v,S}) \right) \middle|
+  \left( P, \bigwedge_U \sigma(\mathbf{a}_{v,U} \mathbf{x}_v \leq b_{v,U}) \right) \middle|
   \forall v \in V_T; \varphi(v) = P(\mathbf{x}_v)
  \right\rbrace
 \end{align*}
 
 If $C_{v_\bot}$ stays unsatisfiable, we let $T$ grow based on the
 unsatisfiable core.
+
+\subsection{Disjunctive problems}
+
+We eliminate the restriction that all disjunction vertices $V_\vee$ have exactly one
+predecessor. We define the universal set of selectors for disjunction vertices.
+\[ \mathcal{S} = \prod_{v \in V_\vee} \left\lbrace v \mapsto u \middle| \exists \theta; (u,v,\theta) \in E \right\rbrace \]
+
+We define a \textbf{selector set collection} \cite{albarghouthi13} for every Horn term vertices, which is a set of sets of selectors.
+
+For $v \in V_T$, the selector set collection $\mathcal{X}_v = \left\lbrace S_{v,1}, \ldots, S_{v,\kappa_v} \right\rbrace$ consists of $\kappa_v$ sets of non-empty and non-overlapping subsets of $\mathcal{S}$. If $\nexists u; u \rightarrow v$, $\mathcal{X}_v = \emptyset$.
+
+We arbitrarily choose the initial selector $s_0 \in \mathcal{S}$. We start from empty collections for all $v$.
+
+\bibliographystyle{plain}
+\bibliography{./biblio}
 
 \end{document}

@@ -1,8 +1,7 @@
 
 all: algo.pdf
 
-article.pdf: article.tex
-	rubber -d article
+.SUFFIXES: .tex .pdf
 
-algo.pdf: algo.tex
-	rubber -d algo
+.tex.pdf:
+	pdflatex $(basename $<)
