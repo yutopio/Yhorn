@@ -10,7 +10,7 @@
 
 \newcommand{\sembrack}[1]{[\![#1]\!}
 \newcommand{\edge}[2]{#1\rightarrow#2}
-\newcommand{\path}[2]{#1\rightarrow^\star#2}
+\newcommand{\edgel}[3]{#1\xrightarrow{#2}#3}
 
 \title{Algorithm explanation}
 \author{Yuto Takei \\ The University of Tokyo}
@@ -39,9 +39,9 @@ graph. A \textbf{Horn graph} is a labelled directed graph $G=(V,E,\varphi)$.
 There are two kinds of edges in a Horn graph;
 \begin{itemize}
 \item for $u \in V_T, v \in V_\vee$, an edge takes a form
-  $(u,v,\theta)$ written $u \xrightarrow{\theta} v$, or,
+  $(u,v,\theta)$, written $\edgel{u}{\theta}{v}$, or,
 \item for $u \in V_\vee, v \in V_T$, an edge takes a form
-  $(u,v,\emptyset)$ written $u \rightarrow v$, where the mapping is
+  $(u,v,\emptyset)$, written $\edge{u}{v}$, where the mapping is
   empty.
 \end{itemize}
 
@@ -77,11 +77,11 @@ solution of $G$ (and a simple solution if possible).
 
 \subsection{Simple solution}
 
-We consider below a Horn graph that is acyclic, and we consider the case
-that all disjunction vertices has exactly one predecessor.
+We consider below a Horn graph that is acyclic, and we consider the
+case that all disjunction vertices has exactly one predecessor.
 
-For simplicity of discussion, we define $k_v$ the effective arity of
-the Horn clause $\mathcal{HC}_{\mathbf{t},\varphi(v)}$.
+For simplicity of discussion, we define \textbf{term arity} $k_v$
+for every Horn term vertex $v \in V_T$.
 \begin{align*}
 k_v =
 \begin{cases}
@@ -89,20 +89,19 @@ arity(P) & \mbox{if } \varphi(v) = P(x_1,...,x_{arity(P)}) \\
 0 & \mbox{if } \varphi(v) = \top \mbox { or } \varphi(v) = \bot
 \end{cases}
 \end{align*}
-We let $K$ denote the maximum of $k_v$ over all $v$.
+We let $K$ denote the maximum of $k_v$ over all $v \in V_T$.
 
 We define the relation $\leadsto$ over $V_T$ as follows.
 \[ u \mathop{\leadsto}^\theta v \Longleftrightarrow
-\exists a \in V_\vee; \left\lbrace (u,a,\theta), (a,v,\emptyset) \right\rbrace \subseteq E \]
+\exists a \in V_\vee; \edgel{v}{\theta}{a} \wedge \edgel{a}{\emptyset}{v} \]
 We may omit $\theta$ and write $u \leadsto v$ for convenience in later
 discussions.
 
-By the assumption that $G$ is acyclic, $\leadsto^+$ is a
-well-founded relation. We assume without loss of generality that $V_T$
-contains the greatest element $v_\bot$ with respect to $\leadsto^+$;
-otherwise we can always implicitly assume $\varphi(v_\bot) = \top$
-such that $\forall v \in V_T \setminus \{v_\bot\}; v
-\mathop{\leadsto}^\emptyset v_\bot$.
+By the assumption that $G$ is acyclic, $\leadsto^+$ is a well-founded
+relation. We assume without loss of generality that $V_T$ contains the
+greatest element $v_\bot$ with respect to $\leadsto^+$; otherwise we
+can always implicitly assume $\varphi(v_\bot) = \top$ such that
+$\forall v \in V_T \setminus \{v_\bot\}; v \mathop{\leadsto}^\emptyset v_\bot$.
 
 For each $v \in V_T$, we define
 $\Delta(v) = (\mathbf{a}_v \mathbf{x}_v \leq b_v, C_v)$
@@ -180,7 +179,7 @@ Let $\hat V_T$ a set of Horn term vertices $V_T$ with multiple
 successors.
 \[ \hat V_T = \left\lbrace v \in V_T \middle|
 \exists u, u', \theta, \theta';
-\left\lbrace (v,u,\theta), (v,u',\theta') \right\rbrace \subseteq E \wedge
+\edgel{v}{\theta}{u} \wedge \edgel{v}{\theta'}{u'} \wedge
 (u \ne u' \vee \theta \ne \theta') \right\rbrace \]
 We define \textbf{Copy tree}, which is a tree $T=(V_C,E_C,\xi)$
 rooted at $v_{v_\bot}$.
@@ -212,7 +211,7 @@ C_v = & \bigcup_\circ C_u \cup \bigcup_\bullet C_u \cup
 \\
 & \cup \begin{cases}
 \emptyset
-& \mbox{if } \nexists u; u \rightarrow v \\
+& \mbox{if } \nexists u; u \leadsto v \\
 \left\lbrace
  \mathbf{a}_{v,\emptyset,i} =
   \sum_\circ \mathbf{a}_{u,U,\theta^{-1}(i)} +
@@ -246,11 +245,11 @@ under
 \qquad \bullet = \substack{
   u \mathop{\leadsto}^\theta v \\
   \exists u' \in V; \xi (u') = u \\
-  \hat \Delta (u', u \rightarrow v) = (\mathbf{a}_{u,U} \mathbf{x}_u \leq b_{u,U}, C_u)} \]
+  \hat \Delta (u', \edge{u}{v}) = (\mathbf{a}_{u,U} \mathbf{x}_u \leq b_{u,U}, C_u)} \]
 
 This intuitively means that constraints are duplicated according to
-the shape of copy tree $T$.
-Given the constraint for the root node in the copy tree as
+the shape of copy tree $T$.  Given the constraint for the root node in
+the copy tree as
 \[ \hat \Delta (v_{v_\bot}) = (\mathbf{a}_0 \mathbf{x}_{v_\bot} \leq b_0, C_{v_\bot}) \]
 a model to $C_{v_\bot}$ gives a solution $\rho$ to $G$, if one exists.
 
@@ -266,15 +265,22 @@ unsatisfiable core.
 
 \subsection{Disjunctive problems}
 
-We eliminate the restriction that all disjunction vertices $V_\vee$ have exactly one
-predecessor. We define the universal set of selectors for disjunction vertices.
-\[ \mathcal{S} = \prod_{v \in V_\vee} \left\lbrace v \mapsto u \middle| \exists \theta; (u,v,\theta) \in E \right\rbrace \]
+We eliminate the restriction that all disjunction vertices $V_\vee$ have
+exactly one predecessor. We define the universal set of selectors for
+disjunction vertices.
+\[ \mathcal{S} = \prod_{v \in V_\vee} \left\lbrace v \mapsto u \middle| \edgel{u}{\emptyset}{v} \right\rbrace \]
 
-We define a \textbf{selector set collection} \cite{albarghouthi13} for every Horn term vertices, which is a set of sets of selectors.
+We define a \textbf{selector set collection} \cite{albarghouthi13} for
+every Horn term vertices, which is a set of sets of selectors.
 
-For $v \in V_T$, the selector set collection $\mathcal{X}_v = \left\lbrace S_{v,1}, \ldots, S_{v,\kappa_v} \right\rbrace$ consists of $\kappa_v$ sets of non-empty and non-overlapping subsets of $\mathcal{S}$. If $\nexists u; u \rightarrow v$, $\mathcal{X}_v = \emptyset$.
+For $v \in V_T$, the selector set collection $\mathcal{X}_v =
+\left\lbrace S_{v,1}, \ldots, S_{v,\kappa_v} \right\rbrace$ consists
+of $\kappa_v$ sets of non-empty and non-overlapping subsets of
+$\mathcal{S}$. If $\nexists u; u \rightarrow v$, $\mathcal{X}_v =
+\emptyset$.
 
-We arbitrarily choose the initial selector $s_0 \in \mathcal{S}$. We start from empty collections for all $v$.
+We arbitrarily choose the initial selector $s_0 \in \mathcal{S}$. We
+start from empty collections for all $v$.
 
 \bibliographystyle{plain}
 \bibliography{./biblio}
