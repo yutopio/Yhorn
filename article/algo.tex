@@ -33,7 +33,7 @@ graph. A \textbf{Horn graph} is a labelled directed graph $G=(V,E,\varphi)$.
   variables.
 \item $\varphi: V_T \rightarrow L$ is a labelling function for Horn
   term vertices, where L is a set of elements of a predicate variable
-  in the form $P(x_1, \ldots, x_{arity(P)})$ or a linear inequality
+  in the form $P(x_1, \ldots, x_{\mathrm{arity}(P)})$ or a linear inequality
   $a_1 x_1 + \cdots + a_n x_n \leq b$.
 \end{itemize}
 There are two kinds of edges in a Horn graph;
@@ -70,7 +70,7 @@ is a formula constructed from
 \end{align*}
 ), where $\rho[G]$ is a tautology. A solution is \textit{simple} if
 $\rho[P]$ is of the form $a_1 x_1 + \cdots + a_n x_n \leq b$ for every
-$P$ in $dom(\rho)$.
+$P$ in $\mathrm{dom}(\rho)$.
 
 The problem of solving Horn clauses (represented by $G$) is to find a
 solution of $G$ (and a simple solution if possible).
@@ -85,7 +85,7 @@ for every Horn term vertex $v \in V_T$.
 \begin{align*}
 k_v =
 \begin{cases}
-arity(P) & \mbox{if } \varphi(v) = P(x_1,...,x_{arity(P)}) \\
+\mathrm{arity}(P) & \mbox{if } \varphi(v) = P(x_1,...,x_{\mathrm{arity}(P)}) \\
 0 & \mbox{if } \varphi(v) = \top \mbox { or } \varphi(v) = \bot
 \end{cases}
 \end{align*}
@@ -169,7 +169,7 @@ If $\models \sigma(C_{v_\bot})$, then $\rho$ defined by
 is a solution of $G$.
 \end{quote}
 
-\subsection{DAG problem}
+\subsection{Disjunction-free problems}
 
 If $C_{v_\bot}$ is unsatisfiable, no simple solution exists for
 $G$. We now try to give a solution by relaxing the constraint
@@ -204,7 +204,7 @@ $\hat \Delta(v,e)$ for $v \in V_C, e \in E$ as
 \[ \hat \Delta (v,e) = \textsc{Copy}_v (\Delta_{V'} (\xi (v)))
 \text{ such that } V' = \left\lbrace v' \middle| (v, v',e) \in E_S \right\rbrace \]
 extending $\Delta$ function to
-$\Delta_V (v) = (\mathbf{a}_{v,\emptyset} \mathbf{x}_v \leq b_{v,\emptyset}, C_v)$
+$\Delta_{V'} (v) = (\mathbf{a}_{v,\emptyset} \mathbf{x}_v \leq b_{v,\emptyset}, C_v)$
 as
 \begin{align*}
 C_v = & \bigcup_\circ C_u \cup \bigcup_\bullet C_u \cup
@@ -236,16 +236,20 @@ C_v = & \bigcup_\circ C_u \cup \bigcup_\bullet C_u \cup
 & \mbox{if } \varphi(v) = \mathbf{a}_0 \mathbf{x}_v \leq b_0
 \end{cases}
 \end{align*}
-under
-\[
-\circ = \substack{
-  u \mathop{\leadsto}^\theta v \\
-  \nexists u' \in V; \xi (u') = u \\
-  \Delta_V (u) = (\mathbf{a}_{u,U} \mathbf{x}_u \leq b_{u,U}, C_u)}
-\qquad \bullet = \substack{
-  u \mathop{\leadsto}^\theta v \\
-  \exists u' \in V; \xi (u') = u \\
-  \hat \Delta (u', \edge{u}{v}) = (\mathbf{a}_{u,U} \mathbf{x}_u \leq b_{u,U}, C_u)} \]
+under the iterator $\circ = (u,U,\theta,C_u) \in S_v^- $ and $\bullet = (u,U,\theta,C_u) \in S_v^+ $
+such that
+\begin{align*}
+& S_v^- = \left\lbrace (u, U, \theta, C_u) \middle|
+  u \mathop{\leadsto}^\theta v \wedge
+  \left( \nexists u' \in V'; \xi (u') = u \right) \wedge
+  \Delta_{V'} (u) = (\mathbf{a}_{u,U} \mathbf{x}_u \leq b_{u,U}, C_u) \right\rbrace
+\\
+& S_v^+ = \left\lbrace (u, U, \theta, C_u) \middle|
+  u \mathop{\leadsto}^\theta v \wedge
+  \left( \exists u' \in V'; \xi (u') = u \wedge
+  \hat \Delta (u', \edge{u}{v}) = (\mathbf{a}_{u,U} \mathbf{x}_u \leq b_{u,U}, C_u) \right) \right\rbrace
+\\
+\end{align*}
 
 This intuitively means that constraints are duplicated according to
 the shape of copy tree $T$.  Given the constraint for the root node in
@@ -263,12 +267,24 @@ a model to $C_{v_\bot}$ gives a solution $\rho$ to $G$, if one exists.
 If $C_{v_\bot}$ stays unsatisfiable, we let $T$ grow based on the
 unsatisfiable core.
 
-\subsection{Disjunctive problems}
+\subsection{Acyclic Horn problems}
 
 We eliminate the restriction that all disjunction vertices $V_\vee$ have
-exactly one predecessor. We define the universal set of selectors for
-disjunction vertices.
-\[ \mathcal{S} = \prod_{v \in V_\vee} \left\lbrace v \mapsto u \middle| \edgel{u}{\emptyset}{v} \right\rbrace \]
+exactly one predecessor.
+
+We define selectors for preceding disjunction vertices to $v$.
+\[ \mathcal{S}_v = \prod_{u \in \mathrm{succ}(v)} \left\lbrace u \mapsto t \middle| \edgel{t}{\theta}{u} \right\rbrace \]
+
+\begin{align*}
+K_l = \begin{cases}
+\left\lbrace l \right\rbrace & \mbox{if } l = \mathbf{a} \mathbf{x} \leq b \\
+\mathcal{X}_P \cup \left\lbrace \bot \right\rbrace
+& \mbox{if } l = P(\mathbf{x})
+\end{cases} \\
+\forall s \in \mathcal{S}_v;
+X = \prod_{t \in \mathrm{ran}(s)} K_{\varphi(t)}
+\exists c \in X;
+\end{align*}
 
 We define a \textbf{selector set collection} \cite{albarghouthi13} for
 every Horn term vertices, which is a set of sets of selectors.
