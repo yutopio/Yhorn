@@ -126,7 +126,7 @@ $\Delta(v) = \left( \mathbf{a}_v \mathbf{x}_v \leq b_v, C_v \right)$
 can be shown as follows.
 
 \begin{align*}
-\hat C_a = &
+\hat C_{a,v} = &
  \bigcup_{\edgel{u}{\theta}{a}} C_u \cup
  \bigcup_{0 < i \leq K}
  \left\lbrace
@@ -139,7 +139,7 @@ can be shown as follows.
  \bigcup_{k_v < i \leq K}
  \left\lbrace \mathbf{a}_{v,i} = 0 \right\rbrace
 \\
-C_v = & \bigcup_{\edge{a}{v}} \hat C_a \cup
+C_v = & \bigcup_{\edge{a}{v}} \hat C_{a,v} \cup
 \begin{cases}
 \emptyset
 & \mbox{if } \varphi(v) = P(\mathbf{x}_v) \\
@@ -174,8 +174,21 @@ If $C_{v_\bot}$ is unsatisfiable, no simple solution exists for
 $G$. We now try to give a solution by relaxing the constraint
 $C_{v_\bot}$.
 
-We consider below a Horn graph whose Horn term vertices has exactly
-one successor.
+We consider below a Horn graph whose Horn term vertices has at
+most one successor.
+
+\subsubsection{Quantifier elimination}
+
+A set of eliminating quantifiers are obtained as $quant(n)$.
+
+\begin{align*}
+in(n) & = \bigcup_{p\in pred(n)} out(p) \\
+out(n) & = gen(n) \cup in(n) \\
+dup(n) & = \left\lbrace t \middle| p,q \in pred(n); p \ne q \wedge
+ t \in out(p) \wedge t \in out(q) \right\rbrace \\
+quant(n) & = gen(n) \cup dup(n) \cup
+ (out(n) \cap \bigcup_{s \in succ(n)} quant(s))
+\end{align*}
 
 Let $\hat V_T$ a set of Horn term vertices $V_T$ with multiple
 successors.
@@ -191,7 +204,7 @@ rooted at $v_{v_\bot}$.
   form $(u,v,e)$, where $e \in E \cup {\bot}$.
 \item $\xi: V_C \rightarrow \hat V_T \cup \left\lbrace v_\bot
   \right\rbrace$ is a labelling function for nodes. The root node
-  $v_{v_\bot}$ has a label $v_\bot$.
+  $v_{v_\bot} \in V_C$ has a label $v_\bot$.
 \end{itemize}
 
 We provide $\textsc{Copy}_v$ procedure to rename all free variables
@@ -209,28 +222,23 @@ $\hat \Delta(v,e)$ for $v \in V_C, e \in E$ as
 extending $\Delta$ function to
 $\Delta_{V'} (v) = (\mathbf{a}_{v,\emptyset} \mathbf{x}_v \leq b_{v,\emptyset}, C_v)$
 as
+
 \begin{align*}
-C_v = & \bigcup_{(u,U,\theta,C_u) \in S_v^-} C_u \cup
-\bigcup_{(u,U,\theta,C_u) \in S_v^+} C_u \cup
+\hat C_a = &
+ \bigcup_{\edgel{u}{\theta}{a}} C_u \cup
+ \bigcup_{0 < i \leq K}
+ \left\lbrace
+  \mathbf{a}_{v,i} = \sum_{\edgel{u}{\theta}{a}} \mathbf{a}_{u, \theta^{-1} (i)}
+ \right\rbrace \\
+ & \hspace{2cm} \cup
+ \left\lbrace
+  b_v \geq \sum_{\edgel{u}{\theta}{a}} b_u
+ \right\rbrace \cup
+ \bigcup_{k_v < i \leq K}
+ \left\lbrace \mathbf{a}_{v,i} = 0 \right\rbrace
 \\
-& \cup \begin{cases}
-\emptyset
-& \mbox{if } \nexists u; u \leadsto v \\
-\left\lbrace
- \mathbf{a}_{v,\emptyset,i} =
-  \sum_{(u,U,\theta,C_u) \in S_v^-} \mathbf{a}_{u,U,\theta^{-1}(i)} +
-  \sum_{(u,U,\theta,C_u) \in S_v^+} \mathbf{a}_{u,U, \theta^{-1}(i)}
-\right\rbrace \cup \\
-\hspace{2cm} \left\lbrace
- b_{v,\emptyset} \geq
-  \sum_{(u,U,\theta,C_u) \in S_v^-} b_{u,U} +
-  \sum_{(u,U,\theta,C_u) \in S_v^+} b_{u,U}
-\right\rbrace \cup \\
-\hspace{2cm} \bigcup_{k_v < i \leq K} \left\lbrace \mathbf{a}_{v,\emptyset,i} = 0 \right\rbrace
-& \mbox{otherwise}
-\end{cases}
-\\
-& \cup \begin{cases}
+C_v = & \bigcup_{\edge{a}{v}} \hat C_a \cup
+\begin{cases}
 \emptyset
 & \mbox{if } \varphi(v) = P(\mathbf{x}_v) \\
 \left\lbrace
@@ -239,6 +247,26 @@ C_v = & \bigcup_{(u,U,\theta,C_u) \in S_v^-} C_u \cup
 \right\rbrace
 & \mbox{if } \varphi(v) = \mathbf{a}_0 \mathbf{x}_v \leq b_0
 \end{cases}
+\end{align*}
+
+---
+
+\begin{align*}
+C_v = & \bigcup_{(u,U,\theta,C_u) \in S_v^-} C_u \cup
+\bigcup_{(u,U,\theta,C_u) \in S_v^+} C_u
+\\
+& \cup
+\left\lbrace
+ \mathbf{a}_{v,\emptyset,i} =
+  \sum_{(u,U,\theta,C_u) \in S_v^-} \mathbf{a}_{u,U,\theta^{-1}(i)} +
+  \sum_{(u,U,\theta,C_u) \in S_v^+} \mathbf{a}_{u,U, \theta^{-1}(i)}
+\right\rbrace \\
+& \cup \left\lbrace
+ b_{v,\emptyset} \geq
+  \sum_{(u,U,\theta,C_u) \in S_v^-} b_{u,U} +
+  \sum_{(u,U,\theta,C_u) \in S_v^+} b_{u,U}
+\right\rbrace \\
+& \cup \bigcup_{k_v < i \leq K} \left\lbrace \mathbf{a}_{v,\emptyset,i} = 0 \right\rbrace
 \end{align*}
 such that
 \begin{align*}
@@ -268,7 +296,26 @@ a model to $C_{v_\bot}$ gives a solution $\rho$ to $G$, if one exists.
 \end{align*}
 
 If $C_{v_\bot}$ stays unsatisfiable, we let $T$ grow based on the
-unsatisfiable core.
+unsatisfiable core for $C_{v_\bot}$.
+
+\subsubsection{Refinement from Unsatisfiable Core}
+
+We first start the process from the initial Copy tree:
+\begin{align*}
+V_C = & \left\lbrace v_{v_\bot} \right\rbrace \\
+E_C = & \emptyset
+\end{align*}
+
+An unsatisfiable core $\mathcal{U}$ is a subset of $C_{v_\bot}$.
+If a vertex $v \in V$ with the copy origin $U$ satisfies:
+\begin{align*}
+& \exists t, u \in V; v \leadsto t \wedge v \leadsto u \wedge \\
+& \left( \exists i, j, k;
+\left\lbrace \left( \mathbf{a}_{s,U,j} = \ldots + \mathbf{a}_{v,U,i} + \ldots \right),
+\left( \mathbf{a}_{t,U,k} = \ldots + \mathbf{a}_{v,U,i} + \ldots \right)
+\right\rbrace \subseteq \mathcal{U} \right)
+\end{align*}
+we add $v$ to the copy tree $T$.
 
 \subsection{Acyclic Horn problems}
 
