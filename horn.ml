@@ -2,68 +2,84 @@ open Util
 open Types
 open MapEx
 
-let buildGraph clauses =
-  (* Create predicate symbol vertices in advance. *)
-  let predVertices = List.fold_left (fun predVertices (_, rh) ->
-    match rh with
-      | PredVar (p, l) ->
-        if M.mem p predVertices then
-          (* A predicate symbol should not be implied in different Horn clauses.
-             e.g. x=0->A(x). y=0->A(y). is illegal. *)
-          assert false
-        else if List.length l <> List.length (distinct l) then
-          (* The parameter definition has the same name variable in the list.
-             e.g. x=0->A(x,x). is illegal. *)
-          assert false
-        else
-          (* Create a new predicate vertex and remember it. *)
-          M.add p (G.V.create rh) predVertices
-      | _ -> predVertices) M.empty clauses in
-  let predVertices = ref predVertices in
+let maybeApply f = function
+  | None -> None
+  | Some x -> Some (f x)
 
-  List.fold_left (fun g (lh, rh) ->
-    let src = match rh with
-      | PredVar (p, _) -> M.find p !predVertices
-      | LinearExpr _ -> G.V.create rh in
+let createRename = listFold2 (fun l a b -> (a, b) :: l) []
+
+let preprocLefthand = List.fold_left (fun (pvars, la) ->
+  function
+  | LinearExpr x -> pvars, Some (
+    match la with
+    | None -> x
+    | Some y -> x &&& y)
+  | PredVar pvar -> (pvar :: pvars), la) ([], None)
+
+let buildGraph clauses =
+  let clauses = List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses in
+
+  (* Create predicate symbol vertices in advance. *)
+  let addVp vp (p, l) =
+    let ll = List.length l in
+    if ll <> List.length (distinct l) then
+      (* The parameter definition has the same name variable in the list.
+         e.g. x=0->A(x,x). is illegal. *)
+      failwith "Binder contains multiple appearance of the same variable."
+    else if M.mem p vp then (
+      failwith "NYI: Disjunctive Horn graph";
+
+      (* A predicate symbol which is implied in multiple Horn clauses should
+         have the same arity across them. *)
+      let PredVar (p', l') = M.find p vp |> G.V.label in assert (p = p');
+      if ll <> List.length l' then
+        failwith ("Inconsistent arity for predicate variable " ^ Id.print p)
+      else vp
+    ) else
+      (* Create a new predicate vertex and remember it. *)
+      let binders = repeat (fun _ l -> (Id.create ()) :: l) ll [] in
+      M.add p (G.V.create (PredVar (p, binders))) vp in
+
+  (* Create vertices. *)
+  let predVertices = List.fold_left (fun vp ((lh, _), rh) ->
+    let vp =
+      match rh with
+      | PredVar pvar -> addVp vp pvar
+      | _ -> vp in
+    List.fold_left addVp vp lh) M.empty clauses in
+
+  (* Add implication relations on the Horn graph. *)
+  List.fold_left (fun g ((pvars, la) as lh, rh) ->
+    let (pvars, la), src =
+      match rh with
+      | PredVar (p, binder) ->
+        let src = M.find p predVertices in
+        let PredVar (p', binder') = G.V.label src in assert (p = p');
+        let rename =
+          createRename binder binder' |>
+          List.fold_left (fun m (a, b) -> M.add a b m) M.empty |> ref in
+        ((List.map (fun (p, args) -> p, renameList rename args) pvars),
+        (maybeApply (mapFormula (renameExpr rename)) la)), src
+      | LinearExpr _ -> lh, G.V.create rh in
     let g = G.add_vertex g src in
 
-    let (pvars, la) = lh in
-    let g, dsts = List.fold_left (fun (g, dsts) (p, args) ->
-      (* Get (or create if needed) the predicate variable vertex and its binder.
-         We will relate this vertex from newly-created predicate variable
-         vertices that corrensponds to the application of such predicates. The
-         edge will carry binding information. *)
-      let g, dst, binders =
-        if M.mem p !predVertices then
-          (* If exists, extract binders from the vertex label. *)
-          let dst = M.find p !predVertices in
-          let PredVar (_, binders) = G.V.label dst in
-          g, dst, binders
-        else (
-          (* If not yet exists, create a new vertex with a fresh binder. [bot]
-             implies the predicate symbol. This means that this predicate
-             variable has no implication in input Horn clauses. *)
-          let binders = repeat (fun _ l -> (Id.create ()) :: l)
-            (List.length args) [] in
-          let dst = G.V.create (PredVar (p, binders)) in
-          let bot = G.V.create (
-            LinearExpr (Expr (EQ, M.add Id.const 1 M.empty))) in
-
-          let g = G.add_edge g dst bot in
-          predVertices := M.add p dst !predVertices;
-          g, dst, args) in
-
-      (* Build a name mapping between referred predicate variable (appears on
-         the right-hand of Horn clause) and referring one (on the left-hand). *)
-      let renames = listFold2 (fun l a b -> (a, b) :: l) [] binders args in
+    let dsts = List.fold_left (fun dsts (p, args) ->
+      (* Get the predicate variable vertex and its binder. We will relate this
+         vertex from newly-created predicate variable vertices that corrensponds
+         to the application of such predicates. The edge will carry binding
+         information. *)
+      let dst = M.find p predVertices in
+      let PredVar (p', binder) = G.V.label dst in assert (p = p');
+      let rename = createRename binder args in
 
       (* Add a edge between origin *)
-      g, (dst, Some renames) :: dsts
-    ) (g, []) pvars in
+      (dst, Some rename) :: dsts
+    ) [] pvars in
 
     (* If a linear expression exists on the left-hand, create a corresponding
        vertex. *)
-    let dsts = match la with
+    let dsts =
+      match la with
       | None -> dsts
       | Some x -> (G.V.create (LinearExpr x), None) :: dsts in
 
@@ -597,16 +613,8 @@ let solve clauses =
   print_endline (String.concat "\n" (List.map printHorn clauses));
   print_newline ();
 
-  let preprocLefthand = List.fold_left (fun (pvars, la) -> function
-    | LinearExpr x -> pvars, Some (match la with
-        | None -> x
-        | Some y -> x &&& y)
-    | PredVar pvar -> (pvar :: pvars), la) ([], None) in
-
   (* Generate the problem graph. *)
-  let g =
-    List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses |>
-    buildGraph in
+  let g = buildGraph clauses in
 
   (* We don't handle cyclic graphs. *)
   assert (not (Traverser.has_cycle g));
