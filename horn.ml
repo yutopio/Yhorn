@@ -27,8 +27,6 @@ let buildGraph clauses =
          e.g. x=0->A(x,x). is illegal. *)
       failwith "Binder contains multiple appearance of the same variable."
     else if M.mem p vp then (
-      failwith "NYI: Disjunctive Horn graph";
-
       (* A predicate symbol which is implied in multiple Horn clauses should
          have the same arity across them. *)
       let PredVar (p', l') = M.find p vp |> G.V.label in assert (p = p');
@@ -183,34 +181,43 @@ let solveGraph (g, root) =
   let cmpMap, link = step (SV.add root SV.empty) SV.empty p [] in
 
   (* Create a dependency graph between subtrees. *)
-  let linkG = List.fold_left (
-    fun g (x, y) -> GI.add_edge g x y) GI.empty link in
+  let gi = GI.add_vertex GI.empty (lookup root) in
+  let linkG = List.fold_left (fun g (x, y) -> GI.add_edge g x y) gi link in
 
   (* Fold over edges to create new graphs for each component. *)
-  let components = G.fold_edges_e (fun e m ->
-    let u = G.E.src e in
-    let uid = MV.find u cmpMap in
+  let components =
+    let rid = MV.find root cmpMap in
+    let gg = G.add_vertex G.empty root in
+    MI.add rid gg MI.empty |>
+    G.fold_edges_e (fun e m ->
+      let u = G.E.src e in
+      let uid = MV.find u cmpMap in
+      let gg =
+        try MI.find uid m
+        with Not_found -> G.empty in
+      (* Adding an edge to a subgraph will also add the src and dst vertices of
+         the edge. *)
+      let m = MI.add uid (G.add_edge_e gg e) m in
 
-    (* Adding an edge to a subgraph will also add the src and dst vertices of
-       the edge. *)
-    let gg =
-      try MI.find uid m
-      with Not_found -> G.empty in
-    MI.add uid (G.add_edge_e gg e) m) g MI.empty in
+      let v = G.E.dst e in
+      let vid = MV.find v cmpMap in
+      let gg =
+        try MI.find vid m
+        with Not_found -> G.empty in
+      MI.add vid (G.add_vertex gg v) m) g in
 
   (* Calculate roots. *)
   (* NOTE: To be precise, key values to add to the mapping should be evaluated
            through Puf.find. In this specific case, because of Puf's
            implementation, all values stay the same on Puf.union order
            (see line 142). *)
-  let roots = SV.fold (fun v -> MI.add (lookup v) v) cutpoints MI.empty in
+  let roots =
+    MI.add (lookup root) root MI.empty |>
+    SV.fold (fun v -> MI.add (lookup v) v) cutpoints in
 
   (* Make a list of subtrees. *)
   let linkOrder = TopologicalGI.fold (fun v l -> v :: l) linkG [] |> List.rev in
   let components = linkOrder |>
-    (* NOTE: Because we now have the unique root by addRoot procedure, the
-             following line is no longer required.
-    MI.fold (fun k _ l -> if List.mem k l then l else k :: l) components |> *)
     List.map (fun k -> (MI.find k roots), (MI.find k components)) in
 
   (* For simplification purpose, travese the component link graph and compute
