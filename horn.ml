@@ -233,11 +233,14 @@ let solveGraph (g, root) =
     (GI.fold_succ (fun y -> MI.addDefault [] (@) y use') linkG x use)
   ) (MI.empty, MI.empty) linkOrder in
   let quant = List.fold_left (fun quant x ->
-    let dup = MI.find x use |>
-      List.fold_left (fun m x -> M.addDefault 0 (+) x 1 m) M.empty in
+    let use = MI.findDefault [] x use in
+    let dup = List.fold_left (fun m x ->
+      M.addDefault 0 (+) x 1 m) M.empty use in
     let l1 = M.fold (fun k v l -> if v > 1 then k :: l else l) dup [] in
     let l2 = MI.find x fvs in
-    let l3 = GI.fold_succ (fun y -> (@) (MI.find y quant)) linkG x [] in
+    let l3 =
+      GI.fold_succ (fun y -> (@) (MI.find y quant)) linkG x [] |>
+      List.filter (fun x -> List.mem x use) in
     MI.add x (sort_distinct (l1 @ l2 @ l3)) quant
   ) MI.empty (List.rev linkOrder) in
 
