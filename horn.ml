@@ -433,16 +433,29 @@ let solveGraph (g, root) =
         with Not_found -> f (GV.V.label vv))
       | `B v -> f v in
 
-    (* TODO: Fix the assignment. *)
-    let constr = assert false in
+    let constr =
+      (* TODO: Parameterized operator. *)
+      M.merge (fun _ p v ->
+        match p, v with
+        | None, None -> assert false
+        | None, Some 0 -> None
+        | None, Some v -> failwith "No solution"
+        | Some p, None
+        | Some p, Some 0 -> Some (Expr (EQ, M.add p 1 M.empty))
+        | Some p, Some v ->
+          Some (Expr (EQ, M.add p 1 (M.add Id.const (-v) M.empty)))
+      ) pcoef coef |>
+      M.values |>
+      reduce (&&&) |>
+      (&&&) constr
+    in
 
     (* Once the root constraint become satisfiable, all subproblems should have
        a solution. *)
     let Some sol = Z3interface.integer_programming constr in
-
     MV.fold (fun k v predSol ->
       match G.V.label k with
-      | LinearExpr _ -> (* predSol *) assert false
+      | LinearExpr _ -> predSol
       | PredVar (p, param) ->
         List.fold_left (fun predSol (e, (pop, pexpr, _)) ->
           let pexpr = M.map (fun x -> M.add x 1 M.empty) pexpr in
