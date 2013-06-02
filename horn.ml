@@ -364,7 +364,7 @@ let solveGraph (g, root) =
 
       MV.add v [e, (pop, pcoef, constrs)] ret in
 
-  let simplifyConstr = assert false in
+  let simplifyConstr _ = assert false in
 
   (* Create templates and constraints for all predicate variables over the
      graph. *)
@@ -373,7 +373,7 @@ let solveGraph (g, root) =
       let templ' = computeAncestors (MV.map fst templ) root None g in
 
       let [_, (pop, pcoef, constr)] = MV.find root templ' in
-      let constr = simplifyConstr constr in
+      (* let constr = simplifyConstr constr in *)
 
       MV.add root ((ME.empty, (pop, pcoef, constr), false), templ') templ
     ) MV.empty components in
@@ -454,26 +454,31 @@ let solveGraph (g, root) =
     (* Once the root constraint become satisfiable, all subproblems should have
        a solution. *)
     let Some sol = Z3interface.integer_programming constr in
-    MV.fold (fun k v predSol ->
+    MV.fold (fun k v sols ->
       match G.V.label k with
-      | LinearExpr _ -> predSol
+      | LinearExpr _ -> sols
       | PredVar (p, param) ->
-        List.fold_left (fun predSol (e, (pop, pexpr, _)) ->
+        List.fold_left (fun (params, predSol) (e, (pop, pexpr, _)) ->
+          let params =
+            try assert (param = M.find p params); params
+            with Not_found -> M.add p param params in
           let pexpr = M.map (fun x -> M.add x 1 M.empty) pexpr in
           let expr = assignParameters sol (pop, pexpr) in
           let predSol = M.addDefault [] (fun a b -> b :: a) p expr predSol in
 
           if List.mem_assoc k components then
             (* This vertex is a cutpoint. *)
-            let predSol' =
+            let params', predSol' =
               try
                 let vv, _ = MV.find k subprobl in
                 step (`A (e, vv)) expr
               with Not_found -> step (`B k) expr in
-            M.merge (fun _ -> maybeAdd (@)) predSol predSol'
-          else predSol
-        ) predSol v
-    ) templ M.empty in
+            (M.merge (fun _ -> maybeAdd (
+              fun x y -> assert (x = y); x)) params params'),
+            (M.merge (fun _ -> maybeAdd (@)) predSol predSol')
+          else params, predSol
+        ) sols v
+    ) templ (M.empty, M.empty) in
   step (`A (None, rootV)) (LTE, M.empty)
 
 let simplifyPCNF clauses =
@@ -644,13 +649,9 @@ let solve clauses =
   assert (not (Traverser.has_cycle g));
 
   (* Generate constraints for solving the graph. *)
-  let sol =
-    addRoot g |>
-    solveGraph |>
-    M.map (fun (exprs) ->
-      (* TODO: Predicate parameters. *)
-      (assert false),
-      (And (List.map (fun x -> Expr x) exprs))) in
+  let params, exprs = addRoot g |> solveGraph in
+  let sol = M.merge (fun _ (Some param) (Some exprs) ->
+      Some (param, (And (List.map (fun x -> Expr x) exprs)))) params exprs in
 
   (* Rename back to original predicate variable names. *)
   M.fold (fun k -> M.add (M.findDefault k k pm)) sol M.empty
