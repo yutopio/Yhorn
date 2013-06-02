@@ -446,8 +446,9 @@ let solveGraph (g, root) =
           Some (Expr (EQ, M.add p 1 (M.add Id.const (-v) M.empty)))
       ) pcoef coef |>
       M.values |>
-      reduce (&&&) |>
-      (&&&) constr
+      (function
+      | [] -> constr
+      | c -> reduce (&&&) c |> (&&&) constr)
     in
 
     (* Once the root constraint become satisfiable, all subproblems should have
