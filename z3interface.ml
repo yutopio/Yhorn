@@ -6,7 +6,7 @@ open Z3
 let _ = preload ()
 
 let timeout = 5000 (* milliseconds *)
-let ctx = mk_context [ ]
+let ctx = mk_context [ "MODEL", "true" ]
 let _int = mk_int_sort ctx
 let _bool = mk_bool_sort ctx
 
@@ -45,13 +45,23 @@ let rec convert = function
   | And x -> mk_and ctx (Array.of_list (List.map convert x))
   | Or x -> mk_or ctx (Array.of_list (List.map convert x))
 
-let check_ast ast =
-  let s = mk_simple_solver ctx in
+let check_ast asts =
+  let s = mk_solver ctx in
   let params = mk_params ctx in
   params_set_uint ctx params (mk_string_symbol ctx ":timeout") timeout;
-  params_set_bool ctx params (mk_string_symbol ctx "unsat_core") false;
+  params_set_bool ctx params (mk_string_symbol ctx "unsat_core") true;
   solver_set_params ctx s params;
-  s, solver_check_assumptions ctx s (Array.of_list ast)
+
+  let ast_symbols =
+    List.fold_left (fun l x ->
+      let name = "ast_" ^ string_of_int (List.length l) in
+      let symbol = Z3.mk_string_symbol ctx name in
+      let ast = Z3.mk_const ctx symbol _bool in
+      Z3.solver_assert ctx s (Z3.mk_iff ctx ast x);
+      ast :: l
+    ) [] asts in
+
+  s, solver_check_assumptions ctx s (Array.of_list ast_symbols)
 let check = function
   | And x -> check_ast (List.map convert x)
   | x -> check_ast [ convert x ]
@@ -90,14 +100,14 @@ let integer_programming constrs =
             | None -> m) mdn M.empty in
         Some m
       | s, L_FALSE ->
-	let unsat_core = solver_get_unsat_core ctx s in
-	let size = ast_vector_size ctx unsat_core in
-	let str = repeat (fun i k ->
-	  let ast = ast_vector_get ctx unsat_core i in
-	  let str = ast_to_string ctx ast in
-	  k ^ str ^ "\n") size "" in
-	failwith (string_of_int size);
-	None (* unsatisfiable *)
+        let unsat_core = solver_get_unsat_core ctx s in
+        let size = ast_vector_size ctx unsat_core in
+        let str = repeat (fun i k ->
+          let ast = ast_vector_get ctx unsat_core i in
+          let str = ast_to_string ctx ast in
+          k ^ str ^ "\n") size "" in
+        failwith (str);
+        None (* unsatisfiable *)
       | s, L_UNDEF -> (* timeout? *)
         print_endline ("Z3 returned L_UNDEF: " ^
                           (solver_get_reason_unknown ctx s));
