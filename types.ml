@@ -286,20 +286,13 @@ module MyVertex' = struct
 end
 
 module MyEdge = struct
-  type t = (Id.t * Id.t) list option
+  type t = Id.t M.t option
 
   let compare x y = match x, y with
     | None, None -> 0
     | _, None -> -1
     | None, _ -> 1
-    | Some x, Some y ->
-      match (List.length x) - (List.length y) with
-        | 0 ->
-          let [x;y] = List.map (List.sort comparePair) [x;y] in
-          listFold2 (fun a x y -> match a with
-            | 0 -> comparePair x y
-            | _ -> a) 0 x y
-        | ret -> ret
+    | Some x, Some y -> M.compare compare x y
 
   let default = None
 end
@@ -335,8 +328,10 @@ module Display = struct
   let edge_attributes e =
     match E.label e with
       | None -> [`Style `Dashed]
-      | Some x ->  [`Label (String.concat ", "
-                           (List.map (fun (x, y) -> Id.print x ^ "=" ^ Id.print y) x))]
+      | Some x ->
+        let r = M.fold (fun x y l ->
+          (Id.print x ^ "=" ^ Id.print y) :: l) x [] in
+        [`Label (String.concat ", " r)]
 end
 
 module Display' = struct
@@ -349,8 +344,10 @@ module Display' = struct
   let edge_attributes e =
     match E.label e with
       | None -> []
-      | Some x ->  [`Label (String.concat ", "
-                           (List.map (fun (x, y) -> Id.print x ^ "=" ^ Id.print y) x))]
+      | Some x ->
+        let r = M.fold (fun x y l ->
+          (Id.print x ^ "=" ^ Id.print y) :: l) x [] in
+        [`Label (String.concat ", " r)]
 end
 
 module Dot = Graph.Graphviz.Dot(Display)

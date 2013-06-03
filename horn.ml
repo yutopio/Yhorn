@@ -6,7 +6,7 @@ let maybeApply f = function
   | None -> None
   | Some x -> Some (f x)
 
-let createRename = listFold2 (fun l a b -> (a, b) :: l) []
+let createRename = listFold2 (fun m k v -> M.add k v m) M.empty
 
 let preprocLefthand = List.fold_left (fun (pvars, la) ->
   function
@@ -53,9 +53,7 @@ let buildGraph clauses =
       | PredVar (p, binder) ->
         let src = M.find p predVertices in
         let PredVar (p', binder') = G.V.label src in assert (p = p');
-        let rename =
-          createRename binder binder' |>
-          List.fold_left (fun m (a, b) -> M.add a b m) M.empty |> ref in
+        let rename = ref (createRename binder binder') in
         ((List.map (fun (p, args) -> p, renameList rename args) pvars),
         (maybeApply (mapFormula (renameExpr rename)) la)), src
       | LinearExpr _ -> lh, G.V.create rh in
@@ -312,8 +310,7 @@ let solveGraph (g, root) =
             (* TODO: Support parameterized operators. *)
             let [_, (pop, pcoef, constr)] = MV.find u ret' in
 
-            let rename = ref (
-              List.fold_left (fun m (x, y) -> M.add x y m) M.empty rename) in
+            let rename = ref rename in
             let f k v = addPcoef (renameVar rename k) (v, 1) in
 
             (* Merging returning template. *)
@@ -552,8 +549,7 @@ let tryUnify (p1, p2) (preds, constr) =
   assert (List.length param1 = List.length param2);
   let preds, nf2 =
     if param1 = param2 then preds, nf2 else
-      let m = ref (listFold2 (fun m a b -> M.add a b m)
-        M.empty param1 param2) in
+      let m = ref (createRename param1 param2) in
       let nf2 = List.map (List.map (renamePexpr m)) nf2 in
       M.add p2 (param1, nf2) preds, nf2 in
 
