@@ -113,7 +113,7 @@ let addRoot g =
     g, (SV.choose roots)
   else
     let root = G.V.create (LinearExpr (Expr (EQ, M.empty))) in
-    let g = SV.fold (fun v g -> G.add_edge g v root) roots g in
+    let g = SV.fold (fun v g -> G.add_edge g root v) roots g in
     g, root
 
 let assignParameters assign (op, expr) = normalizeExpr (
@@ -126,7 +126,12 @@ let solveGraph (g, root) =
   let cutpoints =
     G.fold_vertex (fun v s ->
       if G.in_degree g v > 1 then SV.add v s else s) g SV.empty in
-  (* DEBUG: *) Types.Display.highlight_vertices := cutpoints;
+
+  (* DEBUG: *)
+  if !Flags.enable_gv then (
+    Types.Display.highlight_vertices := cutpoints;
+    display_with_gv (Operator.mirror g)
+  );
 
   (* Create a template for all predicate variable vertices. *)
   let templ = G.fold_vertex (fun v m ->
