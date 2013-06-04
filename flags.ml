@@ -19,3 +19,7 @@ let print_z3_ast = ref false
 
 (* If true, show detail on every query on integer programming. *)
 let debug_z3_ip = ref false
+
+(* If true, integer programming is performed for constraint solving. Otherwise
+   performed on real space. *)
+let integer_programming = ref true

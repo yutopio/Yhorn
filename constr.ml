@@ -62,6 +62,6 @@ let merge (i1, p1, c1) (i2, p2, c2) =
 
 let solve (_, _, constrs) =
   MI.fold (fun _ constr m ->
-    match Z3interface.integer_programming constr with
+    match Z3interface.solve constr with
       | Some sol -> M.simpleMerge sol m
       | None -> raise Not_found) constrs M.empty

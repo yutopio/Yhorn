@@ -2,7 +2,7 @@ open Util
 open Types
 
 (* Test wether the constraint is satisfiable or not. *)
-let z3test x = not (Z3interface.integer_programming x = None)
+let z3test x = not (Z3interface.solve x = None)
 
 (** Unification algorithm for interpolants. *)
 let equal pexprs constrSet =

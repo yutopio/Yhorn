@@ -8,6 +8,7 @@ let _ = preload ()
 let timeout = 5000 (* milliseconds *)
 let ctx = mk_context [ "MODEL", "true" ]
 let _int = mk_int_sort ctx
+let _real = mk_real_sort ctx
 let _bool = mk_bool_sort ctx
 
 let show_error (Error (c, e)) =
@@ -21,7 +22,9 @@ let rec convert = function
       else
         let l, r = (ref l), (ref r) in
         let t, vp = if v > 0 then l, v else r, (-v) in
-        let v = mk_int ctx vp _int in
+        let v =
+          if !Flags.integer_programming then mk_int ctx vp _int
+          else mk_real ctx vp 1 in
         let _ =
           if k = Id.const then t := v :: !t
           else
@@ -32,7 +35,9 @@ let rec convert = function
             else t := (mk_mul ctx [| k; v |]) :: !t in
         (!l, !r)) coef ([], []) in
     let [ l; r ] = List.map (function
-      | [] -> mk_int ctx 0 _int
+      | [] ->
+        if !Flags.integer_programming then mk_int ctx 0 _int
+        else mk_real ctx 0 1
       | [x] -> x
       | l -> mk_add ctx (Array.of_list l)) [ l; r ] in
     match op with
@@ -76,13 +81,13 @@ let check_formula formula =
       | _, L_UNDEF -> None
   with Error (_, _) as e -> (show_error e; None)
 
-let integer_programming constrs =
+let solve constrs =
   try
     match check constrs with
     | s, L_TRUE ->
       let md = solver_get_model ctx s in
       let mdn = model_get_num_consts ctx md in
-      let m = repeat (fun i m ->
+      let m, denomi = repeat (fun i (m, denomi) ->
         let fd = model_get_const_decl ctx md i in
         let symbol = get_decl_name ctx fd in
         let id = match get_symbol_kind ctx symbol with
@@ -92,10 +97,18 @@ let integer_programming constrs =
             Id.from_string (get_symbol_string ctx symbol) in
         match model_get_const_interp ctx md fd with
         | Some ast ->
-          let ok, value = get_numeral_int ctx ast in
-          M.add id value m
-        | None -> m) mdn M.empty in
-      Some m
+          let get_num f ast =
+            let ok, ret = get_numeral_int ctx (f ctx ast) in
+            assert ok; ret in
+          let x, y =
+            if !Flags.integer_programming then
+              get_num (fun _ x -> x) ast, 1
+            else
+              get_num get_numerator ast,
+              get_num get_denominator ast in
+          M.add id (x, y) m, lcm denomi y
+        | None -> m, denomi) mdn (M.empty, 1) in
+      Some (M.map (fun (x, y) -> x * denomi / y) m)
     | s, L_FALSE ->
       let unsat_core = solver_get_unsat_core ctx s in
       let size = ast_vector_size ctx unsat_core in
@@ -111,11 +124,11 @@ let integer_programming constrs =
       None
   with Error (_, _) as e -> (show_error e; None)
 
-let integer_programming constr =
+let solve constr =
   if !Flags.debug_z3_ip then (
     print_endline ("Z3 problem: " ^ (printFormula printExpr constr));
     let _start = Sys.time () in
-    let ret = integer_programming constr in
+    let ret = solve constr in
     let _end = Sys.time () in
     let elapsed = string_of_float (_end -. _start) in
     print_endline ("Z3 elapsed time: " ^ elapsed ^ " sec.");
@@ -128,7 +141,7 @@ let integer_programming constr =
       print_endline ("Z3 solution: Unsatisfiable"));
     print_newline ();
     ret)
-  else integer_programming constr
+  else solve constr
 
 let check_interpolant (a, b) i =
   let ast = mk_or ctx [|

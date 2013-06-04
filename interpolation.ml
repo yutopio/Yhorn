@@ -86,7 +86,7 @@ let interpolate (a, b) =
         let constrs = ref [] in
         let pexprCnf = List.map (fun b -> List.map (fun a ->
           (* Satisfiability check. *)
-          (match Z3interface.integer_programming (
+          (match Z3interface.solve (
             And (List.map (fun x -> Expr x) (a @ b))) with
             | Some x -> raise (Satisfiable (M.bindings x))
             | _ -> ());

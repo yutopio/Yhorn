@@ -450,7 +450,7 @@ let solveGraph (g, root) =
 
     (* Once the root constraint become satisfiable, all subproblems should have
        a solution. *)
-    let Some sol = Z3interface.integer_programming constr in
+    let Some sol = Z3interface.solve constr in
     MV.fold (fun k v sols ->
       match G.V.label k with
       | LinearExpr _ -> sols
