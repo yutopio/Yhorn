@@ -10,6 +10,7 @@ let ctx = mk_context [ "MODEL", "true" ]
 let _int = mk_int_sort ctx
 let _real = mk_real_sort ctx
 let _bool = mk_bool_sort ctx
+let pred_prefix = "ast_"
 
 let show_error (Error (c, e)) =
   print_string "Z3 Error: ";
@@ -61,7 +62,7 @@ let check_ast asts =
     List.fold_left (fun l x ->
       if !Flags.print_z3_ast then
         print_endline ("Z3 AST: " ^ ast_to_string ctx x);
-      let name = "ast_" ^ string_of_int (List.length l) in
+      let name = pred_prefix ^ string_of_int (List.length l) in
       let symbol = Z3.mk_string_symbol ctx name in
       let ast = Z3.mk_const ctx symbol _bool in
       Z3.solver_assert ctx s (Z3.mk_iff ctx ast x);
@@ -90,13 +91,18 @@ let solve constrs =
       let m, denomi = repeat (fun i (m, denomi) ->
         let fd = model_get_const_decl ctx md i in
         let symbol = get_decl_name ctx fd in
-        let id = match get_symbol_kind ctx symbol with
+        let id, ignore =
+          match get_symbol_kind ctx symbol with
           | INT_SYMBOL ->
-            Id.from_int (get_symbol_int ctx symbol)
+            Id.from_int (get_symbol_int ctx symbol), false
           | STRING_SYMBOL ->
-            Id.from_string (get_symbol_string ctx symbol) in
-        match model_get_const_interp ctx md fd with
-        | Some ast ->
+            let symbol_name = get_symbol_string ctx symbol in
+            let ignore = String.sub symbol_name 0 4 = pred_prefix in
+            Id.from_string symbol_name, ignore in
+        match ignore, model_get_const_interp ctx md fd with
+        | true, _
+        | _, None -> m, denomi
+        | _, Some ast ->
           let get_num f ast =
             let ok, ret = get_numeral_int ctx (f ctx ast) in
             assert ok; ret in
@@ -107,7 +113,7 @@ let solve constrs =
               get_num get_numerator ast,
               get_num get_denominator ast in
           M.add id (x, y) m, lcm denomi y
-        | None -> m, denomi) mdn (M.empty, 1) in
+      ) mdn (M.empty, 1) in
       Some (M.map (fun (x, y) -> x * denomi / y) m)
     | s, L_FALSE ->
       let unsat_core = solver_get_unsat_core ctx s in
@@ -125,7 +131,7 @@ let solve constrs =
   with Error (_, _) as e -> (show_error e; None)
 
 let solve constr =
-  if !Flags.debug_z3_ip then (
+  if !Flags.debug_z3_lp then (
     print_endline ("Z3 problem: " ^ (printFormula printExpr constr));
     let _start = Sys.time () in
     let ret = solve constr in
