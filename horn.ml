@@ -341,9 +341,7 @@ let solveGraph (g, root) =
           let pcoef = M.find p templ in
 
           (* Add the atomic current predicate template for Farkas' target. *)
-          let m =
-            M.fold (fun k v -> addPcoef k (v, -1)) pcoef m |>
-            addPcoef Id.const (Id.const, 1) in
+          let m = M.fold (fun k v -> addPcoef k (v, -1)) pcoef m in
 
           (m, pis),
           (* TODO: Currently all template are considered to be LTE. *)
@@ -357,7 +355,7 @@ let solveGraph (g, root) =
         (* Additionally, add constraints to make totals on every
            coefficients zero. *)
         M.fold (fun k v c ->
-          Expr ((if k = Id.const then GT else EQ), v) :: c) m |>
+          Expr ((if k = Id.const then GTE else EQ), v) :: c) m |>
 
         fun x -> match constrs with
         | None -> And x
@@ -420,19 +418,21 @@ let solveGraph (g, root) =
   let rec step v (op, coef) =
     let f v =
       let (_, x, _), templ = MV.find v rootTempls in
-      (x, templ), MV.empty in
-    let ((pop, pcoef, constr), templ), subprobl =
+      v, (x, templ), MV.empty in
+    let v, ((pop, pcoef, constr), templ), subprobl =
       match v with
       | `A (e, vv) ->
-        let c = MVV.find vv constrTree in (
+        let c = MVV.find vv constrTree in
+        let v = GV.V.label vv in (
         try
+          v,
           ME.find e c,
           GV.fold_succ_e (fun e' m ->
             if GV.E.label e' = e then
               let u = GV.E.dst e' in
               MV.add (GV.V.label u) (u, MVV.find u constrTree) m
             else m) st vv MV.empty
-        with Not_found -> f (GV.V.label vv))
+        with Not_found -> f v)
       | `B v -> f v in
 
     let constr =
@@ -456,7 +456,7 @@ let solveGraph (g, root) =
     (* Once the root constraint become satisfiable, all subproblems should have
        a solution. *)
     let Some sol = Z3interface.solve constr in
-    MV.fold (fun k v sols ->
+    MV.fold (fun k pexprs sols ->
       match G.V.label k with
       | LinearExpr _ -> sols
       | PredVar (p, param) ->
@@ -468,7 +468,7 @@ let solveGraph (g, root) =
           let expr = assignParameters sol (pop, pexpr) in
           let predSol = M.addDefault [] (fun a b -> b :: a) p expr predSol in
 
-          if List.mem_assoc k components then
+          if k <> v && List.mem_assoc k components then
             (* This vertex is a cutpoint. *)
             let params', predSol' =
               try
@@ -479,7 +479,7 @@ let solveGraph (g, root) =
               fun x y -> assert (x = y); x)) params params'),
             (M.merge (fun _ -> maybeAdd (@)) predSol predSol')
           else params, predSol
-        ) sols v
+        ) sols pexprs
     ) templ (M.empty, M.empty) in
   step (`A (None, rootV)) (LTE, M.empty)
 
