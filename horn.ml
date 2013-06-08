@@ -17,7 +17,29 @@ let preprocLefthand = List.fold_left (fun (pvars, la) ->
   | PredVar pvar -> (pvar :: pvars), la) ([], None)
 
 let buildGraph clauses =
-  let clauses = List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses in
+  let clauses =
+    List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses |>
+
+    (* Eliminate right-hand linear formula to expression. *)
+    List.fold_left (fun ret (pvars, la as lh, rh as c) ->
+      match rh with
+      | PredVar _ -> c :: ret
+      | LinearExpr e ->
+        mapFormula normalizeExpr e |>
+        splitNegation |>
+        convertToNF true |>
+        List.map (
+          (* Filter the inserted tautologies during the process. *)
+          List.filter (fun x -> x <> (LTE, M.empty) && x <> (EQ, M.empty)) |-
+          sort_distinct |-
+          function
+          | [] -> assert false
+          | [e] -> lh, LinearExpr (Expr e)
+          | l ->
+            (pvars, maybeAdd (&&&) la (Some (And (
+              List.map (fun x -> Expr (negateExpr x)) l)))),
+            LinearExpr (Expr (LTE, M.add Id.const 1 M.empty))) |>
+        (fun c -> c @ ret)) [] in
 
   (* Create predicate symbol vertices in advance. *)
   let addVp vp (p, l) =
@@ -247,7 +269,8 @@ let solveGraph (g, root) =
     MI.add x (sort_distinct (l1 @ l2 @ l3)) quant
   ) MI.empty (List.rev linkOrder) in
 
-  let addPcoef = M.addDefault M.empty (fun m (k, v) -> M.add k v m) in
+  let addPcoef = M.addDefault M.empty (
+    fun m (k, v) -> M.addDefault 0 (+) k v m) in
 
   let addLinear x =
     mapFormula normalizeExpr |-
@@ -327,11 +350,21 @@ let solveGraph (g, root) =
           | _ -> assert false
         ) g v (MV.empty, None, (M.empty, [])) in
 
-      let (m, pis), (pop, pcoef) =
+      let (m, pi), (pop, pcoef) =
         match G.V.label v with
-        | LinearExpr e ->
+        | LinearExpr (Expr (op, coef)) ->
           (* Add the current linear expression for Farkas' target. *)
-          (addLinear (m, pis) (!!! e)),
+          let pi = Id.create () in
+          print_endline (printExpr (op, coef) ^ " --- " ^ Id.print pi);
+
+          (* Building an coefficient mapping in terms of variables. *)
+          ((M.fold (fun k v -> addPcoef k (pi, (-v))) coef m),
+
+          (* TODO: Linear expression must be normalized to LTE. No EQ
+             allowed. *)
+          (match op with
+          | LTE -> Some pi
+          | _ -> assert false)),
 
           (* Should return tautology for performance; will be evaluated at
              the bottom node. *)
@@ -343,14 +376,21 @@ let solveGraph (g, root) =
           (* Add the atomic current predicate template for Farkas' target. *)
           let m = M.fold (fun k v -> addPcoef k (v, -1)) pcoef m in
 
-          (m, pis),
+          (m, None),
           (* TODO: Currently all template are considered to be LTE. *)
-          (M.fold (fun _ v -> M.add v LTE) pcoef M.empty, pcoef) in
+          (M.fold (fun _ v -> M.add v LTE) pcoef M.empty, pcoef)
+        | _ -> assert false in
 
       let constrs =
-        (* Every linear inequality must be weighted non-negative. *)
+        (* Right-hand linear inequality must be weighted positive. *)
+        let seed =
+          match pi with
+          | None -> []
+          | Some pi -> [Expr (GT, M.add pi 1 M.empty)] in
+
+        (* All left-hand linear inequalities must be weighted non-negative. *)
         List.fold_left (fun l pi ->
-          Expr (GTE, M.add pi 1 M.empty) :: l) [] pis |>
+          Expr (GTE, M.add pi 1 M.empty) :: l) seed pis |>
 
         (* Additionally, add constraints to make totals on every
            coefficients zero. *)
