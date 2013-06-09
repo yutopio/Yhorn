@@ -84,7 +84,14 @@ let check_formula formula =
 
 let solve constrs =
   try
-    match check constrs with
+    let exprs, asts =
+      match constrs with
+      | And x ->
+        let exprs = sort_distinct x in
+        exprs, List.map convert exprs
+      | x -> [ x ], [ convert x ] in
+
+    match check_ast asts with
     | s, L_TRUE ->
       let md = solver_get_model ctx s in
       let mdn = model_get_num_consts ctx md in
@@ -118,11 +125,14 @@ let solve constrs =
     | s, L_FALSE ->
       let unsat_core = solver_get_unsat_core ctx s in
       let size = ast_vector_size ctx unsat_core in
-      let str = repeat (fun i k ->
+      let exprs = repeat (fun i k ->
         let ast = ast_vector_get ctx unsat_core i in
         let str = ast_to_string ctx ast in
-        k ^ str ^ "\n") size "" in
-      failwith (str);
+        assert (String.sub str 0 4 = pred_prefix);
+        let num_str = String.sub str 4 (String.length str - 4) in
+        let index = int_of_string num_str in
+        List.nth exprs index :: k) size [] in
+      failwith (printFormula printExpr (And exprs));
       None (* unsatisfiable *)
     | s, L_UNDEF -> (* timeout? *)
       print_endline ("Z3 returned L_UNDEF: " ^
@@ -132,6 +142,7 @@ let solve constrs =
 
 let solve constr =
   if !Flags.debug_z3_lp then (
+    let constr = match constr with And x -> And (sort_distinct x) | x -> x in
     print_endline ("Z3 problem: " ^ (printFormula printExpr constr));
     let _start = Sys.time () in
     let ret = solve constr in
