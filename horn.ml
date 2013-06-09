@@ -104,7 +104,27 @@ let buildGraph clauses =
     (* Add edges between all left-hand terms and right-hand term. *)
     List.fold_left (fun g (dst, label) ->
       G.add_edge_e g (G.E.create src label dst)) g dsts
-  ) G.empty clauses
+  ) G.empty clauses |>
+
+  (* If a predicate variable does not have any assumption or any implication,
+     assume Horn clause bot->P or P->top exists. *)
+  M.fold (fun _ v g ->
+    let PredVar (_, binder) = G.V.label v in
+    let arity = List.length binder in
+    let g =
+      if G.in_degree g v = 0 then
+        let dummy = repeat (fun _ k -> (Id.create ()) :: k) arity [] in
+        let rename = Some (createRename binder dummy) in
+        let top = G.V.create (LinearExpr (Expr (LTE, M.empty))) in
+        G.add_edge_e g (G.E.create top rename v)
+      else g in
+    let g =
+      if G.out_degree g v = 0 then
+        let bot = G.V.create (LinearExpr (
+          Expr (LTE, M.add Id.const 1 M.empty))) in
+        G.add_edge_e g (G.E.create v None bot)
+      else g in
+    g) predVertices
 
 module EOpt(E: Graph.Sig.EDGE) = struct
   type t = E.t option
