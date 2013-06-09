@@ -16,7 +16,39 @@ let preprocLefthand = List.fold_left (fun (pvars, la) ->
     | Some y -> x &&& y)
   | PredVar pvar -> (pvar :: pvars), la) ([], None)
 
+let simplifyCNF clauses =
+  let simplifyDF =
+    List.fold_left (fun (tautology, exprs) (op, coef as expr) ->
+      if tautology then true, []
+      else if M.cardinal coef = 0 then
+        match op with
+        | EQ | LTE | GTE -> true, []
+        | NEQ | LT | GT -> false, exprs
+      else if M.cardinal coef > 1 || not (M.mem Id.const coef) then
+        false, expr :: exprs
+      else (
+        let c = M.find Id.const coef in
+        match op with
+        | EQ -> c = 0
+        | LTE -> c <= 0
+        | GTE -> c >= 0
+        | NEQ -> c <> 0
+        | LT -> c < 0
+        | GT -> c > 0), exprs
+    ) (false, []) in
+
+  let contradiction, ret =
+    List.fold_left (fun (contradiction, clauses) clause ->
+      let tautology, exprs = simplifyDF clause in
+      if tautology then contradiction, clauses
+      else if contradiction || List.length exprs = 0 then true, []
+      else false, (sort_distinct exprs) :: clauses
+    ) (false, []) clauses in
+
+  contradiction, sort_distinct ret
+
 let buildGraph clauses =
+  let bot = LinearExpr (Expr (LTE, M.add Id.const 1 M.empty)) in
   let clauses =
     List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses |>
 
@@ -28,18 +60,18 @@ let buildGraph clauses =
         mapFormula normalizeExpr e |>
         splitNegation |>
         convertToNF true |>
-        List.map (
-          (* Filter the inserted tautologies during the process. *)
-          List.filter (fun x -> x <> (LTE, M.empty) && x <> (EQ, M.empty)) |-
-          sort_distinct |-
-          function
-          | [] -> assert false
-          | [e] -> lh, LinearExpr (Expr e)
-          | l ->
-            (pvars, maybeAdd (&&&) la (Some (And (
-              List.map (fun x -> Expr (negateExpr x)) l)))),
-            LinearExpr (Expr (LTE, M.add Id.const 1 M.empty))) |>
-        (fun c -> c @ ret)) [] in
+        simplifyCNF |>
+        (function
+        | true, _ -> (lh, bot) :: ret
+        | false, exprs ->
+          List.map (
+            function
+            | [] -> assert false
+            | [e] -> lh, LinearExpr (Expr e)
+            | l ->
+              let neg = And (List.map (fun x -> Expr (negateExpr x)) l) in
+              (pvars, maybeAdd (&&&) la (Some neg)), bot) exprs |>
+          (@) ret)) [] in
 
   (* Create predicate symbol vertices in advance. *)
   let addVp rh vp (p, l) =
@@ -670,32 +702,6 @@ let tryUnify solution =
       | Some x -> (false, x)
       | None -> (true, solution)
     ) (false, solution) |- snd
-
-let simplifyCNF =
-  let simplifyDF =
-    List.fold_left (fun (tautology, exprs) (op, coef as expr) ->
-      if tautology then true, []
-      else if M.cardinal coef = 0 then
-        match op with
-          | EQ | LTE | GTE -> true, []
-          | NEQ | LT | GT -> false, exprs
-      else if M.cardinal coef > 1 || not (M.mem Id.const coef) then
-        false, expr :: exprs
-      else (
-        let c = M.find Id.const coef in
-        match op with
-          | EQ -> c = 0
-          | LTE -> c <= 0
-          | GTE -> c >= 0
-          | NEQ -> c <> 0
-          | LT -> c < 0
-          | GT -> c > 0), exprs) (false, []) in
-
-  List.fold_left (fun (contradiction, clauses) clause ->
-    let tautology, exprs = simplifyDF clause in
-    if tautology then contradiction, clauses
-    else if contradiction || List.length exprs = 0 then true, []
-    else false, exprs :: clauses) (false, [])
 
 let getSolution (pexprs, constr) =
   let sol = Constr.solve constr in
