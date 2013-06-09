@@ -42,9 +42,9 @@ let buildGraph clauses =
         (fun c -> c @ ret)) [] in
 
   (* Create predicate symbol vertices in advance. *)
-  let addVp vp (p, l) =
+  let addVp rh vp (p, l) =
     let ll = List.length l in
-    if ll <> List.length (distinct l) then
+    if rh && ll <> List.length (distinct l) then
       (* The parameter definition has the same name variable in the list.
          e.g. x=0->A(x,x). is illegal. *)
       failwith "Binder contains multiple appearance of the same variable."
@@ -64,9 +64,9 @@ let buildGraph clauses =
   let predVertices = List.fold_left (fun vp ((lh, _), rh) ->
     let vp =
       match rh with
-      | PredVar pvar -> addVp vp pvar
+      | PredVar pvar -> addVp true vp pvar
       | _ -> vp in
-    List.fold_left addVp vp lh) M.empty clauses in
+    List.fold_left (addVp false) vp lh) M.empty clauses in
 
   (* Add implication relations on the Horn graph. *)
   List.fold_left (fun g ((pvars, la) as lh, rh) ->
