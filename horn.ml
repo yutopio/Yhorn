@@ -360,7 +360,7 @@ let solveGraph (g, root) =
     let map = ref M.empty in
     M.fold (fun k -> M.add (renameVar map k)) pop M.empty,
     M.fold (fun k -> M.add (renameVar map k)) pcoef M.empty,
-    mapFormula (renameExpr map) constr in
+    List.map (fun (x, y) -> x, mapFormula (renameExpr map) y) constr in
 
   (* Compute at each vertex linear expressions those are ancestors of it. *)
   let rec computeAncestors templs v e g =
@@ -394,7 +394,7 @@ let solveGraph (g, root) =
 
               (* Merging returning template. *)
               let ret = MV.merge (fun _ -> maybeAdd (@)) ret ret' in
-              let constrs = maybeAdd (&&&) constrs (Some constr) in
+              let constrs = constr @ constrs in
               ret, constrs, (m, pis), (Some true)
             )
           | Some rename, PredVar (p, param) ->
@@ -407,7 +407,7 @@ let solveGraph (g, root) =
 
             (* Merging returning template. *)
             let ret = MV.merge (fun _ -> maybeAdd (@)) ret ret' in
-            let constrs = maybeAdd (&&&) constrs (Some constr) in
+            let constrs = constr @ constrs in
 
             let rename = ref rename in
             let f k v = addPcoef (renameVar rename k) (v, 1) in
@@ -415,7 +415,7 @@ let solveGraph (g, root) =
             (* Building an coefficient mapping in terms of variables. *)
             ret, constrs, ((M.fold f pcoef m), pis), (Some false)
           | _ -> assert false
-        ) g v (MV.empty, None, (M.empty, []), None) in
+        ) g v (MV.empty, [], (M.empty, []), None) in
 
       let (m, pi), (pop, pcoef) =
         match G.V.label v, root_flag with
@@ -458,21 +458,17 @@ let solveGraph (g, root) =
         (* Right-hand linear inequality must be weighted positive. *)
         let seed =
           match pi with
-          | None -> []
-          | Some pi -> [Expr (GT, M.add pi 1 M.empty)] in
+          | None -> constrs
+          | Some pi -> ("", Expr (GT, M.add pi 1 M.empty)) :: constrs in
 
         (* All left-hand linear inequalities must be weighted non-negative. *)
         List.fold_left (fun l pi ->
-          Expr (GTE, M.add pi 1 M.empty) :: l) seed pis |>
+          ("", Expr (GTE, M.add pi 1 M.empty)) :: l) seed pis |>
 
         (* Additionally, add constraints to make totals on every
            coefficients zero. *)
         M.fold (fun k v c ->
-          Expr ((if k = Id.const then GTE else EQ), v) :: c) m |>
-
-        fun x -> match constrs with
-        | None -> And x
-        | Some y -> (And x) &&& y
+          ("", Expr ((if k = Id.const then GTE else EQ), v)) :: c) m
       in
 
       MV.add v [e, (pop, pcoef, constrs)] ret in
@@ -485,10 +481,10 @@ let solveGraph (g, root) =
     List.fold_left (fun templ (root, g) ->
       let templ' = computeAncestors (MV.map fst templ) root None g in
 
-      let [_, (pop, pcoef, constr)] = MV.find root templ' in
+      let [_, (pop, pcoef, constrs)] = MV.find root templ' in
       (* let constr = simplifyConstr constr in *)
 
-      MV.add root ((ME.empty, (pop, pcoef, constr), false), templ') templ
+      MV.add root ((ME.empty, (pop, pcoef, constrs), false), templ') templ
     ) MV.empty components in
 
   (* Generate split tree. *)
@@ -528,11 +524,11 @@ let solveGraph (g, root) =
   in
 
   let constrTree = step rootV in
-  let rec step v (op, coef) =
+  let rec step v (op, coef) first =
     let f v =
       let (_, x, _), templ = MV.find v rootTempls in
       v, (x, templ), MV.empty in
-    let v, ((pop, pcoef, constr), templ), subprobl =
+    let v, ((pop, pcoef, constrs), templ), subprobl =
       match v with
       | `A (e, vv) ->
         let c = MVV.find vv constrTree in
@@ -560,15 +556,15 @@ let solveGraph (g, root) =
         | Some p, Some v ->
           Some (Expr (EQ, M.add p 1 (M.add Id.const (-v) M.empty)))
       ) pcoef coef |>
-      M.values |>
-      (function
-      | [] -> constr
-      | c -> reduce (&&&) c |> (&&&) constr)
-    in
+      M.values in
+    let constrs = ("bindingConstr", And constr) :: constrs in
 
     (* Once the root constraint become satisfiable, all subproblems should have
        a solution. *)
-    let Some sol = Z3interface.solve constr in
+    let sol =
+      try Z3interface.solve constrs
+      with x -> if first then raise x else assert false in
+
     MV.fold (fun k pexprs sols ->
       match G.V.label k with
       | LinearExpr _ -> sols
@@ -586,15 +582,19 @@ let solveGraph (g, root) =
             let params', predSol' =
               try
                 let vv, _ = MV.find k subprobl in
-                step (`A (e, vv)) expr
-              with Not_found -> step (`B k) expr in
+                step (`A (e, vv)) expr false
+              with Not_found -> step (`B k) expr false in
             (M.merge (fun _ -> maybeAdd (
               fun x y -> assert (x = y); x)) params params'),
             (M.merge (fun _ -> maybeAdd (@)) predSol predSol')
           else params, predSol
         ) sols pexprs
     ) templ (M.empty, M.empty) in
-  step (`A (None, rootV)) (LTE, M.empty)
+
+  try
+    step (`A (None, rootV)) (LTE, M.empty) true
+  with Z3interface.Unsatisfiable x ->
+    failwith "NYI"
 
 let simplifyPCNF clauses =
   let simplifyPDF exprs =

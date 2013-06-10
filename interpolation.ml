@@ -62,7 +62,7 @@ let interpolate (a, b) =
       (* Remove contradictory conjunctions. *)
       List.filter (fun x ->
         let x = List.map (fun x -> Expr x) x in
-        Z3interface.check_formula (And x) <> Some false)) [a; b] in
+        try Z3interface.check_formula (And x) with _ -> true)) [a; b] in
 
     match a_s, b_s with
       | [], [] ->
@@ -86,10 +86,11 @@ let interpolate (a, b) =
         let constrs = ref [] in
         let pexprCnf = List.map (fun b -> List.map (fun a ->
           (* Satisfiability check. *)
-          (match Z3interface.solve (
-            And (List.map (fun x -> Expr x) (a @ b))) with
-            | Some x -> raise (Satisfiable (M.bindings x))
-            | _ -> ());
+          (try
+            let expr = And (List.map (fun x -> Expr x) (a @ b)) in
+            let x = Z3interface.solve ["", expr] in
+            raise (Satisfiable (M.bindings x))
+          with _ -> ());
 
           let a = List.map (fun x -> true, x) a in
           let b = List.map (fun x -> false, x) b in
