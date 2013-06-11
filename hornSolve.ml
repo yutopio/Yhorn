@@ -152,8 +152,6 @@ let cutGraph g cutpoints =
 
   (* Compute at each vertex linear expressions those are ancestors of it. *)
   let rec computeAncestors visited v =
-    let PredVar (_, params) = G.V.label v in
-
     if MV.mem v visited then
       (* If the vertex is already visited, just return the saved result. *)
       visited, (MV.find v visited)
@@ -185,9 +183,13 @@ let cutGraph g cutpoints =
           (* All nodes without incoming edges are linear expression nodes. *)
           assert false
         | visited, Some la ->
-          (* Perform quantifier elimination. *)
-          let s = List.fold_left (fun s x -> S.add x s) S.empty params in
-          let la = AtpInterface.integer_qelim s la in
+          let la =
+            match G.V.label v with
+            | PredVar (_, params) ->
+              (* Perform quantifier elimination. *)
+              let s = List.fold_left (fun s x -> S.add x s) S.empty params in
+              AtpInterface.integer_qelim s la
+            | _ -> la in
 
           (* Add traversal result. *)
           MV.add v la visited, la) in
@@ -200,9 +202,21 @@ let cutGraph g cutpoints =
       let visited, _ = computeAncestors visited u in
       step visited next in
 
-  let leaves =
-    step MV.empty cutpoints (*|>
-    MV.filter (fun k _ -> SV.mem k cutpoints) *)in
+(*  let leaves = step MV.empty cutpoints in *)
+  let leaves = step MV.empty start in
+  let vm = G.fold_vertex (fun v ->
+    G.V.create (
+      if MV.mem v leaves then LinearExpr (MV.find v leaves)
+      else G.V.label v) |>
+    MV.add v) g MV.empty in
+  let g' = G.fold_edges_e (fun e g ->
+    let u, v = G.E.src e, G.E.dst e in
+    let e' = G.E.create (MV.find u vm) (G.E.label e) (MV.find v vm) in
+    G.add_edge_e g e') g G.empty in
+  print_endline "Show Qelim";
+  display_with_gv (Operator.mirror g');
+
+  let leaves = MV.filter (fun k _ -> SV.mem k cutpoints) leaves in
   let u = MV.cardinal leaves in
 
   (* Attach ancestor linear expressions to cutpoints in every subgraph. *)
