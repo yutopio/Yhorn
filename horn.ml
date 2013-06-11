@@ -223,6 +223,19 @@ type constrTypes =
 | Binding
 type constr = G.E.t list * constrTypes
 
+let print_constrs =
+  List.fold_left (fun i ((_, tag), ex) ->
+    let name = string_of_int i in
+    print_string ("(" ^ name ^ "): " ^ (
+      match tag with
+      | LaWeight -> "LaWeight"
+      | Coef _ -> "Coef"
+      | Simplified v -> "Simplified (" ^ string_of_int (G.V.hash v) ^ ")"
+      | Binding -> "Binding") ^ " - ");
+    print_endline (printFormula printExpr ex);
+    i + 1) 0 |-
+  ignore
+
 exception Unsatisfiable of constr list
 exception No_growth
 
@@ -246,6 +259,10 @@ let solveGraph (g, root) =
         List.fold_left (fun m x ->
           M.add x (Id.create ()) m) M.empty param |>
         M.add Id.const (Id.create ()) in
+
+      (* DEBUG: *)
+      print_endline (Id.print p ^ ": " ^
+        (printPexpr (M.map (fun k -> M.add k 1 M.empty) pcoef)));
 
       M.add p pcoef m
     | _ -> m) g M.empty in
@@ -373,6 +390,7 @@ let solveGraph (g, root) =
     (* Add to the variable maps for applying Farkas' Lemma. *)
     List.fold_left (fun (m, pis) (op, coef) ->
       let pi = Id.create () in
+      print_endline (printExpr (op, coef) ^ " --- " ^ Id.print pi);
 
       (* Building an coefficient mapping in terms of variables. *)
       (M.fold (fun k v -> addPcoef e k (pi, v)) coef m),
@@ -503,6 +521,10 @@ let solveGraph (g, root) =
           let constr = ([], Coef edges), Expr (op, coefs) in
           constr :: c) m
       in
+
+      print_endline (printHornTerm (G.V.label v) ^ ": " ^
+        printPexpr (M.map (fun k -> M.add k 1 M.empty) pcoef));
+      print_constrs constrs;
 
       MV.add v [e, (pcoef, constrs)] ret in
 
@@ -788,7 +810,11 @@ let solve clauses =
       else convertToFormula true cnf)
   in
 
+  print_endline "Solution:";
+  printHornSol sol |> print_endline;
+
   (* DEBUG: Solution verification. *)
+  print_endline "Verification:";
   List.iter (fun x ->
     print_endline (printHorn x);
     if not (Z3interface.check_clause sol x) then
