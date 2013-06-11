@@ -13,3 +13,7 @@ val string_of : t -> string
 val int_of : t -> int
 
 val const : t
+
+(* Serializer *)
+val serialize : t -> string
+val deserialize : string -> t
