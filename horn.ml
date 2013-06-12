@@ -378,10 +378,16 @@ let solveGraph (g, root) =
       let deltaMap, defDelta, dup = MV.find v templs in
 
       (* If the predicate is specified for duplication, rename it. *)
-      let delta =
+      let pop, pcoef, constrs as delta =
         try ME.find e deltaMap
         with Not_found -> (if dup then duplicate else id) defDelta in
-      MV.add v [e, delta] MV.empty
+
+      if dup then
+        MV.add v [e, delta] MV.empty
+      else
+        let exprs = List.map snd constrs |> reduce (&&&) in
+        (* TODO: Simplification *)
+        MV.add v [e, (pop, pcoef, [Simplified v, exprs])] MV.empty
     else
       let ret, constrs, (m, pis), root_flag =
         G.fold_succ_e (fun e (ret, constrs, (m, pis), flag) ->
@@ -481,8 +487,6 @@ let solveGraph (g, root) =
 
       MV.add v [e, (pop, pcoef, constrs)] ret in
 
-  let simplifyConstr _ = assert false in
-
   (* Create templates and constraints for all predicate variables over the
      graph. *)
   let rootTempls =
@@ -490,7 +494,6 @@ let solveGraph (g, root) =
       let templ' = computeAncestors (MV.map fst templ) root None g in
 
       let [_, (pop, pcoef, constrs)] = MV.find root templ' in
-      (* let constr = simplifyConstr constr in *)
 
       MV.add root ((ME.empty, (pop, pcoef, constrs), false), templ') templ
     ) MV.empty components in
@@ -524,8 +527,6 @@ let solveGraph (g, root) =
       let templ' = computeAncestors templs v' None g' in
 
       let [_, (pop, pcoef, constr)] = MV.find v' templ' in
-      (* TODO: Simplification will be done here.
-         let constr = simplifyConstr constr in *)
 
       (pop, pcoef, constr), templ') me in
     MVV.add v me mvv
@@ -615,6 +616,7 @@ let solveGraph (g, root) =
       function
       | Coef es -> List.fold_left (fun g e -> G.add_edge_e g e) g es
       | _ -> g) G.empty x |>
+    Operator.mirror |>
     display_with_gv;
     assert false
 
