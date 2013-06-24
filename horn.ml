@@ -1,4 +1,5 @@
 open Util
+open ListEx
 open Types
 open MapEx
 
@@ -385,7 +386,7 @@ let solveGraph (g, root) =
       if dup then
         MV.add v [e, delta] MV.empty
       else
-        let exprs = List.map snd constrs |> reduce (&&&) in
+        let exprs = List.map snd constrs |> List.reduce (&&&) in
         (* TODO: Simplification *)
         MV.add v [e, (pop, pcoef, [Simplified v, exprs])] MV.empty
     else

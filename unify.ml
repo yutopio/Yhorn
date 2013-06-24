@@ -1,3 +1,4 @@
+open ListEx
 open Util
 open Types
 
@@ -120,7 +121,7 @@ let generatePexprUnifyConstr exprs constr =
       | [] -> Expr (EQ, M.empty) (* assert false *)
       | [x] -> constrs &&& x
       | _ -> constrs &&& And eqs) exprs in
-  let allConstrs = reduce (&&&) allConstrs in
+  let allConstrs = List.reduce (&&&) allConstrs in
 
   (* Check whether it is satisfiable. *)
   if z3test (constr &&& allConstrs) then allConstrs

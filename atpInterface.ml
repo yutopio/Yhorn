@@ -1,4 +1,5 @@
 open Util
+open ListEx
 open Types
 
 let of_expr (op, coef) =
@@ -22,7 +23,7 @@ let of_expr (op, coef) =
             if v = 1 then var
             else Atp_batch.Fn("*", [int v; var])) :: l) x [] in
       if l = [] then int 0
-      else reduce (fun a b -> Atp_batch.Fn("+", [a; b])) l) [c1; ~--c2] in
+      else List.reduce (fun a b -> Atp_batch.Fn("+", [a; b])) l) [c1; ~--c2] in
 
     (* Connect two terms with a relation symbol. *)
     let r = string_of_operator op in
@@ -31,8 +32,8 @@ let of_expr (op, coef) =
 
 let rec of_formula = function
   | Expr e -> of_expr e
-  | And l -> reduce Atp_batch.mk_and (List.map of_formula l)
-  | Or l -> reduce Atp_batch.mk_or (List.map of_formula l)
+  | And l -> List.reduce Atp_batch.mk_and (List.map of_formula l)
+  | Or l -> List.reduce Atp_batch.mk_or (List.map of_formula l)
 
 let rec term_of = function
   | Atp_batch.Var(id) -> M.add (Id.deserialize id) 1 M.empty
@@ -42,9 +43,9 @@ let rec term_of = function
   | Atp_batch.Fn("*", ts) ->
     let ts = List.map term_of ts in
     assert (List.for_all (M.cardinal |- (=) 1) ts);
-    let ts = reduce (@) (List.map M.bindings ts) in
+    let ts = List.reduce (@) (List.map M.bindings ts) in
     let [v] = (List.map fst ts) |> List.filter ((<>) Id.const) in
-    let c = (List.map snd ts) |> reduce ( * ) in
+    let c = (List.map snd ts) |> List.reduce ( * ) in
     M.add v c M.empty
   | Atp_batch.Fn(s, []) -> M.add Id.const (int_of_string s) M.empty
   | Atp_batch.Fn(s, ts) -> assert false
@@ -79,5 +80,5 @@ let integer_qelim vars la =
       if List.exists (fun y -> y => x) rest then f ret rest
       else f (x :: ret) (List.filter (fun y -> not (x => y)) rest) in
    f []) |>
-  reduce Atp_batch.mk_or |>
+  List.reduce Atp_batch.mk_or |>
   formula_of
