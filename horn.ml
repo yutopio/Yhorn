@@ -473,7 +473,7 @@ let solveGraph (g, root) =
         let seed =
           match pi with
           | None -> constrs
-          | Some pi -> (LaWeight, Expr (GT, M.add pi 1 M.empty)) :: constrs in
+          | Some pi -> (Binding, Expr (GT, M.add pi 1 M.empty)) :: constrs in
 
         (* All left-hand linear inequalities must be weighted non-negative. *)
         List.fold_left (fun l pi ->
@@ -566,22 +566,34 @@ let solveGraph (g, root) =
           Some (Expr (EQ, M.add p 1 (M.add Id.const (-v) M.empty)))
       ) pcoef coef |>
       M.values in
-    let constrs = (Binding, And constr) :: constrs in
+    let constrs =
+      if List.length constr = 0 then constrs
+      else (Binding, And constr) :: constrs in
 
-    let constrs, symbol_map =
+    let split_tag =
       List.fold_left (fun (constrs, m) (tag, ex) ->
         let name = string_of_int (List.length m) in
         (name, ex) :: constrs,
-        (name, tag) :: m) ([], []) constrs in
+        (name, tag) :: m) ([], []) in
 
     (* Once the root constraint become satisfiable, all subproblems should have
        a solution. *)
-    let sol =
+    ignore(
+      let constrs = List.filter (fun (tag, x) -> tag <> LaWeight) constrs in
+      let constrs, symbol_map = split_tag constrs in
+
       try Z3interface.solve constrs
       with Z3interface.Unsatisfiable x ->
         if not first then assert false;
         let uc_tags = List.map (fun x -> List.assoc x symbol_map) x in
-        raise (Unsatisfiable (sort_distinct uc_tags)) in
+        raise (Unsatisfiable (sort_distinct uc_tags)));
+
+    let sol =
+      let constrs, symbol_map = split_tag constrs in
+      try Z3interface.solve constrs
+      with Z3interface.Unsatisfiable x ->
+        (* No solution exists. *)
+        assert false in
 
     MV.fold (fun k pexprs sols ->
       match G.V.label k with
