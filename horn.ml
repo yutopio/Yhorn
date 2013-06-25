@@ -394,7 +394,7 @@ let solveGraph (g, root) =
         MV.add v [e, (pop, pcoef, constrs)] MV.empty
       else
         let exprs = List.map snd constrs |> List.reduce (&&&) in
-        (* TODO: Simplification *)
+        (* TODO: Simplification based on quantifiers *)
         MV.add v [e, (pop, pcoef, [([], Simplified v), exprs])] MV.empty
     else
       let ret, constrs, (m, pis), root_flag =
@@ -530,6 +530,12 @@ let solveGraph (g, root) =
       let v' = GV.V.label v in
       let g' = List.assoc v' components in
 
+      let predTempls =
+        let roots = List.map fst components in
+        let keys = List.take (List.index_of v' roots) roots in
+        MV.map fst rootTempls |>
+        MV.filter (fun k _ -> List.mem k keys) in
+
       let me = ME.fold (fun e l me ->
         let templs =
           List.fold_left (fun mv (v, me) ->
@@ -537,7 +543,7 @@ let solveGraph (g, root) =
             let (_, templ, _) = MV.find v mv in
             let me = ME.map fst me in
             MV.add v (me, templ, true) mv
-          ) (MV.map fst rootTempls) l in
+          ) predTempls l in
 
         let templ' = computeAncestors templs v' e g' in
 
