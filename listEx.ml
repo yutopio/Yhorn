@@ -2,6 +2,13 @@
 module List = struct
   include List
 
+  let index_of x =
+    let rec inner i =
+      function
+      | [] -> raise Not_found
+      | y :: rest -> if x = y then i else inner (i + 1) rest in
+    inner 0
+
   let reduce compare = function
     | [] -> failwith "reduce"
     | seed :: rest -> fold_left compare seed rest
