@@ -10,7 +10,6 @@ open Types
 %token PLUS MINUS
 %token AND OR NOT
 %token LPAREN RPAREN
-%token LBRACK RBRACK
 %token ARROW DOT COMMA
 %token EOF
 
@@ -21,27 +20,12 @@ open Types
 %left PLUS MINUS
 
 %start inputUnit
-%type <Types.horn list * (Id.t * Id.t) list> inputUnit
+%type <Types.horn list> inputUnit
 
 %%
 
 inputUnit:
-    | hornClauses mergeSpec EOF { $1,$2 }
-;
-
-mergeSpec:
-    |                           { [] }
-    | LBRACK           RBRACK   { [] }
-    | LBRACK predPairs RBRACK   { $2 }
-;
-
-predPairs:
-    | predPair                  { [$1] }
-    | predPair COMMA predPairs  { $1::$3 }
-;
-
-predPair:
-    | PRED MINUS PRED           { $1,$3 }
+    | hornClauses EOF { $1 }
 ;
 
 hornClauses:

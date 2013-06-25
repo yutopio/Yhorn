@@ -741,88 +741,6 @@ let renameClauses =
     (lh, rh) :: clauses, !pm
   ) ([], M.empty)
 
-let unify nfs constr =
-  (* Extract one parameter each from two parameterized expression. *)
-  let pvarIds =
-    List.flatten (List.flatten nfs) |>
-    List.map Constr.pollPVarId |>
-    List.filter ((<>) None) |>
-    List.map (fun (Some x) -> x) in
-
-  let newId, (ids, puf, constrs) = Constr.mergeConstrs pvarIds constr in
-  match newId with
-    | (-1) -> Some constr
-    | _ ->
-      (* TODO: Will be replaced not to handle constraint set directly. *)
-      let constr = MI.find (Puf.find puf newId) constrs in
-      try
-        match Template.unify Unify.generatePexprUnifyConstr
-          constr ~maxSize:5 nfs with
-          | Some (_, additional) ->
-            let constr = constr &&& additional in
-            let constrs = MI.add (Puf.find puf newId) constr constrs in
-            Some (ids, puf, constrs)
-          | None -> None
-      with Not_found -> None
-
-let tryUnify (p1, p2) (preds, constr) =
-  (* Specified predicate variables must exist. *)
-  let [(param1, nf1);(param2, nf2)] = List.map (fun p ->
-    assert (M.mem p preds); M.find p preds) [p1;p2] in
-
-  (* Parameters for the predicate variable must match. *)
-  assert (List.length param1 = List.length param2);
-  let preds, nf2 =
-    if param1 = param2 then preds, nf2 else
-      let m = ref (createRename param1 param2) in
-      let nf2 = List.map (List.map (renamePexpr m)) nf2 in
-      M.add p2 (param1, nf2) preds, nf2 in
-
-  (* Try to unify nf1 and nf2. *)
-  match unify [nf1;nf2] constr with
-    | Some constr -> Some (M.add p2 (param1, nf1) preds, constr)
-    | None -> None
-
-let reducePairs p =
-  (* Use Jean-Christophe Filliâtre's Union-Find tree implementation. *)
-  let m = ref M.empty in
-  let puf = ref (Puf.create (2 * List.length p)) in
-  let get x =
-    if M.mem x !m then
-      M.find x !m
-    else (
-      let v = M.cardinal !m in
-      m := M.add x v !m; v) in
-  let union x y = puf := Puf.union !puf (get x) (get y) in
-  let find x = Puf.find !puf (get x) in
-
-  (* Reduce merge groups to meaningful ones. *)
-  List.filter (fun (a, b) ->
-    let ret = (find a) <> (find b) in
-    if ret then union a b;
-    ret) p
-
-let tryUnify solution =
-  List.fold_left (fun (fail, solution) pair ->
-  if fail then (true, solution) else
-    match tryUnify pair solution with
-      | Some x -> (false, x)
-      | None -> (true, solution)
-    ) (false, solution) |- snd
-
-let getSolution (pexprs, constr) =
-  let sol = Constr.solve constr in
-
-  (* Construct one interpolant *)
-  M.map (fun (params, cnf) ->
-    let cnf = List.map (List.map (assignParameters sol)) cnf in
-    let cntrdct, clauses = simplifyCNF cnf in
-    let formula =
-      if cntrdct then Expr (EQ, M.add Id.const 1 M.empty)
-      else if List.length clauses = 0 then Expr (EQ, M.empty)
-      else convertToFormula true clauses in
-    params, formula) pexprs
-
 let solve clauses =
   assert (List.length clauses > 0);
 
@@ -850,19 +768,14 @@ let solve clauses =
   let sol = M.merge (fun _ (Some param) (Some exprs) ->
       Some (param, (And (List.map (fun x -> Expr x) exprs)))) params exprs in
 
-  (* Rename back to original predicate variable names. *)
-  M.fold (fun k -> M.add (M.findDefault k k pm)) sol M.empty |>
-  M.map (fun (p, f) -> p,
-    let (contradiction, cnf) = convertToNF true f |> simplifyCNF in
-    if contradiction then Expr (NEQ, M.empty)
-    else convertToFormula true cnf)
-
-let solve clauses unify =
-  (* NYI: Unification [tryUnify] ? *)
-  let unify = reducePairs unify in
-  if List.length unify <> 0 then
-    failwith "NYI: Unification.";
-  let sol = solve clauses in
+  (* Rename back to original predicate variable names and simplify. *)
+  let sol =
+    M.fold (fun k -> M.add (M.findDefault k k pm)) sol M.empty |>
+    M.map (fun (p, f) -> p,
+      let (contradiction, cnf) = convertToNF true f |> simplifyCNF in
+      if contradiction then Expr (NEQ, M.empty)
+      else convertToFormula true cnf)
+  in
 
   (* DEBUG: Solution verification. *)
   List.iter (fun x ->

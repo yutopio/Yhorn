@@ -10,15 +10,13 @@ let main _ =
       | 2 -> let filename = Sys.argv.(1) in open_in (filename)
       | _ -> assert false in
 
-  let clauses, merges =
+  let clauses =
     Parser.inputUnit Lexer.token (Lexing.from_channel input) in
 
-  print_endline (
-    String.concat "\n" (List.map printHorn clauses) ^ "\n" ^
-      "[" ^ String.concat "," (List.map (
-        fun (a, b) -> Id.print a ^ "-" ^ Id.print b) merges) ^ "]");
+  print_endline (String.concat "\n" (List.map printHorn clauses));
+  print_newline ();
 
-  Horn.solve clauses merges |>
+  Horn.solve clauses |>
   printHornSol |> print_endline
 
 let _ = main ()

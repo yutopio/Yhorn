@@ -32,8 +32,6 @@ rule token = parse
     | '-'               { MINUS }
     | '('               { LPAREN }
     | ')'               { RPAREN }
-    | '['               { LBRACK }
-    | ']'               { RBRACK }
     | '&'               { AND }
     | '|'               { OR }
     | '!'               { NOT }

@@ -73,14 +73,6 @@ let check_ast asts =
 
   s, solver_check_assumptions ctx s (Array.of_list ast_symbols)
 
-let check_formula formula =
-  try
-    match check_ast ["", convert formula] with
-    | _, L_TRUE -> true
-    | _, L_FALSE -> false
-    | _, L_UNDEF -> failwith (z3_solver_undef "Unknown")
-  with Error (_, _) as e -> failwith (show_error e)
-
 let solve constrs =
   try
     let asts = List.map (fun (name, expr) -> (name, convert expr)) constrs in
