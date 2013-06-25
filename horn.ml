@@ -196,11 +196,11 @@ let addRoot g =
     let g = SV.fold (fun v g -> G.add_edge g root v) roots g in
     g, root
 
-let assignParameters assign (op, expr) = normalizeExpr (
+let assignParameters assign (op, expr) =
   (M.fold (fun k v o -> if v <> 0 && M.findDefault EQ k op = LTE then
       LTE else o) assign EQ),
   M.map (fun v -> M.fold (fun k v -> (+) ((
-    M.findDefault 1 k assign) * v)) v 0) expr)
+    M.findDefault 1 k assign) * v)) v 0) expr
 
 type constrTypes =
 | LaWeight
@@ -374,7 +374,7 @@ let solveGraph (g, root) =
   let duplicate (pop, pcoef, constr) =
     let map = ref M.empty in
     M.fold (fun k -> M.add (renameVar map k)) pop M.empty,
-    M.fold (fun k -> M.add (renameVar map k)) pcoef M.empty,
+    M.fold (fun k v -> M.add k (renameVar map v)) pcoef M.empty,
     List.map (fun (x, y) -> x, mapFormula (renameExpr map) y) constr in
 
   (* Compute at each vertex linear expressions those are ancestors of it. *)
@@ -545,6 +545,7 @@ let solveGraph (g, root) =
             MV.add v (me, templ, true) mv
           ) predTempls l in
 
+        assert (not (MV.mem v' templs));
         let templ' = computeAncestors templs v' e g' in
 
         let [_, (pop, pcoef, constr)] = MV.find v' templ' in
@@ -599,23 +600,20 @@ let solveGraph (g, root) =
 
       (* Once the root constraint become satisfiable, all subproblems
          should have a solution. *)
-      ignore(
+      if first then (
         let constrs = List.filter (fun ((_, tag), x) ->
           tag <> LaWeight) constrs in
         let constrs, symbol_map = split_tag constrs in
 
-        try Z3interface.solve constrs
+        try ignore(Z3interface.solve constrs)
         with Z3interface.Unsatisfiable x ->
-          if not first then assert false;
           let uc_tags = List.map (fun x -> List.assoc x symbol_map) x in
           raise (Unsatisfiable (List.sort_distinct uc_tags)));
 
       let sol =
         let constrs, symbol_map = split_tag constrs in
         try Z3interface.solve constrs
-        with Z3interface.Unsatisfiable x ->
-          (* No solution exists. *)
-          assert false in
+        with Z3interface.Unsatisfiable x -> assert false in
 
       MV.fold (fun k pexprs sols ->
         match G.V.label k with
