@@ -1,3 +1,4 @@
+open ListEx
 open Util
 
 module Map = struct
@@ -30,7 +31,7 @@ module Make(Ord: Map.OrderedType) = struct
 
   (** [simpleMerge a b] merges two maps with distinct keys. If both maps have
       bindings from the same key, a binding from [a] is considered. *)
-  let simpleMerge a = merge (fun _ a b -> tryPick id [a;b]) a
+  let simpleMerge a = merge (fun _ a b -> List.try_pick id [a;b]) a
 end
 
 end

@@ -1,5 +1,6 @@
-open Util
+open ListEx
 open MapEx
+open Util
 
 module MyInt = struct
   type t = int
@@ -12,18 +13,18 @@ module MyIntListList = struct
   type t = int list list
   let compare x y =
     match List.length y - List.length x with
-      | 0 -> listFold2 (fun ret x y ->
+      | 0 -> List.fold_left2 (fun ret x y ->
         match ret with
           | 0 -> (
             let diff = List.length y - List.length x in
-            let cmp = listFold2 (fun ret x y ->
+            let cmp = List.fold_left2 (fun ret x y ->
               match ret with
                 | 0 -> compare x y
                 | _ -> ret) 0 in
             let x, y =
-              if diff > 0 then x, take (List.length x) y
+              if diff > 0 then x, List.take (List.length x) y
               else if diff = 0 then x, y
-              else take (List.length y) x, y in
+              else List.take (List.length y) x, y in
             match cmp x y with
               | 0 -> diff
               | ret -> ret)

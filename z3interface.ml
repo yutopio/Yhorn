@@ -1,6 +1,6 @@
 open Error
-open Types
 open ListEx
+open Types
 open Util
 open Z3
 
@@ -177,7 +177,8 @@ let check_clause pred (lh, rh) =
   let rh::lh = List.map (function
     | PredVar (p, args) ->
       let (binder, la) = M.find p pred in
-      let renames = listFold2 (fun m a b -> M.add a b m) M.empty binder args in
+      let renames = List.fold_left2 (fun m a b -> M.add a b m)
+        M.empty binder args in
       mapFormula (renameExpr (ref renames)) la
     | LinearExpr x -> x) (rh::lh) in
   let lh = List.reduce (&&&) lh in

@@ -61,6 +61,37 @@ val merge : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list
   (** Choose the minimum value among the list. Raise [Failure "min"] if the
       list is empty. *)
 
+  val try_pick : ('a -> 'b option) -> 'a list -> 'b option
+  (** Apply a function to each element in the list and pick the first result
+      that is not None. *)
+
+  val distinct : 'a list -> 'a list
+  (** Returns distinct elements from a list. *)
+
+  val sort_distinct : 'a list -> 'a list
+  (** Sort the list and then returns distinct elements from it. *)
+
+  val zip : 'a list -> 'b list -> ('a * 'b) list
+  (** Combines two lists into a list of pairs. The two lists must have equal
+      lengths. *)
+
+  val skip : int -> 'a list -> 'a list
+  (** Bypasses a specified number of elements in the list and then returns the
+      remaining elements. *)
+
+  val take : int -> 'a list -> 'a list
+  (** Returns a specified number of contiguous elements from the start of a
+      list. *)
+
+  val chop : int -> 'a list -> 'a list list
+  (** Chop the list so that each sub-list is no longer than a specified
+      number. *)
+
+  val direct_product : 'a list list -> 'a list list
+  (** Gets the all possible combinations of elements each of those are chosen
+      from every list. For example, [direct_product [[A;B]; [C;D]]] returns
+      [[A;C]; [A;D]; [B;C]; [B;D]]. *)
+
   val sorted_multimap :
     ('a -> 'a -> int) ->
     ('a -> (int * 'b) list -> 'c option) ->

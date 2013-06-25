@@ -1,7 +1,7 @@
 open Buffer
 open ListEx
-open Util
 open MapEx
+open Util
 
 module MyString = struct
   type t = Id.t
@@ -221,7 +221,7 @@ let convertToNF cnf formulae =
         | x :: l ->
             let ret = match x with
                 | Expr x -> [ x ] :: ret
-                | And x | Or x -> (directProduct (internal x [])) @ ret in
+                | And x | Or x -> (List.direct_product (internal x [])) @ ret in
             internal l ret in
     match cnf, formulae with
     | true, And x

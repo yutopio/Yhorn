@@ -1,13 +1,13 @@
-open Util
 open ListEx
-open Types
 open MapEx
+open Types
+open Util
 
 let maybeApply f = function
   | None -> None
   | Some x -> Some (f x)
 
-let createRename = listFold2 (fun m k v -> M.add k v m) M.empty
+let createRename = List.fold_left2 (fun m k v -> M.add k v m) M.empty
 
 let preprocLefthand = List.fold_left (fun (pvars, la) ->
   function
@@ -43,10 +43,10 @@ let simplifyCNF clauses =
       let tautology, exprs = simplifyDF clause in
       if tautology then contradiction, clauses
       else if contradiction || List.length exprs = 0 then true, []
-      else false, (sort_distinct exprs) :: clauses
+      else false, (List.sort_distinct exprs) :: clauses
     ) (false, []) clauses in
 
-  contradiction, sort_distinct ret
+  contradiction, List.sort_distinct ret
 
 let buildGraph clauses =
   let bot = LinearExpr (Expr (LTE, M.add Id.const 1 M.empty)) in
@@ -77,7 +77,7 @@ let buildGraph clauses =
   (* Create predicate symbol vertices in advance. *)
   let addVp rh vp (p, l) =
     let ll = List.length l in
-    if rh && ll <> List.length (distinct l) then
+    if rh && ll <> List.length (List.distinct l) then
       (* The parameter definition has the same name variable in the list.
          e.g. x=0->A(x,x). is illegal. *)
       failwith "Binder contains multiple appearance of the same variable."
@@ -314,7 +314,7 @@ let solveGraph (g, root) =
       match G.V.label v with
       | LinearExpr _ -> [] (* TODO: Should consider? *)
       | PredVar (p, param) -> M.find p templ |> M.values in
-    let use' = fv @ (MI.findDefault [] x use |> sort_distinct) in
+    let use' = fv @ (MI.findDefault [] x use |> List.sort_distinct) in
     (MI.add x fv fvs),
     (GI.fold_succ (fun y -> MI.addDefault [] (@) y use') linkG x use)
   ) (MI.empty, MI.empty) linkOrder in
@@ -327,7 +327,7 @@ let solveGraph (g, root) =
     let l3 =
       GI.fold_succ (fun y -> (@) (MI.find y quant)) linkG x [] |>
       List.filter (fun x -> List.mem x use) in
-    MI.add x (sort_distinct (l1 @ l2 @ l3)) quant
+    MI.add x (List.sort_distinct (l1 @ l2 @ l3)) quant
   ) MI.empty (List.rev linkOrder) in
 
   let addPcoef e =
@@ -587,7 +587,7 @@ let solveGraph (g, root) =
       with Z3interface.Unsatisfiable x ->
         if not first then assert false;
         let uc_tags = List.map (fun x -> List.assoc x symbol_map) x in
-        raise (Unsatisfiable (sort_distinct uc_tags)));
+        raise (Unsatisfiable (List.sort_distinct uc_tags)));
 
     let sol =
       let constrs, symbol_map = split_tag constrs in

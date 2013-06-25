@@ -21,6 +21,76 @@ module List = struct
     | [] -> failwith "min"
     | l -> reduce min l
 
+  let try_pick f =
+    List.fold_left (fun ret x -> if ret = None then f x else ret) None
+
+  let distinct l =
+    let rec internal l = function
+      | x :: rest ->
+        internal (l @ (if List.mem x l then [] else [x])) rest
+      | [] -> l in
+    internal [] l
+
+  let sort_distinct l =
+    let compare_neg x y = - (compare x y) in
+    let sorted = List.fast_sort compare_neg l in
+    let rec f ret = function
+      | [] -> ret
+      | [x] -> x::ret
+      | x::y::z -> f (if x = y then ret else x::ret) (y::z) in
+    f [] sorted
+
+  let zip a =
+    let a = ref a in
+    let ret =
+      List.map (fun y ->
+        match !a with
+        | x::rest -> a := rest; (x,y)
+        | _ -> failwith "zip") in
+    if !a = [] then ret else failwith "zip"
+
+  let rec skip n x =
+    assert (n >= 0);
+    if n = 0 then x
+    else match x with
+    | [] -> []
+    | a :: rest -> skip (n - 1) rest
+
+  let take n x =
+    assert (n >= 0);
+    let rec internal n x ret =
+      if n = 0 then List.rev ret
+      else match x with
+      | [] -> ret
+      | a :: rest -> internal (n - 1) rest (a :: ret) in
+    internal n x []
+
+  let chop n x =
+    assert (n > 0);
+    let rec internal1 x ret =
+      let rec internal2 n x ret =
+        if n = 0 then (List.rev ret), x
+        else match x with
+        | [] -> ret, []
+        | a :: rest -> internal2 (n - 1) rest (a :: ret) in
+      let group, rest = internal2 n x [] in
+      match rest with
+      | [] -> List.rev (group :: ret)
+      | _ -> internal1 rest (group :: ret) in
+    internal1 x []
+
+  (* NOTE: Provided in the standard library since OCaml 4.00.0 *)
+  let mapi f l =
+    let _, r = List.fold_left (fun (i, l) x -> i + 1, (f i x) :: l) (0, []) l in
+    List.rev r
+
+  let direct_product input =
+    let ret = ref [] in
+    let rec inner current = function
+      | [] -> ret := current :: !ret
+      | x :: rest -> List.iter (fun x -> inner (current @ [x]) rest) x in
+    inner [] input; !ret
+
   let sorted_multimap compare f lists =
     (* Give IDs to lists. *)
     let (_, lists) =

@@ -1,6 +1,6 @@
-open Util
 open ListEx
 open Types
+open Util
 
 let of_expr (op, coef) =
   let coef = M.filter (fun _ -> (<>) 0) coef in

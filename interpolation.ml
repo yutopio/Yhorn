@@ -1,7 +1,7 @@
-open ListEx
-open Util
-open Types
 open Constr
+open ListEx
+open Types
+open Util
 
 exception Satisfiable of (Id.t * int) list
 

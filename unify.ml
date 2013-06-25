@@ -1,6 +1,6 @@
 open ListEx
-open Util
 open Types
+open Util
 
 (* Test wether the constraint is satisfiable or not. *)
 let z3test x = try ignore (Z3interface.solve ["", x]); true with _ -> false
@@ -15,7 +15,7 @@ let equal pexprs constrSet =
   (* Consider all variables are present in all pexprs. *)
   let vars =
     List.fold_left (fun l (_, coef) -> (M.keys coef) @ l) [] pexprs |>
-    sort_distinct in
+    List.sort_distinct in
 
   let f (op1, coef1) l (op2, coef2) =
     (* Coefficients of both interpolants must be the same *)
@@ -87,7 +87,7 @@ let generatePexprUnifyConstr exprs constr =
       let eqCoef = M.filter (fun _ v -> v <> 0) (v1 -- v2) in
       Expr(EQ, eqCoef)) vars |>
       List.filter (fun x -> x <> Expr(EQ, M.empty)) |>
-      distinct in
+      List.distinct in
     match eqs with
       | [] -> Expr (EQ, M.empty) (* assert false *)
       | [x] -> constr &&& x
@@ -116,7 +116,7 @@ let generatePexprUnifyConstr exprs constr =
       let eqCoef = M.filter (fun _ v -> v <> 0) (v1 -- v2) in
       Expr(EQ, eqCoef)) vars |>
       List.filter (fun x -> x <> Expr(EQ, M.empty)) |>
-      distinct in
+      List.distinct in
     match eqs with
       | [] -> Expr (EQ, M.empty) (* assert false *)
       | [x] -> constrs &&& x

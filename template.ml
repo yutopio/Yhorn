@@ -1,6 +1,6 @@
 open ListEx
-open Util
 open Types
+open Util
 
 type template = int list
 
@@ -26,7 +26,7 @@ let enumerate_application f templ nf =
     snd |>
     List.rev |>
     List.map (fun (x, l) -> x, Template (x, List.rev l)) in
-  let clauses = mapi (fun i x -> List.length x, Clause x) nf in
+  let clauses = List.mapi (fun i x -> List.length x, Clause x) nf in
 
   let x =
     List.stable_sort (fun (x, _) (y, _) -> x - y) (comp @ clauses) |>

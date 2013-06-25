@@ -1,5 +1,5 @@
-open Util
 open Types
+open Util
 
 let main _ =
   Flags.enable_gv := true;

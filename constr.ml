@@ -1,11 +1,11 @@
 open ListEx
-open Util
 open Types
+open Util
 
 let pollPVarId (op, coefs) =
   try Some (List.find ((<>) Id.const) (M.keys op))
   with Not_found ->
-    tryPick (fun x ->
+    List.try_pick (fun x ->
       try Some (List.find ((<>) Id.const) (M.keys x))
       with Not_found -> None) (M.values coefs)
 
@@ -14,7 +14,7 @@ let mergeConstrs pvarIds (ids, puf, constrs as sol) =
     List.map (fun x ->
       List.fold_left (fun i y -> if x <= y then i else i + 1) 0 ids |>
       Puf.find puf) pvarIds |>
-    sort_distinct in
+    List.sort_distinct in
 
   match constrIds with
     | [] -> (-1), sol
@@ -34,8 +34,8 @@ let mergeConstrs pvarIds (ids, puf, constrs as sol) =
       newId, (ids, puf, constrs)
 
 let merge (i1, p1, c1) (i2, p2, c2) =
-  let i1 = mapi (fun i x -> x, i, true) i1 in
-  let i2 = mapi (fun i x -> x, i, false) i2 in
+  let i1 = List.mapi (fun i x -> x, i, true) i1 in
+  let i2 = List.mapi (fun i x -> x, i, false) i2 in
   let i = List.fast_sort compare (i1 @ i2) in
 
   let _, m1, m2 = List.fold_left (fun (i, m1, m2) (_, t, i1flag) -> i + 1,

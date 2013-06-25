@@ -1,5 +1,5 @@
-open Util
 open ListEx
+open Util
 
 module type OrderedType =
   sig

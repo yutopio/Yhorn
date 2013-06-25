@@ -1,8 +1,8 @@
 {
-open Lexing
 open Error
-open Types
+open Lexing
 open Parser
+open Types
 }
 
 let br = ['\r' '\n']
