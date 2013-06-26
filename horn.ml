@@ -210,6 +210,7 @@ type constrTypes =
 type constr = G.E.t list * constrTypes
 
 exception Unsatisfiable of constr list
+exception Invalid_growth
 
 let solveGraph (g, root) =
   let cutpoints =
@@ -650,19 +651,60 @@ let solveGraph (g, root) =
         MEL.addDefault [] (fun a b -> b :: a) ges tag m
       ) MEL.empty x in
 
-      let key, _ = MEL.choose m in
-      let max = List.length components in
+      let keys = MEL.fold (fun k _ l ->
+        let x = List.rev k in
+        let rec f a b =
+          let g () =
+            match a with
+            | y :: a' when List.take (List.length y) x = y ->
+              Some (List.rev_append a' (x :: b))
+            | _ -> None in
+          match b with
+          | [] ->
+            (match g () with
+            | Some l -> l
+            | None -> l @ [x])
+          | y :: b' ->
+            if x > y then f (y :: a) b'
+            else if x = y then l
+            else (* x < y *)
+              match g () with
+              | Some l -> l
+              | None ->
+                List.rev_append a (x :: (
+                  if List.take (List.length x) y = x then b' else b)) in
+        f [] l
+      ) m [[]] |>
+      List.map List.rev in
 
-      let index x =
-        let roots = List.map fst components in
-        List.index_of x roots in
-      let key, min = MEL.fold (fun k _ (key, min) ->
-        if k = [] then (key, min)
-        else
-          let i = List.min (List.map (fun e -> index (G.E.dst e)) k) in
-          if i < min then (k, i) else (key, min)) m (key, max) in
+      let edge_check el dst e =
+        GV.E.label e = el && GV.V.label (GV.E.dst e) = dst in
+      let rec grow x v = function
+        | a::b::rest ->
+          let v' =
+            GV.succ_e st v |>
+            List.filter (edge_check a (G.E.dst b)) |>
+            List.hd |>
+            GV.E.dst in
+          grow x v' (b::rest)
+        | [e] ->
+          if GV.succ_e st v |> List.exists (edge_check e x) then
+            raise Invalid_growth
+          else
+            GV.add_edge_e st (GV.E.create v e (GV.V.create x)) in
 
-      let dst, _ =
+      let rec f g =
+        function
+        | x :: rest -> (
+          try g x
+          with Invalid_growth -> f g rest)
+        | [] -> raise Invalid_growth in
+
+      let f_key key =
+        (* Traverse st based on key. *)
+        let path = (!rootE :: key) in
+        let f_dst dst = step (grow dst rootV path) in
+
         MEL.find key m |>
         List.fold_left (fun m ->
           function
@@ -670,28 +712,9 @@ let solveGraph (g, root) =
             MV.addDefault 0 (+) (G.E.dst e) 1 m) m es
           | _ -> m) MV.empty |>
         MV.filter (fun k v -> v > 1 && List.mem_assoc k components) |>
-        MV.choose in
-
-      (* traverse st based on key. *)
-      let path =
-        (!rootE :: key) |>
-        List.fast_sort (fun a b ->
-          let [x; y] = List.map (G.E.dst |- index) [a; b] in
-          - (compare x y)) in
-
-      let rec grow x v = function
-        | a::b::rest ->
-          let v' =
-            GV.succ_e st v |>
-            List.filter (fun e ->
-              GV.E.label e = a && GV.V.label (GV.E.dst e) = G.E.dst b) |>
-            List.hd |>
-            GV.E.dst in
-          grow x v' (b::rest)
-        | [e] ->
-          GV.add_edge_e st (GV.E.create v e (GV.V.create x)) in
-
-      step (grow dst rootV path) in
+        MV.keys |>
+        f f_dst in
+      f f_key keys in
   step st
 
 let simplifyPCNF clauses =
