@@ -2,6 +2,23 @@
 module List = struct
   include List
 
+  let remove x =
+    let rec inner ret =
+      function
+      | [] -> raise Not_found
+      | y :: rest ->
+        if x = y then rev_append ret rest
+        else inner (y :: ret) rest in
+    inner []
+
+  let remove_at i l =
+    assert (i < List.length l);
+    let rec inner i ret (x :: rest) =
+      match i with
+      | 0 -> rev_append ret rest
+      | _ -> inner (i - 1) (x :: ret) rest in
+    inner i [] l
+
   let index_of x =
     let rec inner i =
       function
@@ -39,15 +56,6 @@ module List = struct
       | [x] -> x::ret
       | x::y::z -> f (if x = y then ret else x::ret) (y::z) in
     f [] sorted
-
-  let zip a =
-    let a = ref a in
-    let ret =
-      List.map (fun y ->
-        match !a with
-        | x::rest -> a := rest; (x,y)
-        | _ -> failwith "zip") in
-    if !a = [] then ret else failwith "zip"
 
   let rec skip n x =
     assert (n >= 0);

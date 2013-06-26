@@ -45,6 +45,12 @@ val stable_sort : ('a -> 'a -> int) -> 'a list -> 'a list
 val fast_sort : ('a -> 'a -> int) -> 'a list -> 'a list
 val merge : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list
 
+  val remove : 'a -> 'a list -> 'a list
+  (** Removes the first occurrence of a specific element from the List. *)
+
+  val remove_at : int -> 'a list -> 'a list
+  (** Removes the element at the specified index of the List. *)
+
   val index_of : 'a -> 'a list -> int
   (** [index_of x l] returns the first index of an occurrence of element [x] in
       the list [l]. Raise [Not_found] if [x] does not exists in the list. *)
@@ -70,10 +76,6 @@ val merge : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list
 
   val sort_distinct : 'a list -> 'a list
   (** Sort the list and then returns distinct elements from it. *)
-
-  val zip : 'a list -> 'b list -> ('a * 'b) list
-  (** Combines two lists into a list of pairs. The two lists must have equal
-      lengths. *)
 
   val skip : int -> 'a list -> 'a list
   (** Bypasses a specified number of elements in the list and then returns the
