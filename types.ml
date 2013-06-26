@@ -325,13 +325,18 @@ module Display = struct
       [`Style `Filled ; `Fillcolor 0; `Fontcolor 0xffffff]
     else []
 
-  let edge_attributes e =
+  let edge_label e =
     match E.label e with
-      | None -> [`Style `Dashed]
+      | None -> ""
       | Some x ->
         let r = M.fold (fun x y l ->
           (Id.print x ^ "=" ^ Id.print y) :: l) x [] in
-        [`Label (String.concat ", " r)]
+        String.concat ", " r
+
+  let edge_attributes e =
+    match E.label e with
+      | None -> [`Style `Dashed]
+      | Some _ -> [`Label (edge_label e)]
 end
 
 module Dot = Graph.Graphviz.Dot(Display)

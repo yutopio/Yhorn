@@ -207,10 +207,24 @@ module DisplayGI = struct
   let vertex_name v = "\"" ^ (string_of_int v) ^ "\""
   let edge_attributes _ = []
 end
+module DisplayGV = struct
+  include GV
+  include DisplayAttrib
+
+  let vertex_name v = "\"" ^ string_of_int (V.hash v) ^ ": " ^ string_of_int (G.V.hash (V.label v)) ^ "\""
+  let edge_label e =
+    let e = E.label e in
+    List.map ((fun f -> f e) |- G.V.hash |- string_of_int) [G.E.src;G.E.dst] |>
+    String.concat "-"
+  let edge_attributes e = [`Label (edge_label e)]
+end
 module DotGI = Graph.Graphviz.Dot(DisplayGI)
+module DotGV = Graph.Graphviz.Dot(DisplayGV)
 
 let display_with_gv_gi x =
   if !Flags.enable_gv then display DotGI.output_graph x else ()
+let display_with_gv_gv x =
+  if !Flags.enable_gv then display DotGV.output_graph x else ()
 
 let addRoot g =
   assert (not (G.is_empty g));
@@ -557,6 +571,8 @@ let solveGraph (g, root) =
   let st = GV.add_vertex GV.empty rootV in
 
   let trySolve st =
+    print_endline "Split tree";
+    display_with_gv_gv st;
     (* Traverse the split tree to generate root constraint. *)
     let rec step v =
       let mvv, me = GV.fold_succ_e (fun e (mvv, me) ->
