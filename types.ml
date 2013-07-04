@@ -294,14 +294,6 @@ module MyVertex = struct
   let equal = (=)
 end
 
-type hornTermId = La of int | Pid of Id.t
-module MyVertex' = struct
-  type t = hornTermId
-  let compare = compare
-  let hash _ = 0 (* TODO: *)
-  let equal = (=)
-end
-
 module MyEdge = struct
   type t = Id.t M.t option
 
@@ -316,10 +308,8 @@ end
 
 module G = Graph.Persistent.Digraph.AbstractLabeled(MyVertex)(MyEdge)
 module SV = Set.Make(G.V)
-module G' = Graph.Persistent.Digraph.AbstractLabeled(MyVertex')(MyEdge)
 module Traverser = Graph.Traverse.Dfs(G)
 module Operator = Graph.Oper.P(G)
-module Sorter = Graph.Topological.Make(G')
 
 module DisplayAttrib = struct
   let graph_attributes _ = []
@@ -351,24 +341,7 @@ module Display = struct
         [`Label (String.concat ", " r)]
 end
 
-module Display' = struct
-  include G'
-  include DisplayAttrib
-  let vertex_name v = "\"" ^
-    (match V.label v with
-      | La x -> "La " ^ (string_of_int x)
-      | Pid x -> "Pid " ^ (Id.print x)) ^ "\""
-  let edge_attributes e =
-    match E.label e with
-      | None -> []
-      | Some x ->
-        let r = M.fold (fun x y l ->
-          (Id.print x ^ "=" ^ Id.print y) :: l) x [] in
-        [`Label (String.concat ", " r)]
-end
-
 module Dot = Graph.Graphviz.Dot(Display)
-module Dot' = Graph.Graphviz.Dot(Display')
 
 let uname =
   let (i, o) as p = Unix.open_process "uname" in
@@ -396,5 +369,3 @@ let display output_graph g =
 
 let display_with_gv x =
   if !Flags.enable_gv then display Dot.output_graph x else ()
-let display_with_gv' x =
-  if !Flags.enable_gv then display Dot'.output_graph x else ()
