@@ -6,6 +6,8 @@ type t =
 
 let id = ref 0
 
+let compare = compare
+
 let print = function
   | NumId x -> "$" ^ string_of_int x
   | StrId x -> x

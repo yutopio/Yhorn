@@ -3,13 +3,8 @@ open ListEx
 open MapEx
 open Util
 
-module MyString = struct
-  type t = Id.t
-  let compare = compare
-end
-
-module M = Map.Make(MyString)
-module S = Set.Make(MyString)
+module M = Map.Make(Id)
+module S = Set.Make(Id)
 
 module Integer = struct
   type t = int

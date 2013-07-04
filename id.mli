@@ -1,6 +1,7 @@
 
 type t
 
+val compare : t -> t -> int
 val print : t -> string
 
 (* Constructor *)
