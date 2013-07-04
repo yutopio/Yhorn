@@ -387,7 +387,7 @@ let solveGraph (g, root) =
 
       (* If the predicate is specified for duplication, rename it. *)
       let pop, pcoef, constrs =
-        try ME.find e deltaMap
+        try duplicate (ME.find e deltaMap)
         with Not_found -> (if dup then duplicate else id) defDelta in
 
       if dup then
@@ -453,7 +453,6 @@ let solveGraph (g, root) =
         | LinearExpr (Expr (op, coef)), _ ->
           (* Add the current linear expression for Farkas' target. *)
           let pi = Id.create () in
-          print_endline (printExpr (op, coef) ^ " --- " ^ Id.print pi);
 
           (* Building an coefficient mapping in terms of variables. *)
           ((M.fold (fun k v -> addPcoef None k (pi, (-v))) coef m),
@@ -601,20 +600,12 @@ let solveGraph (g, root) =
 
       (* Once the root constraint become satisfiable, all subproblems
          should have a solution. *)
-      if first then (
-        let constrs = List.filter (fun ((_, tag), x) ->
-          tag <> LaWeight) constrs in
-        let constrs, symbol_map = split_tag constrs in
-
-        try ignore(Z3interface.solve constrs)
+      let constrs, symbol_map = split_tag constrs in
+      let sol =
+        try Z3interface.solve constrs
         with Z3interface.Unsatisfiable x ->
           let uc_tags = List.map (fun x -> List.assoc x symbol_map) x in
-          raise (Unsatisfiable (List.sort_distinct uc_tags)));
-
-      let sol =
-        let constrs, symbol_map = split_tag constrs in
-        try Z3interface.solve constrs
-        with Z3interface.Unsatisfiable x -> assert false in
+          raise (Unsatisfiable (List.sort_distinct uc_tags)) in
 
       MV.fold (fun k pexprs sols ->
         match G.V.label k with
