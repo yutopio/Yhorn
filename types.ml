@@ -386,8 +386,12 @@ let display output_graph g =
   if uname <> "Darwin" then (
     ignore (Sys.command ("gv " ^ ps ^ " 2>/dev/null"));
     Sys.remove ps
-  ) else
-    ignore (Sys.command ("open " ^ ps));
+  ) else (
+    let pdf = Filename.temp_file "graph" ".pdf" in
+    ignore (Sys.command ("ps2pdf " ^ ps ^ " " ^ pdf));
+    ignore (Sys.command ("open " ^ pdf));
+    ignore (read_line ())
+  );
   Sys.remove dot
 
 let display_with_gv x =
