@@ -1,3 +1,4 @@
+open Error
 open ListEx
 open MapEx
 open Types
@@ -80,13 +81,13 @@ let buildGraph clauses =
     if rh && ll <> List.length (List.distinct l) then
       (* The parameter definition has the same name variable in the list.
          e.g. x=0->A(x,x). is illegal. *)
-      failwith "Binder contains multiple appearance of the same variable."
+      failwith illegal_binder
     else if M.mem p vp then (
       (* A predicate symbol which is implied in multiple Horn clauses should
          have the same arity across them. *)
       let PredVar (p', l') = M.find p vp |> G.V.label in assert (p = p');
       if ll <> List.length l' then
-        failwith ("Inconsistent arity for predicate variable " ^ Id.print p)
+        failwith (invalid_arity p)
       else vp
     ) else
       (* Create a new predicate vertex and remember it. *)
@@ -581,7 +582,7 @@ let solveGraph (g, root) =
           match p, v with
           | None, None -> assert false
           | None, Some 0 -> None
-          | None, Some v -> failwith "No solution"
+          | None, Some v -> failwith no_sol
           | Some p, None
           | Some p, Some 0 -> Some (Expr (EQ, M.add p 1 M.empty))
           | Some p, Some v ->
@@ -869,6 +870,6 @@ let solve clauses unify =
   List.iter (fun x ->
     print_endline (printHorn x);
     if not (Z3interface.check_clause sol x) then
-      failwith "Verification failed") clauses;
+      failwith incorrect) clauses;
 
   sol
