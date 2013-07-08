@@ -212,7 +212,7 @@ type constrTypes =
 type constr = G.E.t list * constrTypes
 
 exception Unsatisfiable of constr list
-exception Invalid_growth
+exception No_growth
 
 let solveGraph (g, root) =
   let cutpoints =
@@ -667,6 +667,8 @@ let solveGraph (g, root) =
 
       let edge_check el dst e =
         GV.E.label e = el && GV.V.label (GV.E.dst e) = dst in
+
+      let changed = ref false in
       let rec grow st x v = function
         | a::b::rest ->
           let v' =
@@ -678,8 +680,9 @@ let solveGraph (g, root) =
         | [e] ->
           if GV.succ_e st v |> List.exists (edge_check e x) then
             st (* Do nothing. *)
-          else
-            GV.add_edge_e st (GV.E.create v e (GV.V.create x)) in
+          else (
+            changed := true;
+            GV.add_edge_e st (GV.E.create v e (GV.V.create x))) in
 
       let f_key st key =
         (* Traverse st based on key. *)
@@ -695,7 +698,9 @@ let solveGraph (g, root) =
         MV.filter (fun k v -> v > 1 && List.mem_assoc k components) |>
         MV.keys |>
         List.fold_left f_dst st in
-      step (List.fold_left f_key st keys) in
+      let st = List.fold_left f_key st keys in
+      if not !changed then raise No_growth;
+      step st in
   step st
 
 let simplifyPCNF clauses =
