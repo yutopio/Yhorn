@@ -664,7 +664,15 @@ let solveGraph (g, root) =
               if List.starts_with srx x then s
               else SEL.add x s) m SEL.empty in
       let keys = SEL.fold (fun x -> SEL.add (List.rev x)) keys SEL.empty in
+
+      (* Eliminating redundant search. *)
       let keys = SEL.diff keys skip in
+
+      (* NOTE: Some dirty heuristical method. *)
+      let keys =
+        SEL.fold (fun x l -> x :: l) keys [] |>
+        List.fast_sort (fun a b -> List.length a - List.length b)
+      in
 
       let edge_check el dst e =
         GV.E.label e = el && GV.V.label (GV.E.dst e) = dst in
@@ -682,16 +690,14 @@ let solveGraph (g, root) =
           else
             GV.add_edge_e st (GV.E.create v e (GV.V.create x)) in
 
-      let rec f1 g s1 s2 =
-        if SEL.is_empty s1 then
-          raise Invalid_growth
-        else
-          let x = SEL.choose s1 in
-          let s1' = SEL.remove x s1 in
+      let rec f1 g s2 =
+        function
+        | x :: s1' -> (
           try g x s2
           with Invalid_growth ->
             let s2' = SEL.add x s2 in
-            f1 g s1' s2' in
+            f1 g s2' s1')
+        | [] -> raise Invalid_growth in
 
       let rec f2 g =
         function
@@ -715,7 +721,7 @@ let solveGraph (g, root) =
         MV.filter (fun k v -> v > 1 && List.mem_assoc k components) |>
         MV.keys |>
         f2 f_dst in
-      f1 f_key keys SEL.empty in
+      f1 f_key SEL.empty keys in
   step st SEL.empty
 
 let simplifyPCNF clauses =
