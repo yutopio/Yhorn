@@ -636,7 +636,7 @@ let solveGraph (g, root) =
       ) templ (M.empty, M.empty) in
     step (`A (!rootE, rootV)) (LTE, M.empty) true in
 
-  let rec step st skip =
+  let rec step st =
     try
       trySolve st
     with Unsatisfiable x ->
@@ -663,54 +663,28 @@ let solveGraph (g, root) =
               let srx = SEL.min_elt sr in
               if List.starts_with srx x then s
               else SEL.add x s) m SEL.empty in
-      let keys = SEL.fold (fun x -> SEL.add (List.rev x)) keys SEL.empty in
-
-      (* Eliminating redundant search. *)
-      let keys = SEL.diff keys skip in
-
-      (* NOTE: Some dirty heuristical method. *)
-      let keys =
-        SEL.fold (fun x l -> x :: l) keys [] |>
-        List.fast_sort (fun a b -> List.length a - List.length b)
-      in
+      let keys = SEL.fold (fun x l -> List.rev x :: l) keys [] in
 
       let edge_check el dst e =
         GV.E.label e = el && GV.V.label (GV.E.dst e) = dst in
-      let rec grow x v = function
+      let rec grow st x v = function
         | a::b::rest ->
           let v' =
             GV.succ_e st v |>
             List.filter (edge_check a (G.E.dst b)) |>
             List.hd |>
             GV.E.dst in
-          grow x v' (b::rest)
+          grow st x v' (b::rest)
         | [e] ->
           if GV.succ_e st v |> List.exists (edge_check e x) then
-            raise Invalid_growth
+            st (* Do nothing. *)
           else
             GV.add_edge_e st (GV.E.create v e (GV.V.create x)) in
 
-      let rec f1 g s2 =
-        function
-        | x :: s1' -> (
-          try g x s2
-          with Invalid_growth ->
-            let s2' = SEL.add x s2 in
-            f1 g s2' s1')
-        | [] -> raise Invalid_growth in
-
-      let rec f2 g =
-        function
-        | x :: rest -> (
-          try g x
-          with Invalid_growth -> f2 g rest)
-        | [] -> raise Invalid_growth in
-
-      let f_key key skip' =
+      let f_key st key =
         (* Traverse st based on key. *)
         let path = (!rootE :: key) in
-        let skip' = SEL.union skip skip' in
-        let f_dst dst = step (grow dst rootV path) skip' in
+        let f_dst st dst = grow st dst rootV path in
 
         MEL.find key m |>
         List.fold_left (fun m ->
@@ -720,9 +694,9 @@ let solveGraph (g, root) =
           | _ -> m) MV.empty |>
         MV.filter (fun k v -> v > 1 && List.mem_assoc k components) |>
         MV.keys |>
-        f2 f_dst in
-      f1 f_key SEL.empty keys in
-  step st SEL.empty
+        List.fold_left f_dst st in
+      step (List.fold_left f_key st keys) in
+  step st
 
 let simplifyPCNF clauses =
   let simplifyPDF exprs =
