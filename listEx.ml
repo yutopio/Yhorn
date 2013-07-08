@@ -92,6 +92,16 @@ module List = struct
     let _, r = List.fold_left (fun (i, l) x -> i + 1, (f i x) :: l) (0, []) l in
     List.rev r
 
+  let starts_with value target =
+    let vl = length value in
+    let tl = length target in
+    (vl <= tl) && (take vl target = value)
+
+  let ends_with value target =
+    let vl = length value in
+    let tl = length target in
+    (vl <= tl) && (skip (vl - tl) target = value)
+
   let direct_product input =
     let ret = ref [] in
     let rec inner current = function

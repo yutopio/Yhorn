@@ -180,6 +180,7 @@ module GV = Graph.Persistent.Digraph.AbstractLabeled(G.V)(EDef)
 module MV = Map.Make(G.V)
 module MVV = Map.Make(GV.V)
 module ME = Map.Make(G.E)
+module SEL = Set.Make(EL)
 module MEL = Map.Make(EL)
 module SV = Set.Make(G.V)
 module TopologicalGI = Graph.Topological.Make(GI)
@@ -635,7 +636,7 @@ let solveGraph (g, root) =
       ) templ (M.empty, M.empty) in
     step (`A (!rootE, rootV)) (LTE, M.empty) true in
 
-  let rec step st =
+  let rec step st skip =
     try
       trySolve st
     with Unsatisfiable x ->
@@ -643,31 +644,27 @@ let solveGraph (g, root) =
         MEL.addDefault [] (fun a b -> b :: a) ges tag m
       ) MEL.empty x in
 
-      let keys = MEL.fold (fun k _ l ->
+      let keys = MEL.fold (fun k _ s ->
         let x = List.rev k in
-        let rec f a b =
-          let g () =
-            match a with
-            | y :: a' when List.take (List.length y) x = y ->
-              Some (List.rev_append a' (x :: b))
-            | _ -> None in
-          match b with
-          | [] ->
-            (match g () with
-            | Some l -> l
-            | None -> l @ [x])
-          | y :: b' ->
-            if x > y then f (y :: a) b'
-            else if x = y then l
-            else (* x < y *)
-              match g () with
-              | Some l -> l
-              | None ->
-                List.rev_append a (x :: (
-                  if List.take (List.length x) y = x then b' else b)) in
-        f [] l
-      ) m [[]] |>
-      List.map List.rev in
+        match SEL.split k s with
+        | _, true, _ -> s
+        | sl, _, sr ->
+          let ret =
+            if SEL.is_empty sl then None
+            else
+              let slx = SEL.max_elt sl in
+              if not (List.starts_with slx x) then None
+              else Some (SEL.remove slx s |> SEL.add x) in
+          match ret with
+          | Some x -> x
+          | None ->
+            if SEL.is_empty sr then SEL.add x s
+            else
+              let srx = SEL.min_elt sr in
+              if List.starts_with srx x then s
+              else SEL.add x s) m SEL.empty in
+      let keys = SEL.fold (fun x -> SEL.add (List.rev x)) keys SEL.empty in
+      let keys = SEL.diff keys skip in
 
       let edge_check el dst e =
         GV.E.label e = el && GV.V.label (GV.E.dst e) = dst in
@@ -685,17 +682,29 @@ let solveGraph (g, root) =
           else
             GV.add_edge_e st (GV.E.create v e (GV.V.create x)) in
 
-      let rec f g =
+      let rec f1 g s1 s2 =
+        if SEL.is_empty s1 then
+          raise Invalid_growth
+        else
+          let x = SEL.choose s1 in
+          let s1' = SEL.remove x s1 in
+          try g x s2
+          with Invalid_growth ->
+            let s2' = SEL.add x s2 in
+            f1 g s1' s2' in
+
+      let rec f2 g =
         function
         | x :: rest -> (
           try g x
-          with Invalid_growth -> f g rest)
+          with Invalid_growth -> f2 g rest)
         | [] -> raise Invalid_growth in
 
-      let f_key key =
+      let f_key key skip' =
         (* Traverse st based on key. *)
         let path = (!rootE :: key) in
-        let f_dst dst = step (grow dst rootV path) in
+        let skip' = SEL.union skip skip' in
+        let f_dst dst = step (grow dst rootV path) skip' in
 
         MEL.find key m |>
         List.fold_left (fun m ->
@@ -705,9 +714,9 @@ let solveGraph (g, root) =
           | _ -> m) MV.empty |>
         MV.filter (fun k v -> v > 1 && List.mem_assoc k components) |>
         MV.keys |>
-        f f_dst in
-      f f_key keys in
-  step st
+        f2 f_dst in
+      f1 f_key keys SEL.empty in
+  step st SEL.empty
 
 let simplifyPCNF clauses =
   let simplifyPDF exprs =

@@ -88,6 +88,14 @@ val merge : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list
   (** Chop the list so that each sub-list is no longer than a specified
       number. *)
 
+  val starts_with : 'a list -> 'a list -> bool
+  (** [ends_with value target] determines whether the beginning of [target]
+      matches [value]. *)
+
+  val ends_with : 'a list -> 'a list -> bool
+  (** [ends_with value target] determines whether the end of [target] matches
+      [value]. *)
+
   val direct_product : 'a list list -> 'a list list
   (** Gets the all possible combinations of elements each of those are chosen
       from every list. For example, [direct_product [[A;B]; [C;D]]] returns
