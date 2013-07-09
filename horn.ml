@@ -851,7 +851,11 @@ let solve clauses =
       Some (param, (And (List.map (fun x -> Expr x) exprs)))) params exprs in
 
   (* Rename back to original predicate variable names. *)
-  M.fold (fun k -> M.add (M.findDefault k k pm)) sol M.empty
+  M.fold (fun k -> M.add (M.findDefault k k pm)) sol M.empty |>
+  M.map (fun (p, f) -> p,
+    let (contradiction, cnf) = convertToNF true f |> simplifyCNF in
+    if contradiction then Expr (NEQ, M.empty)
+    else convertToFormula true cnf)
 
 let solve clauses unify =
   (* NYI: Unification [tryUnify] ? *)
