@@ -60,7 +60,7 @@ let buildGraph clauses =
       | PredVar _ -> c :: ret
       | LinearExpr e ->
         mapFormula normalizeExpr e |>
-        splitNegation |>
+        normalizeOperator |>
         convertToNF true |>
         simplifyCNF |>
         (function
@@ -198,11 +198,8 @@ let addRoot g =
     let g = SV.fold (fun v g -> G.add_edge g root v) roots g in
     g, root
 
-let assignParameters assign (op, expr) =
-  (M.fold (fun k v o -> if v <> 0 && M.findDefault EQ k op = LTE then
-      LTE else o) assign EQ),
-  M.map (fun v -> M.fold (fun k v -> (+) ((
-    M.findDefault 1 k assign) * v)) v 0) expr
+let assignParameters assign =
+  M.map (fun v -> M.fold (fun k v -> (+) ((M.findDefault 1 k assign) * v)) v 0)
 
 type constrTypes =
 | LaWeight
@@ -347,7 +344,7 @@ let solveGraph (g, root) =
 
   let addLinear e x =
     mapFormula normalizeExpr |-
-    splitNegation |-
+    normalizeOperator |-
     convertToNF false |-
 
     (* TODO: Support of disjunctions.
@@ -374,9 +371,8 @@ let solveGraph (g, root) =
            Any larger templates should be available in future. *)
 
   (* Duplicating templates is done by simple renaming. *)
-  let duplicate (pop, pcoef, constr) =
+  let duplicate (pcoef, constr) =
     let map = ref M.empty in
-    M.fold (fun k -> M.add (renameVar map k)) pop M.empty,
     M.fold (fun k v -> M.add k (renameVar map v)) pcoef M.empty,
     List.map (fun (x, y) -> x, mapFormula (renameExpr map) y) constr in
 
@@ -388,17 +384,17 @@ let solveGraph (g, root) =
       let deltaMap, defDelta, dup = MV.find v templs in
 
       (* If the predicate is specified for duplication, rename it. *)
-      let pop, pcoef, constrs =
+      let pcoef, constrs =
         try duplicate (ME.find e deltaMap)
         with Not_found -> (if dup then duplicate else id) defDelta in
 
       if dup then
         let constrs = List.map (fun ((es, a), b) ->  (e :: es, a), b) constrs in
-        MV.add v [e, (pop, pcoef, constrs)] MV.empty
+        MV.add v [e, (pcoef, constrs)] MV.empty
       else
         let exprs = List.map snd constrs |> List.reduce (&&&) in
         (* TODO: Simplification based on quantifiers *)
-        MV.add v [e, (pop, pcoef, [([], Simplified v), exprs])] MV.empty
+        MV.add v [e, (pcoef, [([], Simplified v), exprs])] MV.empty
     else
       let ret, constrs, (m, pis), root_flag =
         G.fold_succ_e (fun e (ret, constrs, (m, pis), flag) ->
@@ -415,7 +411,7 @@ let solveGraph (g, root) =
               assert (flag <> Some false);
 
               let ret' = computeAncestors templs u e g in
-              let [_, (_, _, constr)] = MV.find u ret' in
+              let [_, (_, constr)] = MV.find u ret' in
 
               (* Merging returning template. *)
               let ret = MV.merge (fun _ -> maybeAdd (@)) ret ret' in
@@ -429,8 +425,7 @@ let solveGraph (g, root) =
             let ret' = computeAncestors templs u e g in
 
             (* TODO: We should consider disjunctive templates. *)
-            (* TODO: Support parameterized operators. *)
-            let [_, (pop, pcoef, constr)] = MV.find u ret' in
+            let [_, (pcoef, constr)] = MV.find u ret' in
 
             (* Merging returning template. *)
             let ret = MV.merge (fun _ -> maybeAdd (@)) ret ret' in
@@ -444,30 +439,25 @@ let solveGraph (g, root) =
           | _ -> assert false
         ) g v (MV.empty, [], (M.empty, []), None) in
 
-      let (m, pi), (pop, pcoef) =
+      let (m, pi), pcoef =
         match G.V.label v, root_flag with
         | LinearExpr _, Some true
           (* Generated root node. *)
         | PredVar _, None ->
           (* Predicate variable without assumption. *)
-          (M.empty, None), (M.empty, M.empty)
+          (M.empty, None), M.empty
 
-        | LinearExpr (Expr (op, coef)), _ ->
+        | LinearExpr (Expr (LTE, coef)), _ ->
           (* Add the current linear expression for Farkas' target. *)
           let pi = Id.create () in
 
           (* Building an coefficient mapping in terms of variables. *)
           ((M.fold (fun k v -> addPcoef None k (pi, (-v))) coef m),
-
-          (* TODO: Linear expression must be normalized to LTE. No EQ
-             allowed. *)
-          (match op with
-          | LTE -> Some pi
-          | _ -> assert false)),
+          Some pi),
 
           (* Should return tautology for performance; will be evaluated at
              the bottom node. *)
-          (M.empty, M.empty)
+          M.empty
 
         | PredVar (p, param), Some false ->
           let pcoef = M.find p templ in
@@ -475,9 +465,7 @@ let solveGraph (g, root) =
           (* Add the atomic current predicate template for Farkas' target. *)
           let m = M.fold (fun k v -> addPcoef None k (v, -1)) pcoef m in
 
-          (m, None),
-          (* TODO: Currently all template are considered to be LTE. *)
-          (M.fold (fun _ v -> M.add v LTE) pcoef M.empty, pcoef)
+          (m, None), pcoef
         | _ -> assert false in
 
       let constrs =
@@ -501,7 +489,7 @@ let solveGraph (g, root) =
           constr :: c) m
       in
 
-      MV.add v [e, (pop, pcoef, constrs)] ret in
+      MV.add v [e, (pcoef, constrs)] ret in
 
   (* Create templates and constraints for all predicate variables over the
      graph. *)
@@ -509,9 +497,9 @@ let solveGraph (g, root) =
     List.fold_left (fun templ (root, g) ->
       let templ' = computeAncestors (MV.map fst templ) root !rootE g in
 
-      let [_, (pop, pcoef, constrs)] = MV.find root templ' in
+      let [_, (pcoef, constrs)] = MV.find root templ' in
 
-      MV.add root ((ME.empty, (pop, pcoef, constrs), false), templ') templ
+      MV.add root ((ME.empty, (pcoef, constrs), false), templ') templ
     ) MV.empty components in
 
   (* Generate split tree. *)
@@ -550,9 +538,9 @@ let solveGraph (g, root) =
         assert (not (MV.mem v' templs));
         let templ' = computeAncestors templs v' e g' in
 
-        let [_, (pop, pcoef, constr)] = MV.find v' templ' in
+        let [_, (pcoef, constr)] = MV.find v' templ' in
 
-        ME.add e ((pop, pcoef, constr), templ') me) me ME.empty in
+        ME.add e ((pcoef, constr), templ') me) me ME.empty in
       MVV.add v me mvv
     in
 
@@ -561,7 +549,7 @@ let solveGraph (g, root) =
       let f v =
         let (_, x, _), templ = MV.find v rootTempls in
         v, (x, templ), MV.empty in
-      let v, ((pop, pcoef, constrs), templ), subprobl =
+      let v, ((pcoef, constrs), templ), subprobl =
         match v with
         | `A (e, vv) ->
           let c = MVV.find vv constrTree in
@@ -613,12 +601,12 @@ let solveGraph (g, root) =
         match G.V.label k with
         | LinearExpr _ -> sols
         | PredVar (p, param) ->
-          List.fold_left (fun (params, predSol) (e, (pop, pexpr, _)) ->
+          List.fold_left (fun (params, predSol) (e, (pcoef, _)) ->
             let params =
               try assert (param = M.find p params); params
               with Not_found -> M.add p param params in
-            let pexpr = M.map (fun x -> M.add x 1 M.empty) pexpr in
-            let expr = assignParameters sol (pop, pexpr) in
+            let pcoef = M.map (fun x -> M.add x 1 M.empty) pcoef in
+            let expr = LTE, (assignParameters sol pcoef) in
             let predSol = M.addDefault [] (fun a b -> b :: a) p expr predSol in
 
             if k <> v && List.mem_assoc k components then

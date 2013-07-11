@@ -166,14 +166,14 @@ let rec (!!!) = function
 let (==>) x y = (!!! x) ||| y
 let (<=>) x y = (x ==> y) &&& (y ==> x)
 
-let rec splitNegation = function
-    | And x -> List.reduce (&&&) (List.map splitNegation x)
-    | Or x -> List.reduce (|||) (List.map splitNegation x)
-    | Expr (NEQ, coef) -> Or (
-      List.map (fun x -> Expr (normalizeExpr (x, coef))) [LT;GT])
-    | Expr (EQ, coef) -> And (
-      List.map (fun x -> Expr (normalizeExpr (x, coef))) [LTE;GTE])
-    | Expr e -> Expr e
+let rec normalizeOperator = function
+  | And x -> List.reduce (&&&) (List.map normalizeOperator x)
+  | Or x -> List.reduce (|||) (List.map normalizeOperator x)
+  | Expr (NEQ, coef) -> Or (
+    List.map (fun x -> Expr (normalizeExpr (x, coef))) [LT;GT])
+  | Expr (EQ, coef) -> And (
+    List.map (fun x -> Expr (normalizeExpr (x, coef))) [LTE;GTE])
+  | Expr e -> Expr e
 
 let rec countFormula = function
     | And x
@@ -234,12 +234,12 @@ let convertToFormula cnf nf =
     | x -> if cnf then And x else Or x
 
 (** Solution space of interpolation *)
-type pexpr = operator M.t * coef M.t
+type pcoef = coef M.t
 let (+++) = coefOp (++) M.empty
 
 let renamePexpr m (op, coef) = op,
   M.fold (renameVar m |- M.addDefault M.empty (++)) coef M.empty
-let printPexpr (_, coef) =
+let printPexpr coef =
   let buf = create 1 in
   let first = ref true in
   M.iter (fun v coef ->
@@ -257,7 +257,7 @@ let printPexpr (_, coef) =
     );
     add_string buf (Id.print v))) coef;
   if !first then add_string buf "0";
-  add_string buf " ? ";
+  add_string buf " <= ";
   add_string buf (
     if M.mem Id.const coef then
       printTerm (~-- (M.find Id.const coef))
@@ -269,7 +269,7 @@ let printPexpr (_, coef) =
 type constr = expr formula
 type constrSet = Id.t list * Puf.t * constr MI.t
 
-type hornSolSpace = horn list * ((Id.t list * pexpr nf) M.t * constrSet)
+type hornSolSpace = horn list * ((Id.t list * pcoef nf) M.t * constrSet)
 type hornSol = (Id.t list * expr formula) M.t
 
 let printHornSol x =
