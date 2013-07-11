@@ -200,6 +200,18 @@ module MEL = Map.Make(EL)
 module SV = Set.Make(G.V)
 module TopologicalGI = Graph.Topological.Make(GI)
 
+module DisplayGI = struct
+  include GI
+  include DisplayAttrib
+
+  let vertex_name v = "\"" ^ (string_of_int v) ^ "\""
+  let edge_attributes _ = []
+end
+module DotGI = Graph.Graphviz.Dot(DisplayGI)
+
+let display_with_gv_gi x =
+  if !Flags.enable_gv then display DotGI.output_graph x else ()
+
 let addRoot g =
   assert (not (G.is_empty g));
 
@@ -307,6 +319,7 @@ let solveGraph (g, root) =
   (* Create a dependency graph between subtrees. *)
   let gi = GI.add_vertex GI.empty (lookup root) in
   let linkG = List.fold_left (fun g (x, y) -> GI.add_edge g x y) gi link in
+  display_with_gv_gi linkG;
 
   (* Fold over edges to create new graphs for each component. *)
   let components =
