@@ -48,3 +48,7 @@ let maybeAdd f a b =
   | None, Some x
   | Some x, None -> Some x
   | Some a, Some b -> Some (f a b)
+
+let maybeApply f = function
+  | None -> None
+  | Some x -> Some (f x)

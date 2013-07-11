@@ -4,10 +4,6 @@ open MapEx
 open Types
 open Util
 
-let maybeApply f = function
-  | None -> None
-  | Some x -> Some (f x)
-
 let createRename = List.fold_left2 (fun m k v -> M.add k v m) M.empty
 
 let preprocLefthand = List.fold_left (fun (pvars, la) ->
