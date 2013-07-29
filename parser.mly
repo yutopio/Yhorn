@@ -72,20 +72,15 @@ expr:
 ;
 
 terms:
-    | term              { $1 }
-    | MINUS term        { M.empty -- $2 }
+    |             term  { $1 }
+    |       PLUS  term  { $2 }
+    |       MINUS term  { M.empty -- $2 }
     | terms PLUS  term  { $1 ++ $3 }
     | terms MINUS term  { $1 -- $3 }
 ;
 
 term:
-    | num       { M.add Id.const $1 M.empty }
-    | num VAR   { M.add $2 $1 M.empty }
+    | INT       { M.add Id.const $1 M.empty }
+    | INT VAR   { M.add $2 $1 M.empty }
     |     VAR   { M.add $1 1 M.empty }
-;
-
-num:
-    |       INT { $1 }
-    | PLUS  INT { $2 }
-    | MINUS INT { -($2) }
 ;
