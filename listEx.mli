@@ -76,6 +76,10 @@ val merge : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list
   val sort_distinct : 'a list -> 'a list
   (** Sort the list and then returns distinct elements from it. *)
 
+  val compare : ('a -> 'a -> int) -> 'a list -> 'a list -> int
+  (** Total ordering between lists. The first argument is a total
+      ordering used to compare list elements. *)
+
   val skip : int -> 'a list -> 'a list
   (** Bypasses a specified number of elements in the list and then returns the
       remaining elements. *)

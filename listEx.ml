@@ -57,6 +57,16 @@ module List = struct
       | x::y::z -> f (if x = y then ret else x::ret) (y::z) in
     f [] sorted
 
+  let rec compare c a b =
+    match a, b with
+    | [], [] -> 0
+    | [], _ -> -1
+    | _, [] -> 1
+    | a::a', b::b' ->
+      match c a b with
+      | 0 -> compare c a' b'
+      | x -> x
+
   let rec skip n x =
     assert (n >= 0);
     if n = 0 then x
