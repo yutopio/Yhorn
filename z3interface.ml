@@ -166,14 +166,18 @@ let check_interpolant (a, b) i =
   with e -> failwith (show_error e)
 
 let check_clause pred (lh, rh) =
-  let rh::lh = List.map (function
+  let substitute =
+    function
     | PredVar (p, args) ->
       let (binder, la) = M.find p pred in
-      let renames = List.fold_left2 (fun m a b -> M.add a b m)
-        M.empty binder args in
+      let renames =
+        List.fold_left2 (fun m a b -> M.add a b m)
+          M.empty binder args in
       mapFormula (renameExpr (ref renames)) la
-    | LinearExpr x -> x) (rh::lh) in
-  let lh = List.reduce (&&&) lh in
+    | LinearExpr x -> x in
+
+  let lh = Formula.flatten (mapFormula substitute lh) in
+  let rh = substitute rh in
 
   let ast = mk_not ctx (mk_implies ctx (convert lh) (convert rh)) in
   try

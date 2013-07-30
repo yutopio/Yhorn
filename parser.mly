@@ -14,7 +14,6 @@ open Types
 %token EOF
 
 %nonassoc ARROW
-%left CAND
 %left AND OR
 %right NOT
 %left PLUS MINUS
@@ -34,18 +33,16 @@ hornClauses:
 ;
 
 hornClause:
-    | clause ARROW pred  DOT    { $1, (PredVar $3) }
-    | clause ARROW exprs DOT    { $1, (LinearExpr $3) }
+    | hterms ARROW pred  DOT    { $1, (PredVar $3) }
+    | hterms ARROW exprs DOT    { $1, (LinearExpr $3) }
 ;
 
-clause:
-    | hornTerm                          { [$1] }
-    | hornTerm AND clause %prec CAND    { $1::$3 }
-;
-
-hornTerm:
-    | exprs                 { LinearExpr $1 }
-    | pred                  { PredVar $1 }
+hterms:
+    | exprs                 { Expr (LinearExpr $1) }
+    | pred                  { Expr (PredVar $1) }
+    | LPAREN hterms RPAREN  { $2 }
+    | hterms AND hterms     { And [$1;$3] }
+    | hterms OR  hterms     { Or [$1;$3] }
 ;
 
 pred:

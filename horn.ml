@@ -6,14 +6,25 @@ open Util
 
 let createRename = List.fold_left2 (fun m k v -> M.add k v m) M.empty
 
-let preprocLefthand = List.fold_left (fun (pvars, la) ->
-  function
-  | LinearExpr x -> pvars, Some (
-    let x = normalizeOperator x in
+let preprocLefthand =
+  convertToNF false |-
+  List.map (fun x ->
+    let pvars, la =
+      List.fold_left (fun (pvars, la) ->
+        function
+        | LinearExpr x -> pvars, Some (
+          let x = normalizeOperator x in
+          match la with
+          | None -> x
+          | Some y -> x &&& y)
+        | PredVar pvar -> (pvar :: pvars), la) ([], None) x in
+
     match la with
-    | None -> x
-    | Some y -> x &&& y)
-  | PredVar pvar -> (pvar :: pvars), la) ([], None)
+    | None -> [pvars, None]
+    | Some la ->
+      convertToNF false la |>
+      List.map (fun x -> pvars, Some (And (List.map (fun x -> Expr x) x)))) |-
+  List.flatten
 
 let simplifyCNF clauses =
   let simplifyDF =
@@ -49,7 +60,9 @@ let simplifyCNF clauses =
 let buildGraph clauses =
   let bot = LinearExpr (Expr (LTE, M.add Id.const 1 M.empty)) in
   let (cs_p, cs_l) =
-    List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses |>
+    List.map (fun (lh, rh) ->
+      List.map (fun lh -> lh, rh) (preprocLefthand lh)) clauses |>
+    List.flatten |>
     List.partition (fun (_, rh) ->
       match rh with
       | PredVar _ -> true
@@ -711,24 +724,32 @@ let simplifyPCNF clauses =
   else [M.empty, M.empty] :: filtered
 
 let renameClauses =
-  List.fold_left (fun (clauses, pm) (lh, rh) ->
+  List.fold_left (fun (clauses, pm) clause ->
+    let exec f (lh, rh) =
+      let lh' = mapFormula f lh in
+      let rh' = f rh in
+      lh', rh' in
+
     let vm = ref M.empty in
     let pm = ref pm in
     let f = function
       | PredVar (p, l) ->
-        let p' = M.findDefault (Id.from_string (
-          "P" ^ string_of_int (M.cardinal !pm))) p !pm in
+        let def = Id.from_string ("P" ^ string_of_int (M.cardinal !pm)) in
+        let p' = M.findDefault def p !pm in
         pm := M.add p p' !pm;
         ignore(renameList vm l);
         PredVar (p', l)
       | LinearExpr e ->
         ignore(mapFormula (renameExpr vm) e);
         LinearExpr e in
-    let terms = List.map f (rh::lh) in
+    let clause = exec f clause in
+
     let i = ref 0 in
-    vm := M.map (fun v -> Id.from_string ("x" ^ string_of_int (incr i; !i))) !vm;
-    let rh::lh = List.map (renameHornTerm vm) terms in
-    (lh, rh) :: clauses, !pm
+    let new_name _ = Id.from_string ("x" ^ string_of_int (incr i; !i)) in
+    vm := M.map new_name !vm;
+
+    let clause = exec (renameHornTerm vm) clause in
+    clause :: clauses, !pm
   ) ([], M.empty)
 
 let solve clauses =

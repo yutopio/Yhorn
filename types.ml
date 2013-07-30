@@ -191,7 +191,7 @@ let rec fvs = function
 type hornTerm =
     | LinearExpr of expr formula
     | PredVar of pvar
-type horn = hornTerm list * hornTerm
+type horn = hornTerm formula * hornTerm
 
 let printHornTerm = function
     | LinearExpr e -> printFormula printExpr e
@@ -202,9 +202,7 @@ let renameHornTerm m = function
     | PredVar (p, param) -> PredVar (p, renameList m param)
 
 let printHorn (lh, rh) =
-  let preds, la = List.partition (function PredVar _ -> true | _ -> false) lh in
-  String.concat " & " (List.map printHornTerm (preds @ la)) ^ " -> " ^
-    printHornTerm rh ^ "."
+  printFormula printHornTerm lh ^ " -> " ^ printHornTerm rh ^ "."
 
 (** Normal form of element *)
 type 'a nf = 'a list list
