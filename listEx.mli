@@ -73,7 +73,7 @@ val merge : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list
   val distinct : 'a list -> 'a list
   (** Returns distinct elements from a list. *)
 
-  val sort_distinct : 'a list -> 'a list
+  val sort_distinct : ('a -> 'a -> int) -> 'a list -> 'a list
   (** Sort the list and then returns distinct elements from it. *)
 
   val compare : ('a -> 'a -> int) -> 'a list -> 'a list -> int

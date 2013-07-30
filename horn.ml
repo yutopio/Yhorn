@@ -40,10 +40,10 @@ let simplifyCNF clauses =
       let tautology, exprs = simplifyDF clause in
       if tautology then contradiction, clauses
       else if contradiction || List.length exprs = 0 then true, []
-      else false, (List.sort_distinct exprs) :: clauses
+      else false, (List.sort_distinct Expr.compare exprs) :: clauses
     ) (false, []) clauses in
 
-  contradiction, List.sort_distinct ret
+  contradiction, List.sort_distinct (List.compare Expr.compare) ret
 
 let buildGraph clauses =
   let bot = LinearExpr (Expr (LTE, M.add Id.const 1 M.empty)) in
@@ -316,7 +316,7 @@ let solveGraph (g, root) =
       match G.V.label v with
       | LinearExpr _ -> [] (* TODO: Should consider? *)
       | PredVar (p, param) -> M.find p templ |> M.values in
-    let use' = fv @ (MI.findDefault [] x use |> List.sort_distinct) in
+    let use' = fv @ (MI.findDefault [] x use |> List.sort_distinct Id.compare) in
     (MI.add x fv fvs),
     (GI.fold_succ (fun y -> MI.addDefault [] (@) y use') linkG x use)
   ) (MI.empty, MI.empty) linkOrder in
@@ -329,7 +329,7 @@ let solveGraph (g, root) =
     let l3 =
       GI.fold_succ (fun y -> (@) (MI.find y quant)) linkG x [] |>
       List.filter (fun x -> List.mem x use) in
-    MI.add x (List.sort_distinct (l1 @ l2 @ l3)) quant
+    MI.add x (List.sort_distinct Id.compare (l1 @ l2 @ l3)) quant
   ) MI.empty (List.rev linkOrder) in
 
   let addPcoef e =
@@ -591,7 +591,7 @@ let solveGraph (g, root) =
         try Z3interface.solve constrs
         with Z3interface.Unsatisfiable x ->
           let uc_tags = List.map (fun x -> List.assoc x symbol_map) x in
-          raise (Unsatisfiable (List.sort_distinct uc_tags)) in
+          raise (Unsatisfiable (List.sort_distinct compare uc_tags)) in
 
       MV.fold (fun k pexprs sols ->
         match G.V.label k with

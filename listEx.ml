@@ -48,7 +48,7 @@ module List = struct
       | [] -> l in
     internal [] l
 
-  let sort_distinct l =
+  let sort_distinct compare l =
     let compare_neg x y = - (compare x y) in
     let sorted = List.fast_sort compare_neg l in
     let rec f ret = function
