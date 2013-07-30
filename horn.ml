@@ -9,6 +9,7 @@ let createRename = List.fold_left2 (fun m k v -> M.add k v m) M.empty
 let preprocLefthand = List.fold_left (fun (pvars, la) ->
   function
   | LinearExpr x -> pvars, Some (
+    let x = normalizeOperator x in
     match la with
     | None -> x
     | Some y -> x &&& y)
@@ -47,29 +48,34 @@ let simplifyCNF clauses =
 
 let buildGraph clauses =
   let bot = LinearExpr (Expr (LTE, M.add Id.const 1 M.empty)) in
-  let clauses =
+  let (cs_p, cs_l) =
     List.map (fun (lh, rh) -> (preprocLefthand lh), rh) clauses |>
-
-    (* Eliminate right-hand linear formula to expression. *)
-    List.fold_left (fun ret (pvars, la as lh, rh as c) ->
+    List.partition (fun (_, rh) ->
       match rh with
-      | PredVar _ -> c :: ret
-      | LinearExpr e ->
-        mapFormula normalizeExpr e |>
-        normalizeOperator |>
-        convertToNF true |>
-        simplifyCNF |>
-        (function
-        | true, _ -> (lh, bot) :: ret
-        | false, exprs ->
-          List.map (
-            function
-            | [] -> assert false
-            | [e] -> lh, LinearExpr (Expr e)
-            | l ->
-              let neg = And (List.map (fun x -> Expr (negateExpr x)) l) in
-              (pvars, maybeAdd (&&&) la (Some neg)), bot) exprs |>
-          (@) ret)) [] in
+      | PredVar _ -> true
+      | LinearExpr _ -> false) in
+
+  (* Eliminate right-hand linear formula to contradiction. *)
+  let cs_l =
+    List.fold_left (fun ret ((pvars, la), LinearExpr e) ->
+      normalizeOperator e |>
+      convertToNF true |>
+      simplifyCNF |>
+      (function
+      | true, _ -> [la]
+      | false, exprs ->
+        List.map (
+          function
+          | [] -> assert false
+          | l ->
+            let neg =
+              match List.map (fun x -> Expr (negateExpr x)) l with
+              | [x] -> x
+              | x -> And x in
+            maybeAdd (&&&) la (Some neg)) exprs) |>
+      List.map (fun la -> (pvars, la), bot) |>
+      (@) ret) [] cs_l in
+  let clauses = cs_p @ cs_l in
 
   (* Create predicate symbol vertices in advance. *)
   let addVp rh vp (p, l) =
