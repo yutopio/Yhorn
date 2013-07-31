@@ -103,14 +103,14 @@ let buildGraph clauses =
     else if M.mem p vp then (
       (* A predicate symbol which is implied in multiple Horn clauses should
          have the same arity across them. *)
-      let PredVar (p', l') = M.find p vp |> G.V.label in assert (p = p');
+      let HT (PredVar (p', l')) = M.find p vp |> G.V.label in assert (p = p');
       if ll <> List.length l' then
         failwith (invalid_arity p)
       else vp
     ) else
       (* Create a new predicate vertex and remember it. *)
-      let binders = repeat (fun _ l -> (Id.create ()) :: l) ll [] in
-      M.add p (G.V.create (PredVar (p, binders))) vp in
+      let binders = repeat (fun _ l -> (Id.create ()) :: l) ll [] |> List.rev in
+      M.add p (G.V.create (HT (PredVar (p, binders)))) vp in
 
   (* Create vertices. *)
   let predVertices = List.fold_left (fun vp ((lh, _), rh) ->
@@ -121,17 +121,20 @@ let buildGraph clauses =
     List.fold_left (addVp false) vp lh) M.empty clauses in
 
   (* Add implication relations on the Horn graph. *)
+  let v_bot = G.V.create (HT bot) in
   List.fold_left (fun g ((pvars, la) as lh, rh) ->
     let (pvars, la), src =
       match rh with
       | PredVar (p, binder) ->
         let src = M.find p predVertices in
-        let PredVar (p', binder') = G.V.label src in assert (p = p');
+        let HT (PredVar (p', binder')) = G.V.label src in assert (p = p');
         let rename = ref (createRename binder binder') in
         ((List.map (fun (p, args) -> p, renameList rename args) pvars),
         (maybeApply (Formula.map (renameExpr rename)) la)), src
-      | LinearExpr _ -> lh, G.V.create rh in
-    let g = G.add_vertex g src in
+      | LinearExpr _ -> lh, v_bot in
+
+    let arrow = G.V.create Arrow in
+    let g = G.add_edge_e g (G.E.create src None arrow) in
 
     let dsts = List.fold_left (fun dsts (p, args) ->
       (* Get the predicate variable vertex and its binder. We will relate this
@@ -139,7 +142,7 @@ let buildGraph clauses =
          to the application of such predicates. The edge will carry binding
          information. *)
       let dst = M.find p predVertices in
-      let PredVar (p', binder) = G.V.label dst in assert (p = p');
+      let HT (PredVar (p', binder)) = G.V.label dst in assert (p = p');
       let rename = createRename binder args in
 
       (* Add a edge between origin *)
@@ -151,35 +154,37 @@ let buildGraph clauses =
     let dsts =
       match la with
       | None -> dsts
-      | Some x -> (G.V.create (LinearExpr x), None) :: dsts in
+      | Some x ->
+        let la = LinearExpr (Formula.map normalizeExpr x) in
+        (G.V.create (HT la), None) :: dsts in
 
     (* Add edges between all left-hand terms and right-hand term. *)
     List.fold_left (fun g (dst, label) ->
-      G.add_edge_e g (G.E.create src label dst)) g dsts
+      G.add_edge_e g (G.E.create arrow label dst)) g dsts
   ) G.empty clauses |>
 
   (* If a predicate variable does not have any assumption or any implication,
      assume Horn clause bot->P or P->top exists. *)
   M.fold (fun _ v g ->
-    let PredVar (_, binder) = G.V.label v in
+    let HT (PredVar (_, binder)) = G.V.label v in
     let arity = List.length binder in
     let g =
       if G.in_degree g v = 0 then
         let dummy = repeat (fun _ k -> (Id.create ()) :: k) arity [] in
         let rename = Some (createRename binder dummy) in
-        let top = G.V.create (LinearExpr (Term (LTE, M.empty))) in
+        let top = G.V.create (HT (LinearExpr (Term (LTE, M.empty)))) in
         G.add_edge_e g (G.E.create top rename v)
       else g in
     let g =
       if G.out_degree g v = 0 then
-        let bot = G.V.create (LinearExpr (
-          Term (LTE, M.add Id.const 1 M.empty))) in
+        let bot = G.V.create (HT (LinearExpr (
+          Term (LTE, M.add Id.const 1 M.empty)))) in
         G.add_edge_e g (G.E.create v None bot)
       else g in
     g) predVertices
 
 let rootE =
-  let dummy = G.V.create (LinearExpr (Term (EQ, M.empty))) in
+  let dummy = G.V.create (HT (LinearExpr (Term (EQ, M.empty)))) in
   ref (G.E.create dummy None dummy)
 module EDef = struct
   type t = G.E.t
@@ -203,18 +208,27 @@ module MEL = Map.Make(EL)
 module SV = Set.Make(G.V)
 module TopologicalGI = Graph.Topological.Make(GI)
 
-let addRoot g =
+let findRoot g =
   assert (not (G.is_empty g));
 
   let roots = G.fold_vertex (fun v s ->
     if G.in_degree g v = 0 then SV.add v s else s) g SV.empty in
 
-  if SV.cardinal roots = 1 then
-    g, (SV.choose roots)
-  else
-    let root = G.V.create (LinearExpr (Term (LTE, M.empty))) in
-    let g = SV.fold (fun v g -> G.add_edge g root v) roots g in
-    g, root
+  let _, root as ret =
+    if SV.cardinal roots = 1 then
+      g, (SV.choose roots)
+    else
+      let arrow = G.V.create Arrow in
+      let root = G.V.create (HT (LinearExpr (Term (LTE, M.empty)))) in
+      let g =
+        G.add_edge g root arrow |>
+        SV.fold (fun v g -> G.add_edge g arrow v) roots
+      in
+      g, root
+  in
+
+  rootE := G.E.create root None root;
+  ret
 
 let assignParameters assign =
   M.map (fun v -> M.fold (fun k v -> (+) ((M.findDefault 1 k assign) * v)) v 0)
@@ -243,7 +257,7 @@ let solveGraph (g, root) =
   (* Create a template for all predicate variable vertices. *)
   let templ = G.fold_vertex (fun v m ->
     match G.V.label v with
-    | PredVar (p, param) ->
+    | HT (PredVar (p, param)) ->
       (* Create a template. *)
       let pcoef =
         List.fold_left (fun m x ->
@@ -336,8 +350,8 @@ let solveGraph (g, root) =
     let v = MI.find x roots in
     let fv =
       match G.V.label v with
-      | LinearExpr _ -> [] (* TODO: Should consider? *)
-      | PredVar (p, param) -> M.find p templ |> M.values in
+      | HT (PredVar (p, param)) -> M.find p templ |> M.values
+      | _ -> [] in
     let use' = fv @ (MI.findDefault [] x use |> List.sort_distinct Id.compare) in
     (MI.add x fv fvs),
     (GI.fold_succ (fun y -> MI.addDefault [] (@) y use') linkG x use)
@@ -360,33 +374,12 @@ let solveGraph (g, root) =
       M.addDefault 0 (+) k v m in
     M.addDefault ([], M.empty) add in
 
-  let addLinear e x =
-    Formula.map normalizeExpr |-
-    normalizeOperator |-
-    Nf.dnf_of_formula |-
-
-    (* TODO: Support of disjunctions.
-       We now only consider first conjunction in DNF. *)
-    (function
-    | [x] -> x
-    | [] -> assert false
-    | x::_ ->
-      print_endline "Omitting conjunctions..."; x) |-
-
+  let addLinear e (m, pis) coef =
     (* Add to the variable maps for applying Farkas' Lemma. *)
-    List.fold_left (fun (m, pis) (op, coef) ->
-      let pi = Id.create () in
+    let pi = Id.create () in
 
-      (* Building an coefficient mapping in terms of variables. *)
-      (M.fold (fun k v -> addPcoef e k (pi, v)) coef m),
-
-      (* TODO: Linear expression must be normalized to LTE. No EQ allowed. *)
-      (match op with
-      | LTE -> pi :: pis
-      | _ -> assert false)) x in
-
-  (* TODO: Currently supported template is only [1] in Module Template type.
-           Any larger templates should be available in future. *)
+    (* Building an coefficient mapping in terms of variables. *)
+    (M.fold (fun k v -> addPcoef e k (pi, v)) coef m), pi :: pis in
 
   (* Duplicating templates is done by simple renaming. *)
   let duplicate (pcoef, constr) =
@@ -404,7 +397,8 @@ let solveGraph (g, root) =
       (* If the predicate is specified for duplication, rename it. *)
       let pcoef, constrs =
         try duplicate (ME.find e deltaMap)
-        with Not_found -> (if dup then duplicate else id) defDelta in
+        with Not_found -> (if dup then duplicate else id) defDelta
+      in
 
       if dup then
         let constrs = List.map (fun ((es, a), b) ->  (e :: es, a), b) constrs in
@@ -414,100 +408,69 @@ let solveGraph (g, root) =
         (* TODO: Simplification based on quantifiers *)
         MV.add v [e, (pcoef, [([], Simplified v), exprs])] MV.empty
     else
-      let ret, constrs, (m, pis), root_flag =
-        G.fold_succ_e (fun e (ret, constrs, (m, pis), flag) ->
-          let u = G.E.dst e in
-          match G.E.label e, G.V.label u with
-          | None, LinearExpr ex ->
-            (* No renaming should occur for linear expressions. *)
-            (* TODO: We should consider disjunctive linear expressions. *)
-            if G.succ g u = [] then (
-              assert (flag <> Some true);
-              ret, constrs, (addLinear (Some e) (m, pis) ex), (Some false)
-            ) else (
-              (* Only happens for the root node generated by addRoot. *)
-              assert (flag <> Some false);
+      let x = G.fold_succ_e (fun e () ->
+        let arrow = G.E.dst e in
+        let ret, constrs, (m, pis) =
+          G.fold_succ_e (fun e (ret, constrs, (m, pis as m_pis)) ->
+            let u = G.E.dst e in
+            match G.E.label e, G.V.label u with
+            | None, HT (LinearExpr ex) ->
+              (* TODO: Optimization *)
+              let [x] = Nf.dnf_of_formula ex in
+	      assert (pis = []);
+              let x = List.map snd x in
+              let m_pis = List.fold_left (addLinear (Some e)) m_pis x in
 
+              (* No renaming should occur for linear expressions. *)
+              ret, constrs, m_pis
+
+            | Some rename, HT (PredVar (p, param)) ->
               let ret' = computeAncestors templs u e g in
-              let [_, (_, constr)] = MV.find u ret' in
+
+              (* TODO: We should consider disjunctive templates. *)
+              let [_, (pcoef, constr)] = MV.find u ret' in
 
               (* Merging returning template. *)
               let ret = MV.merge (fun _ -> maybeAdd (@)) ret ret' in
               let constrs = constr @ constrs in
 
-              (* [m, pis] is not used in this case. *)
-              ret, constrs, (M.empty, []), (Some true)
-            )
-          | Some rename, PredVar (p, param) ->
-            assert (flag <> Some true);
-            let ret' = computeAncestors templs u e g in
+              let rename = ref rename in
+              let f k v = addPcoef (Some e) (renameVar rename k) (v, 1) in
 
-            (* TODO: We should consider disjunctive templates. *)
-            let [_, (pcoef, constr)] = MV.find u ret' in
+              (* Building an coefficient mapping in terms of variables. *)
+              ret, constrs, ((M.fold f pcoef m), pis)
 
-            (* Merging returning template. *)
-            let ret = MV.merge (fun _ -> maybeAdd (@)) ret ret' in
-            let constrs = constr @ constrs in
+            | _ -> assert false
+          ) g arrow (MV.empty, [], (M.empty, [])) in
 
-            let rename = ref rename in
-            let f k v = addPcoef (Some e) (renameVar rename k) (v, 1) in
+        let m, pcoef, la =
+          match G.V.label v with
+          | HT (LinearExpr _) -> (* bot *)
+	    m, M.empty, true
+          | HT (PredVar (p, param)) ->
+            (* Add the atomic current predicate template for Farkas' target. *)
+            let pcoef = M.find p templ in
+            let m = M.fold (fun k v -> addPcoef None k (v, -1)) pcoef m in
+            m, pcoef, false
+	  | _ -> assert false in
 
-            (* Building an coefficient mapping in terms of variables. *)
-            ret, constrs, ((M.fold f pcoef m), pis), (Some false)
-          | _ -> assert false
-        ) g v (MV.empty, [], (M.empty, []), None) in
+        let constrs =
+          (* All left-hand linear inequalities must be weighted non-negative. *)
+          List.map (fun pi ->
+            (([], LaWeight), Term (GTE, M.add pi 1 M.empty))) pis |>
 
-      let (m, pi), pcoef =
-        match G.V.label v, root_flag with
-        | LinearExpr _, Some true
-          (* Generated root node. *)
-        | PredVar _, None ->
-          (* Predicate variable without assumption. *)
-          (M.empty, None), M.empty
+          (* Additionally, add constraints to make totals on every
+             coefficients zero. *)
+          M.fold (fun k (edges, coefs) c ->
+            let op = if k = Id.const then if la then GT else GTE else EQ in
+            let constr = ([], Coef edges), Term (op, coefs) in
+            constr :: c) m in
 
-        | LinearExpr (Term (LTE, coef)), _ ->
-          (* Add the current linear expression for Farkas' target. *)
-          let pi = Id.create () in
+        ignore(MV.add v [e, (pcoef, constrs)] ret)
+      ) g v () in
 
-          (* Building an coefficient mapping in terms of variables. *)
-          ((M.fold (fun k v -> addPcoef None k (pi, (-v))) coef m),
-          Some pi),
-
-          (* Should return tautology for performance; will be evaluated at
-             the bottom node. *)
-          M.empty
-
-        | PredVar (p, param), Some false ->
-          let pcoef = M.find p templ in
-
-          (* Add the atomic current predicate template for Farkas' target. *)
-          let m = M.fold (fun k v -> addPcoef None k (v, -1)) pcoef m in
-
-          (m, None), pcoef
-        | _ -> assert false in
-
-      let constrs =
-        (* Right-hand linear inequality must be weighted positive. *)
-        let seed =
-          match pi with
-          | None -> constrs
-          | Some pi ->
-            let constr = ([], Binding), Term (GT, M.add pi 1 M.empty) in
-            constr :: constrs in
-
-        (* All left-hand linear inequalities must be weighted non-negative. *)
-        List.fold_left (fun l pi ->
-          (([], LaWeight), Term (GTE, M.add pi 1 M.empty)) :: l) seed pis |>
-
-        (* Additionally, add constraints to make totals on every
-           coefficients zero. *)
-        M.fold (fun k (edges, coefs) c ->
-          let op = if k = Id.const then GTE else EQ in
-          let constr = ([], Coef edges), Term (op, coefs) in
-          constr :: c) m
-      in
-
-      MV.add v [e, (pcoef, constrs)] ret in
+      assert false
+  in
 
   (* Create templates and constraints for all predicate variables over the
      graph. *)
@@ -616,7 +579,7 @@ let solveGraph (g, root) =
           raise (Unsatisfiable (List.sort_distinct compare uc_tags)) in
 
       MV.fold (fun k pexprs sols ->
-        match G.V.label k with
+        match G.V.label k; assert false with
         | LinearExpr _ -> sols
         | PredVar (p, param) ->
           List.fold_left (fun (params, predSol) (e, (pcoef, _)) ->
@@ -776,8 +739,8 @@ let solve clauses =
   assert (not (Traverser.has_cycle g));
 
   (* Generate constraints for solving the graph. *)
-  let g, root = addRoot g in
-  rootE := G.E.create root None root;
+  let g, root = findRoot g in
+
   let params, exprs = solveGraph (g, root) in
   let sol = M.merge (fun _ (Some param) (Some exprs) ->
       Some (param, (And (List.map (fun x -> Term x) exprs)))) params exprs in

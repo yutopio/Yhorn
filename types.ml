@@ -157,8 +157,12 @@ let printHornSol x =
 
 (* Ocamlgraph related types *)
 
+type vert =
+  | HT of hornTerm
+  | Arrow
+
 module MyVertex = struct
-  type t = hornTerm
+  type t = vert
   let compare = compare
   let hash _ = 0 (* TODO: *)
   let equal = (=)
@@ -193,8 +197,13 @@ end
 module Display = struct
   include G
   include DisplayAttrib
-  let vertex_name v = "\"" ^ (string_of_int (V.hash v)) ^ ":" ^
-                             (printHornTerm (V.label v)) ^ "\""
+
+  let vertex_name v =
+    let lbl =
+      match V.label v with
+      | HT x -> printHornTerm x
+      | Arrow -> ">>" in
+    "\"" ^ (string_of_int (V.hash v)) ^ ":" ^ lbl ^ "\""
 
   let highlight_vertices = ref SV.empty
   let vertex_attributes v =
