@@ -1,13 +1,16 @@
 open Error
+open Expr
+open Formula
 open ListEx
 open MapEx
+open MTypes
 open Types
 open Util
 
 let createRename = List.fold_left2 (fun m k v -> M.add k v m) M.empty
 
 let preprocLefthand =
-  convertToNF false |-
+  Nf.dnf_of_formula |-
   List.map (fun x ->
     let pvars, la =
       List.fold_left (fun (pvars, la) ->
@@ -22,7 +25,7 @@ let preprocLefthand =
     match la with
     | None -> [pvars, None]
     | Some la ->
-      convertToNF false la |>
+      Nf.dnf_of_formula la |>
       List.map (fun x -> pvars, Some (And (List.map (fun x -> Term x) x)))) |-
   List.flatten
 
@@ -52,10 +55,10 @@ let simplifyCNF clauses =
       let tautology, exprs = simplifyDF clause in
       if tautology then contradiction, clauses
       else if contradiction || List.length exprs = 0 then true, []
-      else false, (List.sort_distinct Expr.compare exprs) :: clauses
+      else false, (List.sort_distinct Expr.comp exprs) :: clauses
     ) (false, []) clauses in
 
-  contradiction, List.sort_distinct (List.compare Expr.compare) ret
+  contradiction, List.sort_distinct (List.compare Expr.comp) ret
 
 let buildGraph clauses =
   let bot = LinearExpr (Term (LTE, M.add Id.const 1 M.empty)) in
@@ -72,7 +75,7 @@ let buildGraph clauses =
   let cs_l =
     List.fold_left (fun ret ((pvars, la), LinearExpr e) ->
       normalizeOperator e |>
-      convertToNF true |>
+      Nf.cnf_of_formula |>
       simplifyCNF |>
       (function
       | true, _ -> [la]
@@ -126,7 +129,7 @@ let buildGraph clauses =
         let PredVar (p', binder') = G.V.label src in assert (p = p');
         let rename = ref (createRename binder binder') in
         ((List.map (fun (p, args) -> p, renameList rename args) pvars),
-        (maybeApply (mapFormula (renameExpr rename)) la)), src
+        (maybeApply (Formula.map (renameExpr rename)) la)), src
       | LinearExpr _ -> lh, G.V.create rh in
     let g = G.add_vertex g src in
 
@@ -358,9 +361,9 @@ let solveGraph (g, root) =
     M.addDefault ([], M.empty) add in
 
   let addLinear e x =
-    mapFormula normalizeExpr |-
+    Formula.map normalizeExpr |-
     normalizeOperator |-
-    convertToNF false |-
+    Nf.dnf_of_formula |-
 
     (* TODO: Support of disjunctions.
        We now only consider first conjunction in DNF. *)
@@ -389,7 +392,7 @@ let solveGraph (g, root) =
   let duplicate (pcoef, constr) =
     let map = ref M.empty in
     M.fold (fun k v -> M.add k (renameVar map v)) pcoef M.empty,
-    List.map (fun (x, y) -> x, mapFormula (renameExpr map) y) constr in
+    List.map (fun (x, y) -> x, Formula.map (renameExpr map) y) constr in
 
   (* Compute at each vertex linear expressions those are ancestors of it. *)
   let rec computeAncestors templs v e g =
@@ -726,7 +729,7 @@ let simplifyPCNF clauses =
 let renameClauses =
   List.fold_left (fun (clauses, pm) clause ->
     let exec f (lh, rh) =
-      let lh' = mapFormula f lh in
+      let lh' = Formula.map f lh in
       let rh' = f rh in
       lh', rh' in
 
@@ -740,7 +743,7 @@ let renameClauses =
         ignore(renameList vm l);
         PredVar (p', l)
       | LinearExpr e ->
-        ignore(mapFormula (renameExpr vm) e);
+        ignore(Formula.map (renameExpr vm) e);
         LinearExpr e in
     let clause = exec f clause in
 
@@ -783,9 +786,9 @@ let solve clauses =
   let sol =
     M.fold (fun k -> M.add (M.findDefault k k pm)) sol M.empty |>
     M.map (fun (p, f) -> p,
-      let (contradiction, cnf) = convertToNF true f |> simplifyCNF in
+      let (contradiction, cnf) = Nf.cnf_of_formula f |> simplifyCNF in
       if contradiction then Term (NEQ, M.empty)
-      else convertToFormula true cnf)
+      else Nf.cnf_to_formula cnf)
   in
 
   (* DEBUG: Solution verification. *)

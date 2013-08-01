@@ -1,5 +1,8 @@
 open Error
+open Expr
+open Formula
 open ListEx
+open MTypes
 open Types
 open Util
 open Z3
@@ -127,7 +130,7 @@ let solve constr =
     print_endline "Z3 problem:";
     List.iter (fun (name, x) ->
       print_endline (" (" ^ name ^ "): " ^
-        (printFormula printExpr x))) constr;
+        (Formula.print printExpr x))) constr;
 
     let _start = Sys.time () in
     let show_time () =
@@ -173,10 +176,10 @@ let check_clause pred (lh, rh) =
       let renames =
         List.fold_left2 (fun m a b -> M.add a b m)
           M.empty binder args in
-      mapFormula (renameExpr (ref renames)) la
+      Formula.map (renameExpr (ref renames)) la
     | LinearExpr x -> x in
 
-  let lh = Formula.flatten (mapFormula substitute lh) in
+  let lh = Formula.flatten (Formula.map substitute lh) in
   let rh = substitute rh in
 
   let ast = mk_not ctx (mk_implies ctx (convert lh) (convert rh)) in

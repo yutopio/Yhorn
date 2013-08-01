@@ -1,12 +1,15 @@
 %{
 open Error
+open Expr
+open Formula
+open MTypes
 open Types
 %}
 
 %token <Id.t> VAR
 %token <Id.t> PRED
 %token <int> INT
-%token <Types.operator> OP
+%token <Expr.operator> OP
 %token PLUS MINUS
 %token AND OR NOT
 %token LPAREN RPAREN

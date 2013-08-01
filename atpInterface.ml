@@ -1,4 +1,7 @@
+open Formula
+open Expr
 open ListEx
+open MTypes
 open Types
 open Util
 

@@ -1,67 +1,11 @@
 open Buffer
+open Expr
+open Formula
 open ListEx
 open MapEx
+open MTypes
 open Util
 
-module M = Map.Make(Id)
-module S = Set.Make(Id)
-
-module Integer = struct
-  type t = int
-  let compare = compare
-  let hash x = x
-  let equal = (=)
-end
-
-module MI = Map.Make(Integer)
-
-module MyIntList = struct
-  type t = int list
-  let compare = compare
-end
-
-module MIL = Map.Make(MyIntList)
-
-type operator =
-    | EQ
-    | NEQ
-    | LT
-    | LTE
-    | GT
-    | GTE
-
-let negateOp = function
-    | EQ -> NEQ
-    | NEQ -> EQ
-    | LT -> GTE
-    | LTE -> GT
-    | GT -> LTE
-    | GTE -> LT
-
-let operator_of_string = function
-    | "=" -> EQ
-    | "<>" -> NEQ
-    | "<" -> LT
-    | "<=" -> LTE
-    | ">" -> GT
-    | ">=" -> GTE
-
-let string_of_operator = function
-    | EQ -> "="
-    | NEQ -> "<>"
-    | LT -> "<"
-    | LTE -> "<="
-    | GT -> ">"
-    | GTE -> ">="
-
-type coef = int M.t
-
-let coefOp op d = M.fold (M.addDefault d op)
-let (++) = coefOp (+) 0
-let (--) x y = coefOp (-) 0 y x (* Note that the operands need to be reversed. *)
-let (~--) = M.map (~-)
-
-type expr = operator * coef
 type pvar = Id.t * Id.t list
 
 let printTerm coef =
@@ -124,40 +68,6 @@ let printPvar (name, params) =
   (Id.print name) ^ "(" ^
     String.concat "," (List.map Id.print params) ^ ")"
 
-type 'a formula =
-    | Term of 'a
-    | And of 'a formula list
-    | Or of 'a formula list
-
-let rec printFormula eltPrinter x =
-    let ret = match x with
-    | Term x -> `A x
-    | And x -> `B(x, " & ")
-    | Or x -> `B(x, " | ") in
-
-    match ret with
-    | `A x -> eltPrinter x
-    | `B(x, y) -> String.concat y (List.map (
-        fun x -> "(" ^ (printFormula eltPrinter x) ^ ")") x)
-
-let combineFormulae opAnd x y =
-    match (opAnd, x, y) with
-    | (true, And x, And y) -> And (y @ x)
-    | (true, And x, _) -> And (y :: x)
-    | (true, _, And y) -> And (y @ [ x ])
-    | (true, _, _) -> And [ y ; x ]
-    | (_, Or x, Or y) -> Or (y @ x)
-    | (_, Or x, _) -> Or (y :: x)
-    | (_, _, Or y) -> Or (y @ [ x ])
-    | _ -> Or [ y ; x ]
-let (&&&) x = combineFormulae true x
-let (|||) x = combineFormulae false x
-
-let rec mapFormula f = function
-    | And x -> And (List.map (mapFormula f) x)
-    | Or x -> Or (List.map (mapFormula f) x)
-    | Term e -> Term (f e)
-
 let rec (!!!) = function
     | And x -> Or (List.map (!!!) x)
     | Or x -> And (List.map (!!!) x)
@@ -175,11 +85,6 @@ let rec normalizeOperator = function
     List.map (fun x -> Term (normalizeExpr (x, coef))) [LTE;GTE])
   | Term e -> Term e
 
-let rec countFormula = function
-    | And x
-    | Or x -> List.fold_left (+) 0 (List.map countFormula x)
-    | Term _ -> 1
-
 let rec fvs = function
   | And x
   | Or x -> List.fold_left (fun s -> fvs |- S.union s) S.empty x
@@ -189,47 +94,20 @@ let rec fvs = function
     S.remove Id.const
 
 type hornTerm =
-    | LinearExpr of expr formula
+    | LinearExpr of Expr.t Formula.t
     | PredVar of pvar
-type horn = hornTerm formula * hornTerm
+type horn = hornTerm Formula.t * hornTerm
 
 let printHornTerm = function
-    | LinearExpr e -> printFormula printExpr e
+    | LinearExpr e -> Formula.print printExpr e
     | PredVar p -> printPvar p
 
 let renameHornTerm m = function
-    | LinearExpr e -> LinearExpr (mapFormula (renameExpr m) e)
+    | LinearExpr e -> LinearExpr (Formula.map (renameExpr m) e)
     | PredVar (p, param) -> PredVar (p, renameList m param)
 
 let printHorn (lh, rh) =
-  printFormula printHornTerm lh ^ " -> " ^ printHornTerm rh ^ "."
-
-(** Normal form of element *)
-type 'a nf = 'a list list
-
-let convertToNF cnf formulae =
-    let rec internal formulae ret =
-        match formulae with
-        | [] -> List.rev ret
-        | x :: l ->
-            let ret = match x with
-                | Term x -> [ x ] :: ret
-                | And x | Or x -> (List.direct_product (internal x [])) @ ret in
-            internal l ret in
-    match cnf, formulae with
-    | true, And x
-    | false, Or x -> internal x []
-    | _ -> internal [ formulae ] []
-
-let convertToFormula cnf nf =
-  match List.map (fun x ->
-    match List.map (fun x -> Term x) x with
-      | [] -> assert false
-      | [x] -> x
-      | x -> if cnf then Or x else And x) nf with
-    | [] -> assert false
-    | [x] -> x
-    | x -> if cnf then And x else Or x
+  Formula.print printHornTerm lh ^ " -> " ^ printHornTerm rh ^ "."
 
 (** Solution space of interpolation *)
 type pcoef = coef M.t
@@ -263,18 +141,17 @@ let printPexpr coef =
   contents buf
 
 
-(* TODO: Should have been moved to constr.ml *)
-type constr = expr formula
+type constr = Expr.t Formula.t
 type constrSet = Id.t list * Puf.t * constr MI.t
 
-type hornSolSpace = horn list * ((Id.t list * pcoef nf) M.t * constrSet)
-type hornSol = (Id.t list * expr formula) M.t
+type hornSolSpace = horn list * ((Id.t list * pcoef Nf.t) M.t * constrSet)
+type hornSol = (Id.t list * Expr.t Formula.t) M.t
 
 let printHornSol x =
   let buf = create 1 in
   M.iter (fun k (params, x) ->
     Id.print k ^ "(" ^ (String.concat "," (List.map Id.print params)) ^ ") : "
-      ^ (printFormula printExpr x) ^ "\n" |>
+      ^ (Formula.print printExpr x) ^ "\n" |>
     add_string buf) x;
   contents buf
 

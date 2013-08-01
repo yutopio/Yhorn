@@ -1,6 +1,40 @@
-open Types
+type 'a t =
+| Term of 'a
+| And of 'a t list
+| Or of 'a t list
 
-type 'a t = 'a formula
+let rec print printer x =
+  let ret =
+    match x with
+    | Term x -> `A x
+    | And x -> `B(x, " & ")
+    | Or x -> `B(x, " | ")
+  in
+
+  match ret with
+  | `A x -> printer x
+  | `B(x, y) ->
+    String.concat y (List.map (
+      fun x -> "(" ^ (print printer x) ^ ")") x)
+
+let combine opAnd x y =
+  match (opAnd, x, y) with
+  | (true, And x, And y) -> And (y @ x)
+  | (true, And x, _) -> And (y :: x)
+  | (true, _, And y) -> And (y @ [ x ])
+  | (true, _, _) -> And [ y ; x ]
+  | (_, Or x, Or y) -> Or (y @ x)
+  | (_, Or x, _) -> Or (y :: x)
+  | (_, _, Or y) -> Or (y @ [ x ])
+  | _ -> Or [ y ; x ]
+let (&&&) x = combine true x
+let (|||) x = combine false x
+
+let rec map f =
+  function
+  | And x -> And (List.map (map f) x)
+  | Or x -> Or (List.map (map f) x)
+  | Term e -> Term (f e)
 
 let rec flatten =
   function
@@ -9,3 +43,8 @@ let rec flatten =
   | Term (Or x) -> Or x
   | And x -> And (List.map flatten x)
   | Or x -> Or (List.map flatten x)
+
+let rec count = function
+  | And x
+  | Or x -> List.fold_left (+) 0 (List.map count x)
+  | Term _ -> 1

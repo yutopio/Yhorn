@@ -1,5 +1,6 @@
 {
 open Error
+open Expr
 open Lexing
 open Parser
 open Types
