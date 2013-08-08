@@ -31,7 +31,7 @@ let of_expr (op, coef) =
     else Atp_batch.Atom(Atp_batch.R(r, terms))
 
 let rec of_formula = function
-  | Expr e -> of_expr e
+  | Term e -> of_expr e
   | And l -> List.reduce Atp_batch.mk_and (List.map of_formula l)
   | Or l -> List.reduce Atp_batch.mk_or (List.map of_formula l)
 
@@ -52,14 +52,14 @@ let rec term_of = function
 
 let rec formula_of p =
   match p with
-  | Atp_batch.True -> Expr (EQ, M.empty)
-  | Atp_batch.False -> Expr (NEQ, M.empty)
+  | Atp_batch.True -> Term (EQ, M.empty)
+  | Atp_batch.False -> Term (NEQ, M.empty)
   | Atp_batch.Not p -> (!!!) (formula_of p)
   | Atp_batch.And(p1, p2) -> (formula_of p1) &&& (formula_of p2)
   | Atp_batch.Or(p1, p2) -> (formula_of p1) ||| (formula_of p2)
   | Atp_batch.Atom(Atp_batch.R(r, ts)) ->
     let [t1; t2] = List.map term_of ts in
-    Expr (operator_of_string r, t1 -- t2)
+    Term (operator_of_string r, t1 -- t2)
   | _ -> (
     Atp_batch.print_formula Atp_batch.print_atom p;
     print_newline ();

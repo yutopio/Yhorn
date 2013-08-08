@@ -23,7 +23,7 @@ let preprocLefthand =
     | None -> [pvars, None]
     | Some la ->
       convertToNF false la |>
-      List.map (fun x -> pvars, Some (And (List.map (fun x -> Expr x) x)))) |-
+      List.map (fun x -> pvars, Some (And (List.map (fun x -> Term x) x)))) |-
   List.flatten
 
 let simplifyCNF clauses =
@@ -58,7 +58,7 @@ let simplifyCNF clauses =
   contradiction, List.sort_distinct (List.compare Expr.compare) ret
 
 let buildGraph clauses =
-  let bot = LinearExpr (Expr (LTE, M.add Id.const 1 M.empty)) in
+  let bot = LinearExpr (Term (LTE, M.add Id.const 1 M.empty)) in
   let (cs_p, cs_l) =
     List.map (fun (lh, rh) ->
       List.map (fun lh -> lh, rh) (preprocLefthand lh)) clauses |>
@@ -82,7 +82,7 @@ let buildGraph clauses =
           | [] -> assert false
           | l ->
             let neg =
-              match List.map (fun x -> Expr (negateExpr x)) l with
+              match List.map (fun x -> Term (negateExpr x)) l with
               | [x] -> x
               | x -> And x in
             maybeAdd (&&&) la (Some neg)) exprs) |>
@@ -164,19 +164,19 @@ let buildGraph clauses =
       if G.in_degree g v = 0 then
         let dummy = repeat (fun _ k -> (Id.create ()) :: k) arity [] in
         let rename = Some (createRename binder dummy) in
-        let top = G.V.create (LinearExpr (Expr (LTE, M.empty))) in
+        let top = G.V.create (LinearExpr (Term (LTE, M.empty))) in
         G.add_edge_e g (G.E.create top rename v)
       else g in
     let g =
       if G.out_degree g v = 0 then
         let bot = G.V.create (LinearExpr (
-          Expr (LTE, M.add Id.const 1 M.empty))) in
+          Term (LTE, M.add Id.const 1 M.empty))) in
         G.add_edge_e g (G.E.create v None bot)
       else g in
     g) predVertices
 
 let rootE =
-  let dummy = G.V.create (LinearExpr (Expr (EQ, M.empty))) in
+  let dummy = G.V.create (LinearExpr (Term (EQ, M.empty))) in
   ref (G.E.create dummy None dummy)
 module EDef = struct
   type t = G.E.t
@@ -209,7 +209,7 @@ let addRoot g =
   if SV.cardinal roots = 1 then
     g, (SV.choose roots)
   else
-    let root = G.V.create (LinearExpr (Expr (LTE, M.empty))) in
+    let root = G.V.create (LinearExpr (Term (LTE, M.empty))) in
     let g = SV.fold (fun v g -> G.add_edge g root v) roots g in
     g, root
 
@@ -462,7 +462,7 @@ let solveGraph (g, root) =
           (* Predicate variable without assumption. *)
           (M.empty, None), M.empty
 
-        | LinearExpr (Expr (LTE, coef)), _ ->
+        | LinearExpr (Term (LTE, coef)), _ ->
           (* Add the current linear expression for Farkas' target. *)
           let pi = Id.create () in
 
@@ -489,18 +489,18 @@ let solveGraph (g, root) =
           match pi with
           | None -> constrs
           | Some pi ->
-            let constr = ([], Binding), Expr (GT, M.add pi 1 M.empty) in
+            let constr = ([], Binding), Term (GT, M.add pi 1 M.empty) in
             constr :: constrs in
 
         (* All left-hand linear inequalities must be weighted non-negative. *)
         List.fold_left (fun l pi ->
-          (([], LaWeight), Expr (GTE, M.add pi 1 M.empty)) :: l) seed pis |>
+          (([], LaWeight), Term (GTE, M.add pi 1 M.empty)) :: l) seed pis |>
 
         (* Additionally, add constraints to make totals on every
            coefficients zero. *)
         M.fold (fun k (edges, coefs) c ->
           let op = if k = Id.const then GTE else EQ in
-          let constr = ([], Coef edges), Expr (op, coefs) in
+          let constr = ([], Coef edges), Term (op, coefs) in
           constr :: c) m
       in
 
@@ -588,9 +588,9 @@ let solveGraph (g, root) =
           | None, Some 0 -> None
           | None, Some v -> failwith no_sol
           | Some p, None
-          | Some p, Some 0 -> Some (Expr (EQ, M.add p 1 M.empty))
+          | Some p, Some 0 -> Some (Term (EQ, M.add p 1 M.empty))
           | Some p, Some v ->
-            Some (Expr (EQ, M.add p 1 (M.add Id.const (-v) M.empty)))
+            Some (Term (EQ, M.add p 1 (M.add Id.const (-v) M.empty)))
         ) pcoef coef |>
         M.values in
       let constrs =
@@ -777,14 +777,14 @@ let solve clauses =
   rootE := G.E.create root None root;
   let params, exprs = solveGraph (g, root) in
   let sol = M.merge (fun _ (Some param) (Some exprs) ->
-      Some (param, (And (List.map (fun x -> Expr x) exprs)))) params exprs in
+      Some (param, (And (List.map (fun x -> Term x) exprs)))) params exprs in
 
   (* Rename back to original predicate variable names and simplify. *)
   let sol =
     M.fold (fun k -> M.add (M.findDefault k k pm)) sol M.empty |>
     M.map (fun (p, f) -> p,
       let (contradiction, cnf) = convertToNF true f |> simplifyCNF in
-      if contradiction then Expr (NEQ, M.empty)
+      if contradiction then Term (NEQ, M.empty)
       else convertToFormula true cnf)
   in
 

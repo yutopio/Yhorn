@@ -125,13 +125,13 @@ let printPvar (name, params) =
     String.concat "," (List.map Id.print params) ^ ")"
 
 type 'a formula =
-    | Expr of 'a
+    | Term of 'a
     | And of 'a formula list
     | Or of 'a formula list
 
 let rec printFormula eltPrinter x =
     let ret = match x with
-    | Expr x -> `A x
+    | Term x -> `A x
     | And x -> `B(x, " & ")
     | Or x -> `B(x, " | ") in
 
@@ -156,12 +156,12 @@ let (|||) x = combineFormulae false x
 let rec mapFormula f = function
     | And x -> And (List.map (mapFormula f) x)
     | Or x -> Or (List.map (mapFormula f) x)
-    | Expr e -> Expr (f e)
+    | Term e -> Term (f e)
 
 let rec (!!!) = function
     | And x -> Or (List.map (!!!) x)
     | Or x -> And (List.map (!!!) x)
-    | Expr e -> Expr (negateExpr e)
+    | Term e -> Term (negateExpr e)
 
 let (==>) x y = (!!! x) ||| y
 let (<=>) x y = (x ==> y) &&& (y ==> x)
@@ -169,21 +169,21 @@ let (<=>) x y = (x ==> y) &&& (y ==> x)
 let rec normalizeOperator = function
   | And x -> List.reduce (&&&) (List.map normalizeOperator x)
   | Or x -> List.reduce (|||) (List.map normalizeOperator x)
-  | Expr (NEQ, coef) -> Or (
-    List.map (fun x -> Expr (normalizeExpr (x, coef))) [LT;GT])
-  | Expr (EQ, coef) -> And (
-    List.map (fun x -> Expr (normalizeExpr (x, coef))) [LTE;GTE])
-  | Expr e -> Expr e
+  | Term (NEQ, coef) -> Or (
+    List.map (fun x -> Term (normalizeExpr (x, coef))) [LT;GT])
+  | Term (EQ, coef) -> And (
+    List.map (fun x -> Term (normalizeExpr (x, coef))) [LTE;GTE])
+  | Term e -> Term e
 
 let rec countFormula = function
     | And x
     | Or x -> List.fold_left (+) 0 (List.map countFormula x)
-    | Expr _ -> 1
+    | Term _ -> 1
 
 let rec fvs = function
   | And x
   | Or x -> List.fold_left (fun s -> fvs |- S.union s) S.empty x
-  | Expr (_, coef) ->
+  | Term (_, coef) ->
     (* TODO: Rewrite M.keys to return a set. *)
     M.fold (fun k _ -> S.add k) coef S.empty |>
     S.remove Id.const
@@ -213,7 +213,7 @@ let convertToNF cnf formulae =
         | [] -> List.rev ret
         | x :: l ->
             let ret = match x with
-                | Expr x -> [ x ] :: ret
+                | Term x -> [ x ] :: ret
                 | And x | Or x -> (List.direct_product (internal x [])) @ ret in
             internal l ret in
     match cnf, formulae with
@@ -223,7 +223,7 @@ let convertToNF cnf formulae =
 
 let convertToFormula cnf nf =
   match List.map (fun x ->
-    match List.map (fun x -> Expr x) x with
+    match List.map (fun x -> Term x) x with
       | [] -> assert false
       | [x] -> x
       | x -> if cnf then Or x else And x) nf with

@@ -4,8 +4,8 @@ type 'a t = 'a formula
 
 let rec flatten =
   function
-  | Expr (Expr x) -> Expr x
-  | Expr (And x) -> And x
-  | Expr (Or x) -> Or x
+  | Term (Term x) -> Term x
+  | Term (And x) -> And x
+  | Term (Or x) -> Or x
   | And x -> And (List.map flatten x)
   | Or x -> Or (List.map flatten x)

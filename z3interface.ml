@@ -19,7 +19,7 @@ let pred_prefix = "ast_"
 let show_error (Error (c, e)) = try get_error_msg c e with _ -> "Unknown"
 
 let rec convert = function
-  | Expr (op, coef) -> (
+  | Term (op, coef) -> (
     let (l, r) = M.fold (fun k v (l, r) ->
       if v = 0 then (l, r)
       else

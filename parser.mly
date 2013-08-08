@@ -38,8 +38,8 @@ hornClause:
 ;
 
 hterms:
-    | exprs                 { Expr (LinearExpr $1) }
-    | pred                  { Expr (PredVar $1) }
+    | exprs                 { Term (LinearExpr $1) }
+    | pred                  { Term (PredVar $1) }
     | LPAREN hterms RPAREN  { $2 }
     | hterms AND hterms     { And [$1;$3] }
     | hterms OR  hterms     { Or [$1;$3] }
@@ -57,7 +57,7 @@ predParam:
 ;
 
 exprs:
-    | expr                  { Expr $1 }
+    | expr                  { Term $1 }
     | LPAREN exprs RPAREN   { $2 }
     | exprs AND exprs       { $1 &&& $3 }
     | exprs OR  exprs       { $1 ||| $3 }
