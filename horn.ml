@@ -350,8 +350,12 @@ let solveGraph (g, root) sol_templ =
     List.map (fun (x, y) -> x, Formula.map (renameExpr map) y) constr in
 
   let rec gen_constr ret v no_simp =
-    let ret =
-      G.fold_succ (fun arrow ret ->
+    if MV.mem v ret then
+      (* If the vertex is already registered in the template list,
+         simply return it. *)
+      ret
+    else
+      let ret = G.fold_succ (fun arrow ret ->
         let ret, constrs, (m, pis) =
           G.fold_succ_e (fun e (ret, constrs, (m, pis as m_pis)) ->
             let u = G.E.dst e in
@@ -403,7 +407,11 @@ let solveGraph (g, root) sol_templ =
           M.fold (fun k (edges, coefs) c ->
             let op = if k = Id.const then if la then GT else GTE else EQ in
             let constr = ([], Coef edges), Term (op, coefs) in
-            constr :: c) m in
+            constr :: c) m |>
+
+          (* Add constraints from predecessors. *)
+          (@) constrs
+        in
 
         MV.add arrow constrs ret
       ) g v ret in
