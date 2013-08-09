@@ -18,6 +18,14 @@ let negateOp =
   | GT -> LTE
   | GTE -> LT
 
+let flipOp =
+  function
+  | LT -> GT
+  | LTE -> GTE
+  | GT -> LT
+  | GTE -> LTE
+  | x -> x
+
 let operator_of_string =
   function
   | "=" -> EQ

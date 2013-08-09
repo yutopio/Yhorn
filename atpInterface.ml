@@ -74,14 +74,40 @@ let integer_qelim vars la =
   of_formula la |>
   S.fold (fun id ast -> Atp_batch.Exists(Id.serialize id, ast)) vars |>
   Atp_batch.integer_qelim |>
-  Atp_batch.simplify |>
-  Atp_batch.dnf |>
-  Atp_batch.disjuncts |>
-  (let rec f ret = function
-    | [] -> ret
-    | x :: rest ->
-      if List.exists (fun y -> y => x) rest then f ret rest
-      else f (x :: ret) (List.filter (fun y -> not (x => y)) rest) in
-   f []) |>
-  List.reduce Atp_batch.mk_or |>
+  Atp_batch.cnf |>
+  Atp_batch.conjuncts |>
+  List.map (fun ds ->
+    try
+      let [Term (ox,mx); Term (oy,my)] =
+        Atp_batch.disjuncts ds |> List.map formula_of in
+      let [mx';my'] = List.map (M.filter (fun k _ -> k <> Id.const)) [mx;my] in
+      let [cx;cy] = List.map (M.findDefault 0 Id.const) [mx;my] in
+      let (oy, my, cy) =
+        if M.compare compare mx' my' <> 0 then
+          let oy, my' = flipOp oy, (~--) my' in
+          if M.compare compare mx' my' <> 0 then raise Not_found
+          else
+            let cy = -cy in
+            oy, (M.add Id.const cy mx), cy
+        else oy, my, cy in
+      let ret =
+        if cx = cy then
+          if ox = oy then ox, mx
+          else
+            match ox, oy with
+            | LT, LTE | LTE, LT | LT, EQ | LTE, EQ | EQ, LT | EQ, LTE -> LTE, mx
+            | GT, GTE | GTE, GT | GT, EQ | GTE, EQ | EQ, GT | EQ, GTE -> GTE, mx
+            | LT, GT | GT, LT | LT, NEQ | GT, NEQ | NEQ, LT | NEQ, GT -> NEQ, mx
+            | _ -> EQ, M.empty
+        else
+          let ox, mx, oy, my =
+            if cx > cy then ox, mx, oy, my
+            else oy, my, ox, mx in
+          match oy with
+          | NEQ | LT | LTE ->
+            (match ox with EQ | LT | LTE -> oy, my | _ -> EQ, M.empty)
+          | _ -> (match ox with NEQ | GT | GTE -> ox, mx) in
+      normalizeExpr ret |> of_expr
+    with _ -> ds) |>
+  List.reduce Atp_batch.mk_and |>
   formula_of
