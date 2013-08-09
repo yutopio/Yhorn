@@ -69,11 +69,10 @@ let rec formula_of p =
     assert false)
 
 let integer_qelim vars la =
-  let (=>) x y = Atp_batch.tautology (Atp_batch.Imp(x, y)) in
   let vars = S.diff (fvs la) vars in
   of_formula la |>
   S.fold (fun id ast -> Atp_batch.Exists(Id.serialize id, ast)) vars |>
-  Atp_batch.integer_qelim |>
+  Atp_batch.real_qelim |>
   Atp_batch.cnf |>
   Atp_batch.conjuncts |>
   List.map (fun ds ->
@@ -107,7 +106,7 @@ let integer_qelim vars la =
           | NEQ | LT | LTE ->
             (match ox with EQ | LT | LTE -> oy, my | _ -> EQ, M.empty)
           | _ -> (match ox with NEQ | GT | GTE -> ox, mx) in
-      normalizeExpr ret |> of_expr
+      of_expr ret
     with _ -> ds) |>
   List.reduce Atp_batch.mk_and |>
   formula_of
