@@ -44,7 +44,9 @@ let rec flatten =
   | And x -> And (List.map flatten x)
   | Or x -> Or (List.map flatten x)
 
-let rec count = function
-  | And x
-  | Or x -> List.fold_left (+) 0 (List.map count x)
-  | Term _ -> 1
+let rec fold f seed =
+  function
+  | And x | Or x -> List.fold_left (fold f) seed x
+  | Term e -> f seed e
+
+let count x = fold (fun x _ -> x + 1) 0 x

@@ -158,14 +158,13 @@ let printHornSol x =
 (* Ocamlgraph related types *)
 
 type vert =
-  | HT of hornTerm
+  | VLinear of Expr.t Formula.t
+  | VPred
+  | VBot
   | Arrow
 
 module MyVertex = struct
   type t = vert
-  let compare = compare
-  let hash _ = 0 (* TODO: *)
-  let equal = (=)
 end
 
 module MyEdge = struct
@@ -201,7 +200,9 @@ module Display = struct
   let vertex_name v =
     let lbl =
       match V.label v with
-      | HT x -> printHornTerm x
+      | VLinear e -> Formula.print printExpr e
+      | VPred -> "pred"
+      | VBot -> "bot"
       | Arrow -> ">>" in
     "\"" ^ (string_of_int (V.hash v)) ^ ":" ^ lbl ^ "\""
 
