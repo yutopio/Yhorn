@@ -349,7 +349,7 @@ let solveGraph (g, root) sol_templ =
     M.fold (fun k v -> M.add k (renameVar map v)) pcoef M.empty,
     List.map (fun (x, y) -> x, Formula.map (renameExpr map) y) constr in
 
-  let rec gen_constr ret v no_simp =
+  let rec gen_constr ret v visited =
     if MV.mem v ret then
       (* If the vertex is already registered in the template list,
          simply return it. *)
@@ -371,9 +371,9 @@ let solveGraph (g, root) sol_templ =
               ret, constrs, m_pis
 
             | Some rename, HT (PredVar (p, param)) ->
-              let ret' = gen_constr ret u no_simp in
+              let ret = gen_constr ret u visited in
 
-              let constr = MV.find u ret' in
+              let constr = MV.find u ret in
               let constrs = constr @ constrs in
 
               let rename = ref rename in
@@ -426,7 +426,7 @@ let solveGraph (g, root) sol_templ =
     in
 
     let constr =
-      if quants = [] || List.mem v no_simp then
+      if SV.mem v visited then
         (* No simplification. *)
         constrs
       else
@@ -440,7 +440,25 @@ let solveGraph (g, root) sol_templ =
     MV.add v constr ret
   in
 
-  let x = gen_constr MV.empty root [] in
+  let visited = SV.add root SV.empty in
+  let constrs = gen_constr MV.empty root visited in
+
+  (* Initialize incremental check tree. *)
+  let gen = G.add_vertex G.empty root in
+
+  let split_tag =
+    List.fold_left (fun (constrs, m) (tag, ex) ->
+      let name = string_of_int (List.length m) in
+      (name, ex) :: constrs,
+      (name, tag) :: m) ([], []) in
+
+  let root_constrs, symbol_map = MV.find root constrs |> split_tag in
+  let sol =
+    try Z3interface.solve root_constrs
+    with Z3interface.Unsatisfiable x ->
+      let uc_tags = List.map (fun x -> List.assoc x symbol_map) x in
+      let unsat = List.sort_distinct compare uc_tags in
+      assert false in
   assert false
 
 let simplifyPCNF clauses =
