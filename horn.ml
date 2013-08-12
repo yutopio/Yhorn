@@ -227,6 +227,7 @@ type constrTypes =
 let rec solveGraph (g, ps, vps) visited =
   (* DEBUG: *)
   if !Flags.enable_gv then (
+    Types.Display.highlight_vertices := visited;
     display_with_gv (Operator.mirror g)
   );
 
@@ -271,13 +272,18 @@ let rec solveGraph (g, ps, vps) visited =
               (* Traverse the tree for preceding pred vertices. *)
               let ret = gen_constr ret u in
 
-              (* Rename the free variables in the constraint, and
-                 append to the constraint list. *)
               let constr =
-                let rename = M.fold (fun _ v -> M.add v v) pcoef M.empty in
-                let rename = ref rename in
-                let rename = Formula.map (renameExpr rename) in
-                List.map (fun (a, b) -> a, rename b) (MV.find u ret) in
+                if SV.mem u visited then
+                  (* If the vertex is already traversed under satisfiability,
+                     do not rename the rest part of the constraints. *)
+                  MV.find u ret
+                else
+                  (* Rename the free variables in the constraint, and
+                     append to the constraint list. *)
+                  let rename = M.fold (fun _ v -> M.add v v) pcoef M.empty in
+                  let rename = ref rename in
+                  let rename = Formula.map (renameExpr rename) in
+                  List.map (fun (a, b) -> a, rename b) (MV.find u ret) in
               let constrs = constr @ constrs in
 
               let rename = ref rename in
