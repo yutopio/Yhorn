@@ -431,6 +431,13 @@ let rec solveGraph (g, ps, vps) visited =
     | `Disj x ->
       split_vertex_disj (g, ps, vps) x
     | `Unknown ->
+      let visited' = SV.union visited s in
+
+      if visited = visited' then
+        (* If all vertices are traversed and still unsatisfiable,
+           we don't have a solution. *)
+        raise Not_found;
+
       (* Extend the graph by LaWeight set s. *)
       solveGraph (g, ps, vps) (SV.union visited s)
 
