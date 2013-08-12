@@ -244,6 +244,19 @@ let rec solveGraph (g, ps, vps) visited =
     display_with_gv (Operator.mirror g)
   );
 
+  M.iter (fun p (binder, vpf) ->
+    Id.print p ^ "(" ^ String.concat "," (List.map Id.print binder) ^
+      "): " ^ Formula.print (G.V.hash |- string_of_int) vpf |>
+    print_endline) ps;
+  print_newline ();
+
+  MV.iter (fun v (p, pcoef) ->
+    let pcoef = M.map (fun v -> M.add v 1 M.empty) pcoef in
+    string_of_int (G.V.hash v) ^ "(" ^ Id.print p ^ "): " ^
+      printPexpr pcoef |>
+    print_endline) vps;
+  print_newline ();
+
   let addPcoef e =
     let add (es, m) (k, v) =
       (match e with None -> es | Some e -> e :: es),
