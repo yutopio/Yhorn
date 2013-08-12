@@ -224,6 +224,19 @@ type constrTypes =
 | Coef of (Id.t * G.E.t) list
 | Simplified of G.V.t
 
+let print_constrs =
+  List.fold_left (fun i (tag, ex) ->
+    let name = string_of_int i in
+    print_string ("(" ^ name ^ "): " ^ (
+      match tag with
+      | LaWeight -> "LaWeight"
+      | Coef _ -> "Coef"
+      | Simplified v -> "Simplified (" ^ string_of_int (G.V.hash v) ^ ")"
+    ) ^ " - ");
+    print_endline (Formula.print printExpr ex);
+    i + 1) 0 |-
+  ignore
+
 let rec solveGraph (g, ps, vps) visited =
   (* DEBUG: *)
   if !Flags.enable_gv then (
@@ -240,6 +253,7 @@ let rec solveGraph (g, ps, vps) visited =
   let addLinear (m, pis) coef =
     (* Add to the variable maps for applying Farkas' Lemma. *)
     let pi = Id.create () in
+    print_endline (printExpr (LTE, coef) ^ " --- " ^ Id.print pi);
 
     (* Building an coefficient mapping in terms of variables. *)
     (M.fold (fun k v -> addPcoef None k (pi, v)) coef m), pi :: pis in
@@ -349,6 +363,8 @@ let rec solveGraph (g, ps, vps) visited =
         [Simplified v, constrs]
     in
 
+    print_endline (string_of_int (G.V.hash v));
+    print_constrs constr;
     MV.add v constr ret
   in
 
@@ -636,7 +652,11 @@ let solve clauses =
   (* Rename back to original predicate variable names and simplify. *)
   let sol = M.fold (fun k -> M.add (M.findDefault k k pm)) sol M.empty in
 
+  print_endline "Solution:";
+  printHornSol sol |> print_endline;
+
   (* DEBUG: Solution verification. *)
+  print_endline "Verification:";
   List.iter (fun x ->
     print_endline (printHorn x);
     if not (Z3interface.check_clause sol x) then

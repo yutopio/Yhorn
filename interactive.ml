@@ -3,6 +3,7 @@ open Util
 
 let main _ =
   Flags.enable_gv := true;
+  Flags.debug_z3_lp := true;
 
   let input =
     match Array.length (Sys.argv) with
@@ -16,7 +17,6 @@ let main _ =
   print_endline (String.concat "\n" (List.map printHorn clauses));
   print_newline ();
 
-  Horn.solve clauses |>
-  printHornSol |> print_endline
+  Horn.solve clauses
 
 let _ = main ()
