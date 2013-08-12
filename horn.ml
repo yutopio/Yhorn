@@ -477,6 +477,7 @@ and split_vertex_conj (g, ps, vps) x =
       g', x'
     ) (g, (vps, [])) copies in
 
+  let vp's = vp :: vp's in
   let p, _ = MV.find vp vps in
   let (binder, vpf) = M.find p ps in
   let vpf =
@@ -503,7 +504,7 @@ and split_vertex_disj (g, ps, vps) x =
       let g'= G.remove_edge_e g' e in
       let dst = G.E.dst e in
       let g' = G.add_edge g' vp' dst in
-      g', x
+      g', x'
     ) (g, (vps, [])) copies in
 
   (* Temporarily remove edges to the current pred vertices, and group them by
@@ -525,9 +526,10 @@ and split_vertex_disj (g, ps, vps) x =
   ) mv (g', MV.empty) in
 
   let vp's = vp :: vp's in
-  let g' =
+  let g =
     MV.fold (fun _ (up, succ, lbls) g ->
       repeat (fun _ l -> vp's :: l) (List.length lbls) [] |>
+      List.direct_product |>
       List.fold_left (fun g choice ->
         let arrow = G.V.create Arrow in
         let g =
