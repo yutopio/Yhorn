@@ -36,6 +36,12 @@ let rec map f =
   | Or x -> Or (List.map (map f) x)
   | Term e -> Term (f e)
 
+let rec transform f =
+  function
+  | And x -> And (List.map (transform f) x)
+  | Or x -> Or (List.map (transform f) x)
+  | Term x -> f x
+
 let rec flatten =
   function
   | Term (Term x) -> Term x

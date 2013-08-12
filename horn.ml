@@ -11,6 +11,9 @@ let bot = Term (LTE, M.add Id.const 1 M.empty)
 
 let createRename = List.fold_left2 (fun m k v -> M.add k v m) M.empty
 
+let assignParameters assign =
+  M.map (fun v -> M.fold (fun k v -> (+) ((M.findDefault 1 k assign) * v)) v 0)
+
 let simplifyCNF clauses =
   let simplifyDF =
     List.fold_left (fun (tautology, exprs) (op, coef as expr) ->
@@ -63,7 +66,6 @@ let preprocLefthand =
   List.flatten
 
 let root = G.V.create VBot
-let rootE = G.E.create root None root
 module MV = Map.Make(G.V)
 
 let buildGraph clauses =
@@ -217,38 +219,12 @@ let buildGraph clauses =
   (* Return the graph, pred information, and their vertices. *)
   g, ps, vps
 
-module EDef = struct
-  type t = G.E.t
-  let default = rootE
-  let compare x y = G.E.compare x y
-end
-
-module EL = struct
-  type t = G.E.t list
-  let default = []
-  let compare = compare
-end
-
-module GI = Graph.Persistent.Digraph.Concrete(Integer)
-module GV = Graph.Persistent.Digraph.AbstractLabeled(G.V)(EDef)
-module MVV = Map.Make(GV.V)
-module ME = Map.Make(G.E)
-module SEL = Set.Make(EL)
-module MEL = Map.Make(EL)
-module SV = Set.Make(G.V)
-module TopologicalGI = Graph.Topological.Make(GI)
-
-let assignParameters assign =
-  M.map (fun v -> M.fold (fun k v -> (+) ((M.findDefault 1 k assign) * v)) v 0)
-
 type constrTypes =
 | LaWeight
-| Coef of G.E.t list
+| Coef of (Id.t * G.E.t) list
 | Simplified of G.V.t
-| Binding
-type constr = G.E.t list * constrTypes
 
-let solveGraph (g, ps, vps) =
+let rec solveGraph (g, ps, vps) visited =
   (* DEBUG: *)
   if !Flags.enable_gv then (
     display_with_gv (Operator.mirror g)
@@ -260,26 +236,21 @@ let solveGraph (g, ps, vps) =
       M.addDefault 0 (+) k v m in
     M.addDefault ([], M.empty) add in
 
-  let addLinear e (m, pis) coef =
+  let addLinear (m, pis) coef =
     (* Add to the variable maps for applying Farkas' Lemma. *)
     let pi = Id.create () in
 
     (* Building an coefficient mapping in terms of variables. *)
-    (M.fold (fun k v -> addPcoef e k (pi, v)) coef m), pi :: pis in
+    (M.fold (fun k v -> addPcoef None k (pi, v)) coef m), pi :: pis in
 
-  (* Duplicating templates is done by simple renaming. *)
-  let duplicate (pcoef, constr) =
-    let map = ref M.empty in
-    M.fold (fun k v -> M.add k (renameVar map v)) pcoef M.empty,
-    List.map (fun (x, y) -> x, Formula.map (renameExpr map) y) constr in
-
-  let rec gen_constr ret v visited =
+  let rec gen_constr ret v =
     if MV.mem v ret then
       (* If the vertex is already registered in the template list,
          simply return it. *)
       ret
     else
-      let ret = G.fold_succ (fun arrow ret ->
+      let ret = G.fold_succ_e (fun e ret ->
+        let arrow = G.E.dst e in
         let ret, constrs, (m, pis) =
           G.fold_succ_e (fun e (ret, constrs, (m, pis as m_pis)) ->
             let u = G.E.dst e in
@@ -289,7 +260,7 @@ let solveGraph (g, ps, vps) =
               let [x] = Nf.dnf_of_formula ex in
               assert (pis = []);
               let x = List.map snd x in (* Ignore LTE operator *)
-              let m_pis = List.fold_left (addLinear (Some e)) m_pis x in
+              let m_pis = List.fold_left addLinear m_pis x in
 
               (* No renaming should occur for linear expressions. *)
               ret, constrs, m_pis
@@ -298,7 +269,7 @@ let solveGraph (g, ps, vps) =
               let p, pcoef = MV.find u vps in
 
               (* Traverse the tree for preceding pred vertices. *)
-              let ret = gen_constr ret u visited in
+              let ret = gen_constr ret u in
 
               (* Rename the free variables in the constraint, and
                  append to the constraint list. *)
@@ -310,7 +281,7 @@ let solveGraph (g, ps, vps) =
               let constrs = constr @ constrs in
 
               let rename = ref rename in
-              let f k v = addPcoef (Some e) (renameVar rename k) (v, 1) in
+              let f k v = addPcoef (Some (v, e)) (renameVar rename k) (v, 1) in
 
               (* Building an coefficient mapping in terms of variables. *)
               ret, constrs, ((M.fold f pcoef m), pis)
@@ -324,20 +295,21 @@ let solveGraph (g, ps, vps) =
           | VPred ->
             (* Add the atomic current predicate template for Farkas' target. *)
             let p, pcoef = MV.find v vps in
-            let m = M.fold (fun k v -> addPcoef None k (v, -1)) pcoef m in
+            let add k v = addPcoef (Some (v, e)) k (v, -1) in
+            let m = M.fold add pcoef m in
             m, false, M.values pcoef
 	  | _ -> assert false in
 
         let constrs =
           (* All left-hand linear inequalities must be weighted non-negative. *)
           List.map (fun pi ->
-            (([], LaWeight), Term (GTE, M.add pi 1 M.empty))) pis |>
+            (LaWeight, Term (GTE, M.add pi 1 M.empty))) pis |>
 
           (* Additionally, add constraints to make totals on every
              coefficients zero. *)
           M.fold (fun k (edges, coefs) c ->
             let op = if k = Id.const then if la then GT else GTE else EQ in
-            let constr = ([], Coef edges), Term (op, coefs) in
+            let constr = Coef edges, Term (op, coefs) in
             constr :: c) m |>
 
           (* Add constraints from predecessors. *)
@@ -368,14 +340,11 @@ let solveGraph (g, ps, vps) =
           And (List.map snd constrs) |>
           AtpInterface.integer_qelim quants in *)
         let constrs = And (List.map snd constrs) in
-        [([], Simplified v), constrs]
+        [Simplified v, constrs]
     in
 
     MV.add v constr ret
   in
-
-  let visited = SV.add root SV.empty in
-  let constrs = gen_constr MV.empty root visited in
 
   let split_tag =
     List.fold_left (fun (constrs, m) (tag, ex) ->
@@ -383,14 +352,198 @@ let solveGraph (g, ps, vps) =
       (name, ex) :: constrs,
       (name, tag) :: m) ([], []) in
 
+  let constrs = gen_constr MV.empty root in
   let root_constrs, symbol_map = MV.find root constrs |> split_tag in
-  let sol =
-    try Z3interface.solve root_constrs
-    with Z3interface.Unsatisfiable x ->
-      let uc_tags = List.map (fun x -> List.assoc x symbol_map) x in
-      let unsat = List.sort_distinct compare uc_tags in
-      assert false in
-  assert false
+  
+  try
+    let sol = Z3interface.solve root_constrs in
+
+    (* If solved, check whether the visited set contains all node. If not,
+       extend the set further. Compute frontier. *)
+    let visited' =
+      SV.fold (
+        G.fold_succ (
+          G.fold_succ (fun v s ->
+            match G.V.label v with
+            | VPred -> SV.add v s  
+            | _ -> s) g) g) visited visited in
+
+    if SV.cardinal visited <> SV.cardinal visited' then
+      (* Broaden non-simplification vertices. *)
+      solveGraph (g, ps, vps) visited'
+    else
+      (* Finished all traversal. *)
+      assert false
+
+  with Z3interface.Unsatisfiable uc ->
+    (* Restore constraint information. *)
+    let uc_tags = List.map (fun x -> List.assoc x symbol_map) uc in
+
+    (* Sort the unsat core tags. *)
+    let m, s =
+      List.fold_left (fun (m, s) ->
+        function
+        | Coef es ->
+          List.fold_left (fun m (id, es) -> M.add_append id es m) m es, s
+        | Simplified v -> m, SV.add v s
+        | _ -> m, s) (M.empty, SV.empty) uc_tags in
+
+    (* A routine to find edges, which share the same vertex under the same
+       variable. *)
+    let findMerge f es =
+      let mv =
+        List.fold_left (fun m e -> MV.add_append (f e) e m) MV.empty es |>
+        MV.filter (fun _ v -> List.length v >= 2) in
+      if MV.cardinal mv > 0 then Some (MV.choose mv |> snd) else None in
+
+    (* Find conjunctive unsat information. *)
+    let search =
+      M.fold (fun _ es ret ->
+        (* If already have found split point, continue. *)
+        match ret with
+        | `Conj _ | `Disj _ -> ret
+        | `Unknown ->
+
+        (* Find conjunctive merge. *)
+        match findMerge G.E.dst es with
+        | Some x -> `Conj x
+        | None ->
+
+        (* or, find disjunctive merge. *)
+        match findMerge G.E.src es with
+        | Some x -> `Disj x
+        | None -> `Unknown
+      ) m `Unknown in
+
+    match search with
+    | `Conj x ->
+      split_vertex_conj (g, ps, vps) x
+    | `Disj x ->
+      split_vertex_disj (g, ps, vps) x
+    | `Unknown ->
+      (* Extend the graph by LaWeight set s. *)
+      solveGraph (g, ps, vps) (SV.union visited s)
+
+and split_vertex (vp, (vps, vp's)) =
+  (* Create a new vertex. *)
+  let vp' = G.V.create VPred in
+  let vp's' = vp' :: vp's in
+
+  (* Create a fresh parameterized template for new predicate vertex. *)
+  let (p, pcoef) = MV.find vp vps in
+  let pcoef' = M.map (fun _ -> Id.create ()) pcoef in
+  let vps' = MV.add vp' (p, pcoef') vps in
+
+  vp', (vps', vp's')
+
+and split_vertex_conj (g, ps, vps) x =
+  (* Split DAG. *)
+
+  (* TODO: Optimize the way of splitting by using Coloring problem. *)
+  let vp = G.E.dst (List.hd x) in
+  let copies = List.tl x in
+
+  let g, (vps, vp's) =
+    List.fold_left (fun (g', x) e ->
+      let vp', x' = split_vertex (vp, x) in
+
+      let g'= G.remove_edge_e g' e in
+      let src = G.E.src e in
+      let lbl = G.E.label e in
+      let g' = G.add_edge_e g' (G.E.create src lbl vp') in
+
+      let g' =
+        G.fold_succ (fun arrow g' ->
+          let arrow' = G.V.create Arrow in
+          let g' =
+            G.fold_succ_e (fun e g' ->
+              let dst = G.E.dst e in
+              let lbl = G.E.label e in
+              G.add_edge_e g' (G.E.create arrow' lbl dst)
+            ) g arrow g' in
+          G.add_edge g' vp' arrow'
+        ) g vp g' in
+
+      g', x'
+    ) (g, (vps, [])) copies in
+
+  let p, _ = MV.find vp vps in
+  let (binder, vpf) = M.find p ps in
+  let vpf =
+    Formula.transform (fun x ->
+      if x = vp then And (List.map (fun x -> Term x) vp's) else Term x) vpf in
+  let ps = M.add p (binder, vpf) ps in
+
+  (* Retry. *)
+  (* TODO: Rebuild visited node information; not from scratch. *)
+  solveGraph (g, ps, vps) (SV.add root SV.empty)
+
+and split_vertex_disj (g, ps, vps) x =
+  (* Split disjunction. *)
+
+  (* TODO: Optimize the way of splitting by using Coloring problem. *)
+  let vp = G.E.src (List.hd x) in
+  let copies = List.tl x in
+
+  (* Create new pred vertices for disjunction. *)
+  let g, (vps, vp's) =
+    List.fold_left (fun (g', x) e ->
+      let vp', x' = split_vertex (vp, x) in
+
+      let g'= G.remove_edge_e g' e in
+      let dst = G.E.dst e in
+      let g' = G.add_edge g' vp' dst in
+      g', x
+    ) (g, (vps, [])) copies in
+
+  (* Temporarily remove edges to the current pred vertices, and group them by
+     originating arrows. *)
+  let g', mv = G.fold_pred_e (fun e (g', mv) ->
+    let src = G.E.src e in
+    let lbl = G.E.label e in
+
+    let g' = G.remove_edge_e g' e in
+    let mv' = MV.add_append src lbl mv in
+    g', mv'
+  ) g vp (g, MV.empty) in
+
+  let g', mv = MV.fold (fun arrow lbls (g', mv) ->
+    let up = G.pred g' arrow |> List.hd in
+    let succ = G.succ_e g' arrow in
+    G.remove_vertex g' arrow,
+    MV.add arrow (up, succ, lbls) mv
+  ) mv (g', MV.empty) in
+
+  let vp's = vp :: vp's in
+  let g' =
+    MV.fold (fun _ (up, succ, lbls) g ->
+      repeat (fun _ l -> vp's :: l) (List.length lbls) [] |>
+      List.fold_left (fun g choice ->
+        let arrow = G.V.create Arrow in
+        let g =
+          List.fold_left (fun g e ->
+            let lbl = G.E.label e in
+            let dst = G.E.dst e in
+            G.add_edge_e g (G.E.create arrow lbl dst)
+          ) g succ in
+        let g =
+          List.fold_left2 (fun g lbl dst ->
+            G.add_edge_e g (G.E.create arrow lbl dst)
+          ) g lbls choice in
+        G.add_edge g up arrow
+      ) g
+    ) mv g' in
+
+  let p, _ = MV.find vp vps in
+  let (binder, vpf) = M.find p ps in
+  let vpf =
+    Formula.transform (fun x ->
+      if x = vp then Or (List.map (fun x -> Term x) vp's) else Term x) vpf in
+  let ps = M.add p (binder, vpf) ps in
+
+  (* Retry. *)
+  (* TODO: Rebuild visited node information; not from scratch. *)
+  solveGraph (g, ps, vps) (SV.add root SV.empty)
 
 let simplifyPCNF clauses =
   let simplifyPDF exprs =
@@ -458,7 +611,8 @@ let solve clauses =
   (* We don't handle cyclic graphs. *)
   assert (not (Traverser.has_cycle g));
 
-  let params, exprs = solveGraph problem in
+  let visited = SV.add root SV.empty in
+  let params, exprs = solveGraph problem visited in
   assert false
 
 (*

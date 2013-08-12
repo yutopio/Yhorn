@@ -117,7 +117,8 @@ module List = struct
     let rec inner current = function
       | [] -> ret := current :: !ret
       | x :: rest -> List.iter (fun x -> inner (current @ [x]) rest) x in
-    inner [] input; !ret
+    inner [] input;
+    List.rev (!ret)
 
   let sorted_multimap compare f lists =
     (* Give IDs to lists. *)

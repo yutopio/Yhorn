@@ -10,6 +10,7 @@ module type S = sig
   val values: 'a t -> 'a list
   val findDefault: 'a -> key -> 'a t -> 'a
   val addDefault: 'a -> ('a -> 'b -> 'a) -> key -> 'b -> 'a t -> 'a t
+  val add_append: key -> 'a -> 'a list t -> 'a list t
   val simpleMerge: 'a t -> 'a t -> 'a t
 end
 
@@ -28,6 +29,8 @@ module Make(Ord: Map.OrderedType) = struct
       value d. *)
   let addDefault d (+) k v m =
     add k ((+) (findDefault d k m) v) m
+
+  let add_append k elem m = addDefault [] (fun l e -> e :: l) k elem m
 
   (** [simpleMerge a b] merges two maps with distinct keys. If both maps have
       bindings from the same key, a binding from [a] is considered. *)

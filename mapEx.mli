@@ -7,6 +7,7 @@ module type S = sig
   val values: 'a t -> 'a list
   val findDefault: 'a -> key -> 'a t -> 'a
   val addDefault: 'a -> ('a -> 'b -> 'a) -> key -> 'b -> 'a t -> 'a t
+  val add_append: key -> 'a -> 'a list t -> 'a list t
   val simpleMerge: 'a t -> 'a t -> 'a t
 end
 

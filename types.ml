@@ -181,6 +181,7 @@ end
 
 module G = Graph.Persistent.Digraph.AbstractLabeled(MyVertex)(MyEdge)
 module SV = Set.Make(G.V)
+module SE = Set.Make(G.E)
 module Traverser = Graph.Traverse.Dfs(G)
 module Operator = Graph.Oper.P(G)
 
