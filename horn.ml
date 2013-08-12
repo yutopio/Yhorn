@@ -379,7 +379,11 @@ let rec solveGraph (g, ps, vps) visited =
       solveGraph (g, ps, vps) visited'
     else
       (* Finished all traversal. *)
-      assert false
+      let vps = MV.map (fun (_, pcoef) ->
+        let pcoef = M.map (fun v -> M.add v 1 M.empty) pcoef in
+        LTE, assignParameters sol pcoef) vps in
+      M.map (fun (binder, vpf) ->
+        (binder, Formula.map (fun v -> MV.find v vps) vpf)) ps
 
   with Z3interface.Unsatisfiable uc ->
     (* Restore constraint information. *)
@@ -618,26 +622,10 @@ let solve clauses =
   assert (not (Traverser.has_cycle g));
 
   let visited = SV.add root SV.empty in
-  let params, exprs = solveGraph problem visited in
-  assert false
-
-(*
-  (* Create basic template for solution. *)
-  let sol_templ = List.fold_left (fun m k -> M.add k (Term k) m) M.empty preds in
-
-  (* Generate constraints for solving the graph. *)
-  let params, exprs = solveGraph (g, root) sol_templ in
-  let sol = M.merge (fun _ (Some param) (Some exprs) ->
-      Some (param, (And (List.map (fun x -> Term x) exprs)))) params exprs in
+  let sol = solveGraph problem visited in
 
   (* Rename back to original predicate variable names and simplify. *)
-  let sol =
-    M.fold (fun k -> M.add (M.findDefault k k pm)) sol M.empty |>
-    M.map (fun (p, f) -> p,
-      let (contradiction, cnf) = Nf.cnf_of_formula f |> simplifyCNF in
-      if contradiction then Term (NEQ, M.empty)
-      else Nf.cnf_to_formula cnf)
-  in
+  let sol = M.fold (fun k -> M.add (M.findDefault k k pm)) sol M.empty in
 
   (* DEBUG: Solution verification. *)
   List.iter (fun x ->
@@ -646,4 +634,3 @@ let solve clauses =
       failwith incorrect) clauses;
 
   sol
-*)
