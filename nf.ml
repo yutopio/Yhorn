@@ -3,9 +3,9 @@ open ListEx
 
 type 'a t = 'a list list
 
-let of_formula cnf formulae =
-  let rec internal formulae ret =
-    match formulae with
+let of_formula cnf formula =
+  let rec internal formula ret =
+    match formula with
     | [] -> List.rev ret
     | x :: l ->
       let ret =
@@ -15,10 +15,11 @@ let of_formula cnf formulae =
       in
       internal l ret
   in
-  match cnf, formulae with
+  let formula = normalize formula in
+  match cnf, formula with
   | true, And x
   | false, Or x -> internal x []
-  | _ -> internal [ formulae ] []
+  | _ -> internal [ formula ] []
 let cnf_of_formula x = of_formula true x
 let dnf_of_formula x = of_formula false x
 

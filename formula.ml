@@ -1,3 +1,5 @@
+open ListEx
+
 type 'a t =
 | Term of 'a
 | And of 'a t list
@@ -56,3 +58,9 @@ let rec fold f seed =
   | Term e -> f seed e
 
 let count x = fold (fun x _ -> x + 1) 0 x
+
+let normalize =
+  function
+  | And x -> List.reduce (&&&) x
+  | And x -> List.reduce (|||) x
+  | x -> x
