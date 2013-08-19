@@ -1,47 +1,33 @@
 %{
 open Error
+open Expr
+open Formula
+open MTypes
 open Types
 %}
 
 %token <Id.t> VAR
 %token <Id.t> PRED
 %token <int> INT
-%token <Types.operator> OP
+%token <Expr.operator> OP
 %token PLUS MINUS
 %token AND OR NOT
 %token LPAREN RPAREN
-%token LBRACK RBRACK
 %token ARROW DOT COMMA
 %token EOF
 
 %nonassoc ARROW
-%left CAND
 %left AND OR
 %right NOT
 %left PLUS MINUS
 
 %start inputUnit
-%type <Types.horn list * (Id.t * Id.t) list> inputUnit
+%type <Types.horn list> inputUnit
 
 %%
 
 inputUnit:
-    | hornClauses mergeSpec EOF { $1,$2 }
-;
-
-mergeSpec:
-    |                           { [] }
-    | LBRACK           RBRACK   { [] }
-    | LBRACK predPairs RBRACK   { $2 }
-;
-
-predPairs:
-    | predPair                  { [$1] }
-    | predPair COMMA predPairs  { $1::$3 }
-;
-
-predPair:
-    | PRED MINUS PRED           { $1,$3 }
+    | hornClauses EOF { $1 }
 ;
 
 hornClauses:
@@ -50,18 +36,16 @@ hornClauses:
 ;
 
 hornClause:
-    | clause ARROW pred  DOT    { $1, (PredVar $3) }
-    | clause ARROW exprs DOT    { $1, (LinearExpr $3) }
+    | hterms ARROW pred  DOT    { $1, (PredVar $3) }
+    | hterms ARROW exprs DOT    { $1, (LinearExpr $3) }
 ;
 
-clause:
-    | hornTerm                          { [$1] }
-    | hornTerm AND clause %prec CAND    { $1::$3 }
-;
-
-hornTerm:
-    | exprs                 { LinearExpr $1 }
-    | pred                  { PredVar $1 }
+hterms:
+    | exprs                 { Term (LinearExpr $1) }
+    | pred                  { Term (PredVar $1) }
+    | LPAREN hterms RPAREN  { $2 }
+    | hterms AND hterms     { And [$1;$3] }
+    | hterms OR  hterms     { Or [$1;$3] }
 ;
 
 pred:
@@ -76,7 +60,7 @@ predParam:
 ;
 
 exprs:
-    | expr                  { Expr $1 }
+    | expr                  { Term $1 }
     | LPAREN exprs RPAREN   { $2 }
     | exprs AND exprs       { $1 &&& $3 }
     | exprs OR  exprs       { $1 ||| $3 }
@@ -88,20 +72,15 @@ expr:
 ;
 
 terms:
-    | term              { $1 }
-    | MINUS term        { M.empty -- $2 }
+    |             term  { $1 }
+    |       PLUS  term  { $2 }
+    |       MINUS term  { M.empty -- $2 }
     | terms PLUS  term  { $1 ++ $3 }
     | terms MINUS term  { $1 -- $3 }
 ;
 
 term:
-    | num       { M.add Id.const $1 M.empty }
-    | num VAR   { M.add $2 $1 M.empty }
+    | INT       { M.add Id.const $1 M.empty }
+    | INT VAR   { M.add $2 $1 M.empty }
     |     VAR   { M.add $1 1 M.empty }
-;
-
-num:
-    |       INT { $1 }
-    | PLUS  INT { $2 }
-    | MINUS INT { -($2) }
 ;

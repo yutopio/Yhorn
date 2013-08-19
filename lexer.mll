@@ -1,8 +1,9 @@
 {
-open Lexing
 open Error
-open Types
+open Expr
+open Lexing
 open Parser
+open Types
 }
 
 let br = ['\r' '\n']
@@ -32,8 +33,6 @@ rule token = parse
     | '-'               { MINUS }
     | '('               { LPAREN }
     | ')'               { RPAREN }
-    | '['               { LBRACK }
-    | ']'               { RBRACK }
     | '&'               { AND }
     | '|'               { OR }
     | '!'               { NOT }
@@ -44,10 +43,10 @@ rule token = parse
     | upperIdent        { PRED(Id.from_string (lexeme lexbuf)) }
     | digit+            { INT(int_of_string(lexeme lexbuf)) }
     | eof               { EOF }
-    | _                 { unrecToken (lexeme lexbuf) }
+    | _                 { failwith (unrecToken (lexeme lexbuf)) }
 and blockComment = parse
     | "*/"              { token lexbuf }
     | [^'*''/']+        { blockComment lexbuf }
     | '*'+[^'*''/']     { blockComment lexbuf }
-    | eof               { nonTermCom () }
+    | eof               { failwith nonTermCom }
     | _                 { blockComment lexbuf }

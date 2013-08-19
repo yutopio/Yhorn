@@ -1,6 +1,9 @@
+open MTypes
 open Types
 
-val check_formula : expr formula -> bool option
-val integer_programming : expr formula -> int M.t option
-val check_interpolant : expr formula * expr formula -> expr formula -> bool
+exception Unsatisfiable of string list
+
+val solve : (string * Expr.t Formula.t) list -> int M.t
+val check_interpolant :
+  Expr.t Formula.t * Expr.t Formula.t -> Expr.t Formula.t -> bool
 val check_clause : hornSol -> horn -> bool

@@ -1,27 +1,36 @@
+open Error
+open Expr
+open Formula
+open ListEx
+open MTypes
 open Types
 open Util
 open Z3
+
+exception Unsatisfiable of string list
 
 (* Calling `preload` will trigger callback registration *)
 let _ = preload ()
 
 let timeout = 5000 (* milliseconds *)
-let ctx = mk_context [ ]
+let ctx = mk_context [ "MODEL", "true" ]
 let _int = mk_int_sort ctx
+let _real = mk_real_sort ctx
 let _bool = mk_bool_sort ctx
+let pred_prefix = "ast_"
 
-let show_error (Error (c, e)) =
-  print_string "Z3 Error: ";
-  print_endline (try get_error_msg c e with _ -> "unknown")
+let show_error (Error (c, e)) = try get_error_msg c e with _ -> "Unknown"
 
 let rec convert = function
-  | Expr (op, coef) -> (
+  | Term (op, coef) -> (
     let (l, r) = M.fold (fun k v (l, r) ->
       if v = 0 then (l, r)
       else
         let l, r = (ref l), (ref r) in
         let t, vp = if v > 0 then l, v else r, (-v) in
-        let v = mk_int ctx vp _int in
+        let v =
+          if !Flags.integer_programming then mk_int ctx vp _int
+          else mk_real ctx vp 1 in
         let _ =
           if k = Id.const then t := v :: !t
           else
@@ -32,106 +41,151 @@ let rec convert = function
             else t := (mk_mul ctx [| k; v |]) :: !t in
         (!l, !r)) coef ([], []) in
     let [ l; r ] = List.map (function
-      | [] -> mk_int ctx 0 _int
+      | [] ->
+        if !Flags.integer_programming then mk_int ctx 0 _int
+        else mk_real ctx 0 1
       | [x] -> x
       | l -> mk_add ctx (Array.of_list l)) [ l; r ] in
     match op with
-      | EQ -> mk_eq ctx l r
-      | NEQ -> mk_not ctx (mk_eq ctx l r)
-      | LT -> mk_lt ctx l r
-      | LTE -> mk_le ctx l r
-      | GT -> mk_gt ctx l r
-      | GTE -> mk_ge ctx l r)
+    | EQ -> mk_eq ctx l r
+    | NEQ -> mk_not ctx (mk_eq ctx l r)
+    | LT -> mk_lt ctx l r
+    | LTE -> mk_le ctx l r
+    | GT -> mk_gt ctx l r
+    | GTE -> mk_ge ctx l r)
   | And x -> mk_and ctx (Array.of_list (List.map convert x))
   | Or x -> mk_or ctx (Array.of_list (List.map convert x))
 
-let check ast =
+let check_ast asts =
   let s = mk_solver ctx in
-  let params = mk_params ctx in
-  params_set_uint ctx params (mk_string_symbol ctx ":timeout") timeout;
-  solver_set_params ctx s params;
-  solver_assert ctx s ast;
-  s, solver_check ctx s
+  let p = mk_params ctx in
+  params_set_uint ctx p (mk_string_symbol ctx ":timeout") !Flags.z3_timeout;
+  params_set_bool ctx p (mk_string_symbol ctx "unsat_core") true;
+  solver_set_params ctx s p;
 
-(* DEBUG: Show the assertion AST for Z3 before passing to solver.
-let check ast =
-  print_endline ("Z3 AST: " ^ ast_to_string ctx ast);
-  check ast *)
+  let ast_symbols =
+    List.map (fun (name, x) ->
+      if !Flags.print_z3_ast then
+        print_endline ("Z3 AST: " ^ ast_to_string ctx x);
+      let name = pred_prefix ^ name in
+      let symbol = Z3.mk_string_symbol ctx name in
+      let ast = Z3.mk_const ctx symbol _bool in
+      Z3.solver_assert ctx s (Z3.mk_iff ctx ast x);
+      ast
+    ) asts in
 
-let check_formula formula =
+  s, solver_check_assumptions ctx s (Array.of_list ast_symbols)
+
+let solve constrs =
   try
-    match check (convert formula) with
-      | _, L_TRUE -> Some true
-      | _, L_FALSE -> Some false
-      | _, L_UNDEF -> None
-  with e -> (show_error e; None)
+    let asts = List.map (fun (name, expr) -> (name, convert expr)) constrs in
+    match check_ast asts with
+    | s, L_TRUE ->
+      let md = solver_get_model ctx s in
+      let mdn = model_get_num_consts ctx md in
+      let m, denomi = repeat (fun i (m, denomi) ->
+        let fd = model_get_const_decl ctx md i in
+        let symbol = get_decl_name ctx fd in
+        let id, ignore =
+          match get_symbol_kind ctx symbol with
+          | INT_SYMBOL ->
+            Id.from_int (get_symbol_int ctx symbol), false
+          | STRING_SYMBOL ->
+            let symbol_name = get_symbol_string ctx symbol in
+            let ignore = String.sub symbol_name 0 4 = pred_prefix in
+            Id.from_string symbol_name, ignore in
+        match ignore, model_get_const_interp ctx md fd with
+        | true, _
+        | _, None -> m, denomi
+        | _, Some ast ->
+          let get_num f ast =
+            let ok, ret = get_numeral_int ctx (f ctx ast) in
+            assert ok; ret in
+          let x, y =
+            if !Flags.integer_programming then
+              get_num (fun _ x -> x) ast, 1
+            else
+              get_num get_numerator ast,
+              get_num get_denominator ast in
+          M.add id (x, y) m, lcm denomi y
+      ) mdn (M.empty, 1) in
+      M.map (fun (x, y) -> x * denomi / y) m
+    | s, L_FALSE ->
+      let unsat_core = solver_get_unsat_core ctx s in
+      let size = ast_vector_size ctx unsat_core in
+      let exprs = repeat (fun i k ->
+        let ast = ast_vector_get ctx unsat_core i in
+        let str = ast_to_string ctx ast in
+        let magic = String.length pred_prefix in
+        assert (String.sub str 0 magic = pred_prefix);
+        String.sub str magic (String.length str - magic) :: k
+      ) size [] in
+      raise (Unsatisfiable exprs)
+    | s, L_UNDEF -> (* timeout? *)
+      failwith (z3_solver_undef (solver_get_reason_unknown ctx s))
+  with Error (_, _) as e -> failwith (show_error e)
 
-let integer_programming constrs =
-  try
-    match check (convert constrs) with
-      | s, L_TRUE ->
-        let md = solver_get_model ctx s in
-        let mdn = model_get_num_consts ctx md in
-        let m = repeat (fun i m ->
-          let fd = model_get_const_decl ctx md i in
-          let symbol = get_decl_name ctx fd in
-          let id = match get_symbol_kind ctx symbol with
-            | INT_SYMBOL ->
-              Id.from_int (get_symbol_int ctx symbol)
-            | STRING_SYMBOL ->
-              Id.from_string (get_symbol_string ctx symbol) in
-          match model_get_const_interp ctx md fd with
-            | Some ast ->
-              let ok, value = get_numeral_int ctx ast in
-              M.add id value m
-            | None -> m) mdn M.empty in
-        Some m
-      | _, L_FALSE -> None (* unsatisfiable *)
-      | s, L_UNDEF -> (* timeout? *)
-        print_endline ("Z3 returned L_UNDEF: " ^
-                          (solver_get_reason_unknown ctx s));
-        None
-  with e -> (show_error e; None)
+let solve constr =
+  if !Flags.debug_z3_lp then (
+    print_endline "Z3 problem:";
+    List.iter (fun (name, x) ->
+      print_endline (" (" ^ name ^ "): " ^
+        (Formula.print printExpr x))) constr;
 
-(* DEBUG:
-let integer_programming constr =
-  print_endline ("Z3 problem: " ^ (printFormula printExpr constr));
-  let _start = Sys.time () in
-  let ret = integer_programming constr in
-  let _end = Sys.time () in
-  print_endline ("Z3 elapsed time: " ^
-    (string_of_float (_end -. _start)) ^ " sec.");
-  (match ret with
-    | Some sol ->
-      print_endline ("Z3 solution: [" ^ (String.concat ", " (
-        M.fold (fun k v l -> (Id.print k ^ "=" ^ (string_of_int v))::l) sol [])) ^ "]\n")
-    | None ->
-      print_endline ("Z3 solution: Unsatisfiable\n"));
-  ret
-*)
+    let _start = Sys.time () in
+    let show_time () =
+      let _end = Sys.time () in
+      let elapsed = string_of_float (_end -. _start) in
+      print_endline ("Z3 elapsed time: " ^ elapsed ^ " sec.") in
+
+    try
+      let sol = solve constr in
+      show_time ();
+
+      let conv k v l = (Id.print k ^ "=" ^ string_of_int v) :: l in
+      let str_sol = String.concat ", " (M.fold conv sol []) in
+      print_endline ("Z3 solution: [" ^ str_sol ^ "]");
+      sol
+    with
+    | Unsatisfiable x as unsat ->
+      show_time ();
+      print_endline ("Z3 solution: Unsatisfiable (" ^ String.concat ", " x ^ ")");
+      raise unsat
+    | Failure msg ->
+      show_time ();
+      print_endline ("Z3 solution: Failure (" ^ msg ^ ")");
+      failwith msg)
+  else solve constr
 
 let check_interpolant (a, b) i =
   let ast = mk_or ctx [|
     mk_not ctx (mk_implies ctx (convert a) (convert i));
     mk_and ctx [| (convert i); (convert b) |] |] in
   try
-    match check ast with
-      | _, L_FALSE -> true
-      | _ -> false
-  with e -> (show_error e; false)
+    match check_ast ["", ast] with
+    | _, L_TRUE -> false
+    | _, L_FALSE -> true
+    | _, L_UNDEF -> failwith (z3_solver_undef "Unknown")
+  with e -> failwith (show_error e)
 
 let check_clause pred (lh, rh) =
-  let rh::lh = List.map (function
+  let substitute =
+    function
     | PredVar (p, args) ->
       let (binder, la) = M.find p pred in
-      let renames = listFold2 (fun m a b -> M.add a b m) M.empty binder args in
-      mapFormula (renameExpr (ref renames)) la
-    | LinearExpr x -> x) (rh::lh) in
-  let lh = reduce (&&&) lh in
+      let renames =
+        List.fold_left2 (fun m a b -> M.add a b m)
+          M.empty binder args in
+      Formula.map (renameExpr (ref renames)) la
+    | LinearExpr x -> x in
+
+  let lh = Formula.flatten (Formula.map substitute lh) in
+  let rh = substitute rh in
 
   let ast = mk_not ctx (mk_implies ctx (convert lh) (convert rh)) in
   try
-    match check ast with
-      | _, L_FALSE -> true
-      | _ -> false
-  with e -> (show_error e; false)
+    match check_ast ["", ast] with
+    | _, L_TRUE -> false
+    | _, L_FALSE -> true
+    | _, L_UNDEF -> failwith (z3_solver_undef "Unknown")
+  with e -> failwith (show_error e)

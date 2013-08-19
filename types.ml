@@ -1,60 +1,11 @@
 open Buffer
+open Expr
+open Formula
+open ListEx
+open MapEx
+open MTypes
 open Util
 
-module MyString = struct
-  type t = Id.t
-  let compare = compare
-end
-
-module M = MapEx.Make(MyString)
-module S = Set.Make(MyString)
-
-module MyInt = struct
-  type t = int
-  let compare = compare
-end
-
-module MI = MapEx.Make(MyInt)
-
-module MyIntList = struct
-  type t = int list
-  let compare = compare
-end
-
-module MIL = MapEx.Make(MyIntList)
-
-type operator =
-    | EQ
-    | NEQ
-    | LT
-    | LTE
-    | GT
-    | GTE
-
-let negateOp = function
-    | EQ -> NEQ
-    | NEQ -> EQ
-    | LT -> GTE
-    | LTE -> GT
-    | GT -> LTE
-    | GTE -> LT
-
-let string_of_operator = function
-    | EQ -> "="
-    | NEQ -> "<>"
-    | LT -> "<"
-    | LTE -> "<="
-    | GT -> ">"
-    | GTE -> ">="
-
-type coef = int M.t
-
-let coefOp op d = M.fold (M.addDefault d op)
-let (++) = coefOp (+) 0
-let (--) x y = coefOp (-) 0 y x (* Note that the operands need to be reversed. *)
-let (~--) = M.map (fun v -> -v)
-
-type expr = operator * coef
 type pvar = Id.t * Id.t list
 
 let printTerm coef =
@@ -117,112 +68,54 @@ let printPvar (name, params) =
   (Id.print name) ^ "(" ^
     String.concat "," (List.map Id.print params) ^ ")"
 
-type 'a formula =
-    | Expr of 'a
-    | And of 'a formula list
-    | Or of 'a formula list
-
-let rec printFormula eltPrinter x =
-    let ret = match x with
-    | Expr x -> `A x
-    | And x -> `B(x, " & ")
-    | Or x -> `B(x, " | ") in
-
-    match ret with
-    | `A x -> eltPrinter x
-    | `B(x, y) -> String.concat y (List.map (
-        fun x -> "(" ^ (printFormula eltPrinter x) ^ ")") x)
-
-let combineFormulae opAnd x y =
-    match (opAnd, x, y) with
-    | (true, And x, And y) -> And (y @ x)
-    | (true, And x, _) -> And (y :: x)
-    | (true, _, And y) -> And (y @ [ x ])
-    | (true, _, _) -> And [ y ; x ]
-    | (_, Or x, Or y) -> Or (y @ x)
-    | (_, Or x, _) -> Or (y :: x)
-    | (_, _, Or y) -> Or (y @ [ x ])
-    | _ -> Or [ y ; x ]
-let (&&&) x = combineFormulae true x
-let (|||) x = combineFormulae false x
-
-let rec mapFormula f = function
-    | And x -> And (List.map (mapFormula f) x)
-    | Or x -> Or (List.map (mapFormula f) x)
-    | Expr e -> Expr (f e)
-
 let rec (!!!) = function
     | And x -> Or (List.map (!!!) x)
     | Or x -> And (List.map (!!!) x)
-    | Expr e -> Expr (negateExpr e)
+    | Term e -> Term (negateExpr e)
 
 let (==>) x y = (!!! x) ||| y
 let (<=>) x y = (x ==> y) &&& (y ==> x)
 
-let rec splitNegation = function
-    | And x -> reduce (&&&) (List.map splitNegation x)
-    | Or x -> reduce (|||) (List.map splitNegation x)
-    | Expr (NEQ, coef) -> Or (
-      List.map (fun x -> Expr (normalizeExpr (x, coef))) [LT;GT])
-    | Expr e -> Expr e
+let rec normalizeOperator = function
+  | And x -> List.reduce (&&&) (List.map normalizeOperator x)
+  | Or x -> List.reduce (|||) (List.map normalizeOperator x)
+  | Term (NEQ, coef) -> Or (
+    List.map (fun x -> Term (normalizeExpr (x, coef))) [LT;GT])
+  | Term (EQ, coef) -> And (
+    List.map (fun x -> Term (normalizeExpr (x, coef))) [LTE;GTE])
+  | Term e -> Term e
 
-let rec countFormula = function
-    | And x
-    | Or x -> List.fold_left (+) 0 (List.map countFormula x)
-    | Expr _ -> 1
+let rec fvs = function
+  | And x
+  | Or x -> List.fold_left (fun s -> fvs |- S.union s) S.empty x
+  | Term (_, coef) ->
+    (* TODO: Rewrite M.keys to return a set. *)
+    M.fold (fun k _ -> S.add k) coef S.empty |>
+    S.remove Id.const
 
 type hornTerm =
-    | LinearExpr of expr formula
+    | LinearExpr of Expr.t Formula.t
     | PredVar of pvar
-type horn = hornTerm list * hornTerm
+type horn = hornTerm Formula.t * hornTerm
 
 let printHornTerm = function
-    | LinearExpr e -> printFormula printExpr e
+    | LinearExpr e -> Formula.print printExpr e
     | PredVar p -> printPvar p
 
 let renameHornTerm m = function
-    | LinearExpr e -> LinearExpr (mapFormula (renameExpr m) e)
+    | LinearExpr e -> LinearExpr (Formula.map (renameExpr m) e)
     | PredVar (p, param) -> PredVar (p, renameList m param)
 
 let printHorn (lh, rh) =
-  let preds, la = List.partition (function PredVar _ -> true | _ -> false) lh in
-  String.concat " & " (List.map printHornTerm (preds @ la)) ^ " -> " ^
-    printHornTerm rh ^ "."
-
-(** Normal form of element *)
-type 'a nf = 'a list list
-
-let convertToNF cnf formulae =
-    let rec internal formulae ret =
-        match formulae with
-        | [] -> List.rev ret
-        | x :: l ->
-            let ret = match x with
-                | Expr x -> [ x ] :: ret
-                | And x | Or x -> (directProduct (internal x [])) @ ret in
-            internal l ret in
-    match cnf, formulae with
-    | true, And x
-    | false, Or x -> internal x []
-    | _ -> internal [ formulae ] []
-
-let convertToFormula cnf nf =
-  match List.map (fun x ->
-    match List.map (fun x -> Expr x) x with
-      | [] -> assert false
-      | [x] -> x
-      | x -> if cnf then Or x else And x) nf with
-    | [] -> assert false
-    | [x] -> x
-    | x -> if cnf then And x else Or x
+  Formula.print printHornTerm lh ^ " -> " ^ printHornTerm rh ^ "."
 
 (** Solution space of interpolation *)
-type pexpr = operator M.t * coef M.t
+type pcoef = coef M.t
 let (+++) = coefOp (++) M.empty
 
 let renamePexpr m (op, coef) = op,
   M.fold (renameVar m |- M.addDefault M.empty (++)) coef M.empty
-let printPexpr (_, coef) =
+let printPexpr coef =
   let buf = create 1 in
   let first = ref true in
   M.iter (fun v coef ->
@@ -240,59 +133,57 @@ let printPexpr (_, coef) =
     );
     add_string buf (Id.print v))) coef;
   if !first then add_string buf "0";
-  add_string buf " ? ";
-  add_string buf (if M.mem Id.const coef then printTerm (M.find Id.const coef) else "0");
+  add_string buf " <= ";
+  add_string buf (
+    if M.mem Id.const coef then
+      printTerm (~-- (M.find Id.const coef))
+    else "0");
   contents buf
 
 
-(* TODO: Should have been moved to constr.ml *)
-type constr = expr formula
+type constr = Expr.t Formula.t
 type constrSet = Id.t list * Puf.t * constr MI.t
 
-type hornSolSpace = horn list * ((Id.t list * pexpr nf) M.t * constrSet)
-type hornSol = (Id.t list * expr formula) M.t
+type hornSolSpace = horn list * ((Id.t list * pcoef Nf.t) M.t * constrSet)
+type hornSol = (Id.t list * Expr.t Formula.t) M.t
+
+let printHornSol x =
+  let buf = create 1 in
+  M.iter (fun k (params, x) ->
+    Id.print k ^ "(" ^ (String.concat "," (List.map Id.print params)) ^ ") : "
+      ^ (Formula.print printExpr x) ^ "\n" |>
+    add_string buf) x;
+  contents buf
 
 (* Ocamlgraph related types *)
 
-module MyVertex = struct
-  type t = hornTerm
-  let compare = compare
-  let hash _ = 0 (* TODO: *)
-  let equal = (=)
-end
+type vert =
+  | VLinear of Expr.t Formula.t
+  | VPred
+  | VBot
+  | Arrow
 
-type hornTermId = La of int | Pid of Id.t
-module MyVertex' = struct
-  type t = hornTermId
-  let compare = compare
-  let hash _ = 0 (* TODO: *)
-  let equal = (=)
+module MyVertex = struct
+  type t = vert
 end
 
 module MyEdge = struct
-  type t = (Id.t * Id.t) list option
+  type t = Id.t M.t option
 
   let compare x y = match x, y with
     | None, None -> 0
     | _, None -> -1
     | None, _ -> 1
-    | Some x, Some y ->
-      match (List.length x) - (List.length y) with
-        | 0 ->
-          let [x;y] = List.map (List.sort comparePair) [x;y] in
-          listFold2 (fun a x y -> match a with
-            | 0 -> comparePair x y
-            | _ -> a) 0 x y
-        | ret -> ret
+    | Some x, Some y -> M.compare compare x y
 
   let default = None
 end
 
 module G = Graph.Persistent.Digraph.AbstractLabeled(MyVertex)(MyEdge)
-module G' = Graph.Persistent.Digraph.AbstractLabeled(MyVertex')(MyEdge)
+module SV = Set.Make(G.V)
+module SE = Set.Make(G.E)
 module Traverser = Graph.Traverse.Dfs(G)
 module Operator = Graph.Oper.P(G)
-module Sorter = Graph.Topological.Make(G')
 
 module DisplayAttrib = struct
   let graph_attributes _ = []
@@ -306,36 +197,37 @@ end
 module Display = struct
   include G
   include DisplayAttrib
-  let vertex_name v = "\"" ^ (string_of_int (V.hash v)) ^ ":" ^
-                             (printHornTerm (V.label v)) ^ "\""
-  let edge_attributes e =
-    match E.label e with
-      | None -> []
-      | Some x ->  [`Label (String.concat ", "
-                           (List.map (fun (x, y) -> Id.print x ^ "=" ^ Id.print y) x))]
-end
 
-module Display' = struct
-  include G'
-  include DisplayAttrib
-  let vertex_name v = "\"" ^
-    (match V.label v with
-      | La x -> "La " ^ (string_of_int x)
-      | Pid x -> "Pid " ^ (Id.print x)) ^ "\""
+  let vertex_name v =
+    let lbl =
+      match V.label v with
+      | VLinear e -> Formula.print printExpr e
+      | VPred -> "pred"
+      | VBot -> "bot"
+      | Arrow -> ">>" in
+    "\"" ^ (string_of_int (V.hash v)) ^ ":" ^ lbl ^ "\""
+
+  let highlight_vertices = ref SV.empty
+  let vertex_attributes v =
+    if SV.mem v !highlight_vertices then
+      [`Style `Filled ; `Fillcolor 0; `Fontcolor 0xffffff]
+    else []
+
   let edge_attributes e =
     match E.label e with
-      | None -> []
-      | Some x ->  [`Label (String.concat ", "
-                           (List.map (fun (x, y) -> Id.print x ^ "=" ^ Id.print y) x))]
+      | None -> [`Style `Dashed]
+      | Some x ->
+        let r = M.fold (fun x y l ->
+          (Id.print x ^ "=" ^ Id.print y) :: l) x [] in
+        [`Label (String.concat ", " r)]
 end
 
 module Dot = Graph.Graphviz.Dot(Display)
-module Dot' = Graph.Graphviz.Dot(Display')
 
 let uname =
   let (i, o) as p = Unix.open_process "uname" in
   let ret = input_line i in
-  Unix.close_process p;
+  ignore(Unix.close_process p);
   ret
 
 let display output_graph g =
@@ -348,13 +240,13 @@ let display output_graph g =
   if uname <> "Darwin" then (
     ignore (Sys.command ("gv " ^ ps ^ " 2>/dev/null"));
     Sys.remove ps
-  ) else
-    ignore (Sys.command ("open " ^ ps));
+  ) else (
+    let pdf = Filename.temp_file "graph" ".pdf" in
+    ignore (Sys.command ("ps2pdf " ^ ps ^ " " ^ pdf));
+    ignore (Sys.command ("open " ^ pdf));
+    ignore (read_line ())
+  );
   Sys.remove dot
 
-let display_with_gv _ = ()
-let display_with_gv' _ = ()
-
-(* DEBUG: *)
-let display_with_gv = display Dot.output_graph
-let display_with_gv' = display Dot'.output_graph
+let display_with_gv x =
+  if !Flags.enable_gv then display Dot.output_graph x else ()
