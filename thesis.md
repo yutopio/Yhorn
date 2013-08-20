@@ -30,7 +30,6 @@ An interpolation problem consists of two logical formulas that are inconsistent 
 
 Our algorithm focuses on interpolating problems on linear arithmetic.
 
-
 Example
 ---
 
@@ -41,3 +40,25 @@ A: (x \leq a) \wedge (a + 1 \leq y)
 B: (y \leq b) \wedge (b + 1 \leq x)
 
 Here, the linear arithmetic formulas A and B are inconsistent. The interpolant I for this problem is (x-y+1 \leq 0), which is implied by A and inconsistent with B. The vocabulary of I is {x,y} and is over A's vocabulary {x,y,a} and B's {x,y,b}.
+
+In computing the interpolant, we make a linear constraint of a interpolant by applying Farkas lemma. First, we assing weight parameters to every expression in conjunction form.
+
+\lambda_1 : -a+x     \leq 0
+\lambda_2 :  a  -y+1 \leq 0
+- - - - - -
+\lambda_3 : -b  +y   \leq 0
+\lambda_4 :  b-x  +1 \leq 0
+
+Because all expressions induce inconsistent as a whole, the sum of weighted expressions should satisfy the following constraint.
+
+- \lambda_1 + \lambda_2 = 0 (a)
+- \lambda_3 + \lambda_4 = 0 (b)
+  \lambda_1 - \lambda_4 = 0 (x)
+- \lambda_2 + \lambda_3 = 0 (y)
+  \lambda_2 + \lambda_4 > 0 (const)
+
+With the linear constraint among \lambda_i above, the interpolant is represented as follows by the sum of weighted expressions from the first formula groups.
+
+(- \lambda_1 + \lambda_2) a + \lambda_1 x - \lambda_2 y + \lambda_2 \leq 0
+
+One of the model of the linear constraint is \lambda_i = 1 (1 \leq i \leq 4), and we obtain x-y+1 \leq 0 as a solution.
