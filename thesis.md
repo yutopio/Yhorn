@@ -23,8 +23,11 @@ Interpolation
 
 Among various program verification techniques, when software model checking with predicate abstraction is adopted, the interpolation is used to compute the abstraction predicate along a spurious counterexample that a model checker discovered. It is done by computing a Craig's interpolant between the strongest postcondition at the location and the weakest precondition to the failure point at every program location.
 
-Our algorithm focuses on interpolating problems on linear arithmetic.
-
+We propose an interpolation algorithm which returns as simple a
+solution as possible in terms of the number of conjunctions and
+disjunctions.
+Our algorithm focuses on interpolating problems on linear arithmetic
+and it works in a constructive manner.
 
 Example
 ---
