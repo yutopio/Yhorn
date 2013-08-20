@@ -21,6 +21,23 @@ The rest of the paper is structured as follows. Chapter 2 proposes a new interpo
 Interpolation
 ===
 
-An interpolation problem is computing one predicate called an interpolant between two given predicates that are inconsistent each other. The interpolant is implied from the first predicate and is inconsistent with the second one. The vocabulary of the interpolant appears in both predicates.
-
 Among various program verification techniques, when software model checking with predicate abstraction is adopted, the interpolation is used to compute the abstraction predicate along a spurious counterexample that a model checker discovered.
+
+Preliminary
+---
+
+An interpolation problem consists of two logical formulas that are inconsistent each other and a solution for the problem, which is called a Craig interpolant, is a predicate that is implied from the first logical formula and is inconsistent with the second one. The vocabulary of the interpolant appears in both predicates.
+
+Our algorithm focuses on interpolating problems on linear arithmetic.
+
+
+Example
+---
+
+Consider the following interpolation problem.
+
+A: (x \leq a) \wedge (a + 1 \leq y)
+- - - - - -
+B: (y \leq b) \wedge (b + 1 \leq x)
+
+Here, the linear arithmetic formulas A and B are inconsistent. The interpolant I for this problem is (x-y+1 \leq 0), which is implied by A and inconsistent with B. The vocabulary of I is {x,y} and is over A's vocabulary {x,y,a} and B's {x,y,b}.
