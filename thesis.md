@@ -25,10 +25,6 @@ Among various program verification techniques, when software model checking with
 
 Our algorithm focuses on interpolating problems on linear arithmetic.
 
-Craig's Interpolation
----
-
-Given two logical formulas A and B that are inconsistent each other, we call a new preposition I a Craig's interpolant between A and B such that $I$ is implied by $A$ and inconsistent with $B$. $I$'s vocabulary must be only free variables that appears in both $A$ and $B$.
 
 Example
 ---
@@ -41,7 +37,7 @@ B: (y \leq b) \wedge (b + 1 \leq x)
 
 Here, the linear arithmetic formulas A and B are inconsistent. The interpolant I for this problem is (x-y+1 \leq 0), which is implied by A and inconsistent with B. The vocabulary of I is {x,y} and is over A's vocabulary {x,y,a} and B's {x,y,b}.
 
-In computing the interpolant, we make a linear constraint of a interpolant by applying Farkas' lemma. First, we assing weight parameters to every expression in conjunction form.
+In computing the interpolant, we make a linear constraint of a interpolant by applying Farkas's lemma. First, we assing weight parameters to every expression in conjunction form.
 
 \lambda_1 : -a+x     \leq 0
 \lambda_2 :  a  -y+1 \leq 0
@@ -63,3 +59,20 @@ With the linear constraint among \lambda_i above, the interpolant is represented
 
 One of the model of the linear constraint is \lambda_i = 1 (1 \leq i \leq 4), and we obtain x-y+1 \leq 0 as a solution.
 
+
+Preliminary
+---
+
+### Craig's Interpolation
+
+Given two logical formulas A and B that are inconsistent each other, we call a new preposition I a Craig's interpolant between A and B such that $I$ is implied by $A$ and inconsistent with $B$. $I$'s vocabulary must be only free variables that appears in both $A$ and $B$.
+
+### Farkas's Lemma on linear inequalities
+
+Let a linear inequality $e_i$ be represented as $a_i1 x_1 + \cdots + a_im x_m <= a_i0$. Assuming that $e_1,\cdots,e_n$ implies $e_0$, there exists $\lambda_1,\cdots,\lambda_n$ that satisfy $a_0j =\sum_(i=1)^n \lambda_i * a_ij (j=0...m)$.
+
+
+Algorithm
+---
+
+We first present an interpolating algorithm between two sets of linear inequalities.
