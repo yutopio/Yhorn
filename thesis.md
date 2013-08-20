@@ -63,7 +63,7 @@ With the linear constraint among \lambda_i above, the interpolant is represented
 One of the model of the linear constraint is \lambda_i = 1 (1 \leq i \leq 4), and we obtain x-y+1 \leq 0 as a solution.
 
 
-Preliminary
+Preliminaries
 ---
 
 ### Craig's Interpolation
