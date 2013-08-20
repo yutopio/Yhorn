@@ -20,10 +20,12 @@
 
 \section{Algorithm}
 
+\subsection{Example}
+
 \subsection{Preliminaries}
 
-The Horn clause solving algorithm receives an input problem in Horn
-graph. A \textbf{Horn graph} is a labelled directed graph $G=(V,E,\varphi)$.
+Our Horn clause solving algorithm receives an input problem in Horn
+graph. A \textbf{Horn graph} is a labelled directed acyclic graph $G=(V,E,\varphi)$.
 \begin{itemize}
 \item $V$ is a union of two disjoint sets of vertices; Horn term
   vertices $V_T$ and arrow vertices $V_\Rightarrow$. Each vertex $u
@@ -57,18 +59,17 @@ Horn clauses $\mathcal{HC}_v$ for all vertices $v \in V_\Rightarrow$.
 We implicitly assume each $\mathcal{HC}_v$ is universally quantified
 by its all free variables $\textsc{FV}(\mathcal{HC}_v)$.  Without loss
 of generality, we limit linear expression labels on $V_T$ vertices
-with incoming edges to either $0 \leq -1$, meaning $\bot$, or $0 \leq
-0$, meaning $\top$.
+with incoming edges to $1 \leq 0$, meaning $\bot$.
 
 The solution of $G$ is a map $\rho$ from predicate variables to linear
 predicates of the form $\lambda x_1, \cdots ,x_n. \psi $ (where $\psi$
 is a formula constructed from
 \begin{align*}
-\psi ::= & a_1 x_1 + \cdots + a_n x_n \leq b \mid \\
+\psi ::= & a_1 x_1 + \cdots + a_n x_n + b \leq 0 \mid \\
 & \psi \wedge \psi \mid \psi \vee \psi \mid \top \mid \bot
 \end{align*}
 ), where $\rho[G]$ is a tautology. A solution is \textit{simple} if
-$\rho[P]$ is of the form $a_1 x_1 + \cdots + a_n x_n \leq b$ for every
+$\rho[P]$ is of the form $a_1 x_1 + \cdots + a_n x_n + b \leq 0$ for every
 $P$ in $\mathrm{dom}(\rho)$.
 
 The problem of solving Horn clauses (represented by $G$) is to find a
@@ -76,7 +77,11 @@ solution of $G$ (and a simple solution if possible).
 
 \subsection{Simple solution}
 
-We consider below a Horn graph that is acyclic.
+We first propose an algorithm to compute a simple solution for the given
+$G$ if one exists. Later we add modifications to the algorithm if a
+simple solution does not exist.
+Our algorithm works in a constructive manner. List 1 shows the
+pseudo-code of our algorithm.
 
 For simplicity of discussion, we define \textbf{term arity} $k_v$ for
 every Horn term vertex $v \in V_T$ with incoming edges.
