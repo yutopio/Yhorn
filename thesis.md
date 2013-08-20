@@ -21,14 +21,14 @@ The rest of the paper is structured as follows. Chapter 2 proposes a new interpo
 Interpolation
 ===
 
-Among various program verification techniques, when software model checking with predicate abstraction is adopted, the interpolation is used to compute the abstraction predicate along a spurious counterexample that a model checker discovered.
-
-Preliminary
----
-
-An interpolation problem consists of two logical formulas that are inconsistent each other and a solution for the problem, which is called a Craig interpolant, is a predicate that is implied from the first logical formula and is inconsistent with the second one. The vocabulary of the interpolant appears in both predicates.
+Among various program verification techniques, when software model checking with predicate abstraction is adopted, the interpolation is used to compute the abstraction predicate along a spurious counterexample that a model checker discovered. It is done by computing a Craig's interpolant between the strongest postcondition at the location and the weakest precondition to the failure point at every program location.
 
 Our algorithm focuses on interpolating problems on linear arithmetic.
+
+Craig's Interpolation
+---
+
+Given two logical formulas A and B that are inconsistent each other, we call a new preposition I a Craig's interpolant between A and B such that $I$ is implied by $A$ and inconsistent with $B$. $I$'s vocabulary must be only free variables that appears in both $A$ and $B$.
 
 Example
 ---
@@ -41,7 +41,7 @@ B: (y \leq b) \wedge (b + 1 \leq x)
 
 Here, the linear arithmetic formulas A and B are inconsistent. The interpolant I for this problem is (x-y+1 \leq 0), which is implied by A and inconsistent with B. The vocabulary of I is {x,y} and is over A's vocabulary {x,y,a} and B's {x,y,b}.
 
-In computing the interpolant, we make a linear constraint of a interpolant by applying Farkas lemma. First, we assing weight parameters to every expression in conjunction form.
+In computing the interpolant, we make a linear constraint of a interpolant by applying Farkas' lemma. First, we assing weight parameters to every expression in conjunction form.
 
 \lambda_1 : -a+x     \leq 0
 \lambda_2 :  a  -y+1 \leq 0
@@ -62,3 +62,4 @@ With the linear constraint among \lambda_i above, the interpolant is represented
 (- \lambda_1 + \lambda_2) a + \lambda_1 x - \lambda_2 y + \lambda_2 \leq 0
 
 One of the model of the linear constraint is \lambda_i = 1 (1 \leq i \leq 4), and we obtain x-y+1 \leq 0 as a solution.
+
