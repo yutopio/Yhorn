@@ -289,25 +289,27 @@ Algorithm~\ref{alg:solveHorn} shows the pseudo-code of our algorithm.
 
 \newcommand{\solveHorn}{\ensuremath{\mbox{\sc SolveHornGraph}}}
 \newcommand{\genConstr}{\ensuremath{\mbox{\sc GenerateConstraint}}}
+\newcommand{\splitGraph}{\ensuremath{\mbox{\sc RestructureGraph}}}
 
 \begin{algorithm}
 \caption{$ \solveHorn (G) $}\label{alg:solveHorn}
 \begin{algorithmic}
 \STATE {$v_\bot \gets $ the root node of $G$}
-\STATE {$visited \gets \left\lbrace v_\bot \right\rbrace$}
-
-\STATE {$C \gets \genConstr (v_\bot, visited)$}
-\STATE {$c_{v_\bot} \gets C(v_\bot)$}
-\IF {$c_{v_\bot}$ is satisfiable}
-  \IF {$visited$ contains all predicate variable vertices}
-    \STATE {$visited \gets a$}
-    \COMMENT {build solution}
+\STATE {$V \gets \left\lbrace v_\bot \right\rbrace$}
+\REPEAT
+  \STATE {$C \gets \genConstr (v_\bot, V)$}
+  \STATE {$c_{v_\bot} \gets C(v_\bot)$}
+  \STATE {Evaluate satisfiability of $c_{v_\bot}$}
+  \IF {$c_{v_\bot}$ is unsatisfiable}
+    \STATE {$\mathcal{UC} \gets $ unsatisfiable core for $c_{v_\bot}$}
+    \STATE {$G \gets \splitGraph (G, \mathcal{UC})$}
+    \STATE {$V \gets \left\lbrace v_\bot \right\rbrace$}
   \ELSE
-    \STATE {$visited \gets a$}
+    \STATE {Enlarge $V$}
+    \STATE {$m \gets $ one model of $c_{v_\bot}$}
   \ENDIF
-\ELSE
-  \STATE {$\mathcal{UC} \gets $ unsatisfiable core for $c_{v_\bot}$}
-\ENDIF
+\UNTIL {$V$ contains all predicate variable vertices}
+\STATE {Build solution by $m$}
 \end{algorithmic}
 \end{algorithm}
 
@@ -330,8 +332,7 @@ Algorithm~\ref{alg:solveHorn} shows the pseudo-code of our algorithm.
 \end{algorithmic}
 \end{algorithm}
 
-
-The construction of the algorithm is two fold.
+The construction of the algorithm is in two fold.
 \begin{itemize}
 \item \textbf{Iterative Constraint Building} The process starts from
   generating the weakest constraint that the graph allows and
@@ -340,8 +341,6 @@ The construction of the algorithm is two fold.
   unsatisfiable during the iteration, restructure the input Horn graph
   to enlarge the solution template.
 \end{itemize}
-
-
 
 All vertices with predicate variable labels are assigned a simple
 template.  For a vertex with a label $P(\mathbf{x})$, the algorithm
