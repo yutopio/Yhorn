@@ -47,8 +47,8 @@ B(y) : c_3 y + c_4 \leq 0
 By naturally encoding the first Horn clause with Farkas's lemma,
 we obtain a linear constraint
 $ \lambda_1 = c_1 \wedge - \lambda_1 \geq c_2 \wedge \lambda_1 \geq 0 $.
-Any assignment to $ c_1, c_2, \lambda_1 $ which satisfies this will make a valid $A(x)$
-for the first clause. In the same manner, we obtain
+Any assignment to $ c_1, c_2, \lambda_1 $ which satisfies this will make $A(x)$
+valid for the first clause. In the same manner, we obtain
 $ \lambda_2 = c_3 \wedge - 2 \lambda_2 \geq c_4 \wedge \lambda_2 \geq 0 $
 from the second clause, and
 $ c_1 = 3 \lambda_3 \wedge c_3 = 2 \lambda_3 \wedge c_2 + c_4 \geq -10 \lambda_3 \wedge \lambda_3 > 0 $
@@ -80,10 +80,20 @@ constraint for the first clause as the previous example.
 \lambda_1 = c_1 \wedge - \lambda_1 \geq c_2 \wedge \lambda_1 \geq 0
 \end{align}
 
-Now we have $A$'s appearance twice on the second clause, and we try to
-solve first by a weaker constraint, which we give allow different
-assignments for multiple occurrence. Virtually it is equivalent to
-solve the following problem with the templates.
+Sinve we have $A$'s appearance twice on the second clause,
+it is possible for $A$ to have two expressions each of which is used
+for $A(x)$ and $A(y)$. Although we need to use the same template for
+multiple occurrences in order to compute the simplest solution,
+it may make the whole constraints unsatisfiable if the simplest
+solution does not exist.
+
+Therefore, we generate a weaker constraint for the second clause that
+allows different expressions of $A$ for multiple occurrence. If the
+whole constraint is satisfiable in the case, we try to solve in a
+stronger constraint to generate a simple solution.
+
+In this specific case, it is virtually equivalent to solve the
+following problem in a weaker constraint.
 
 \begin{align*}
 \text{Problem:} \\
@@ -97,8 +107,8 @@ A_2(x) \text{ : } & c_{1,2} x + c_{2,2} \leq 0 \\
 A(x) \text{ : } & A_1(x) \wedge A_2(x) \\
 \end{align*}
 
-By this, duplicating the constraint ~\ref{eq:constr1}, we obtain the
-whole constraint as follows.
+By duplicating the constraint~\ref{eq:constr1} of $A$ for newly
+created $A_1$ and $A_2$, we obtain the whole constraint as follows.
 
 \begin{align*}
 & \lambda_{1,1} = c_{1,1} \wedge - \lambda_{1,1} \geq c_{2,1} \wedge \lambda_{1,1} \geq 0 \wedge \\
@@ -149,7 +159,7 @@ The constraints generated are follows.
 \end{align*}
 
 The constraints here become unsatisfiable, and one possible
-unsatisfiable core is
+unsatisfiable core is:
 
 \begin{align*}
 \lambda_3 & = c_3 \\
@@ -160,10 +170,60 @@ c_2 + c_4 & > 0 \\
 0 & \geq c_2
 \end{align*}
 
-Because the unsatisfiable core contains the constraint that restrict
-the parameter $c_3$ or $c_4$ to take different values according to
-originating disjunctions. This let us determine to relax the template
-to allow a enlarged solution.
+Because the unsatisfiable core contains constraints originating from
+the disjunctions to be expressed in a single term template. This let
+us determine to relax the template to allow a enlarged solution.
+
+Now we slightly change the problem and the template.
+
+\begin{align*}
+\text{Problem:} \\
+x \leq 0 \wedge -x \leq 0 & \implies A(x) \\
+x+1 \leq 0 & \implies B_1(x) \\
+-x+1 \leq 0 & \implies B_2(x) \\
+A(x) \wedge B_1(x) & \implies 1 \leq 0 \\
+A(x) \wedge B_2(x) & \implies 1 \leq 0 \\
+\\
+\text{Templates:} \\
+A(x) \text{ : } & c_1 x + c_2 \leq 0 \\
+B_i(x) \text{ : } & c_{3,i} x + c_{4,i} \leq 0 \quad (i \in \left\lbrace 1,2 \right\rbrace ) \\
+B(x) \text{ : } & B_1(x) \vee B_2(x)
+\end{align*}
+
+When we construct the constraints, as same as previous, we again
+obtain an unsatisfiable core:
+
+\begin{align*}
+& \lambda_1 - \lambda_2 = c_1 \wedge 0 \geq c_2 \wedge \lambda_1 \geq 0 \wedge \lambda_2 \geq 0 \wedge \\
+& \lambda_3 = c_3 \wedge \lambda_3 \geq c_4 \wedge \lambda_3 \geq 0 \wedge \\
+& - \lambda_4 = c_3 \wedge \lambda_4 \geq c_4 \wedge \lambda_4 \geq 0 \wedge \\
+& c_1 + c_3 = 0 \wedge c_2 + c_4 > 0
+\end{align*}
+
+
+\begin{align*}
+\lambda_3 & = c_3 \\
+\lambda_3 & \geq c_4 \\
+- \lambda_4 & = c_3 \\
+\lambda_4 & \geq c_4 \\
+c_2 + c_4 & > 0 \\
+0 & \geq c_2
+\end{align*}
+
+\begin{align*}
+\text{Problem:} \\
+x \leq 0 \wedge -x \leq 0 & \implies A_i(x) \quad (i \in \left\lbrace 1,2 \right\rbrace ) \\
+x+1 \leq 0 & \implies B_1(x) \\
+-x+1 \leq 0 & \implies B_2(x) \\
+A_i(x) \wedge B_j(x) & \implies 1 \leq 0 \quad (i,j \in \left\lbrace 1,2 \right\rbrace ) \\
+\\
+\text{Templates:} \\
+A_i(x) \text{ : } & c_{1,i} x + c_{2,i} \leq 0 \quad (i \in \left\lbrace 1,2 \right\rbrace ) \\
+A(x) \text{ : } & A_1(x) \wedge A_2(x) \\
+B_i(x) \text{ : } & c_{3,i} x + c_{4,i} \leq 0 \quad (i \in \left\lbrace 1,2 \right\rbrace ) \\
+B(x) \text{ : } & B_1(x) \vee B_2(x)
+\end{align*}
+
 
 \subsection{Preliminaries}
 
@@ -209,7 +269,7 @@ predicates of the form $\lambda x_1, \cdots ,x_n. \psi $ (where $\psi$
 is a formula constructed from
 \begin{align*}
 \psi ::= & a_1 x_1 + \cdots + a_n x_n + b \leq 0 \mid \\
-& \psi \wedge \psi \mid \psi \vee \psi \mid \top \mid \bot
+& \psi \wedge \psi \mid \psi \vee \psi
 \end{align*}
 ), where $\rho[G]$ is a tautology. A solution is \textit{simple} if
 $\rho[P]$ is of the form $a_1 x_1 + \cdots + a_n x_n + b \leq 0$ for every
