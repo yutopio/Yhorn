@@ -22,6 +22,7 @@
 
 \subsection{Example}
 
+\paragraph {Tree interpolation}
 First, consider the following example.
 
 \begin{align*}
@@ -30,7 +31,11 @@ y \leq 2 & \implies B(y) \\
 A(x) \wedge B(y) & \implies 3x+2y \leq 10
 \end{align*}
 
-In this example, a simple solution is expressed by linear expression
+In this example, we would like to compute linear arithmetic
+formulas for the predicate variables $A$ and $B$.
+They appear only once on both left-hand and right-hand globally in the problem.
+
+We try to obtain a simple solution that is expressed by linear expression
 templates, whose coefficients and constants are parameterized. Assume
 that they have following predicate templates.
 
@@ -39,24 +44,26 @@ A(x) : c_1 x + c_2 \leq 0 \\
 B(y) : c_3 y + c_4 \leq 0
 \end{align*}
 
-By naturally encoding every Horn clause with Farkas's lemma
-constraints, we obtain the following linear constraint over
-$c_i$.
+By naturally encoding the first Horn clause with Farkas's lemma,
+we obtain a linear constraint
+$ \lambda_1 = c_1 \wedge - \lambda_1 \geq c_2 \wedge \lambda_1 \geq 0 $.
+Any assignment to $ c_1, c_2, \lambda_1 $ which satisfies this will make a valid $A(x)$
+for the first clause. In the same manner, we obtain
+$ \lambda_2 = c_3 \wedge - 2 \lambda_2 \geq c_4 \wedge \lambda_2 \geq 0 $
+from the second clause, and
+$ c_1 = 3 \lambda_3 \wedge c_3 = 2 \lambda_3 \wedge c_2 + c_4 \geq -10 \lambda_3 \wedge \lambda_3 > 0 $
+from the third.
+
+One of the models satisfying all the constraints above is
+$( c_1, c_2, c_3, c_4, \lambda_1, \lambda_2, \lambda_3 ) = (3, -3, 2, -4, 3, 2, 1)$.
+By assigning them to the template, we obtain the following solution.
 
 \begin{align*}
-\lambda_1 = c_1 \wedge - \lambda_1 \geq c_2 \wedge \\
-\lambda_2 = c_3 \wedge - 2 \lambda_2 \geq c_4 \wedge \\
-c_1 = 3 \lambda_3 \wedge c_3 = 2 \lambda_3 \wedge c_2 + c_4 \geq -10 \lambda_3 \wedge \\
-\lambda_1 \geq 0 \wedge \lambda_2 \geq 0 \wedge \lambda_3 \geq 0
+A(x) : 3 x - 3 \leq 0 \\
+B(y) : 2 y - 4 \leq 0
 \end{align*}
 
-One of the model satisfying the constraint above is
-
-\begin{align*}
-\left\lbrace c_1 = 3 \wedge c_2 = -3 \wedge c_3 = 2 \wedge c_4 = -4 \wedge
-\lambda_1 = 3 \wedge \lambda_2 = 2 \wedge \lambda_3 = 1 \right\rbrace
-\end{align*}
-
+\paragraph {DAG Horn graph solving}
 Second, we explain a case that some predicate variables appear
 multiple times on left-hand side in different Horn clauses.
 
@@ -65,6 +72,57 @@ x \leq 1 & \implies A(x) \\
 A(x) \wedge A(y) & \implies x+y \leq 2
 \end{align*}
 
+Assigning a template
+$A(x) : c_1 x + c_2 \leq 0$, we obtain the same
+constraint for the first clause as the previous example.
+
+\begin{align} \label{eq:constr1}
+\lambda_1 = c_1 \wedge - \lambda_1 \geq c_2 \wedge \lambda_1 \geq 0
+\end{align}
+
+Now we have $A$'s appearance twice on the second clause, and we try to
+solve first by a weaker constraint, which we give allow different
+assignments for multiple occurrence. Virtually it is equivalent to
+solve the following problem with the templates.
+
+\begin{align*}
+\text{Problem:} \\
+x \leq 1 & \implies A_1(x) \\
+x \leq 1 & \implies A_2(x) \\
+A_1(x) \wedge A_2(y) & \implies x+y \leq 2 \\
+\\
+\text{Templates:} \\
+A_1(x) \text{ : } & c_{1,1} x + c_{2,1} \leq 0 \\
+A_2(x) \text{ : } & c_{1,2} x + c_{2,2} \leq 0 \\
+A(x) \text{ : } & A_1(x) \wedge A_2(x) \\
+\end{align*}
+
+By this, duplicating the constraint ~\ref{eq:constr1}, we obtain the
+whole constraint as follows.
+
+\begin{align*}
+& \lambda_{1,1} = c_{1,1} \wedge - \lambda_{1,1} \geq c_{2,1} \wedge \lambda_{1,1} \geq 0 \wedge \\
+& \lambda_{1,2} = c_{1,2} \wedge - \lambda_{1,2} \geq c_{2,2} \wedge \lambda_{1,2} \geq 0 \wedge \\
+& c_{1,1} = \lambda_2 \wedge c_{1,2} = \lambda_2 \wedge c_{2,1} + c_{2,2} \geq 2 \lambda_2 \wedge \lambda_2 > 0
+\end{align*}
+
+This constraint is satisfiable and one model is
+\[ ( c_{1,1}, c_{1,2}, c_{2,1}, c_{2,2}, \lambda_{1,1}, \lambda_{1,2}, \lambda_2 ) =
+( 1, -1, 1, -1, 1, 1, 1 ) \] and the solution then becomes
+$A(x) : (x -1 \leq 0) \wedge (x -1 \leq 0)$.
+
+Since the weak constraint is satisfiable, we now refine the constraint
+to obtain the better solution. That is, simply eliminate the
+duplication to build the following constraint for the original template.
+
+\begin{align*}
+& \lambda_1 = c_1 \wedge - \lambda_1 \geq c_2 \wedge \lambda_1 \geq 0 \wedge \\
+& c_1 = \lambda_2 \wedge c_1 = \lambda_2 \wedge 2 c_2 \geq 2 \lambda_2 \wedge \lambda_2 > 0
+\end{align*}
+
+Solving this constraint simply gives us a solution $A(x) : x -1 \leq 0$.
+
+\paragraph {Disjunctive Horn graph solving}
 Finally, we explain a case that an input set of Horn clauses contain
 disjunctions on left-hand side.
 
