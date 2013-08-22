@@ -21,44 +21,48 @@
 
 \section{Horn clause solving}
 
-We propose a new algorithm for solving Horn clauses to generate a
-solution which is as simple as possible.  This enables us to obtain
-appropriate predicates that are suitable for predicate abstraction in
-the program verification techniques.
+We propose a new algorithm for solving recursion-less Horn clauses to
+generate a solution which is as simple as possible.  This enables us
+to obtain appropriate predicates that are suitable for predicate
+abstraction in the program verification techniques.
 
-The construction of the algorithm roughly consists of three parts.
+The construction of the algorithm roughly consists of two parts.
 \begin{itemize}
-\item \textbf{Horn Graph Building} converts input Horn clauses into a
-  \emph{Horn graph} that express the equivalent problem. The process
-  also generates a predicate template for every predicate variable
-  that the solution will become.  The Horn graph is used throughout
-  the algorithm to represent the problem under certain solution
-  template.
 \item \textbf{Iterative Constraint Generation} is a process to build a
   constraint to compute a solution.  It starts from generating the
-  weakest constraint in the sense that the resulting solution would not
-  be simple yet.  The process iteratively strengthen a constraint
+  weakest constraint in the sense that the resulting solution would
+  not be simple yet.  The process iteratively strengthen a constraint
   until the strongest one while preserving the constraint
-  satisfiability. The strongest constraint gives an instanciation of
-  templates.
-\item \textbf{Graph Restructuring} If the constraint become
+  satisfiability.  The strongest constraint gives a simple solution.
+\item \textbf{Problem Restructuring} If the constraint become
   unsatisfiable during the iteration, the process restructure the
-  input Horn graph to enlarge the solution template.  This is done by
-  considering the unsatisfiable core of the constraint.
+  problem equivalent to obtain a less simpler solution.  This process
+  considers the unsatisfiable core of the constraint.
 \end{itemize}
-Our algorithm works in a constructive manner.
 
-Each predicate variable vertex in an input graph has a unique
-predicate variable label.  All predicate variables on them are
-assigned simple templates.  Those predicate templates are expressed
-with template parameters.  Then, according to the graph structure, the
-algorithm builds a linear constraint that parameters must satisfy.
-For constraint building, the algorithm traverses the input graph in
-the topological order on $V_\Rightarrow$, and concatenate the
-constraints from predecessors to build the problem constraints.  Each
-process to build a constraint on $\mathcal{HC}_v$ for all vertices $v
-\in V_\Rightarrow$ is equivalent to generate a linear constraint in
-interpolation.
+All predicate variables in an input problem are assigned simple
+templates.  Those predicate templates are parameterized.  In the
+iterative constraint generation process, algorithm builds a linear
+constraint that parameters in templates must satisfy.  This is done in
+a constructive manner, and constraints are build in the order of
+implication dependency in Horn clauses.  That is, when an input
+problem has a Horn clause thath has a predicate variable $P$ on its
+left-hand and $Q$ on its right-hand, a constraint to describe
+parameters in $P$'s template are first build before those in $Q$'s
+template.  When all parameters in the whole problem are described, the
+built constraint are evaluated to obtain a model.  Its instanciation
+becomes an appropriate solution for the input problem.
+
+The novelty of our algorithm lies in the incremental constraint
+refinement.  The algorithm try from the weakest constraint that an
+input problem allows that does not give a simple solution, and
+strengthen the constraint until it reaches to the simplest solution
+that the problem has.  When a constraint becomes unsatisfiable, the
+algorithm analyzes the unsatisfiable core and transform the problem to
+obtain less simple solution.
+
+This construction of the algorithm enables us to compute a relatively
+simpler solution compared to existing algorithms in a reasonable time.
 
 \subsection{Example}
 
@@ -71,24 +75,24 @@ y \leq 2 & \implies B(y) \\
 A(x) \wedge B(y) & \implies 3x+2y \leq 10
 \end{align*}
 
-In this example, we would like to compute linear arithmetic
-formulas for the predicate variables $A$ and $B$.
-They appear only once on both left-hand and right-hand globally in the problem.
+In this example, we would like to compute linear arithmetic formulas
+for the predicate variables $A$ and $B$.  They appear only once on
+both left-hand and right-hand globally in the problem.
 
-We try to obtain a simple solution that is expressed by linear expression
-templates, whose coefficients and constants are parameterized. Assume
-that they have following predicate templates.
+We try to obtain a simple solution that is expressed by linear
+expression templates, whose coefficients and constants are
+parameterized.  Assume that they have following predicate templates.
 
 \begin{align*}
 A(x) : c_1 x + c_2 \leq 0 \\
 B(y) : c_3 y + c_4 \leq 0
 \end{align*}
 
-By naturally encoding the first Horn clause with Farkas's lemma,
-we obtain a linear constraint
+By naturally encoding the first Horn clause with Farkas's lemma, we
+obtain a linear constraint
 $ \lambda_1 = c_1 \wedge - \lambda_1 \geq c_2 \wedge \lambda_1 \geq 0 $.
-Any assignment to $ c_1, c_2, \lambda_1 $ which satisfies this will make $A(x)$
-valid for the first clause. In the same manner, we obtain
+Any assignment to $ c_1, c_2, \lambda_1 $ which satisfies this will
+make $A(x)$ valid for the first clause.  In the same manner, we obtain
 $ \lambda_2 = c_3 \wedge - 2 \lambda_2 \geq c_4 \wedge \lambda_2 \geq 0 $
 from the second clause, and
 $ c_1 = 3 \lambda_3 \wedge c_3 = 2 \lambda_3 \wedge c_2 + c_4 \geq -10 \lambda_3 \wedge \lambda_3 > 0 $
@@ -103,7 +107,7 @@ A(x) : 3 x - 3 \leq 0 \\
 B(y) : 2 y - 4 \leq 0
 \end{align*}
 
-\paragraph {DAG Horn graph solving}
+\paragraph {DAG problem solving}
 Second, we explain a case that some predicate variables appear
 multiple times on left-hand side in different Horn clauses.
 
@@ -112,23 +116,22 @@ x \leq 1 & \implies A(x) \\
 A(x) \wedge A(y) & \implies x+y \leq 2
 \end{align*}
 
-Assigning a template
-$A(x) : c_1 x + c_2 \leq 0$, we obtain the same
+Assigning a template $A(x) : c_1 x + c_2 \leq 0$, we obtain the same
 constraint for the first clause as the previous example.
 
 \begin{align} \label{eq:constr1}
 \lambda_1 = c_1 \wedge - \lambda_1 \geq c_2 \wedge \lambda_1 \geq 0
 \end{align}
 
-Sinve we have $A$'s appearance twice on the second clause,
-it is possible for $A$ to have two expressions each of which is used
-for $A(x)$ and $A(y)$. Although we need to use the same template for
-multiple occurrences in order to compute the simplest solution,
-it may make the whole constraints unsatisfiable if the simplest
-solution does not exist.
+Sinve we have $A$'s appearance twice on the second clause, it is
+possible for $A$ to have two expressions each of which is used for
+$A(x)$ and $A(y)$.  Although we need to use the same template for
+multiple occurrences in order to compute the simplest solution, it may
+make the whole constraints unsatisfiable if the simplest solution does
+not exist.
 
 Therefore, we generate a weaker constraint for the second clause that
-allows different expressions of $A$ for multiple occurrence. If the
+allows different expressions of $A$ for multiple occurrence.  If the
 whole constraint is satisfiable in the case, we try to solve in a
 stronger constraint to generate a simple solution.
 
@@ -162,8 +165,9 @@ This constraint is satisfiable and one model is
 $A(x) : (x -1 \leq 0) \wedge (x -1 \leq 0)$.
 
 Since the weak constraint is satisfiable, we now refine the constraint
-to obtain the better solution. That is, simply eliminate the
-duplication to build the following constraint for the original template.
+to obtain the better solution.  That is, simply eliminate the
+duplication to build the following constraint for the original
+template.
 
 \begin{align*}
 & \lambda_1 = c_1 \wedge - \lambda_1 \geq c_2 \wedge \lambda_1 \geq 0 \wedge \\
@@ -172,7 +176,7 @@ duplication to build the following constraint for the original template.
 
 Solving this constraint simply gives us a solution $A(x) : x -1 \leq 0$.
 
-\paragraph {Disjunctive Horn graph solving}
+\paragraph {Disjunctive Horn clause solving}
 Finally, we explain a case that an input set of Horn clauses contain
 disjunctions on left-hand side.
 
@@ -211,7 +215,7 @@ c_2 + c_4 & > 0 \\
 \end{align*}
 
 Because the unsatisfiable core contains constraints originating from
-the disjunctions to be expressed in a single term template. This let
+the disjunctions to be expressed in a single term template.  This let
 us determine to relax the template to allow a enlarged solution.
 
 Now we slightly change the problem and the template.
@@ -264,13 +268,21 @@ Finally, we obtain the following constraint:
 
 TODO
 
+
+The process also generates a predicate template for every predicate
+variable that the solution will become.  under certain solution
+template.
+
 \subsection{Preliminaries}
 
-Our Horn clause solving algorithm receives an input problem in Horn
-graph. A \textbf{Horn graph} is a labelled directed acyclic graph $G=(V,E,\varphi)$.
+For ease of discussion, our algorithm handles an input set of Horn
+clauses by a \emph{Horn graph} that express the equivalent problem.
+The graph is then used throughout the algorithm to represent the
+problem.  A Horn graph is a labelled directed acyclic graph
+$G=(V,E,\varphi)$.
 \begin{itemize}
 \item $V$ is a union of two disjoint sets of vertices; Horn term
-  vertices $V_T$ and arrow vertices $V_\Rightarrow$. Each vertex $u
+  vertices $V_T$ and arrow vertices $V_\Rightarrow$.  Each vertex $u
   \in V_\Rightarrow$ has eactly one outgoing edge to some $v \in V_T$,
   denoted as $succ(u)$.
 \item $E$ is a set of labelled edges, which are expressed in the form
@@ -289,7 +301,6 @@ There are two kinds of edges in a Horn graph;
   $(u,v,\emptyset)$, written $\edge{u}{v}$, where the mapping is
   empty.
 \end{itemize}
-
 The meaning $\llbracket G \rrbracket $ of a Horn graph $G$ is a set of
 Horn clauses $\mathcal{HC}_v$ for all vertices $v \in V_\Rightarrow$.
 
@@ -299,11 +310,14 @@ Horn clauses $\mathcal{HC}_v$ for all vertices $v \in V_\Rightarrow$.
 \end{align*}
 
 We implicitly assume each $\mathcal{HC}_v$ is universally quantified
-by its all free variables $\textsc{FV}(\mathcal{HC}_v)$.  Without loss
-of generality, we assume the existence of the root vertex $v_\bot \in
-V_T$ with linear expression labels $1 \leq 0$, meaning $\bot$. We also
-assume that other vertices with linear expression labels have no
-incoming edges to them.
+by its all free variables $\textsc{FV}(\mathcal{HC}_v)$.
+
+Without loss of generality, we assume the existence of the root vertex
+$v_\bot \in V_T$ with linear expression labels $1 \leq 0$, meaning
+$\bot$.  This is because if we have a Horn clause $P \implies e$ which
+$e$ is a linear expression, we can convert it to $P \wedge \neg e
+\implies 1 \leq 0$.  We also assume that other vertices with linear
+expression labels have no incoming edges to them.
 
 The solution of $G$ is a map $\rho$ from predicate variables to linear
 predicates of the form $\lambda x_1, \cdots ,x_n. \psi $ (where $\psi$
@@ -312,9 +326,9 @@ is a formula constructed from
 \psi ::= & a_1 x_1 + \cdots + a_n x_n + b \leq 0 \mid \\
 & \psi \wedge \psi \mid \psi \vee \psi
 \end{align*}
-), where $\rho[G]$ is a tautology. A solution is \textit{simple} if
-$\rho[P]$ is of the form $a_1 x_1 + \cdots + a_n x_n + b \leq 0$ for every
-$P$ in $\mathrm{dom}(\rho)$.
+), where $\rho[G]$ is a tautology.  A solution is \textit{simple} if
+$\rho[P]$ is of the form $a_1 x_1 + \cdots + a_n x_n + b \leq 0$ for
+every $P$ in $\mathrm{dom}(\rho)$.
 
 The problem of solving Horn clauses (represented by $G$) is to find a
 solution of $G$ (and a simple solution if possible).
@@ -322,8 +336,9 @@ solution of $G$ (and a simple solution if possible).
 \subsection{Simple solution}
 
 We first propose an algorithm to compute a simple solution for the
-given $G$ if one exists.  Later we add modifications to the algorithm
-for the case that a simple solution does not exist.  Algorithm~\ref{alg:solveHorn} shows the pseudo-code of our algorithm.
+given Horn graph $G$ if one exists.  Later we add modifications to the
+algorithm for the case that a simple solution does not exist for $G$.
+Algorithm~\ref{alg:solveHorn} shows the pseudo-code of our algorithm.
 
 \newcommand{\solveHorn}{\ensuremath{\mbox{\sc SolveHornGraph}}}
 \newcommand{\genConstr}{\ensuremath{\mbox{\sc GenerateConstraint}}}
@@ -380,6 +395,17 @@ $\genConstr$ procedure produces the constraint for a given vertex $v$.
 The constraints are first built the weakest so that the disjunctiveness of
 whole solution template is fixed first.
 
+
+
+
+
+
+
+traverses the input graph in the topological order on
+$V_\Rightarrow$, and concatenate the constraints from predecessors to
+build the problem constraints.  Each process to build a constraint on
+$\mathcal{HC}_v$ for all vertices $v \in V_\Rightarrow$ is equivalent
+to generate a linear constraint in interpolation.
 
 
 
