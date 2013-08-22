@@ -17,9 +17,48 @@
 \author{Yuto Takei \\ The University of Tokyo}
 
 \begin{document}
-\maketitle
 
-\section{Algorithm}
+
+\section{Horn clause solving}
+
+We propose a new algorithm for solving Horn clauses to generate a
+solution which is as simple as possible.  This enables us to obtain
+appropriate predicates that are suitable for predicate abstraction in
+the program verification techniques.
+
+The construction of the algorithm roughly consists of three parts.
+\begin{itemize}
+\item \textbf{Horn Graph Building} converts input Horn clauses into a
+  \emph{Horn graph} that express the equivalent problem. The process
+  also generates a predicate template for every predicate variable
+  that the solution will become.  The Horn graph is used throughout
+  the algorithm to represent the problem under certain solution
+  template.
+\item \textbf{Iterative Constraint Generation} is a process to build a
+  constraint to compute a solution.  It starts from generating the
+  weakest constraint in the sense that the resulting solution would not
+  be simple yet.  The process iteratively strengthen a constraint
+  until the strongest one while preserving the constraint
+  satisfiability. The strongest constraint gives an instanciation of
+  templates.
+\item \textbf{Graph Restructuring} If the constraint become
+  unsatisfiable during the iteration, the process restructure the
+  input Horn graph to enlarge the solution template.  This is done by
+  considering the unsatisfiable core of the constraint.
+\end{itemize}
+Our algorithm works in a constructive manner.
+
+Each predicate variable vertex in an input graph has a unique
+predicate variable label.  All predicate variables on them are
+assigned simple templates.  Those predicate templates are expressed
+with template parameters.  Then, according to the graph structure, the
+algorithm builds a linear constraint that parameters must satisfy.
+For constraint building, the algorithm traverses the input graph in
+the topological order on $V_\Rightarrow$, and concatenate the
+constraints from predecessors to build the problem constraints.  Each
+process to build a constraint on $\mathcal{HC}_v$ for all vertices $v
+\in V_\Rightarrow$ is equivalent to generate a linear constraint in
+interpolation.
 
 \subsection{Example}
 
@@ -284,10 +323,7 @@ solution of $G$ (and a simple solution if possible).
 
 We first propose an algorithm to compute a simple solution for the
 given $G$ if one exists.  Later we add modifications to the algorithm
-for the case that a simple solution does not exist.
-
-Our algorithm works in a constructive manner.
-Algorithm~\ref{alg:solveHorn} shows the pseudo-code of our algorithm.
+for the case that a simple solution does not exist.  Algorithm~\ref{alg:solveHorn} shows the pseudo-code of our algorithm.
 
 \newcommand{\solveHorn}{\ensuremath{\mbox{\sc SolveHornGraph}}}
 \newcommand{\genConstr}{\ensuremath{\mbox{\sc GenerateConstraint}}}
@@ -316,6 +352,11 @@ Algorithm~\ref{alg:solveHorn} shows the pseudo-code of our algorithm.
 \end{algorithm}
 
 
+Specifically, for a predicate variable $P(\mathbf{x})$,
+the algorithm assigns a template $\mathbf{a}_P \mathbf{x} + b_P \leq
+0$.  Parameters $\mathbf{a}_P$ and $b_P$ are specified by a linear
+constraint.
+
 \begin{algorithm}
 \caption{$ \genConstr (v, visited) $}\label{alg:genConstr}
 \begin{algorithmic}
@@ -333,31 +374,6 @@ Algorithm~\ref{alg:solveHorn} shows the pseudo-code of our algorithm.
 \ENDFOR
 \end{algorithmic}
 \end{algorithm}
-
-The construction of the algorithm is in two fold.
-\begin{itemize}
-\item \textbf{Iterative Constraint Building} The process starts from
-  generating the weakest constraint that the input Horn graph allows and
-  iteratively strengthen a constraint until the strongest one.
-\item \textbf{Graph Restructuring} If the constraint become
-  unsatisfiable during the iteration, restructure the input Horn graph
-  to enlarge the solution template.
-\end{itemize}
-This algorithm enables a solution to be build as simple as possible.
-
-For the input graph, each predicate variable vertex has a unique
-predicate variable label assigned.  All predicate variables are
-assigned a simple template.  For a predicate variable $P(\mathbf{x})$,
-the algorithm assigns a template $\mathbf{a}_P \mathbf{x} + b_P \leq
-0$.  Parameters $\mathbf{a}_P$ and $b_P$ are specified by a linear
-constraint.  Then, according to the graph structure, the algorithm
-builds a linear constraint that parameters in predicate variable
-templates must satisfy.  For constraint building, the algorithm
-traverses the graph in the topological order on $V_\Rightarrow$, and
-concatenate the constraints from predecessors to build the problem
-constraints. Each process to build a constraint on $\mathcal{HC}_v$
-for all vertices $v \in V_\Rightarrow$ is equivalent to generate a
-linear constraint in interpolation.
 
 $\genConstr$ procedure produces the constraint for a given vertex $v$.
 
