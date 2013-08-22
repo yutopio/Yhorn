@@ -329,12 +329,12 @@ every Horn term vertex $v \in V_T$ with incoming edges.
 k_v =
 \begin{cases}
 \mathrm{arity}(P) & \mbox{if } \varphi(v) = P(x_1,...,x_{\mathrm{arity}(P)}) \\
-0 & \mbox{if } \varphi(v) = \top \mbox { or } \varphi(v) = \bot
+0 & \mbox{if } \varphi(v) = \bot
 \end{cases}
 \end{align*}
 We let $K$ denote the maximum of $k_v$ over all $v \in V_T$.
 
-A variable mapping label on edges \theta is used to map the index of
+A variable mapping label $\theta$ on edges is used to map the index of
 one predicate variable to another. (TODO?)
 
 (Example?)
@@ -418,9 +418,9 @@ C_v = & \bigcup_{\edge{a}{v}} \hat C_{a,v} \cup
  b_v = \lambda_v b_0
 \right\rbrace
 & \mbox{if } \varphi(v) = \mathbf{a}_0 \mathbf{x}_v \leq b_0
-\end{cases}
+\end{cases} \\
+(TODO???)
 \end{align*}
-
 For simplicity, we assume variables $\mathbf{a}_u$, $b_u$ are obtained
 from $C_u$.
 
@@ -441,30 +441,37 @@ is a solution of $G$.
 
 \subsection {Graph transformation}
 
-Algorithm~\ref{alg:solveHorn} shows the pseudo-code of our algorithm.
+If $C_{v_\bot}$ is unsatisfiable, no simple solution exists for $G$.
+We now try to give a less simpler solution by transforming $G$ and
+relaxing the constraint $C_{v_\bot}$.  This transformation takes place
+by considering the unsatisfiable core from the constraint.
+
+Algorithm~\ref{alg:solveHorn} shows the pseudo-code of our Horn clause
+solving algorithm.  It takes an input Horn graph and returns a mapping
+between predicate variables and linear arithmetic formulas.
 
 \newcommand{\solveHorn}{\ensuremath{\mbox{\sc SolveHornGraph}}}
 \newcommand{\genConstr}{\ensuremath{\mbox{\sc GenerateConstraint}}}
-\newcommand{\splitGraph}{\ensuremath{\mbox{\sc RestructureGraph}}}
+\newcommand{\transGraph}{\ensuremath{\mbox{\sc TransformGraph}}}
 
 \begin{algorithm}
 \caption{$ \solveHorn (G) $}\label{alg:solveHorn}
 \begin{algorithmic}
 \STATE {$v_\bot \gets $ the root node of $G$}
-\STATE {$V \gets \left\lbrace v_\bot \right\rbrace$}
+\STATE {$V_\star \gets \left\lbrace v_\bot \right\rbrace$}
 \REPEAT
-  \STATE {$C \gets \genConstr (v_\bot, V)$}
-  \STATE {$c_{v_\bot} \gets C(v_\bot)$}
-  \STATE {Evaluate satisfiability of $c_{v_\bot}$}
-  \IF {$c_{v_\bot}$ is unsatisfiable}
-    \STATE {$\mathcal{UC} \gets $ unsatisfiable core for $c_{v_\bot}$}
-    \STATE {$G \gets \splitGraph (G, \mathcal{UC})$}
-    \STATE {$V \gets \left\lbrace v_\bot \right\rbrace$}
+  \STATE {$\mathcal{C} \gets \genConstr (G, v_\bot, V_\star)$}
+  \STATE {$C_{v_\bot} \gets \mathcal{C} \left[ v_\bot \right]$}
+  \STATE {Evaluate satisfiability of $C_{v_\bot}$}
+  \IF {$C_{v_\bot}$ is unsatisfiable}
+    \STATE {$U \gets $ unsatisfiable core for $C_{v_\bot}$}
+    \STATE {$G \gets \transGraph (G, U)$}
+    \STATE {$V_\star \gets \left\lbrace v_\bot \right\rbrace$}
   \ELSE
-    \STATE {Enlarge $V$}
-    \STATE {$m \gets $ one model of $c_{v_\bot}$}
+    \STATE {$V_\star \gets V_\star \cup \left\lbrace u \in V_T \mid \forall v \in V_\star; u \leadsto v \right\rbrace$}
+m    \STATE {$m \gets $ one model of $C_{v_\bot}$}
   \ENDIF
-\UNTIL {$V$ contains all predicate variable vertices}
+\UNTIL {$V_\star$ contains all predicate variable vertices}
 \STATE {Build solution by $m$}
 \end{algorithmic}
 \end{algorithm}
@@ -486,15 +493,13 @@ $\genConstr$ procedure produces the constraint for a given vertex $v$.
 
 
 \begin{algorithm}
-\caption{$ \genConstr (v, visited) $}\label{alg:genConstr}
+\caption{$ \genConstr (G, v, visited) $}\label{alg:genConstr}
 \begin{algorithmic}
-\STATE {$m \gets \emptyset$}
-\FORALL {$v_\Rightarrow \in preds(v)$}
-  \FORALL {$v_p \in preds(v_\Rightarrow)$}
-    \STATE { $ l := \varphi (v_p) $ }
-    \IF {$l$ is a predicate variable}
-      \STATE {$m' \gets \genConstr (v_p) $}
-      \STATE {$m \gets m \cup m'$}
+\STATE {$\mathcal{C} \gets \emptyset$}
+\FORALL {$v_\Rightarrow \in preds_G(v)$}
+  \FORALL {$v_p \in preds_G(v_\Rightarrow)$}
+    \IF {$\varphi (v_p)$ is a predicate variable}
+      \STATE {$\mathcal{C} \gets \mathcal{C} \cup \genConstr (G, v_p, visited)$}
     \ELSE
       \STATE { $id$ }
     \ENDIF
@@ -507,38 +512,13 @@ $\genConstr$ procedure produces the constraint for a given vertex $v$.
 
 
 
-
-
-
 traverses the input graph in the topological order on
 $V_\Rightarrow$, and concatenate the constraints from predecessors to
 build the problem constraints.  Each process to build a constraint on
 $\mathcal{HC}_v$ for all vertices $v \in V_\Rightarrow$ is equivalent
 to generate a linear constraint in interpolation.
 
-
-
-\subsection{Disjunction-free problems}
-
-If $C_{v_\bot}$ is unsatisfiable, no simple solution exists for
-$G$. We now try to give a solution by relaxing the constraint
-$C_{v_\bot}$.
-
-We consider below a Horn graph whose Horn term vertices has at
-most one successor.
-
-\subsubsection{Quantifier elimination}
-
-A set of eliminating quantifiers are obtained as $quant(n)$.
-
-\begin{align*}
-in(n) & = \bigcup_{p\in pred(n)} out(p) \\
-out(n) & = gen(n) \cup in(n) \\
-dup(n) & = \left\lbrace t \middle| p,q \in pred(n); p \ne q \wedge
- t \in out(p) \wedge t \in out(q) \right\rbrace \\
-quant(n) & = gen(n) \cup dup(n) \cup
- (out(n) \cap \bigcup_{s \in succ(n)} quant(s))
-\end{align*}
+\subsection{Quantifier elimination}
 
 Let $\hat V_T$ a set of Horn term vertices $V_T$ with multiple
 successors.
@@ -573,64 +553,6 @@ extending $\Delta$ function to
 $\Delta_{V'} (v) = (\mathbf{a}_{v,\emptyset} \mathbf{x}_v \leq b_{v,\emptyset}, C_v)$
 as
 
-\begin{align*}
-\hat C_a = &
- \bigcup_{\edgel{u}{\theta}{a}} C_u \cup
- \bigcup_{0 < i \leq K}
- \left\lbrace
-  \mathbf{a}_{v,i} = \sum_{\edgel{u}{\theta}{a}} \mathbf{a}_{u, \theta^{-1} (i)}
- \right\rbrace \\
- & \hspace{2cm} \cup
- \left\lbrace
-  b_v \geq \sum_{\edgel{u}{\theta}{a}} b_u
- \right\rbrace \cup
- \bigcup_{k_v < i \leq K}
- \left\lbrace \mathbf{a}_{v,i} = 0 \right\rbrace
-\\
-C_v = & \bigcup_{\edge{a}{v}} \hat C_a \cup
-\begin{cases}
-\emptyset
-& \mbox{if } \varphi(v) = P(\mathbf{x}_v) \\
-\left\lbrace
- \lambda_v \geq 0, \mathbf{a}_{v,\emptyset} = \lambda_v \mathbf{a}_0,
- b_{v,\emptyset} = \lambda_v b_0
-\right\rbrace
-& \mbox{if } \varphi(v) = \mathbf{a}_0 \mathbf{x}_v \leq b_0
-\end{cases}
-\end{align*}
-
----
-
-\begin{align*}
-C_v = & \bigcup_{(u,U,\theta,C_u) \in S_v^-} C_u \cup
-\bigcup_{(u,U,\theta,C_u) \in S_v^+} C_u
-\\
-& \cup
-\left\lbrace
- \mathbf{a}_{v,\emptyset,i} =
-  \sum_{(u,U,\theta,C_u) \in S_v^-} \mathbf{a}_{u,U,\theta^{-1}(i)} +
-  \sum_{(u,U,\theta,C_u) \in S_v^+} \mathbf{a}_{u,U, \theta^{-1}(i)}
-\right\rbrace \\
-& \cup \left\lbrace
- b_{v,\emptyset} \geq
-  \sum_{(u,U,\theta,C_u) \in S_v^-} b_{u,U} +
-  \sum_{(u,U,\theta,C_u) \in S_v^+} b_{u,U}
-\right\rbrace \\
-& \cup \bigcup_{k_v < i \leq K} \left\lbrace \mathbf{a}_{v,\emptyset,i} = 0 \right\rbrace
-\end{align*}
-such that
-\begin{align*}
-& S_v^- = \left\lbrace (u, U, \theta, C_u) \middle|
-  u \mathop{\leadsto}^\theta v \wedge
-  \left( \nexists u' \in V'; \xi (u') = u \right) \wedge
-  \Delta_{V'} (u) = (\mathbf{a}_{u,U} \mathbf{x}_u \leq b_{u,U}, C_u) \right\rbrace
-\\
-& S_v^+ = \left\lbrace (u, U, \theta, C_u) \middle|
-  u \mathop{\leadsto}^\theta v \wedge
-  \left( \exists u' \in V'; \xi (u') = u \wedge
-  \hat \Delta (u', \edge{u}{v}) = (\mathbf{a}_{u,U} \mathbf{x}_u \leq b_{u,U}, C_u) \right) \right\rbrace
-\\
-\end{align*}
 
 This intuitively means that constraints are duplicated according to
 the shape of copy tree $T$.  Given the constraint for the root node in
@@ -648,13 +570,7 @@ a model to $C_{v_\bot}$ gives a solution $\rho$ to $G$, if one exists.
 If $C_{v_\bot}$ stays unsatisfiable, we let $T$ grow based on the
 unsatisfiable core for $C_{v_\bot}$.
 
-\subsubsection{Refinement from Unsatisfiable Core}
-
-We first start the process from the initial Copy tree:
-\begin{align*}
-V_C = & \left\lbrace v_{v_\bot} \right\rbrace \\
-E_C = & \emptyset
-\end{align*}
+\subsection{Refinement from Unsatisfiable Core}
 
 An unsatisfiable core $\mathcal{U}$ is a subset of $C_{v_\bot}$.
 If a vertex $v \in V$ with the copy origin $U$ satisfies:
