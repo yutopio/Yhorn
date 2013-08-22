@@ -291,7 +291,7 @@ $G=(V,E,\varphi)$.
 \item $\varphi: V_T \rightarrow L$ is a labelling function for Horn
   term vertices, where L is a set of elements of a predicate variable
   in the form $P(x_1, \ldots, x_{\mathrm{arity}(P)})$ or a linear
-  inequality $a_1 x_1 + \cdots + a_n x_n \leq b$.
+  inequality $a_1 x_1 + \cdots + a_n x_n + b \leq 0$.
 \end{itemize}
 There are two kinds of edges in a Horn graph;
 \begin{itemize}
@@ -303,32 +303,59 @@ There are two kinds of edges in a Horn graph;
 \end{itemize}
 The meaning $\llbracket G \rrbracket $ of a Horn graph $G$ is a set of
 Horn clauses $\mathcal{HC}_v$ for all vertices $v \in V_\Rightarrow$.
-
 \begin{align*}
 \mathcal{HC}_v & = \left( \bigwedge_{(u,v,\theta) \in E} \theta \varphi(u) \right) \Longrightarrow \varphi(succ(v)) \\
 \llbracket G \rrbracket & = \bigwedge_{v \in V_\Rightarrow} \mathcal{HC}_v
 \end{align*}
-
 We implicitly assume each $\mathcal{HC}_v$ is universally quantified
 by its all free variables $\textsc{FV}(\mathcal{HC}_v)$.
 
-Without loss of generality, we assume the existence of the root vertex
-$v_\bot \in V_T$ with linear expression labels $1 \leq 0$, meaning
-$\bot$.  This is because if we have a Horn clause $P \implies e$ which
-$e$ is a linear expression, we can convert it to $P \wedge \neg e
-\implies 1 \leq 0$.  We also assume that other vertices with linear
-expression labels have no incoming edges to them.
+Horn term vertices with predicate variable labels are unique each
+other that any of them do not have the same variable on their labels.
+From now on, we may denote a Horn term vertex with a predicate
+variable label by its predicate variable name if no ambiguity is
+present.
 
-The solution of $G$ is a map $\rho$ from predicate variables to linear
-predicates of the form $\lambda x_1, \cdots ,x_n. \psi $ (where $\psi$
-is a formula constructed from
+Without loss of generality, we assume the existence of the \emph{root
+  vertex} $v_\bot \in V_T$ with linear expression labels $1 \leq 0$,
+meaning $\bot$.  This is because if we have a Horn clause $P \implies
+e$ which $e$ is a linear expression, we can convert it to $P \wedge
+\neg e \implies 1 \leq 0$.  We also assume that other vertices with
+linear expression labels have no incoming edges to them.
+
+For simplicity of discussion, we define \emph{term arity} $k_v$ for
+every Horn term vertex $v \in V_T$ with incoming edges.
+\begin{align*}
+k_v =
+\begin{cases}
+\mathrm{arity}(P) & \mbox{if } \varphi(v) = P(x_1,...,x_{\mathrm{arity}(P)}) \\
+0 & \mbox{if } \varphi(v) = \top \mbox { or } \varphi(v) = \bot
+\end{cases}
+\end{align*}
+We let $K$ denote the maximum of $k_v$ over all $v \in V_T$.
+
+A variable mapping label on edges \theta is used to map the index of
+one predicate variable to another. (TODO?)
+
+(Example?)
+
+The algorithm assigns a \emph{predicate template} for all predicate
+variables in $G$. A template for a predicate variable $P(x_1, \ldots, x_n)$
+is a formula $\psi$ constructed from the following definition.
 \begin{align*}
 \psi ::= & a_1 x_1 + \cdots + a_n x_n + b \leq 0 \mid \\
 & \psi \wedge \psi \mid \psi \vee \psi
 \end{align*}
-), where $\rho[G]$ is a tautology.  A solution is \textit{simple} if
-$\rho[P]$ is of the form $a_1 x_1 + \cdots + a_n x_n + b \leq 0$ for
-every $P$ in $\mathrm{dom}(\rho)$.
+A linear expression in the definition above may also be represented in
+a equivalent vector form $\mathbf{a} \mathbf{x} + b \leq 0$ for short.
+Parameters $\mathbf{a}$ and $b$ are specified by a linear constraint.
+
+The solution of $G$ is a map $\rho$ from predicate variables to linear
+predicates of the form $\lambda x_1, \ldots ,x_n. \psi$ where
+parameters in $\psi$ are replaced with constant and $\rho[G]$ becomes
+a tautology.  A solution is \textit{simple} if $\rho[P]$ is of the
+form $\mathbf{a} \mathbf{x} + b \leq 0$ for every $P$ in
+$\mathrm{dom}(\rho)$.
 
 The problem of solving Horn clauses (represented by $G$) is to find a
 solution of $G$ (and a simple solution if possible).
@@ -338,6 +365,82 @@ solution of $G$ (and a simple solution if possible).
 We first propose an algorithm to compute a simple solution for the
 given Horn graph $G$ if one exists.  Later we add modifications to the
 algorithm for the case that a simple solution does not exist for $G$.
+In such a case, we transform the input graph $G$ to have a larger
+solution template.
+
+We define the relation $\leadsto$ over $V_T$ as follows.
+\[ u \mathop{\leadsto}^\theta v \Longleftrightarrow
+\exists a \in V_\Rightarrow; \edgel{v}{\theta}{a} \wedge \edge{a}{v} \]
+We may omit $\theta$ and write $u \leadsto v$ for convenience in later
+discussions.
+
+By the assumption that $G$ is acyclic, $\leadsto^+$ is a well-founded
+relation. $v_\bot$ is the greatest element with respect to
+$\leadsto^+$.
+
+For each predicate variable $v \in V_T$, the algorithm assigns a
+predicate template $\mathbf{a}_v \mathbf{x}_v + b_v \leq 0$ and define
+$C_v$ which is a set of linear expressions on template parameters
+$\mathbf{a}_v$ and $b_v$.  Intuitively, it denotes the set of
+inequalities:
+\begin{align*}
+\left\lbrace
+ \mathbf{a}_v \mathbf{x}_v + b_v \leq 0 \middle|
+ \exists \left( \textsc{FV}(C_v)
+  \setminus (\mathbf{a}_v \cup \left\lbrace b_v \right\rbrace
+ \right); C
+\right\rbrace
+\end{align*}
+
+$C_v$ is defined by well-founded induction on $v$ with respect to the
+relation $\leadsto^+$. Then, $C_v$ can be shown as follows.
+
+\begin{align*}
+\hat C_{a,v} = &
+ \bigcup_{\edgel{u}{\theta}{a}} C_u \cup
+ \bigcup_{0 < i \leq K}
+ \left\lbrace
+  \mathbf{a}_{v,i} = \sum_{\edgel{u}{\theta}{a}} \mathbf{a}_{u, \theta^{-1} (i)}
+ \right\rbrace \\
+ & \hspace{2cm} \cup
+ \left\lbrace
+  b_v \geq \sum_{\edgel{u}{\theta}{a}} b_u
+ \right\rbrace \cup
+ \bigcup_{k_v < i \leq K}
+ \left\lbrace \mathbf{a}_{v,i} = 0 \right\rbrace
+\\
+C_v = & \bigcup_{\edge{a}{v}} \hat C_{a,v} \cup
+\begin{cases}
+\emptyset
+& \mbox{if } \varphi(v) = P(\mathbf{x}_v) \\
+\left\lbrace
+ \lambda_v \geq 0, \mathbf{a}_v = \lambda_v \mathbf{a}_0,
+ b_v = \lambda_v b_0
+\right\rbrace
+& \mbox{if } \varphi(v) = \mathbf{a}_0 \mathbf{x}_v \leq b_0
+\end{cases}
+\end{align*}
+
+For simplicity, we assume variables $\mathbf{a}_u$, $b_u$ are obtained
+from $C_u$.
+
+Any model $\sigma$ to the constraint $C_{v_\bot}$ gives a simple
+solution for $G$ if $C_{v_\bot}$ is satisfiable, i.e., we should have:
+
+\begin{quote}
+If $\models \sigma(C_{v_\bot})$, then $\rho$ defined by
+\begin{align*}
+ \rho = \left\lbrace
+  \left( P, \sigma(\mathbf{a}_v \mathbf{x}_v \leq b_v) \right) \middle|
+  \forall v \in V_T; \varphi(v) = P(\mathbf{x}_v)
+ \right\rbrace
+\end{align*}
+is a solution of $G$.
+\end{quote}
+
+
+\subsection {Graph transformation}
+
 Algorithm~\ref{alg:solveHorn} shows the pseudo-code of our algorithm.
 
 \newcommand{\solveHorn}{\ensuremath{\mbox{\sc SolveHornGraph}}}
@@ -367,10 +470,20 @@ Algorithm~\ref{alg:solveHorn} shows the pseudo-code of our algorithm.
 \end{algorithm}
 
 
-Specifically, for a predicate variable $P(\mathbf{x})$,
-the algorithm assigns a template $\mathbf{a}_P \mathbf{x} + b_P \leq
-0$.  Parameters $\mathbf{a}_P$ and $b_P$ are specified by a linear
-constraint.
+The constraints are first built the weakest so that the disjunctiveness of
+whole solution template is fixed first.  The strength matters that the
+predicate variables are used as the same expressions depending on
+different appearances of the predicate variable.
+
+The strngeth of the constraint is controlled by a set of vertices $V$
+in the pseudo-code.  Predicate variable vertices in $V$ are treated
+strictly unique across the different appearances of the predicate
+variables in Horn clauses.
+
+
+
+$\genConstr$ procedure produces the constraint for a given vertex $v$.
+
 
 \begin{algorithm}
 \caption{$ \genConstr (v, visited) $}\label{alg:genConstr}
@@ -390,10 +503,6 @@ constraint.
 \end{algorithmic}
 \end{algorithm}
 
-$\genConstr$ procedure produces the constraint for a given vertex $v$.
-
-The constraints are first built the weakest so that the disjunctiveness of
-whole solution template is fixed first.
 
 
 
@@ -408,96 +517,6 @@ $\mathcal{HC}_v$ for all vertices $v \in V_\Rightarrow$ is equivalent
 to generate a linear constraint in interpolation.
 
 
-
-For simplicity of discussion, we define \textbf{term arity} $k_v$ for
-every Horn term vertex $v \in V_T$ with incoming edges.
-\begin{align*}
-k_v =
-\begin{cases}
-\mathrm{arity}(P) & \mbox{if } \varphi(v) = P(x_1,...,x_{\mathrm{arity}(P)}) \\
-0 & \mbox{if } \varphi(v) = \top \mbox { or } \varphi(v) = \bot
-\end{cases}
-\end{align*}
-We let $K$ denote the maximum of $k_v$ over all $v \in V_T$.
-
-We define the relation $\leadsto$ over $V_T$ as follows.
-\[ u \mathop{\leadsto}^\theta v \Longleftrightarrow
-\exists a \in V_\Rightarrow; \edgel{v}{\theta}{a} \wedge \edge{a}{v} \]
-We may omit $\theta$ and write $u \leadsto v$ for convenience in later
-discussions.
-
-By the assumption that $G$ is acyclic, $\leadsto^+$ is a well-founded
-relation. We assume without loss of generality that $V_T$ contains the
-greatest element $v_\bot$ with respect to $\leadsto^+$; otherwise we
-can always implicitly assume $\varphi(v_\bot) = \top$ such that
-$\forall v \in V_T \setminus \{v_\bot\}; v \mathop{\leadsto}^\emptyset v_\bot$.
-
-For each $v \in V_T$, we define
-$\Delta(v) = (\mathbf{a}_v \mathbf{x}_v \leq b_v, C_v)$
-, where
-\begin{itemize}
-\item $\mathbf{a}_v \mathbf{x}_v \leq b_v$ is a linear inequality that
-  contains coefficient variables $\mathbf{a}_v$, and
-\item $C_v$ is a set of linear expressions on coefficient variables.
-\end{itemize}
-Intuitively, the pair $(\mathbf{a} \mathbf{x} \leq b, C)$ denotes the
-set of inequalities:
-\begin{align*}
-\left\lbrace
- \mathbf{a} \mathbf{x} \leq b \middle|
- \exists \left( \textsc{FV}(C)
-  \setminus (\mathbf{a} \cup \left\lbrace b \right\rbrace
- \right); C
-\right\rbrace
-\end{align*}
-
-$\Delta(v)$ is defined by well-founded induction on $v$ with respect
-to the relation $\leadsto^+$. Then, $C_v$ in
-$\Delta(v) = \left( \mathbf{a}_v \mathbf{x}_v \leq b_v, C_v \right)$
-can be shown as follows.
-
-\begin{align*}
-\hat C_{a,v} = &
- \bigcup_{\edgel{u}{\theta}{a}} C_u \cup
- \bigcup_{0 < i \leq K}
- \left\lbrace
-  \mathbf{a}_{v,i} = \sum_{\edgel{u}{\theta}{a}} \mathbf{a}_{u, \theta^{-1} (i)}
- \right\rbrace \\
- & \hspace{2cm} \cup
- \left\lbrace
-  b_v \geq \sum_{\edgel{u}{\theta}{a}} b_u
- \right\rbrace \cup
- \bigcup_{k_v < i \leq K}
- \left\lbrace \mathbf{a}_{v,i} = 0 \right\rbrace
-\\
-C_v = & \bigcup_{\edge{a}{v}} \hat C_{a,v} \cup
-\begin{cases}
-\emptyset
-& \mbox{if } \varphi(v) = P(\mathbf{x}_v) \\
-\left\lbrace
- \lambda_v \geq 0, \mathbf{a}_v = \lambda_v \mathbf{a}_0,
- b_v = \lambda_v b_0
-\right\rbrace
-& \mbox{if } \varphi(v) = \mathbf{a}_0 \mathbf{x}_v \leq b_0
-\end{cases}
-\end{align*}
-
-For simplicity, we assume variables $\mathbf{a}_u$, $b_u$ are obtained
-from $\Delta(u)$.
-
-Any model $\sigma$ to the constraint $C_{v_\bot}$ gives a simple
-solution for $G$ if $C_{v_\bot}$ is satisfiable, i.e., we should have:
-
-\begin{quote}
-If $\models \sigma(C_{v_\bot})$, then $\rho$ defined by
-\begin{align*}
- \rho = \left\lbrace
-  \left( P, \sigma(\mathbf{a}_v \mathbf{x}_v \leq b_v) \right) \middle|
-  \forall v \in V_T; \varphi(v) = P(\mathbf{x}_v)
- \right\rbrace
-\end{align*}
-is a solution of $G$.
-\end{quote}
 
 \subsection{Disjunction-free problems}
 
@@ -648,36 +667,8 @@ If a vertex $v \in V$ with the copy origin $U$ satisfies:
 \end{align*}
 we add $v$ to the copy tree $T$.
 
-\subsection{Acyclic Horn problems}
 
-We eliminate the restriction that all Horn term vertices
-$V_\Rightarrow$ have exactly one successor.
 
-We define selectors for preceding disjunction vertices to $v$.
-\[ \mathcal{S}_v = \prod_{u \in \mathrm{succ}(v)} \left\lbrace u \mapsto t \middle| \edgel{t}{\theta}{u} \right\rbrace \]
-
-\begin{align*}
-K_l = \begin{cases}
-\left\lbrace l \right\rbrace & \mbox{if } l = \mathbf{a} \mathbf{x} \leq b \\
-\mathcal{X}_P \cup \left\lbrace \bot \right\rbrace
-& \mbox{if } l = P(\mathbf{x})
-\end{cases} \\
-\forall s \in \mathcal{S}_v;
-X = \prod_{t \in \mathrm{ran}(s)} K_{\varphi(t)}
-\exists c \in X;
-\end{align*}
-
-We define a \textbf{selector set collection} \cite{albarghouthi13} for
-every Horn term vertices, which is a set of sets of selectors.
-
-For $v \in V_T$, the selector set collection $\mathcal{X}_v =
-\left\lbrace S_{v,1}, \ldots, S_{v,\kappa_v} \right\rbrace$ consists
-of $\kappa_v$ sets of non-empty and non-overlapping subsets of
-$\mathcal{S}$. If $\nexists u; u \rightarrow v$, $\mathcal{X}_v =
-\emptyset$.
-
-We arbitrarily choose the initial selector $s_0 \in \mathcal{S}$. We
-start from empty collections for all $v$.
 
 \bibliographystyle{plain}
 \bibliography{./biblio}
