@@ -465,22 +465,19 @@ between predicate variables and linear arithmetic formulas.
 \STATE {$v_\bot \gets $ the root node of $G$}
 \STATE {$V_\star \gets \left\lbrace v_\bot \right\rbrace$}
 \REPEAT
-  \STATE {$\mathcal{C} \gets \genConstr (G, v_\bot, V_\star)$}
-  \STATE {$C_{v_\bot} \gets \mathcal{C} \left[ v_\bot \right]$}
-  \STATE {Evaluate satisfiability of $C_{v_\bot}$}
-  \IF {$C_{v_\bot}$ is unsatisfiable}
+  \STATE {$C_{v_\bot} \gets \genConstr (G, v_\bot, V_\star)$}
+  \IF {$C_{v_\bot}$ is satisfiable}
+    \STATE {$\sigma \gets $ one model of $C_{v_\bot}$}
+    \STATE {$V_\star \gets V_\star \cup \left\lbrace u \in V_T \mid \forall v \in V_\star; u \leadsto v \right\rbrace$}
+  \ELSE
     \STATE {$U \gets $ unsatisfiable core for $C_{v_\bot}$}
     \STATE {$G \gets \transGraph (G, U)$}
     \STATE {$V_\star \gets \left\lbrace v_\bot \right\rbrace$}
-  \ELSE
-    \STATE {$V_\star \gets V_\star \cup \left\lbrace u \in V_T \mid \forall v \in V_\star; u \leadsto v \right\rbrace$}
-m    \STATE {$m \gets $ one model of $C_{v_\bot}$}
   \ENDIF
-\UNTIL {$V_\star$ contains all predicate variable vertices}
-\STATE {Build solution by $m$}
+\UNTIL {$V_\star = V_T$}
+\STATE {Build solution by $\sigma$}
 \end{algorithmic}
 \end{algorithm}
-
 
 The constraints are first built the weakest so that the disjunctiveness of
 whole solution template is fixed first.  The strength matters that the
@@ -500,11 +497,11 @@ $\genConstr$ procedure produces the constraint for a given vertex $v$.
 \begin{algorithm}
 \caption{$ \genConstr (G, v, visited) $}\label{alg:genConstr}
 \begin{algorithmic}
-\STATE {$\mathcal{C} \gets \emptyset$}
+\STATE {$C \gets \emptyset$}
 \FORALL {$v_\Rightarrow \in preds_G(v)$}
   \FORALL {$v_p \in preds_G(v_\Rightarrow)$}
     \IF {$\varphi (v_p)$ is a predicate variable}
-      \STATE {$\mathcal{C} \gets \mathcal{C} \cup \genConstr (G, v_p, visited)$}
+      \STATE {$C \gets C \cup \genConstr (G, v_p, visited)$}
     \ELSE
       \STATE { $id$ }
     \ENDIF
