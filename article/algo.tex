@@ -443,13 +443,53 @@ If $\models \sigma(C_{v_\bot})$, then $\rho$ defined by
 is a solution of $G$.
 \end{quote}
 
+If $C_{v_\bot}$ is unsatisfiable, no simple solution exists for $G$.
+There are two cases that a simple solution does not exist for a
+predicate variable.
+\begin{itemize}
+\item A predicate variable appears multiple times on left-hand of Horn
+  clauses, and those appearances require different expressions as an
+  assumption.
+\item A predicate variable is implied by a disjunctive Horn clause,
+  which has disjunctions on its left-hand, and a common premise that
+  the disjunctions induce is not strong enough for solving a problem.
+\end{itemize}
+
+The first case occurs in a case like follows.
+\begin{align*}
+% conj.txt ... originated from uc/01.txt
+\left( x \leq 0 \right) \wedge \left( y \leq 0 \right) & \implies P(x,y) \\
+P(x,a) \wedge P(b,y) & \implies x+y \leq 0
+\end{align*}
+In this example, the predicate variable $P$ appears twice on the
+second clause and they require different premises; $x \leq 0$ for the
+first and $y \leq 0$ for the second.  They cannot be represented by
+$\mathbf{ax} + b \leq 0$ template at the same time.
+
+The second case occurs in a case like follows.
+\begin{align*}
+% disj-simp.txt ... originated from 23simp_neg.txt
+\left( x+1 \leq 0 \right) \vee \left( -x+1 \leq 0 \right) & \implies P(x) \\
+P(x,y) \wedge \left( x \leq 0 \right) \wedge \left( -x \leq 0 \right) & \implies \bot
+\end{align*}
+In this example, the predicate variable $P$ is implied by the first
+clause, which is a disjunctive Horn clause.  As a simple solution, $P$
+can take a common consequence that both of $x+1 \leq 0$ and $-x+1 \leq
+0$ induce.  However, such a simple linear expression does not exist
+except for $0 \leq 0$, which is equivalent to $\top$, and it is not
+sufficient to satisfy the second clause.
+
+Both cases can be fixed by enlarging the solution template.
+
 
 \subsection {Graph transformation}
 
-If $C_{v_\bot}$ is unsatisfiable, no simple solution exists for $G$.
-We now try to give a less simpler solution by transforming $G$ and
-relaxing the constraint $C_{v_\bot}$.  This transformation takes place
-by considering the unsatisfiable core from the constraint.
+If a simple solution does not exist for $G$, we try to give a less
+simpler solution by transforming $G$ and relaxing the constraint
+$C_{v_\bot}$.  This transformation takes place by considering the
+unsatisfiable core from the constraint.  Depending on the reason for
+the absence of a simple solution, the way of the transformation
+differs.
 
 Algorithm~\ref{alg:solveHorn} shows the pseudo-code of our Horn clause
 solving algorithm.  It takes an input Horn graph and returns a mapping
@@ -520,57 +560,14 @@ build the problem constraints.  Each process to build a constraint on
 $\mathcal{HC}_v$ for all vertices $v \in V_\Rightarrow$ is equivalent
 to generate a linear constraint in interpolation.
 
-\subsection{Quantifier elimination}
-
-Let $\hat V_T$ a set of Horn term vertices $V_T$ with multiple
-successors.
-\[ \hat V_T = \left\lbrace v \in V_T \middle|
-\exists u, u', \theta, \theta';
-\edgel{v}{\theta}{u} \wedge \edgel{v}{\theta'}{u'} \wedge
-(u \ne u' \vee \theta \ne \theta') \right\rbrace \]
-We define \textbf{Copy tree}, which is a tree $T=(V_C,E_C,\xi)$
-rooted at $v_{v_\bot}$.
-\begin{itemize}
-\item $V_C$ is a set of nodes.
-\item $E_C$ is a set of labelled edges, which are expressed in the
-  form $(u,v,e)$, where $e \in E \cup {\bot}$.
-\item $\xi: V_C \rightarrow \hat V_T \cup \left\lbrace v_\bot
-  \right\rbrace$ is a labelling function for nodes. The root node
-  $v_{v_\bot} \in V_C$ has a label $v_\bot$.
-\end{itemize}
-
-We provide $\textsc{Copy}_v$ procedure to rename all free variables
-for avoiding name collision.
-\[ \textsc{Copy}_v (x_V) = x_{V \cup \left\lbrace v \right\rbrace} \]
-All variables with the same name are then distinguished by the label
-of copy origin nodes $V$. For consistency, the variables without the
-label should be interpreted as that it has $\emptyset$ for origin
-nodes.
-
-We give a constraint function over a copy tree
-$\hat \Delta(v,e)$ for $v \in V_C, e \in E$ as
-\[ \hat \Delta (v,e) = \textsc{Copy}_v (\Delta_{V'} (\xi (v)))
-\text{ such that } V' = \left\lbrace v' \middle| (v, v',e) \in E_C \right\rbrace \]
-extending $\Delta$ function to
-$\Delta_{V'} (v) = (\mathbf{a}_{v,\emptyset} \mathbf{x}_v \leq b_{v,\emptyset}, C_v)$
-as
 
 
-This intuitively means that constraints are duplicated according to
-the shape of copy tree $T$.  Given the constraint for the root node in
-the copy tree as
-\[ \hat \Delta (v_{v_\bot}, \bot) = (\mathbf{a}_0 \mathbf{x}_{v_\bot} \leq b_0, C_{v_\bot}) \]
-a model to $C_{v_\bot}$ gives a solution $\rho$ to $G$, if one exists.
 
-\begin{align*}
- \rho = \left\lbrace
-  \left( P, \bigwedge_U \sigma(\mathbf{a}_{v,U} \mathbf{x}_v \leq b_{v,U}) \right) \middle|
-  \forall v \in V_T; \varphi(v) = P(\mathbf{x}_v)
- \right\rbrace
-\end{align*}
 
-If $C_{v_\bot}$ stays unsatisfiable, we let $T$ grow based on the
-unsatisfiable core for $C_{v_\bot}$.
+
+
+
+
 
 \subsection{Refinement from Unsatisfiable Core}
 
