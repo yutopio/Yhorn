@@ -4,6 +4,7 @@
 \usepackage{amssymb}
 \usepackage{algorithm}
 \usepackage{algorithmic}
+\usepackage{graphicx}
 \usepackage{listings}
 \usepackage{stmaryrd}
 \usepackage{syntax}
@@ -16,17 +17,272 @@
 \author{Yuto Takei \\ The University of Tokyo}
 
 \begin{document}
-\maketitle
 
-\section{Algorithm}
+
+\section{Horn clause solving}
+
+We propose a new algorithm for solving recursion-less Horn clauses to
+generate a solution which is as simple as possible.  This enables us
+to obtain appropriate predicates that are suitable for predicate
+abstraction in the program verification techniques.
+
+The construction of the algorithm roughly consists of two parts.
+\begin{itemize}
+\item \textbf{Iterative Constraint Generation} is a process to build a
+  constraint to compute a solution.  It starts from generating the
+  weakest constraint in the sense that the resulting solution would
+  not be simple yet.  The process iteratively strengthen a constraint
+  until the strongest one while preserving the constraint
+  satisfiability.  The strongest constraint gives a simple solution.
+\item \textbf{Problem Restructuring} If the constraint become
+  unsatisfiable during the iteration, the process restructure the
+  problem equivalent to obtain a less simpler solution.  This process
+  considers the unsatisfiable core of the constraint.
+\end{itemize}
+
+All predicate variables in an input problem are assigned simple
+templates.  Those predicate templates are parameterized.  In the
+iterative constraint generation process, algorithm builds a linear
+constraint that parameters in templates must satisfy.  This is done in
+a constructive manner, and constraints are build in the order of
+implication dependency in Horn clauses.  That is, when an input
+problem has a Horn clause thath has a predicate variable $P$ on its
+left-hand and $Q$ on its right-hand, a constraint to describe
+parameters in $P$'s template are first build before those in $Q$'s
+template.  When all parameters in the whole problem are described, the
+built constraint are evaluated to obtain a model.  Its instanciation
+becomes an appropriate solution for the input problem.
+
+The novelty of our algorithm lies in the incremental constraint
+refinement.  The algorithm try from the weakest constraint that an
+input problem allows that does not give a simple solution, and
+strengthen the constraint until it reaches to the simplest solution
+that the problem has.  When a constraint becomes unsatisfiable, the
+algorithm analyzes the unsatisfiable core and transform the problem to
+obtain less simple solution.
+
+This construction of the algorithm enables us to compute a relatively
+simpler solution compared to existing algorithms in a reasonable time.
+
+\subsection{Example}
+
+\paragraph {Tree interpolation}
+First, consider the following example.
+
+\begin{align*}
+x \leq 1 & \implies A(x) \\
+y \leq 2 & \implies B(y) \\
+A(x) \wedge B(y) & \implies 3x+2y \leq 10
+\end{align*}
+
+In this example, we would like to compute linear arithmetic formulas
+for the predicate variables $A$ and $B$.  They appear only once on
+both left-hand and right-hand globally in the problem.
+
+We try to obtain a simple solution that is expressed by linear
+expression templates, whose coefficients and constants are
+parameterized.  Assume that they have following predicate templates.
+
+\begin{align*}
+A(x) : c_1 x + c_2 \leq 0 \\
+B(y) : c_3 y + c_4 \leq 0
+\end{align*}
+
+By naturally encoding the first Horn clause with Farkas's lemma, we
+obtain a linear constraint
+$ \lambda_1 = c_1 \wedge - \lambda_1 \geq c_2 \wedge \lambda_1 \geq 0 $.
+Any assignment to $ c_1, c_2, \lambda_1 $ which satisfies this will
+make $A(x)$ valid for the first clause.  In the same manner, we obtain
+$ \lambda_2 = c_3 \wedge - 2 \lambda_2 \geq c_4 \wedge \lambda_2 \geq 0 $
+from the second clause, and
+$ c_1 = 3 \lambda_3 \wedge c_3 = 2 \lambda_3 \wedge c_2 + c_4 \geq -10 \lambda_3 \wedge \lambda_3 > 0 $
+from the third.
+
+One of the models satisfying all the constraints above is
+$( c_1, c_2, c_3, c_4, \lambda_1, \lambda_2, \lambda_3 ) = (3, -3, 2, -4, 3, 2, 1)$.
+By assigning them to the template, we obtain the following solution.
+
+\begin{align*}
+A(x) : 3 x - 3 \leq 0 \\
+B(y) : 2 y - 4 \leq 0
+\end{align*}
+
+\paragraph {DAG problem solving}
+Second, we explain a case that some predicate variables appear
+multiple times on left-hand side in different Horn clauses.
+
+\begin{align*}
+x \leq 1 & \implies A(x) \\
+A(x) \wedge A(y) & \implies x+y \leq 2
+\end{align*}
+
+Assigning a template $A(x) : c_1 x + c_2 \leq 0$, we obtain the same
+constraint for the first clause as the previous example.
+
+\begin{align} \label{eq:constr1}
+\lambda_1 = c_1 \wedge - \lambda_1 \geq c_2 \wedge \lambda_1 \geq 0
+\end{align}
+
+Sinve we have $A$'s appearance twice on the second clause, it is
+possible for $A$ to have two expressions each of which is used for
+$A(x)$ and $A(y)$.  Although we need to use the same template for
+multiple occurrences in order to compute the simplest solution, it may
+make the whole constraints unsatisfiable if the simplest solution does
+not exist.
+
+Therefore, we generate a weaker constraint for the second clause that
+allows different expressions of $A$ for multiple occurrence.  If the
+whole constraint is satisfiable in the case, we try to solve in a
+stronger constraint to generate a simple solution.
+
+In this specific case, it is virtually equivalent to solve the
+following problem in a weaker constraint.
+
+\begin{align*}
+\text{Problem:} \\
+x \leq 1 & \implies A_1(x) \\
+x \leq 1 & \implies A_2(x) \\
+A_1(x) \wedge A_2(y) & \implies x+y \leq 2 \\
+\\
+\text{Templates:} \\
+A_1(x) \text{ : } & c_{1,1} x + c_{2,1} \leq 0 \\
+A_2(x) \text{ : } & c_{1,2} x + c_{2,2} \leq 0 \\
+A(x) \text{ : } & A_1(x) \wedge A_2(x) \\
+\end{align*}
+
+By duplicating the constraint~\ref{eq:constr1} of $A$ for newly
+created $A_1$ and $A_2$, we obtain the whole constraint as follows.
+
+\begin{align*}
+& \lambda_{1,1} = c_{1,1} \wedge - \lambda_{1,1} \geq c_{2,1} \wedge \lambda_{1,1} \geq 0 \wedge \\
+& \lambda_{1,2} = c_{1,2} \wedge - \lambda_{1,2} \geq c_{2,2} \wedge \lambda_{1,2} \geq 0 \wedge \\
+& c_{1,1} = \lambda_2 \wedge c_{1,2} = \lambda_2 \wedge c_{2,1} + c_{2,2} \geq 2 \lambda_2 \wedge \lambda_2 > 0
+\end{align*}
+
+This constraint is satisfiable and one model is
+\[ ( c_{1,1}, c_{1,2}, c_{2,1}, c_{2,2}, \lambda_{1,1}, \lambda_{1,2}, \lambda_2 ) =
+( 1, -1, 1, -1, 1, 1, 1 ) \] and the solution then becomes
+$A(x) : (x -1 \leq 0) \wedge (x -1 \leq 0)$.
+
+Since the weak constraint is satisfiable, we now refine the constraint
+to obtain the better solution.  That is, simply eliminate the
+duplication to build the following constraint for the original
+template.
+
+\begin{align*}
+& \lambda_1 = c_1 \wedge - \lambda_1 \geq c_2 \wedge \lambda_1 \geq 0 \wedge \\
+& c_1 = \lambda_2 \wedge c_1 = \lambda_2 \wedge 2 c_2 \geq 2 \lambda_2 \wedge \lambda_2 > 0
+\end{align*}
+
+Solving this constraint simply gives us a solution $A(x) : x -1 \leq 0$.
+
+\paragraph {Disjunctive Horn clause solving}
+Finally, we explain a case that an input set of Horn clauses contain
+disjunctions on left-hand side.
+
+\begin{align*}
+x \leq 0 \wedge -x \leq 0 & \implies A(x) \\
+x+1 \leq 0 \vee -x+1 \leq 0 & \implies B(x) \\
+A(x) \wedge B(x) & \implies 1 \leq 0
+\end{align*}
+
+Same as the previous examples, templates for predicate variables are
+prepared.
+
+\begin{align*}
+A(x) : c_1 x + c_2 \leq 0 \\ B(x) : c_3 x + c_4 \leq 0
+\end{align*}
+
+The constraints generated are follows.
+
+\begin{align*}
+& \lambda_1 - \lambda_2 = c_1 \wedge 0 \geq c_2 \wedge \lambda_1 \geq 0 \wedge \lambda_2 \geq 0 \wedge \\
+& \lambda_3 = c_3 \wedge \lambda_3 \geq c_4 \wedge \lambda_3 \geq 0 \wedge \\
+& - \lambda_4 = c_3 \wedge \lambda_4 \geq c_4 \wedge \lambda_4 \geq 0 \wedge \\
+& c_1 + c_3 = 0 \wedge c_2 + c_4 > 0
+\end{align*}
+
+The constraints here become unsatisfiable, and one possible
+unsatisfiable core is:
+
+\begin{align*}
+\lambda_3 & = c_3 \\
+\lambda_3 & \geq c_4 \\
+- \lambda_4 & = c_3 \\
+\lambda_4 & \geq c_4 \\
+c_2 + c_4 & > 0 \\
+0 & \geq c_2
+\end{align*}
+
+Because the unsatisfiable core contains constraints originating from
+the disjunctions to be expressed in a single term template.  This let
+us determine to relax the template to allow a enlarged solution.
+
+Now we slightly change the problem and the template.
+
+\begin{align*}
+\text{Problem:} \\
+x \leq 0 \wedge -x \leq 0 & \implies A(x) \\
+x+1 \leq 0 & \implies B_1(x) \\
+-x+1 \leq 0 & \implies B_2(x) \\
+A(x) \wedge B_1(x) & \implies 1 \leq 0 \\
+A(x) \wedge B_2(x) & \implies 1 \leq 0 \\
+\\
+\text{Templates:} \\
+A(x) \text{ : } & c_1 x + c_2 \leq 0 \\
+B_i(x) \text{ : } & c_{3,i} x + c_{4,i} \leq 0 \quad (i \in \left\lbrace 1,2 \right\rbrace ) \\
+B(x) \text{ : } & B_1(x) \vee B_2(x)
+\end{align*}
+
+When we construct the constraints, as same as previous, we again
+obtain an unsatisfiable core:
+
+\begin{align*}
+\text{Constraint:} \\
+TODO \\
+\\
+\text{Unsatisfiable core:} \\
+TODO
+\end{align*}
+
+This time, the unsatisfiable core contains the constraints that
+originate from
+
+TODO
+
+\begin{align*}
+\text{Problem:} \\
+x \leq 0 \wedge -x \leq 0 & \implies A_i(x) \quad (i \in \left\lbrace 1,2 \right\rbrace ) \\
+x+1 \leq 0 & \implies B_1(x) \\
+-x+1 \leq 0 & \implies B_2(x) \\
+A_i(x) \wedge B_j(x) & \implies 1 \leq 0 \quad (i,j \in \left\lbrace 1,2 \right\rbrace ) \\
+\\
+\text{Templates:} \\
+A_i(x) \text{ : } & c_{1,i} x + c_{2,i} \leq 0 \quad (i \in \left\lbrace 1,2 \right\rbrace ) \\
+A(x) \text{ : } & A_1(x) \wedge A_2(x) \\
+B_i(x) \text{ : } & c_{3,i} x + c_{4,i} \leq 0 \quad (i \in \left\lbrace 1,2 \right\rbrace ) \\
+B(x) \text{ : } & B_1(x) \vee B_2(x)
+\end{align*}
+
+Finally, we obtain the following constraint:
+
+TODO
+
+
+The process also generates a predicate template for every predicate
+variable that the solution will become.  under certain solution
+template.
 
 \subsection{Preliminaries}
 
-The Horn clause solving algorithm receives an input problem in Horn
-graph. A \textbf{Horn graph} is a labelled directed graph $G=(V,E,\varphi)$.
+For ease of discussion, our algorithm handles an input set of Horn
+clauses by a \emph{Horn graph} that express the equivalent problem.
+The graph is then used throughout the algorithm to represent the
+problem.  A Horn graph is a labelled directed acyclic graph
+$G=(V,E,\varphi)$.
 \begin{itemize}
 \item $V$ is a union of two disjoint sets of vertices; Horn term
-  vertices $V_T$ and arrow vertices $V_\Rightarrow$. Each vertex $u
+  vertices $V_T$ and arrow vertices $V_\Rightarrow$.  Each vertex $u
   \in V_\Rightarrow$ has eactly one outgoing edge to some $v \in V_T$,
   denoted as $succ(u)$.
 \item $E$ is a set of labelled edges, which are expressed in the form
@@ -35,7 +291,7 @@ graph. A \textbf{Horn graph} is a labelled directed graph $G=(V,E,\varphi)$.
 \item $\varphi: V_T \rightarrow L$ is a labelling function for Horn
   term vertices, where L is a set of elements of a predicate variable
   in the form $P(x_1, \ldots, x_{\mathrm{arity}(P)})$ or a linear
-  inequality $a_1 x_1 + \cdots + a_n x_n \leq b$.
+  inequality $a_1 x_1 + \cdots + a_n x_n + b \leq 0$.
 \end{itemize}
 There are two kinds of edges in a Horn graph;
 \begin{itemize}
@@ -45,85 +301,105 @@ There are two kinds of edges in a Horn graph;
   $(u,v,\emptyset)$, written $\edge{u}{v}$, where the mapping is
   empty.
 \end{itemize}
-
 The meaning $\llbracket G \rrbracket $ of a Horn graph $G$ is a set of
 Horn clauses $\mathcal{HC}_v$ for all vertices $v \in V_\Rightarrow$.
-
 \begin{align*}
 \mathcal{HC}_v & = \left( \bigwedge_{(u,v,\theta) \in E} \theta \varphi(u) \right) \Longrightarrow \varphi(succ(v)) \\
 \llbracket G \rrbracket & = \bigwedge_{v \in V_\Rightarrow} \mathcal{HC}_v
 \end{align*}
-
 We implicitly assume each $\mathcal{HC}_v$ is universally quantified
-by its all free variables $\textsc{FV}(\mathcal{HC}_v)$.  Without loss
-of generality, we limit linear expression labels on $V_T$ vertices
-with incoming edges to either $0 \leq -1$, meaning $\bot$, or $0 \leq
-0$, meaning $\top$.
+by its all free variables $\textsc{FV}(\mathcal{HC}_v)$.
+
+Horn term vertices with predicate variable labels are unique each
+other that any of them do not have the same variable on their labels.
+From now on, we may denote a Horn term vertex with a predicate
+variable label by its predicate variable name if no ambiguity is
+present.
+
+Without loss of generality, we assume the existence of the \emph{root
+  vertex} $v_\bot \in V_T$ with linear expression labels $1 \leq 0$,
+meaning $\bot$.  This is because if we have a Horn clause $P \implies
+e$ which $e$ is a linear expression, we can convert it to $P \wedge
+\neg e \implies 1 \leq 0$.  We also assume that other vertices with
+linear expression labels have no incoming edges to them.
+
+For simplicity of discussion, we define \emph{term arity} $k_v$ for
+every Horn term vertex $v \in V_T$ with incoming edges.
+\begin{align*}
+k_v =
+\begin{cases}
+\mathrm{arity}(P) & \mbox{if } \varphi(v) = P(x_1,...,x_{\mathrm{arity}(P)}) \\
+0 & \mbox{if } \varphi(v) = \bot
+\end{cases}
+\end{align*}
+We let $K$ denote the maximum of $k_v$ over all $v \in V_T$.
+
+A variable mapping label $\theta$ on edges is used to map the index of
+one predicate variable to another. (TODO?)
+
+(Example?)
+
+The algorithm assigns a \emph{predicate template} for all predicate
+variables in $G$. A template for a predicate variable $P(x_1, \ldots, x_n)$
+is a formula $\psi$ constructed from the following definition.
+\begin{align*}
+\psi ::= & a_1 x_1 + \cdots + a_n x_n + b \leq 0 \mid \\
+& \psi \wedge \psi \mid \psi \vee \psi
+\end{align*}
+A linear expression in the definition above may also be represented in
+a equivalent vector form $\mathbf{a} \mathbf{x} + b \leq 0$ for short.
+Parameters $\mathbf{a}$ and $b$ are specified by a linear constraint.
 
 The solution of $G$ is a map $\rho$ from predicate variables to linear
-predicates of the form $\lambda x_1, \cdots ,x_n. \psi $ (where $\psi$
-is a formula constructed from
-\begin{align*}
-\psi ::= & a_1 x_1 + \cdots + a_n x_n \leq b \mid \\
-& \psi \wedge \psi \mid \psi \vee \psi \mid \top \mid \bot
-\end{align*}
-), where $\rho[G]$ is a tautology. A solution is \textit{simple} if
-$\rho[P]$ is of the form $a_1 x_1 + \cdots + a_n x_n \leq b$ for every
-$P$ in $\mathrm{dom}(\rho)$.
+predicates of the form $\lambda x_1, \ldots ,x_n. \psi$ where
+parameters in $\psi$ are replaced with constant and $\rho[G]$ becomes
+a tautology.  A solution is \textit{simple} if $\rho[P]$ is of the
+form $\mathbf{a} \mathbf{x} + b \leq 0$ for every $P$ in
+$\mathrm{dom}(\rho)$.
 
 The problem of solving Horn clauses (represented by $G$) is to find a
 solution of $G$ (and a simple solution if possible).
 
 \subsection{Simple solution}
 
-We consider below a Horn graph that is acyclic.
-
-For simplicity of discussion, we define \textbf{term arity} $k_v$ for
-every Horn term vertex $v \in V_T$ with incoming edges.
-\begin{align*}
-k_v =
-\begin{cases}
-\mathrm{arity}(P) & \mbox{if } \varphi(v) = P(x_1,...,x_{\mathrm{arity}(P)}) \\
-0 & \mbox{if } \varphi(v) = \top \mbox { or } \varphi(v) = \bot
-\end{cases}
-\end{align*}
-We let $K$ denote the maximum of $k_v$ over all $v \in V_T$.
+We first propose an algorithm to compute a simple solution for the
+given Horn graph $G$ if one exists.  Later we add modifications to the
+algorithm for the case that a simple solution does not exist for $G$.
+In such a case, we transform the input graph $G$ to have a larger
+solution template.
 
 We define the relation $\leadsto$ over $V_T$ as follows.
 \[ u \mathop{\leadsto}^\theta v \Longleftrightarrow
 \exists a \in V_\Rightarrow; \edgel{v}{\theta}{a} \wedge \edge{a}{v} \]
 We may omit $\theta$ and write $u \leadsto v$ for convenience in later
-discussions.
+discussions. By the assumption that $G$ is acyclic, $\leadsto^+$ is a
+well-founded relation. $v_\bot$ is the greatest element with respect
+to $\leadsto^+$.
 
-By the assumption that $G$ is acyclic, $\leadsto^+$ is a well-founded
-relation. We assume without loss of generality that $V_T$ contains the
-greatest element $v_\bot$ with respect to $\leadsto^+$; otherwise we
-can always implicitly assume $\varphi(v_\bot) = \top$ such that
-$\forall v \in V_T \setminus \{v_\bot\}; v \mathop{\leadsto}^\emptyset v_\bot$.
-
-For each $v \in V_T$, we define
+For each Horn term vertex $v \in V_T$, we define
 $\Delta(v) = (\mathbf{a}_v \mathbf{x}_v \leq b_v, C_v)$
 , where
 \begin{itemize}
 \item $\mathbf{a}_v \mathbf{x}_v \leq b_v$ is a linear inequality that
-  contains coefficient variables $\mathbf{a}_v$, and
+  contains coefficient variables $\mathbf{a}_v$ and a constant $b_v$,
+  and
 \item $C_v$ is a set of linear expressions on coefficient variables.
 \end{itemize}
-Intuitively, the pair $(\mathbf{a} \mathbf{x} \leq b, C)$ denotes the
-set of inequalities:
+Intuitively, it denotes the set of inequalities:
 \begin{align*}
 \left\lbrace
- \mathbf{a} \mathbf{x} \leq b \middle|
- \exists \left( \textsc{FV}(C)
-  \setminus (\mathbf{a} \cup \left\lbrace b \right\rbrace
- \right); C
+ \mathbf{a}_v \mathbf{x}_v + b_v \leq 0 \middle|
+ \exists \left( \textsc{FV}(C_v)
+  \setminus (\mathbf{a}_v \cup \left\lbrace b_v \right\rbrace
+ \right); C_v
 \right\rbrace
 \end{align*}
+For a predicate variable vertex, $\mathbf{a}_v \mathbf{x}_v + b_v \leq
+0$ serves as a predicate template and $C_v$ describes the parameters
+$\mathbf{a}_v$ and $b_v$.
 
-$\Delta(v)$ is defined by well-founded induction on $v$ with respect
-to the relation $\leadsto^+$. Then, $C_v$ in
-$\Delta(v) = \left( \mathbf{a}_v \mathbf{x}_v \leq b_v, C_v \right)$
-can be shown as follows.
+$C_v$ is defined by well-founded induction on $v$ with respect to the
+relation $\leadsto^+$. Then, $C_v$ can be shown as follows.
 
 \begin{align*}
 \hat C_{a,v} = &
@@ -148,11 +424,10 @@ C_v = & \bigcup_{\edge{a}{v}} \hat C_{a,v} \cup
  b_v = \lambda_v b_0
 \right\rbrace
 & \mbox{if } \varphi(v) = \mathbf{a}_0 \mathbf{x}_v \leq b_0
-\end{cases}
+\end{cases} \\
 \end{align*}
-
 For simplicity, we assume variables $\mathbf{a}_u$, $b_u$ are obtained
-from $\Delta(u)$.
+from $C_u$.
 
 Any model $\sigma$ to the constraint $C_{v_\bot}$ gives a simple
 solution for $G$ if $C_{v_\bot}$ is satisfiable, i.e., we should have:
@@ -168,27 +443,84 @@ If $\models \sigma(C_{v_\bot})$, then $\rho$ defined by
 is a solution of $G$.
 \end{quote}
 
-\subsection{Disjunction-free problems}
 
-If $C_{v_\bot}$ is unsatisfiable, no simple solution exists for
-$G$. We now try to give a solution by relaxing the constraint
-$C_{v_\bot}$.
+\subsection {Graph transformation}
 
-We consider below a Horn graph whose Horn term vertices has at
-most one successor.
+If $C_{v_\bot}$ is unsatisfiable, no simple solution exists for $G$.
+We now try to give a less simpler solution by transforming $G$ and
+relaxing the constraint $C_{v_\bot}$.  This transformation takes place
+by considering the unsatisfiable core from the constraint.
 
-\subsubsection{Quantifier elimination}
+Algorithm~\ref{alg:solveHorn} shows the pseudo-code of our Horn clause
+solving algorithm.  It takes an input Horn graph and returns a mapping
+between predicate variables and linear arithmetic formulas.
 
-A set of eliminating quantifiers are obtained as $quant(n)$.
+\newcommand{\solveHorn}{\ensuremath{\mbox{\sc SolveHornGraph}}}
+\newcommand{\genConstr}{\ensuremath{\mbox{\sc GenerateConstraint}}}
+\newcommand{\transGraph}{\ensuremath{\mbox{\sc TransformGraph}}}
 
-\begin{align*}
-in(n) & = \bigcup_{p\in pred(n)} out(p) \\
-out(n) & = gen(n) \cup in(n) \\
-dup(n) & = \left\lbrace t \middle| p,q \in pred(n); p \ne q \wedge
- t \in out(p) \wedge t \in out(q) \right\rbrace \\
-quant(n) & = gen(n) \cup dup(n) \cup
- (out(n) \cap \bigcup_{s \in succ(n)} quant(s))
-\end{align*}
+\begin{algorithm}
+\caption{$ \solveHorn (G) $}\label{alg:solveHorn}
+\begin{algorithmic}
+\STATE {$v_\bot \gets $ the root node of $G$}
+\STATE {$V_\star \gets \left\lbrace v_\bot \right\rbrace$}
+\REPEAT
+  \STATE {$C_{v_\bot} \gets \genConstr (G, v_\bot, V_\star)$}
+  \IF {$C_{v_\bot}$ is satisfiable}
+    \STATE {$\sigma \gets $ one model of $C_{v_\bot}$}
+    \STATE {$V_\star \gets V_\star \cup \left\lbrace u \in V_T \mid \forall v \in V_\star; u \leadsto v \right\rbrace$}
+  \ELSE
+    \STATE {$U \gets $ unsatisfiable core for $C_{v_\bot}$}
+    \STATE {$G \gets \transGraph (G, U)$}
+    \STATE {$V_\star \gets \left\lbrace v_\bot \right\rbrace$}
+  \ENDIF
+\UNTIL {$V_\star = V_T$}
+\STATE {Build solution by $\sigma$}
+\end{algorithmic}
+\end{algorithm}
+
+The constraints are first built the weakest so that the disjunctiveness of
+whole solution template is fixed first.  The strength matters that the
+predicate variables are used as the same expressions depending on
+different appearances of the predicate variable.
+
+The strngeth of the constraint is controlled by a set of vertices $V$
+in the pseudo-code.  Predicate variable vertices in $V$ are treated
+strictly unique across the different appearances of the predicate
+variables in Horn clauses.
+
+
+
+$\genConstr$ procedure produces the constraint for a given vertex $v$.
+
+
+\begin{algorithm}
+\caption{$ \genConstr (G, v, visited) $}\label{alg:genConstr}
+\begin{algorithmic}
+\STATE {$C \gets \emptyset$}
+\FORALL {$v_\Rightarrow \in preds_G(v)$}
+  \FORALL {$v_p \in preds_G(v_\Rightarrow)$}
+    \IF {$\varphi (v_p)$ is a predicate variable}
+      \STATE {$C \gets C \cup \genConstr (G, v_p, visited)$}
+    \ELSE
+      \STATE { $id$ }
+    \ENDIF
+  \ENDFOR
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+
+
+
+
+traverses the input graph in the topological order on
+$V_\Rightarrow$, and concatenate the constraints from predecessors to
+build the problem constraints.  Each process to build a constraint on
+$\mathcal{HC}_v$ for all vertices $v \in V_\Rightarrow$ is equivalent
+to generate a linear constraint in interpolation.
+
+\subsection{Quantifier elimination}
 
 Let $\hat V_T$ a set of Horn term vertices $V_T$ with multiple
 successors.
@@ -223,64 +555,6 @@ extending $\Delta$ function to
 $\Delta_{V'} (v) = (\mathbf{a}_{v,\emptyset} \mathbf{x}_v \leq b_{v,\emptyset}, C_v)$
 as
 
-\begin{align*}
-\hat C_a = &
- \bigcup_{\edgel{u}{\theta}{a}} C_u \cup
- \bigcup_{0 < i \leq K}
- \left\lbrace
-  \mathbf{a}_{v,i} = \sum_{\edgel{u}{\theta}{a}} \mathbf{a}_{u, \theta^{-1} (i)}
- \right\rbrace \\
- & \hspace{2cm} \cup
- \left\lbrace
-  b_v \geq \sum_{\edgel{u}{\theta}{a}} b_u
- \right\rbrace \cup
- \bigcup_{k_v < i \leq K}
- \left\lbrace \mathbf{a}_{v,i} = 0 \right\rbrace
-\\
-C_v = & \bigcup_{\edge{a}{v}} \hat C_a \cup
-\begin{cases}
-\emptyset
-& \mbox{if } \varphi(v) = P(\mathbf{x}_v) \\
-\left\lbrace
- \lambda_v \geq 0, \mathbf{a}_{v,\emptyset} = \lambda_v \mathbf{a}_0,
- b_{v,\emptyset} = \lambda_v b_0
-\right\rbrace
-& \mbox{if } \varphi(v) = \mathbf{a}_0 \mathbf{x}_v \leq b_0
-\end{cases}
-\end{align*}
-
----
-
-\begin{align*}
-C_v = & \bigcup_{(u,U,\theta,C_u) \in S_v^-} C_u \cup
-\bigcup_{(u,U,\theta,C_u) \in S_v^+} C_u
-\\
-& \cup
-\left\lbrace
- \mathbf{a}_{v,\emptyset,i} =
-  \sum_{(u,U,\theta,C_u) \in S_v^-} \mathbf{a}_{u,U,\theta^{-1}(i)} +
-  \sum_{(u,U,\theta,C_u) \in S_v^+} \mathbf{a}_{u,U, \theta^{-1}(i)}
-\right\rbrace \\
-& \cup \left\lbrace
- b_{v,\emptyset} \geq
-  \sum_{(u,U,\theta,C_u) \in S_v^-} b_{u,U} +
-  \sum_{(u,U,\theta,C_u) \in S_v^+} b_{u,U}
-\right\rbrace \\
-& \cup \bigcup_{k_v < i \leq K} \left\lbrace \mathbf{a}_{v,\emptyset,i} = 0 \right\rbrace
-\end{align*}
-such that
-\begin{align*}
-& S_v^- = \left\lbrace (u, U, \theta, C_u) \middle|
-  u \mathop{\leadsto}^\theta v \wedge
-  \left( \nexists u' \in V'; \xi (u') = u \right) \wedge
-  \Delta_{V'} (u) = (\mathbf{a}_{u,U} \mathbf{x}_u \leq b_{u,U}, C_u) \right\rbrace
-\\
-& S_v^+ = \left\lbrace (u, U, \theta, C_u) \middle|
-  u \mathop{\leadsto}^\theta v \wedge
-  \left( \exists u' \in V'; \xi (u') = u \wedge
-  \hat \Delta (u', \edge{u}{v}) = (\mathbf{a}_{u,U} \mathbf{x}_u \leq b_{u,U}, C_u) \right) \right\rbrace
-\\
-\end{align*}
 
 This intuitively means that constraints are duplicated according to
 the shape of copy tree $T$.  Given the constraint for the root node in
@@ -298,13 +572,7 @@ a model to $C_{v_\bot}$ gives a solution $\rho$ to $G$, if one exists.
 If $C_{v_\bot}$ stays unsatisfiable, we let $T$ grow based on the
 unsatisfiable core for $C_{v_\bot}$.
 
-\subsubsection{Refinement from Unsatisfiable Core}
-
-We first start the process from the initial Copy tree:
-\begin{align*}
-V_C = & \left\lbrace v_{v_\bot} \right\rbrace \\
-E_C = & \emptyset
-\end{align*}
+\subsection{Refinement from Unsatisfiable Core}
 
 An unsatisfiable core $\mathcal{U}$ is a subset of $C_{v_\bot}$.
 If a vertex $v \in V$ with the copy origin $U$ satisfies:
@@ -317,36 +585,8 @@ If a vertex $v \in V$ with the copy origin $U$ satisfies:
 \end{align*}
 we add $v$ to the copy tree $T$.
 
-\subsection{Acyclic Horn problems}
 
-We eliminate the restriction that all Horn term vertices
-$V_\Rightarrow$ have exactly one successor.
 
-We define selectors for preceding disjunction vertices to $v$.
-\[ \mathcal{S}_v = \prod_{u \in \mathrm{succ}(v)} \left\lbrace u \mapsto t \middle| \edgel{t}{\theta}{u} \right\rbrace \]
-
-\begin{align*}
-K_l = \begin{cases}
-\left\lbrace l \right\rbrace & \mbox{if } l = \mathbf{a} \mathbf{x} \leq b \\
-\mathcal{X}_P \cup \left\lbrace \bot \right\rbrace
-& \mbox{if } l = P(\mathbf{x})
-\end{cases} \\
-\forall s \in \mathcal{S}_v;
-X = \prod_{t \in \mathrm{ran}(s)} K_{\varphi(t)}
-\exists c \in X;
-\end{align*}
-
-We define a \textbf{selector set collection} \cite{albarghouthi13} for
-every Horn term vertices, which is a set of sets of selectors.
-
-For $v \in V_T$, the selector set collection $\mathcal{X}_v =
-\left\lbrace S_{v,1}, \ldots, S_{v,\kappa_v} \right\rbrace$ consists
-of $\kappa_v$ sets of non-empty and non-overlapping subsets of
-$\mathcal{S}$. If $\nexists u; u \rightarrow v$, $\mathcal{X}_v =
-\emptyset$.
-
-We arbitrarily choose the initial selector $s_0 \in \mathcal{S}$. We
-start from empty collections for all $v$.
 
 \bibliographystyle{plain}
 \bibliography{./biblio}
