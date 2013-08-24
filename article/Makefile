@@ -1,26 +1,31 @@
 
-all: algo.pdf
+NAME = algo
+
+all: $(NAME).pdf
 
 clean:
 	rm *.aux *.bbl *.dvi *.pdf *.log
 
-.SUFFIXES: .tex .aux .bib .bbl .dvi .pdf
+.SUFFIXES: .tex .aux .bib .bbl .bb .dvi .pdf
 .SECONDARY:
 
-%.dvi : %.tex
+.pdf.bb:
+	ebb $<
 
-%.aux:
-	latex $(basename $@)
+iscs-thesis.cls: iscs-thesis.ins iscs-thesis.dtx
+	platex iscs-thesis.ins
 
-%.bbl: %.aux biblio.bib
-	bibtex $(basename $@)
+$(NAME).dvi: iscs-thesis.cls $(NAME).tex $(NAME).bbl
+	platex $(NAME)
 
-.bbl.dvi:
-	latex $(basename $<)
-	touch $(basename $<).bbl
+algo.dvi:
+	platex algo
 
-%.pdf: %.dvi %.tex biblio.bib
-	pdflatex $(basename $<)
-	touch $(basename $<).bbl
-	touch $(basename $<).dvi
-	touch $(basename $<).pdf
+$(NAME).aux: $(NAME).tex
+	latex $(NAME)
+
+$(NAME).bbl: $(NAME).aux biblio.bib
+	bibtex $(NAME)
+
+$(NAME).pdf: $(NAME).dvi
+	dvipdfmx $(NAME)
