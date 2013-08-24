@@ -340,8 +340,10 @@ one predicate variable to another. (TODO?)
 (Example?)
 
 The algorithm assigns a \emph{predicate template} for all predicate
-variables in $G$. A template for a predicate variable $P(x_1, \ldots, x_n)$
-is a formula $\psi$ constructed from the following definition.
+variables in $G$. A \emph{predicate templateset} is a mapping from
+predicate variables to a predicate template.  A template for a
+predicate variable $P(x_1, \ldots, x_n)$ is a formula $\psi$
+constructed from the following definition.
 \begin{align*}
 \psi ::= & a_1 x_1 + \cdots + a_n x_n + b \leq 0 \mid \\
 & \psi \wedge \psi \mid \psi \vee \psi
@@ -388,7 +390,7 @@ $\Delta(v) = (\mathbf{a}_v \mathbf{x}_v \leq b_v, C_v)$
 Intuitively, it denotes the set of inequalities:
 \begin{align*}
 \left\lbrace
- \mathbf{a}_v \mathbf{x}_v + b_v \leq 0 \middle|
+ \mathbf{a}_v \mathbf{x}_v + b_v \leq 0 \mid
  \exists \left( \textsc{FV}(C_v)
   \setminus (\mathbf{a}_v \cup \left\lbrace b_v \right\rbrace
  \right); C_v
@@ -436,7 +438,7 @@ solution for $G$ if $C_{v_\bot}$ is satisfiable, i.e., we should have:
 If $\models \sigma(C_{v_\bot})$, then $\rho$ defined by
 \begin{align*}
  \rho = \left\lbrace
-  \left( P, \sigma(\mathbf{a}_v \mathbf{x}_v \leq b_v) \right) \middle|
+  \left( P, \sigma(\mathbf{a}_v \mathbf{x}_v \leq b_v) \right) \mid
   \forall v \in V_T; \varphi(v) = P(\mathbf{x}_v)
  \right\rbrace
 \end{align*}
@@ -487,9 +489,10 @@ Both cases can be fixed by enlarging the solution template.
 If a simple solution does not exist for $G$, we try to give a less
 simpler solution by transforming $G$ and relaxing the constraint
 $C_{v_\bot}$.  This transformation takes place by considering the
-unsatisfiable core from the constraint.  Depending on the reason for
-the absence of a simple solution, the way of the transformation
-differs.
+unsatisfiable core $\mathcal{U}$.  An unsatisfiable core $\mathcal{U}$
+is a subset of $C_{v_\bot}$ which is inconsistent itself.  Depending
+on the reason for the absence of a simple solution, the way of the
+transformation differs.
 
 Algorithm~\ref{alg:solveHorn} shows the updated pseudo-code of our
 Horn clause solving algorithm with the graph transformation.  It takes
@@ -505,31 +508,152 @@ and linear arithmetic formulas.
 \begin{algorithmic}
 \STATE {$v_\bot \gets $ the root node of $G$}
 \STATE {$V_\star \gets \left\lbrace v_\bot \right\rbrace$}
+\STATE {$T \gets $ initial predicate templateset for $G$}
 \REPEAT
   \STATE {$C_{v_\bot} \gets \genConstr (G, v_\bot, V_\star)$}
   \IF {$C_{v_\bot}$ is satisfiable}
     \STATE {$\sigma \gets $ one model of $C_{v_\bot}$}
     \STATE {$V_\star \gets V_\star \cup \left\lbrace u \in V_T \mid \forall v \in V_\star; u \leadsto v \right\rbrace$}
   \ELSE
-    \STATE {$U \gets $ unsatisfiable core for $C_{v_\bot}$}
-    \STATE {$G \gets \transGraph (G, U)$}
+    \STATE {$\mathcal{U} \gets $ unsatisfiable core for $C_{v_\bot}$}
+    \STATE {$(G, T) \gets \transGraph (G, T, \mathcal{U})$}
     \STATE {$V_\star \gets \left\lbrace v_\bot \right\rbrace$}
   \ENDIF
 \UNTIL {$V_\star = V_T$}
-% TODO: Consider predicate templates?
-\STATE {Build solution by $\sigma$}
+\RETURN {$\sigma \left( T \right)$}
 \end{algorithmic}
 \end{algorithm}
-\transGraph procedure determines the unsatisfiable core of the
+\transGraph~procedure determines the unsatisfiable core of the
 constraint and transform the Horn graph $G$ and predicate templates.
 As mentioned earlier, two ways of graph transformation exist.
 
 \paragraph{Conjunction split}
+For the first case previously mentioned, the unsatisfiable core
+$\mathcal{U}$ contains coeffcient constraint expressions with a
+coefficient parameter of certain predicate variable.  If the predicate
+variable $P$ is the cause of unsatisfiability, some constraint
+expressions in the unsatisfiable core have a parameter $a_{P,i}$
+and/or $b_P$ in the following way.
+\begin{align*}
+& \exists v_a, v_b \in V_T; v_P \leadsto v_a \wedge v_P \leadsto v_b \wedge \\
+& \left( \exists i, j, k;
+\left\lbrace \left( \mathbf{a}_{v_a,j} = \ldots + \mathbf{a}_{v_P,i} + \ldots \right),
+\left( \mathbf{a}_{v_b,k} = \ldots + \mathbf{a}_{v_P,i} + \ldots \right)
+\right\rbrace \subseteq \mathcal{U} \right)
+\end{align*}
+
+In such a case, the predicate variable $P$ in question is copied to
+$P_1, \ldots, P_n$ so that the different appearances of $P$ on
+left-hand of Horn clauses can take different premises.  The solution
+template of $P$ becomes the conjunction of $P_1, \ldots, P_n$.
+
+<fig...>
+
+Here, the graph $G=(V,E,\varphi)$ will be transformed into
+$G'=(V',E',\varphi')$ such that:
+\begin{align*}
+V' & = V \setminus \left\lbrace v_P \right\rbrace \cup
+  \left\lbrace v_{P_i} \mid \emptyset \right\rbrace \\
+E' & = E \\
+\varphi' & = \varphi
+\end{align*}
+
+Note that after this duplication of the predicate vertex $P$, in order
+to induce different linear expressions for $P_1, \ldots, P_n$, it may
+be necessary for preceeding predicate variable vertices in $G$ to be
+duplicated in the same manner as $P$. It is because that different
+derivation of $P$'s implication relation may be required to get
+different consequences.
+
+However, succeeding predicate vertices of $P$ in $G$ and other
+vertices than predecessors are not affected because those implications
+that have $P$ in their assumption can selectively choose the premise
+that $P_1, \ldots, P_n$ leads.
+
+Therefore, this graph transformation only affects the predecessors of
+$P$.
 
 \paragraph{Disjunction split}
+For the second case, the unsatisfiable core $\mathcal{U}$ contains
+coefficient constraints that unifies induced linear expressions from
+each term in disjunctions to be the same expression.  Similarly as
+previous, if the predicate variable $P$ is the cause of
+unsatisfiability, some constraint expressions in the unsatisfiable
+core have a parameter $a_{P,i}$ and/or $b_P$ in the following way.
+\begin{align*}
+& \exists v_a, v_b \in V_T; v_P \leadsto v_a \wedge v_P \leadsto v_b \wedge \\
+& \left( \exists i, j, k;
+\left\lbrace \left( \mathbf{a}_{v_a,j} = \ldots + \mathbf{a}_{v_P,i} + \ldots \right),
+\left( \mathbf{a}_{v_b,k} = \ldots + \mathbf{a}_{v_P,i} + \ldots \right)
+\right\rbrace \subseteq \mathcal{U} \right)
+\end{align*}
 
-The constraints are first built the weakest so that the disjunctiveness of
-whole solution template is fixed first.  The strength matters that the
+In such a case, the predicate variable $P$ in question is separated to
+$P_1, \ldots, P_n$ each of which is implied by a term, which was
+originally a part of a disjunction to imply $P$.  This intuitively
+enables us to avoid generating a common linear expression that
+disjunctive terms induces, and to propagate each term's premises to
+$P$'s successors instead.
+
+<fig...>
+
+Here, the graph $G=(V,E,\varphi)$ will be transformed into
+$G'=(V',E',\varphi')$ such that:
+\begin{align*}
+V' & = V \setminus \left\lbrace v_P \right\rbrace \cup
+  \left\lbrace v_{P_i} \mid \emptyset \right\rbrace \\
+E' & = E \\
+\varphi' & = \varphi
+\end{align*}
+
+After this duplication of the predicate vertex $P$, unlike the
+conjunction split, this results in producing a disjunction at
+succeeding predicate variables vertices ($R$ in this case).
+\begin{align*}
+(P_1 \wedge Q) \vee (P_2 \wedge Q) \implies R
+\end{align*}
+Also, predicate variables that appeared with $P$ in the same
+assumption ($Q$ in this case) needs to be duplicated by conjunction,
+so as to obtain different premises that go along with $P_i$.
+Therefore, the effect of disjunction split may reach to neighboring
+predicate vertices.
+
+\paragraph{Combinatorial explosion in disjunctions}
+Virtually, if multiple disjunctions exists in an input set of Horn
+clauses, a na\"{i}ve way of building a solution is solve all
+combinations of choices out of every disjunction and concatenate each
+expression with conjunctions and/or disjunctions appropriately.  This
+may cause a combinatorial explosion.
+
+Conside example below. $e_i$ represents some conjunctions of linear
+expressions.
+% TODO: Can't we replace e_i with actual expressions?
+\begin{align*}
+(e_1 \vee e_2) \implies P \\ (e_3 \vee e_4) \implies Q \\ P \wedge Q \implies \bot
+\end{align*}
+In this example, a na\"{i}ve algorithm may solve following four
+problems separately.
+\begin{itemize}
+\item $e_1 \implies P_1 \qquad e_3 \implies Q_1 \qquad P_1 \wedge Q_1 \implies \bot$
+\item $e_2 \implies P_2 \qquad e_3 \implies Q_2 \qquad P_2 \wedge Q_2 \implies \bot$
+\item $e_1 \implies P_3 \qquad e_4 \implies Q_3 \qquad P_3 \wedge Q_3 \implies \bot$
+\item $e_2 \implies P_4 \qquad e_4 \implies Q_4 \qquad P_4 \wedge Q_4 \implies \bot$
+\end{itemize}
+Then the solution is built by follows.
+\begin{itemize}
+\item $P = ( P_1 \vee P_2 ) \wedge ( P_3 \vee P_4 )$
+\item $Q = ( P_1 \vee P_3 ) \wedge ( P_2 \vee P_4 )$
+\end{itemize}
+However, this method is not efficient.
+
+\paragraph{Algorithm}
+To avoid this, our algorithm tries to unify a disjunctions of solution
+and determine the necessity of split in conjunctions.
+
+The constraints are first built the weakest so that all conjunctions
+are not yet unified.
+
+The strength matters that the
 predicate variables are used as the same expressions depending on
 different appearances of the predicate variable.
 
@@ -560,38 +684,11 @@ $\genConstr$ procedure produces the constraint for a given vertex $v$.
 \end{algorithm}
 
 
-
-
-
 traverses the input graph in the topological order on
 $V_\Rightarrow$, and concatenate the constraints from predecessors to
 build the problem constraints.  Each process to build a constraint on
 $\mathcal{HC}_v$ for all vertices $v \in V_\Rightarrow$ is equivalent
 to generate a linear constraint in interpolation.
-
-
-
-
-
-
-
-
-
-
-\subsection{Refinement from Unsatisfiable Core}
-
-An unsatisfiable core $\mathcal{U}$ is a subset of $C_{v_\bot}$.
-If a vertex $v \in V$ with the copy origin $U$ satisfies:
-\begin{align*}
-& \exists t, u \in V; v \leadsto t \wedge v \leadsto u \wedge \\
-& \left( \exists i, j, k;
-\left\lbrace \left( \mathbf{a}_{s,U,j} = \ldots + \mathbf{a}_{v,U,i} + \ldots \right),
-\left( \mathbf{a}_{t,U,k} = \ldots + \mathbf{a}_{v,U,i} + \ldots \right)
-\right\rbrace \subseteq \mathcal{U} \right)
-\end{align*}
-we add $v$ to the copy tree $T$.
-
-
 
 
 \bibliographystyle{plain}
