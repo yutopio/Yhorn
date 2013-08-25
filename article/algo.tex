@@ -406,7 +406,7 @@ relation $\rightarrow^+$. Then, $C_v$ can be shown as follows.
 \begin{itemize}
 \item For $v \in V_\Rightarrow$;
 \begin{align*}
-C_v =
+C_v & =
  \bigcup_{\edgel{u}{\theta}{v}} C_u \cup
  \bigcup_{0 < i \leq K}
  \left\lbrace
@@ -546,6 +546,7 @@ variable $P$ is the cause of unsatisfiability, some constraint
 expressions in the unsatisfiable core have a parameter $a_{P,i}$
 and/or $b_P$ in the following way.
 \begin{align*}
+% TODO:
 & \exists v_a, v_b \in V_T; v_P \leadsto v_a \wedge v_P \leadsto v_b \wedge \\
 & \left( \exists i, j, k;
 \left\lbrace \left( \mathbf{a}_{v_a,j} = \ldots + \mathbf{a}_{v_P,i} + \ldots \right),
@@ -592,6 +593,7 @@ previous, if the predicate variable $P$ is the cause of
 unsatisfiability, some constraint expressions in the unsatisfiable
 core have a parameter $a_{P,i}$ and/or $b_P$ in the following way.
 \begin{align*}
+% TODO:
 & \exists v_a, v_b \in V_T; v_P \leadsto v_a \wedge v_P \leadsto v_b \wedge \\
 & \left( \exists i, j, k;
 \left\lbrace \left( \mathbf{a}_{v_a,j} = \ldots + \mathbf{a}_{v_P,i} + \ldots \right),
@@ -629,6 +631,22 @@ so as to obtain different premises that go along with $P_i$.
 Therefore, the effect of disjunction split may reach to neighboring
 predicate vertices.
 
+
+Consider these two ways of transformation, we show a pseudo-code for
+\transGraph~procedure.  The procedure is given the graph $G$, the
+predicate templateset $T$, and the unsatisfiable core
+$\mathcal{U}$. It returns the transformed graph $G'$ and the new
+templateset $T'$.
+
+\begin{algorithm}
+\caption{$ \transGraph (G, T, \mathcal{U}) $}\label{alg:transGraph}
+\begin{algorithmic}
+% TODO:
+\RETURN {$\left( G', T' \right)$}
+\end{algorithmic}
+\end{algorithm}
+
+
 \paragraph{Combinatorial explosion in disjunctions}
 Virtually, if multiple disjunctions exists in an input set of Horn
 clauses, a na\"{i}ve way of building a solution is solve all
@@ -658,28 +676,49 @@ Then the solution is built by follows.
 However, this method is not efficient.
 
 \paragraph{Algorithm}
-To avoid this, our algorithm tries to unify a disjunctions of solution
-and determine the necessity of split in conjunctions.
+To avoid this, our algorithm lets a predicate variable $P$ which is
+disjunctively implied on the Horn graph $G$ to have a linear
+expression that is consequences of all terms in the disjunction.  This
+prevents the possibility of choices for disjunctions to be propagated
+to succeeding vertices. The simple linear expression is propagated
+instead.
 
-The constraints are first built the weakest so that all conjunctions
-are not yet unified.
+On the other hand, the algorithm allows a predicate variable $P$ that
+appears on multiple implications or appears multiple times in a single
+implication to take different linear expressions as a premise at
+different appearances.  This is for the algorithm to determine the
+cause of unsatisfiability efficiently.  It is done by copying a
+predicate templates and its parameters' constraint with appropriate
+renaming.
 
-The strength matters that the
-predicate variables are used as the same expressions depending on
-different appearances of the predicate variable.
+The algorithm first execute this duplication on all predicate
+variables with multiple appearances.  It is the weakest constraint
+that the algorithm makes for the certain $G$.  Then, the algorithm
+gradually reduces the number of vertices that are duplicated by each
+time testing the satisfiability of the constraint.  When the
+constraint bebcome unsatisfiable at the certain iteration, the
+algorithm can determine a predicate vertex which has to be split in a
+conjunctive template.  If all the predicate variable constraints are
+no longer duplicated and the constraint is the strongest, any model
+for such constraint gives a simple solution under the Horn graph $G$
+and the templateset $T$.
 
-The strngeth of the constraint is controlled by a set of vertices $V$
-in the pseudo-code.  Predicate variable vertices in $V$ are treated
-strictly unique across the different appearances of the predicate
-variables in Horn clauses.
+Note that duplicating the constraint in a na\"{i}ve way may cause the
+constraint to exponentially grow in size.  Our algorithm prevent it by
+simplifying a predicate vertex's constraint $C_v$ by quantifier
+elimination when $v$ is duplicated in generating linear constraint.
+For a predicate variable vertex $v_P$, variables except for the
+coefficient parameter $\mathbf{a}_P$ and the constant parameter $b_P$
+are eliminated.  Due to the constraints generation process, the
+simplified constraint is also linear and can be efficiently check the
+satisfiability.
 
-
-
-$\genConstr$ procedure produces the constraint for a given vertex $v$.
-
+We finally show the modified version of pseudo-code for $\genConstr$
+procedure.  It produces the constraint $C_v$ for a given vertex $v$,
+considering constraint duplication and simplification.
 
 \begin{algorithm}
-\caption{$ \genConstr (G, v, visited) $}\label{alg:genConstr}
+\caption{$ \genConstr (G, v, V_\star) $}\label{alg:genConstr}
 \begin{algorithmic}
 \STATE {$C \gets \emptyset$}
 \FORALL {$v_\Rightarrow \in preds_G(v)$}
