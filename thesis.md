@@ -66,11 +66,11 @@ One of the model of the linear constraint is \lambda_i = 1 (1 \leq i \leq 4), an
 Preliminaries
 ---
 
-### Craig's Interpolation
+\paragraph{Craig's Interpolation}
 
 Given two logical formulas A and B that are inconsistent each other, we call a new preposition I a Craig's interpolant between A and B such that $I$ is implied by $A$ and inconsistent with $B$. $I$'s vocabulary must be only free variables that appears in both $A$ and $B$.
 
-### Farkas's Lemma on linear inequalities
+\paragraph{Farkas's Lemma on linear inequalities}
 
 Let a linear inequality $e_i$ be represented as $a_i1 x_1 + \cdots + a_im x_m <= a_i0$. Assuming that $e_1,\cdots,e_n$ implies $e_0$, there exists $\lambda_1,\cdots,\lambda_n$ that satisfy $a_0j =\sum_(i=1)^n \lambda_i * a_ij (j=0...m)$.
 
