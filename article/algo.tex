@@ -301,6 +301,15 @@ There are two kinds of edges in a Horn graph;
   $(u,v,\emptyset)$, written $\edge{u}{v}$, where the mapping is
   empty.
 \end{itemize}
+
+We define the relation $\leadsto$ over $V_T$ as follows.
+\[ u \mathop{\leadsto}^\theta v \Longleftrightarrow \exists a \in V_\Rightarrow;
+\edgel{u}{\theta}{a} \wedge \edge{a}{v} \] We may omit $\theta$ and
+write $u \leadsto v$ for convenience in later discussions. By the
+assumption that $G$ is acyclic, both $\rightarrow^+$ and $\leadsto^+$ are
+well-founded relations. $v_\bot$ is the greatest element with respect
+to both $\rightarrow^+$ and $\leadsto^+$.
+
 The meaning $\llbracket G \rrbracket $ of a Horn graph $G$ is a set of
 Horn clauses $\mathcal{HC}_v$ for all vertices $v \in V_\Rightarrow$.
 \begin{align*}
@@ -340,8 +349,8 @@ one predicate variable to another. (TODO?)
 (Example?)
 
 The algorithm assigns a \emph{predicate template} for all predicate
-variables in $G$. A \emph{predicate templateset} is a mapping from
-predicate variables to a predicate template.  A template for a
+variables in $G$. A \emph{predicate templateset} is a set of mappings from
+a predicate variable to a predicate template.  A template for a
 predicate variable $P(x_1, \ldots, x_n)$ is a formula $\psi$
 constructed from the following definition.
 \begin{align*}
@@ -370,19 +379,11 @@ algorithm for the case that a simple solution does not exist for $G$.
 In such a case, we transform the input graph $G$ to have a larger
 solution template.
 
-We define the relation $\leadsto$ over $V_T$ as follows.
-\[ u \mathop{\leadsto}^\theta v \Longleftrightarrow
-\exists a \in V_\Rightarrow; \edgel{v}{\theta}{a} \wedge \edge{a}{v} \]
-We may omit $\theta$ and write $u \leadsto v$ for convenience in later
-discussions. By the assumption that $G$ is acyclic, $\leadsto^+$ is a
-well-founded relation. $v_\bot$ is the greatest element with respect
-to $\leadsto^+$.
-
-For each Horn term vertex $v \in V_T$, we define
-$\Delta(v) = (\mathbf{a}_v \mathbf{x}_v \leq b_v, C_v)$
+For each vertex $v \in V$, we define
+$\Delta(v) = (\mathbf{a}_v \mathbf{x}_v + b_v \leq 0, C_v)$
 , where
 \begin{itemize}
-\item $\mathbf{a}_v \mathbf{x}_v \leq b_v$ is a linear inequality that
+\item $\mathbf{a}_v \mathbf{x}_v + b_v \leq 0$ is a linear inequality that
   contains coefficient variables $\mathbf{a}_v$ and a constant $b_v$,
   and
 \item $C_v$ is a set of linear expressions on coefficient variables.
@@ -401,35 +402,45 @@ For a predicate variable vertex, $\mathbf{a}_v \mathbf{x}_v + b_v \leq
 $\mathbf{a}_v$ and $b_v$.
 
 $C_v$ is defined by well-founded induction on $v$ with respect to the
-relation $\leadsto^+$. Then, $C_v$ can be shown as follows.
-
+relation $\rightarrow^+$. Then, $C_v$ can be shown as follows.
+\begin{itemize}
+\item For $v \in V_\Rightarrow$;
 \begin{align*}
-\hat C_{a,v} = &
- \bigcup_{\edgel{u}{\theta}{a}} C_u \cup
+C_v =
+ \bigcup_{\edgel{u}{\theta}{v}} C_u \cup
  \bigcup_{0 < i \leq K}
  \left\lbrace
-  \mathbf{a}_{v,i} = \sum_{\edgel{u}{\theta}{a}} \mathbf{a}_{u, \theta^{-1} (i)}
+  \mathbf{a}_{v,i} = \sum_{\edgel{u}{\theta}{v}} \mathbf{a}_{u, \theta^{-1} (i)}
  \right\rbrace \\
  & \hspace{2cm} \cup
  \left\lbrace
-  b_v \geq \sum_{\edgel{u}{\theta}{a}} b_u
+  b_v \leq \sum_{\edgel{u}{\theta}{v}} b_u
  \right\rbrace \cup
- \bigcup_{k_v < i \leq K}
+ \bigcup_{k_{succ(v)} < i \leq K}
  \left\lbrace \mathbf{a}_{v,i} = 0 \right\rbrace
-\\
-C_v = & \bigcup_{\edge{a}{v}} \hat C_{a,v} \cup
-\begin{cases}
-\emptyset
-& \mbox{if } \varphi(v) = P(\mathbf{x}_v) \\
+\end{align*}
+\item For $v \in V_T$ such that
+  $v \neq v_{\bot} \wedge \varphi(v) = \mathbf{a}_0 \mathbf{x}_v \leq b_0$
+  where $\mathbf{a}_0$ and $b_0$ are constants;
+\begin{align*}
+C_v =
 \left\lbrace
  \lambda_v \geq 0, \mathbf{a}_v = \lambda_v \mathbf{a}_0,
  b_v = \lambda_v b_0
 \right\rbrace
-& \mbox{if } \varphi(v) = \mathbf{a}_0 \mathbf{x}_v \leq b_0
-\end{cases} \\
 \end{align*}
-For simplicity, we assume variables $\mathbf{a}_u$, $b_u$ are obtained
-from $C_u$.
+\item For $v \in V_T$ such that $\varphi(v) = P(\mathbf{x}_v)$;
+\begin{align*}
+C_v = & \bigcup_{\edge{u}{v}} \left( C_{u} \cup
+\left\lbrace \mathbf{a}_u = \mathbf{a}_v, b_u = b_v \right\rbrace
+\right)
+\end{align*}
+\item For $v_\bot$;
+\begin{align*}
+C_{v_\bot} = \bigcup_{\edge{u}{v_\bot}} \left( C_{u} \cup
+\left\lbrace \mathbf{a}_u = \mathbf{0}, b_u > 0 \right\rbrace \right)
+\end{align*}
+\end{itemize}
 
 Any model $\sigma$ to the constraint $C_{v_\bot}$ gives a simple
 solution for $G$ if $C_{v_\bot}$ is satisfiable, i.e., we should have:
