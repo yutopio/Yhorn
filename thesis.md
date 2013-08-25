@@ -66,13 +66,27 @@ One of the model of the linear constraint is \lambda_i = 1 (1 \leq i \leq 4), an
 Preliminaries
 ---
 
-\paragraph{Craig's Interpolation}
+Our algorithm aims to compute a Craig's interpolant over linear arithmetic formulas.
 
+\paragraph{Craig's Interpolation}
 Given two logical formulas A and B that are inconsistent each other, we call a new preposition I a Craig's interpolant between A and B such that $I$ is implied by $A$ and inconsistent with $B$. $I$'s vocabulary must be only free variables that appears in both $A$ and $B$.
+
+Our algorithm handles a linear expression $e$ which is in a form:
+\[ a_1 x_1 + .. + a_n x_n + b \leq 0 \]
+This expression contains coefficient parameters $a_1, \ldots, a_n$ and a constant parameter $b$. We treat a special expressions $\top$ as $0 \leq 0$ and $\bot$ as $1 \leq 0$. The algorithm input and output is a formula $\psi$ that consists of conjunctions and/or disjunctions of linear expressions.
+\[ \psi = e | e \wedge e | e \vee e | \top | \bot \]
+
+In the simple interpolation, the algorithm receives two formulas in $\psi$ and returns an interpolant in $\psi$. For the later extension to handle a symmetric interpolation problem, the algorithm receives multiple formulas in $\psi$ and returns intermediate interpolants in $\psi$. For computing those interpolants over linear arithmetics, we use Farkas's Lemma.
 
 \paragraph{Farkas's Lemma on linear inequalities}
 
 Let a linear inequality $e_i$ be represented as $a_i1 x_1 + \cdots + a_im x_m <= a_i0$. Assuming that $e_1,\cdots,e_n$ implies $e_0$, there exists $\lambda_1,\cdots,\lambda_n$ that satisfy $a_0j =\sum_(i=1)^n \lambda_i * a_ij (j=0...m)$.
+
+For the special case of Farkas's Lemma, we can state that:
+
+Assuming that $e_1,\cdots,e_n$ implies $\bot$, there exists $\lambda_1,\cdots,\lambda_n$ that satisfy $???? TODO $.
+
+Our interpolating algorithm make use of the latter version of Farkas's Lemma.
 
 
 Algorithm
