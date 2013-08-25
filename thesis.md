@@ -144,3 +144,32 @@ To compute the intersection between them, it is sufficient to choose the same as
 However, if such an assignment of $\mathbf{a}$ and $b$ does not exist, no common solution exists across two problems because $\mathcal{I} = \emptyset$.
 
 By applying this approach, it is also possible to compute a common interpolant among more than three problems.
+
+
+\paragraph{Interpolation between logical formulas}
+We now extend the algorithm so that it can handle general logical formulas over linear arithmetic including disjunctions of linear expressions. Here the algorithm takes two logical formulas over linear expressions as a problem input. For convenience, we assume that they are represented in disjunctive normal form (DNF). The solution for this problem is the interpolant that is a logical formula of linear expressions.
+
+First, consider the case of an interpolation problem between $A_1 \vee A_2$ and $B$.
+When $(A_1 \vee A_2) \wedge B$ is inconsistent, $A_1 \wedge B$ is necessarily inconsistent.
+Let $\mathcal{I}_1$ denote the set of interpolants for $(A_1, B)$.
+In the same manner, let $\mathcal{I}_2$ denote the set of interpolants for $(A_2, B)$.
+We may naturally obtain an interpolant set by the intersection
+$\mathcal{I} = \mathcal{I}_1 \cup \mathcal{I}_2$ as a solution for $(A_1 \vee A_2, B)$.
+When the algorithm computes $\mathcal{I}$ by the previous method, and it is $\emptyset$,
+we need to build a less simple solution by
+\[ \mathcal{I}' = \left\lbrace I_1 \vee I_2 \middle I_1 \in \mathcal{I}_1 \wedge I_2 \in \mathcal{I}_2 \right\rbrace \]
+Any formulas in the set $\mathcal{I}'$ are the interpolant for $(A_1 \vee A_2, B)$ because
+\begin{align*}
+\forall I \in \mathcal{I}. A_1 \vdash I \wedge A_2 \vdash I \wedge \\
+I \nvdash B \wedge FV(I) = FV(A_1) \cup FV(A_2) \cup FV(B)
+\end{align*}
+
+Second, consider the case of an interpolation problem between $A$ and $B_1 \wedge B_2$.
+% TODO:
+
+By combining these two ways of interpolant construction,
+we may be able to build a small solution for more general cases like $(A_1, \ldots, A_n)$ and $(B_1, \ldots, B_n)$.
+In order to obtain a small solution, we need to wisely choose the order of combining an interpolant set.
+
+\paragraph{Symmetric Interpolation}
+TODO
