@@ -92,4 +92,29 @@ Our interpolating algorithm make use of the latter version of Farkas's Lemma.
 Algorithm
 ---
 
-We first present an interpolating algorithm between two sets of linear inequalities.
+Our algorithm aims to construct a relatively small interpolant in a reasonable computation time for any input.
+It also aims to obtain a common solution among multiple interpolating problems.
+When the algorithm is used as a sub-routine for solving Horn clause satisfying problems that are made
+while discovering predicates for abstraction during the program verification.,
+these advantages of our algorithm make it possible to return a relatively small predicates for
+those problems. To accomplish these aims, the algorithm preserves a set of interpolants during the computation, and define and execute operations over interpolant sets.
+
+We first present an interpolating algorithm between two conjunctive sets of linear inequalities $A = \left\lbrace e_1,\ldots,e_m \right\rbrace$ and $B = \left\lbrace e_{m+1},\ldots,e_{m+n} \right\rbrace$. We assume that conjunctions of $A$ and $B$ are inconsistent. Then there exists an interpolating linear expression $\e_star$ which satisfies
+\begin{align*}
+\left\lbrace e_1,\ldots,e_m \right\rbrace & \vdash e_\star \\
+e_\star & \nvdash \left\lbrace e_{m+1},\ldots,e_{m+n} \right\rbrace \\
+\end{align*}
+For convenience, we assume that any expression $e_i$ have variables $x_1, \ldots, x_a$.
+
+According to the Farkas's lemma,
+there exists a set of assignments to $\lambda_i$, to conclude \bot from a set of linear expressions $A \cup B$, namely,
+\begin{align*}
+\lambda_1, ... m exists. \\
+% TODO: coefficient, constant constraints
+\end{align*}
+
+Then, a linear combination of $A$'s formula with a weight $\lambda_1, \ldots, \lambda_m$ becomes an interpolant I between $A$ and $B$.  Note that any assignments to $\lambda_i$ that satisfy the expressions above will let an expression I to be an interpolant.  Considering this, it is possible to obtain different interpolants for a interpolating problem by computing different assignments to $\lambda_i$.
+
+This enables the algorithm to preserve a set of interpolants by a linear expression template $a_1 x_1 + \cdots + a_n x_n + b \leq 0$ with a constraint to describe a possible space of coefficient parameters $a_i$ and the constant parameter $b$.
+
+In practical, we may use linear programming solvers to obtain a model for $\lambda_i$. By assigning concrete values to them, we can obtain a concrete interpolant.
