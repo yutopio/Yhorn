@@ -81,7 +81,6 @@ This expression contains coefficient parameters $a_1, \ldots, a_n$ and a constan
 In the simple interpolation, the algorithm receives two formulas in $\psi$ and returns an interpolant in $\psi$. For the later extension to handle a symmetric interpolation problem, the algorithm receives multiple formulas in $\psi$ and returns intermediate interpolants in $\psi$. For computing those interpolants over linear arithmetics, we use Farkas's Lemma.
 
 \paragraph{Farkas's Lemma on linear inequalities}
-
 Let a linear inequality $e_i$ be represented as $a_i1 x_1 + \cdots + a_im x_m <= a_i0$. Assuming that $e_1,\cdots,e_n$ implies $e_0$, there exists $\lambda_1,\cdots,\lambda_n$ that satisfy $a_0j =\sum_(i=1)^n \lambda_i * a_ij (j=0...m)$.
 
 For the special case of Farkas's Lemma, we can state that:
@@ -101,7 +100,8 @@ while discovering predicates for abstraction during the program verification.,
 these advantages of our algorithm make it possible to return a relatively small predicates for
 those problems. To accomplish these aims, the algorithm preserves a set of interpolants during the computation, and define and execute operations over interpolant sets.
 
-\paragraph{Interpolation between conjunctions} We first present an interpolating algorithm between two conjunctive sets of linear inequalities $A = \left\lbrace e_1,\ldots,e_m \right\rbrace$ and $B = \left\lbrace e_{m+1},\ldots,e_{m+n} \right\rbrace$. We assume that conjunctions of $A$ and $B$ are inconsistent. Then there exists an interpolating linear expression $\e_star$ which satisfies
+\paragraph{Interpolation between conjunctions}
+We first present an interpolating algorithm between two conjunctive sets of linear inequalities $A = \left\lbrace e_1,\ldots,e_m \right\rbrace$ and $B = \left\lbrace e_{m+1},\ldots,e_{m+n} \right\rbrace$. We assume that conjunctions of $A$ and $B$ are inconsistent. For later convenience, we call this interpolating problem $\left( A, B \right)$. Then there exists an interpolating linear expression $\e_star$ which satisfies
 \begin{align*}
 \left\lbrace e_1,\ldots,e_m \right\rbrace & \vdash e_\star \\
 e_\star & \nvdash \left\lbrace e_{m+1},\ldots,e_{m+n} \right\rbrace \\
@@ -122,3 +122,25 @@ This enables the algorithm to preserve a set of interpolants by a linear express
 In practical, we may use linear programming solvers to obtain a model for $\lambda_i$. By assigning concrete values to them, we can obtain a concrete interpolant.
 
 \paragraph{Computing a common interpolant}
+Next we consider a method to compute a common interpolant across two different interpolating problems.
+That is, when given two interpolating problems $\left(A_1, B_1 \right)$ and $\left(A_2, B_2 \right)$,
+the problem is about to compute the common interpolant I, which is an interpolant for the first problem and the second one at the same time.
+
+This problem is used when solving a following Horn clause solving problem, for instance.
+\[
+% TODO
+\]
+
+To accomplish this, we simply need to compute the intersection of interpolant sets.
+Let us call the interpolant space for the problems $\left(A_1, B_1 \right)$ and $\left(A_2, B_2 \right)$, $\mathcal{I}_1$, and $\mathcal{I}_2$.
+In the previous method, a set of interpolants was represented by a parameterized linear expression.
+\begin{align*}
+\mathcal{I}_1 = \left\lbrace \mathbf{a}_1 \mathbf{x} \leq b_1 | C_1(\mathbf{a}_1, b_1) \right\rbrace
+\mathcal{I}_2 = \left\lbrace \mathbf{a}_2 \mathbf{x} \leq b_2 | C_2(\mathbf{a}_2, b_2) \right\rbrace
+\end{align*}
+To compute the intersection between them, it is sufficient to choose the same assignments of parameters and let them satisfy the both constraints $C_1$ and $C_2$.
+\[ \mathcal{I} = \left\lbrace \mathbf{a} \mathbf{x} \leq b | C_1(\mathbf{a}, b) \wedge C_2(\mathbf{a}, b) } \]
+
+However, if such an assignment of $\mathbf{a}$ and $b$ does not exist, no common solution exists across two problems because $\mathcal{I} = \emptyset$.
+
+By applying this approach, it is also possible to compute a common interpolant among more than three problems.
