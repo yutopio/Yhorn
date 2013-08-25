@@ -62,6 +62,8 @@ With the linear constraint among \lambda_i above, the interpolant is represented
 
 One of the model of the linear constraint is \lambda_i = 1 (1 \leq i \leq 4), and we obtain x-y+1 \leq 0 as a solution.
 
+% TODO: Better to mention multiple interpolants possible for one interpolating problem?
+
 
 Preliminaries
 ---
@@ -99,7 +101,7 @@ while discovering predicates for abstraction during the program verification.,
 these advantages of our algorithm make it possible to return a relatively small predicates for
 those problems. To accomplish these aims, the algorithm preserves a set of interpolants during the computation, and define and execute operations over interpolant sets.
 
-We first present an interpolating algorithm between two conjunctive sets of linear inequalities $A = \left\lbrace e_1,\ldots,e_m \right\rbrace$ and $B = \left\lbrace e_{m+1},\ldots,e_{m+n} \right\rbrace$. We assume that conjunctions of $A$ and $B$ are inconsistent. Then there exists an interpolating linear expression $\e_star$ which satisfies
+\paragraph{Interpolation between conjunctions} We first present an interpolating algorithm between two conjunctive sets of linear inequalities $A = \left\lbrace e_1,\ldots,e_m \right\rbrace$ and $B = \left\lbrace e_{m+1},\ldots,e_{m+n} \right\rbrace$. We assume that conjunctions of $A$ and $B$ are inconsistent. Then there exists an interpolating linear expression $\e_star$ which satisfies
 \begin{align*}
 \left\lbrace e_1,\ldots,e_m \right\rbrace & \vdash e_\star \\
 e_\star & \nvdash \left\lbrace e_{m+1},\ldots,e_{m+n} \right\rbrace \\
@@ -118,3 +120,5 @@ Then, a linear combination of $A$'s formula with a weight $\lambda_1, \ldots, \l
 This enables the algorithm to preserve a set of interpolants by a linear expression template $a_1 x_1 + \cdots + a_n x_n + b \leq 0$ with a constraint to describe a possible space of coefficient parameters $a_i$ and the constant parameter $b$.
 
 In practical, we may use linear programming solvers to obtain a model for $\lambda_i$. By assigning concrete values to them, we can obtain a concrete interpolant.
+
+\paragraph{Computing a common interpolant}
