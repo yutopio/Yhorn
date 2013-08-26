@@ -4,8 +4,8 @@ NAME = thesis
 all: $(NAME).pdf
 
 clean:
-	rm iscs-thesis.cls
-	rm *.aux *.bbl *.blg *.dvi *.pdf *.log *.toc
+	-rm -f iscs-thesis.cls
+	-rm -f *.aux *.bbl *.blg *.log *.out *.toc *.dvi *.pdf
 
 .SUFFIXES: .tex .aux .bib .bbl .bb .dvi .pdf
 .SECONDARY:
