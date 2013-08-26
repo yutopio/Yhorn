@@ -1,10 +1,11 @@
 
-NAME = algo
+NAME = thesis
 
 all: $(NAME).pdf
 
 clean:
-	rm *.aux *.bbl *.dvi *.pdf *.log
+	rm iscs-thesis.cls
+	rm *.aux *.bbl *.blg *.dvi *.pdf *.log *.toc
 
 .SUFFIXES: .tex .aux .bib .bbl .bb .dvi .pdf
 .SECONDARY:
