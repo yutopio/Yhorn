@@ -394,70 +394,35 @@ let rec solveGraph (g, ps, vps) visited =
       | Coef es ->
         List.fold_left (fun g (_, e) -> G.add_edge_e g e) g es
       | _ -> g) G.empty uc_tags in
-    (Operator.mirror g' |> display_with_gv);
 
-    (* Sort the unsat core tags. *)
-    let m, s =
-      List.fold_left (fun (m, s) ->
-        function
-        | Coef es ->
-          List.fold_left (fun m (id, es) -> M.add_append id es m) m es, s
-        | Simplified v -> m, SV.add v s
-        | _ -> m, s) (M.empty, SV.empty) uc_tags in
+    let findMerge conj =
+      let f1, f2 =
+        if conj then G.in_degree, G.pred_e
+        else G.out_degree, G.succ_e in
+      G.fold_vertex (fun v ret ->
+        match ret with
+        | Some x -> ret
+        | None ->
+          if G.V.label v = VPred && f1 g v >= 2 then Some (f2 g v)
+          else None
+      ) g' None in
 
-    (* A routine to find edges, which share the same vertex under the same
-       variable. *)
-    let findMerge conj es =
-      let f = if conj then G.E.dst else G.E.src in
-      let mv =
-        List.fold_left (fun m e -> MV.add_append (f e) e m) MV.empty es |>
-        MV.filter (fun _ v -> List.length v >= 2) in
-      if MV.cardinal mv > 0 then Some (MV.choose mv |> snd) else None in
-
-    (* Find conjunctive unsat information. *)
-    match
-      M.fold (fun _ es ret ->
-        (* If already have found split point, continue. *)
-        if ret = None then
-          (* Find conjunctive merge. *)
-          findMerge true es
-        else ret
-      ) m None with
-      | Some x -> split_vertex_conj (g, ps, vps) x
-      | None -> (
-    match
-      M.fold (fun _ es ret ->
-        (* If already have found split point, continue. *)
-        if ret = None then
-          (* Find disjunctive merge. *)
-          findMerge false es
-        else ret
-      ) m None with
-      | Some x -> split_vertex_disj (g, ps, vps) x
-      | None -> (
-
-    let x = G.fold_vertex (fun v ret ->
-      match ret with
-      | Some x -> ret
-      | None ->
-        if G.V.label v = VPred && G.out_degree g v >= 2 then
-          Some (G.succ_e g v)
-        else None
-    ) g' None in
-
-    (* Find disjunctive merge. *)
-    match x with
+    match findMerge true with
+    | Some x -> split_vertex_conj (g, ps, vps) x
+    | None ->
+    match findMerge false with
     | Some x -> split_vertex_disj (g, ps, vps) x
-    | None -> (
-      let visited' = SV.union visited s in
+    | None ->
+      let f v = SV.fold (fun e v' ->
+        List.fold_left (fun v' x -> SV.add x v') v' (G.succ g e)) v v in
+      let visited' = f (f visited) in
 
       if visited = visited' then
         (* If all vertices are traversed and still unsatisfiable,
            we don't have a solution. *)
         raise Not_found;
 
-      (* Extend the graph by LaWeight set s. *)
-      solveGraph (g, ps, vps) (SV.union visited s))))
+      solveGraph (g, ps, vps) visited'
 
 and split_vertex (vp, (vps, vp's)) =
   (* Create a new vertex. *)
