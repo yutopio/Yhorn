@@ -407,30 +407,37 @@ let rec solveGraph (g, ps, vps) visited =
       if MV.cardinal mv > 0 then Some (MV.choose mv |> snd) else None in
 
     (* Find conjunctive unsat information. *)
-    let search =
+    match
       M.fold (fun _ es ret ->
         (* If already have found split point, continue. *)
-        match ret with
-        | `Conj _ | `Disj _ -> ret
-        | `Unknown ->
+        if ret = None then
+          (* Find conjunctive merge. *)
+          findMerge G.E.dst es
+        else ret
+      ) m None with
+      | Some x -> split_vertex_conj (g, ps, vps) x
+      | None -> (
+    match
+      M.fold (fun _ es ret ->
+        (* If already have found split point, continue. *)
+        if ret = None then
+          (* Find disjunctive merge. *)
+          findMerge G.E.src es
+        else ret
+      ) m None with
+      | Some x -> split_vertex_disj (g, ps, vps) x
+      | None -> (
 
-        (* Find conjunctive merge. *)
-        match findMerge G.E.dst es with
-        | Some x -> `Conj x
-        | None ->
 
-        (* or, find disjunctive merge. *)
-        match findMerge G.E.src es with
-        | Some x -> `Disj x
-        | None -> `Unknown
-      ) m `Unknown in
-
-    match search with
-    | `Conj x ->
-      split_vertex_conj (g, ps, vps) x
-    | `Disj x ->
-      split_vertex_disj (g, ps, vps) x
-    | `Unknown ->
+    let es = List.fold_left (fun l ->
+      function
+      | Coef es ->
+        List.fold_left (fun l (_, es) -> es :: l) l es
+      | _ -> l) [] uc_tags in
+    (* Find disjunctive merge. *)
+    match findMerge G.E.src es with
+    | Some x -> split_vertex_disj (g, ps, vps) x
+    | None -> (
       let visited' = SV.union visited s in
 
       if visited = visited' then
@@ -439,7 +446,7 @@ let rec solveGraph (g, ps, vps) visited =
         raise Not_found;
 
       (* Extend the graph by LaWeight set s. *)
-      solveGraph (g, ps, vps) (SV.union visited s)
+      solveGraph (g, ps, vps) (SV.union visited s))))
 
 and split_vertex (vp, (vps, vp's)) =
   (* Create a new vertex. *)
