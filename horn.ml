@@ -400,10 +400,12 @@ let rec solveGraph (g, ps, vps) visited =
 
     (* A routine to find edges, which share the same vertex under the same
        variable. *)
-    let findMerge f es =
+    let findMerge conj es =
+      let f, f2 =
+        if conj then (G.E.dst, G.in_degree) else (G.E.src, G.out_degree) in
       let mv =
         List.fold_left (fun m e -> MV.add_append (f e) e m) MV.empty es |>
-        MV.filter (fun _ v -> List.length v >= 2) in
+        MV.filter (fun k v -> (f2 g k >= 2) && List.length v >= 2) in
       if MV.cardinal mv > 0 then Some (MV.choose mv |> snd) else None in
 
     (* Find conjunctive unsat information. *)
@@ -412,7 +414,7 @@ let rec solveGraph (g, ps, vps) visited =
         (* If already have found split point, continue. *)
         if ret = None then
           (* Find conjunctive merge. *)
-          findMerge G.E.dst es
+          findMerge true es
         else ret
       ) m None with
       | Some x -> split_vertex_conj (g, ps, vps) x
@@ -422,12 +424,11 @@ let rec solveGraph (g, ps, vps) visited =
         (* If already have found split point, continue. *)
         if ret = None then
           (* Find disjunctive merge. *)
-          findMerge G.E.src es
+          findMerge false es
         else ret
       ) m None with
       | Some x -> split_vertex_disj (g, ps, vps) x
       | None -> (
-
 
     let es = List.fold_left (fun l ->
       function
@@ -435,7 +436,7 @@ let rec solveGraph (g, ps, vps) visited =
         List.fold_left (fun l (_, es) -> es :: l) l es
       | _ -> l) [] uc_tags in
     (* Find disjunctive merge. *)
-    match findMerge G.E.src es with
+    match findMerge false es with
     | Some x -> split_vertex_disj (g, ps, vps) x
     | None -> (
       let visited' = SV.union visited s in
