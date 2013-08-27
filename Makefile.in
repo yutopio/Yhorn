@@ -1,15 +1,3 @@
-##########################################################################
-#                                                                        #
-#  This software is free software; you can redistribute it and/or        #
-#  modify it under the terms of the GNU Library General Public           #
-#  License version 2.1, with the special exception on linking            #
-#  described in file LICENSE.                                            #
-#                                                                        #
-#  This software is distributed in the hope that it will be useful,      #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of        #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                  #
-#                                                                        #
-##########################################################################
 
 include Makefile.config
 
@@ -41,7 +29,8 @@ all: byte opt
 ######################################
 
 MOD  = version flags listEx id error util mapEx puf mTypes \
-       expr formula nf types parser lexer z3interface atpInterface horn
+       expr formula nf types parser lexer z3interface atpInterface horn \
+       interpolation
 MLI  = $(wildcard $(patsubst %, %.mli, $(MOD)))
 ML   = $(wildcard $(patsubst %, %.ml, $(MOD)))
 SRC  = $(MLI) $(ML) $(filter %.ml %.mli,$(GENERATED))
@@ -156,6 +145,13 @@ config.status: configure
 
 configure: configure.in
 	autoconf
+
+# install
+#########
+
+install: all
+	$(OCAMLFIND) remove $(NAME)
+	$(OCAMLFIND) install $(NAME) META $(NAME).a $(NAME).cmi $(NAME).cma $(NAME).cmxa
 
 # clean
 #######
