@@ -7,11 +7,8 @@ clean:
 	-rm -f iscs-thesis.cls
 	-rm -f *.aux *.bbl *.blg *.log *.out *.toc *.dvi *.pdf
 
-.SUFFIXES: .tex .aux .bib .bbl .bb .dvi .pdf
+.SUFFIXES: .tex .aux .bib .bbl .dvi .pdf
 .SECONDARY:
-
-.pdf.bb:
-	ebb $<
 
 iscs-thesis.cls: iscs-thesis.ins iscs-thesis.dtx
 	platex iscs-thesis.ins
@@ -23,6 +20,7 @@ algo.dvi:
 	platex algo
 
 $(NAME).aux: $(NAME).tex
+	(cd figures; make)
 	platex $(NAME)
 
 $(NAME).bbl: $(NAME).aux biblio.bib
