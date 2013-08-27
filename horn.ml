@@ -389,6 +389,13 @@ let rec solveGraph (g, ps, vps) visited =
     (* Restore constraint information. *)
     let uc_tags = List.map (fun x -> List.assoc x symbol_map) uc in
 
+    let g' = List.fold_left (fun g ->
+      function
+      | Coef es ->
+        List.fold_left (fun g (_, e) -> G.add_edge_e g e) g es
+      | _ -> g) G.empty uc_tags in
+    (Operator.mirror g' |> display_with_gv);
+
     (* Sort the unsat core tags. *)
     let m, s =
       List.fold_left (fun (m, s) ->
@@ -401,11 +408,10 @@ let rec solveGraph (g, ps, vps) visited =
     (* A routine to find edges, which share the same vertex under the same
        variable. *)
     let findMerge conj es =
-      let f, f2 =
-        if conj then (G.E.dst, G.in_degree) else (G.E.src, G.out_degree) in
+      let f = if conj then G.E.dst else G.E.src in
       let mv =
         List.fold_left (fun m e -> MV.add_append (f e) e m) MV.empty es |>
-        MV.filter (fun k v -> (f2 g k >= 2) && List.length v >= 2) in
+        MV.filter (fun _ v -> List.length v >= 2) in
       if MV.cardinal mv > 0 then Some (MV.choose mv |> snd) else None in
 
     (* Find conjunctive unsat information. *)
@@ -430,13 +436,17 @@ let rec solveGraph (g, ps, vps) visited =
       | Some x -> split_vertex_disj (g, ps, vps) x
       | None -> (
 
-    let es = List.fold_left (fun l ->
-      function
-      | Coef es ->
-        List.fold_left (fun l (_, es) -> es :: l) l es
-      | _ -> l) [] uc_tags in
+    let x = G.fold_vertex (fun v ret ->
+      match ret with
+      | Some x -> ret
+      | None ->
+        if G.V.label v = VPred && G.out_degree g v >= 2 then
+          Some (G.succ_e g v)
+        else None
+    ) g' None in
+
     (* Find disjunctive merge. *)
-    match findMerge false es with
+    match x with
     | Some x -> split_vertex_disj (g, ps, vps) x
     | None -> (
       let visited' = SV.union visited s in
