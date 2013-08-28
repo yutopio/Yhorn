@@ -60,3 +60,160 @@ In our experiment, we compared the performance of our algorithm with
 CSIsat, that is mainly used as a sub procedure of MoCHi.  Note that
 CSIsat may return different interpolants for an interpolating problem
 because of the randomized algorithm.
+
+\paragraph{Comparison over simple interpolation}
+First, we compare by simply generating an interpolant without
+incorporating into MoCHi.  \textsc{Yint} represents our interpolating
+theorem prover.
+
+\begin{itemize}
+\item Disjunctive interpolation in $A$.
+\[\begin{array}{r l}
+\varphi_A & (x-1 \geq 0) \vee (x+1 \leq 0) \\
+\hline
+\varphi_B & x=0
+\end{array}\]
+The result for this:
+\[\begin{array}{l c}
+\text{\textsc{Yint}} & (x+1 \leq 0) \vee (-x+1 \leq 0) \\
+\text{\textsc{CSIsat}} & (-x \leq -1 \vee x \leq -1)
+\end{array}\]
+\item Disjunctive interpolation in $B$.
+\[\begin{array}{r l}
+\varphi_A & x=0 \\
+\hline
+\varphi_B & (x-1 \geq 0) \vee (x+1 \leq 0)
+\end{array}\]
+\[\begin{array}{l c}
+\text{\textsc{Yint}} & -x=0 \\
+\text{\textsc{CSIsat}} & (-x \leq 0 \wedge x \leq 0)
+\end{array}\]
+\item Complex formula in $A$.
+% complicated disj
+\[\begin{array}{r l}
+\varphi_A & ((x-5<0) \wedge (-x<0)) \vee ((x<0) \wedge (-x-5<0)) \\
+\hline
+\varphi_B & x=0
+\end{array}\]
+\[\begin{array}{l c}
+\text{\textsc{Yint}} & (x+1 \leq 0) \vee (-x+1 \leq 0) \\
+\text{\textsc{CSIsat}} & (x < 0 \vee -x < 0)
+\end{array}\]
+\end{itemize}
+For those problems that are simple enough, Yint and CSIsat returns the
+same results.
+
+Next we tried the problem that an equality interpolant exists.
+% equality
+\[\begin{array}{r l}
+\varphi_A & x=0 \\
+\hline
+\varphi_B & x-1=0
+\end{array}\]
+\[\begin{array}{l c}
+\text{\textsc{Yint}} & x=0 \\
+\text{\textsc{CSIsat}} & x \leq 0
+\end{array}\]
+
+\bigskip\centerline{}
+
+% quantifier
+\[\begin{array}{r l}
+\varphi_A & (y-z=0) \wedge (x-z=0) \\
+\hline
+\varphi_B & (-w+y+1 \leq 0) \wedge (-w+x \geq 0)
+\end{array}\]
+\[\begin{array}{l c}
+\text{\textsc{Yint}} & x-y=0 \\
+\text{\textsc{CSIsat}} & x-y \leq 0
+\end{array}\]
+Because our algorithm handles linear equalities special, our algorithm makes an effort to return an interpolant of linear equality if one exists.
+
+Additionally, as the follwing resuls of \textsc{Yint} shows, if a simple interpolant exists for a given problem, our algorithm tries such result.
+\[\begin{array}{r l}
+\varphi_A & ((-y+1 \leq 0) \wedge (-x \leq 0)) \vee ((-y \leq 0) \wedge (-x+1 \leq 0)) \\
+\hline
+\varphi_B & ((y+1<0) \wedge (x<0)) \vee ((y<0) \wedge (x+1<0))
+\end{array}\]
+\[\begin{array}{l c}
+\text{\textsc{Yint}} & -x \leq 0 \\
+\text{\textsc{CSIsat}} & (((x < 0 \vee -x \leq 0) \wedge 0 \leq x) \vee ((y < 0 \vee -y \leq 0) \wedge 0 \leq y))
+\end{array}\]
+
+\bigskip\centerline{}
+
+\[\begin{array}{r l}
+\varphi_A & (x-1=0) \vee (x+1=0) \\
+\hline
+\varphi_B & (x-2=0) \vee (x=0) \vee (x+2=0)
+\end{array}\]
+\[\begin{array}{l c}
+\text{\textsc{Yint}} & (-x-1=0) \vee (-x+1=0) \\
+\text{\textsc{CSIsat}} & ((-x \leq -1 \vee x \leq -1) \wedge (-x \leq 1 \vee - x \leq - 1) \wedge (x \leq - 1 \vee x \leq 1))
+\end{array}\]
+
+Finally, we showed some test cases that may occur in practical interpolation.
+
+\[\begin{array}{r l}
+\multirow{2}{*}{$\varphi_A$}
+& ((x-y-1 \leq 0) \wedge (-x+y-2 \leq 0) \wedge (x+y-1 \leq 0) \wedge (-x-y-2 \leq 0)) \vee \\
+& ((x-y-2 \leq 0) \wedge (-x+y-1 \leq 0) \wedge (x+y-2 \leq 0) \wedge (-x-y-1 \leq 0)) \\
+\hline
+\multirow{2}{*}{$\varphi_B$}
+& ((x-y+1<0) \wedge (-x+y-2 \leq 0) \wedge (x+y-2 \leq 0) \wedge (-x-y+1<0)) \vee \\
+& ((x-y-2 \leq 0) \wedge (-x+y+1<0) \wedge (x+y+1<0) \wedge (-x-y-2 \leq 0))
+\end{array}\]
+\[\begin{array}{l c}
+\text{\textsc{Yint}} & (-x+17y-33 \leq 0) \wedge (x-17y-33 \leq 0) \\
+\text{\textsc{CSIsat}} & ((-1 \leq (x + y) \vee (x + -y) \leq 1) \wedge (-1 \leq (x + -y) \vee (x + y) \leq 1))
+\end{array}\]
+
+\bigskip\centerline{}
+
+\[\begin{array}{r l}
+\multirow{2}{*}{$\varphi_A$}
+& ((y+1=0) \wedge (x-1=0)) \vee ((y+1=0) \wedge (x+1=0)) \vee \\
+& ((y-1=0) \wedge (x+1=0)) \vee ((y-1=0) \wedge (x-1=0)) \\
+\hline
+\multirow{2}{*}{$\varphi_B$}
+& ((y+2 \leq 0) \wedge (x-2 \geq 0)) \vee ((y+2 \leq 0) \wedge (x+2 \leq 0)) \vee \\
+& ((y-2 \geq 0) \wedge (x+2 \leq 0)) \vee ((y-2 \geq 0) \wedge (x-2 \geq 0))
+\end{array}\]
+\begin{tabular}{l c}
+\textsc{Yint} & $(-2y-3 \leq 0) \wedge (2y-3 \leq 0)$
+\end{tabular}
+
+\bigskip\centerline{}
+
+\textsc{CSIsat}
+\begin{align*}
+& ((-y \leq 1 \wedge y \leq -1) \vee (-y \leq -1 \wedge x \leq 1) \vee x \leq -1) \wedge \\
+& \qquad (-x \leq 1 \vee -x \leq -1 \vee -y \leq -1) \wedge \\
+& \qquad (-x \leq 1 \vee -x \leq -1 \vee y \leq -1) \wedge \\
+& \qquad (-x \leq -1 \vee x \leq -1)
+\end{align*}
+
+\[\begin{array}{r l}
+\varphi_A & ((y-1=0) \wedge (x-1=0)) \vee ((y=0) \wedge (x=0)) \\
+\hline
+\varphi_B & (((y-1>0) \vee (y-1<0)) \wedge (x-1=0)) \vee (((y>0) \vee (y<0)) \wedge (x=0))
+\end{array}\]
+\begin{tabular}{l c}
+\textsc{Yint} & $x-y=0$
+\end{tabular}
+
+\textsc{CSIsat}
+\begin{align*}
+& ((((y \leq 0 \wedge -y \leq 0) \vee 1 = x) \wedge 1 \neq x) \vee ((1 \neq x \vee -y \leq -1) \wedge 1 = x) \vee 0 \neq x) \wedge \\
+& \qquad (((0 \neq x \vee y \leq 1) \wedge (0 = x \vee y \leq 1)) \vee 1 \neq x) \wedge \\
+& \qquad (((1 \neq x \vee -y \leq -1) \wedge 1 = x) \vee 0 = x) \wedge \\
+& \qquad ((1 \neq x \wedge 1 = x) \vee (y \leq 0 \wedge -y \leq 0) \vee 0 \neq x) \wedge \\
+& \qquad (1 = x \vee y \leq 0)
+\end{align*}
+
+
+
+
+
+
+
