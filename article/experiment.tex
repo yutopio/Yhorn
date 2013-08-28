@@ -1,14 +1,20 @@
 \chapter{Experiment}
 \label{chap:experiment}
 
-We incorporated our algorithm to the software model checker for
-higher-order programs (MoCHi) \cite{conf/pldi/KobayashiSU11}.  It
-is specifically designed to verify the correctness of higher-orde
-programs written in a small subset of ML.  It infers dependent types
-for input higher-order programs \cite{conf/ppdp/UnnoK09}.
+We have incorporated our algorithm to the software model checker for
+higher-order programs (MoCHi) \cite{conf/pldi/KobayashiSU11}.  It is
+specifically designed to verify the correctness of higher-orde
+programs written in a small subset of ML.  This verification tool
+abstracts a given input program by inferring dependent types for
+higher-order programs \cite{conf/ppdp/UnnoK09}.
 
-Our implementation make use of Z3 \cite{conf/tacas/MouraB08} as
-an SMT solver.
+We implemented our proposed algorithm into MoCHi by two steps.  First,
+we replace an existing theorem prover with our interpolating theorem
+prover as a sub-routine for solving Horn clauses in dependend typing.
+We used a method to obtain a common small interpolant across different
+interpolating problems, while reducing a Horn clause problem into
+interpolation \cite{conf/ppdp/UnnoK09}.  Second, we completely
+replaced MoCHi's Horn solving algorithm with our algorithm.
 
 For simplicity of the implementation, we assume that the linear
 inequalities in the integer space.  Because of this, our algorithm
@@ -17,16 +23,40 @@ lost the completeness.  By using Motzkin's transpose theorem
 inequalities in both $\mathbf{ax} + b \leq 0$ and $\mathbf{ax} + b <
 0$.
 
+While solving interpolating problems, our algorithm treated linear
+equalities in the form $\mathbf{ax} + b = 0$ specially without
+normalizing into a conjunction of linear equalities so that the
+algorithm obtain a linear equality in a set of interpolants.  It is
+because we observed some cases that requires a equality relation
+between two variables but not an inequality as an program invariant.
+
+Note that, however, in Horn clauses solving problems, when a predicate
+variable $P$ needs to take an equality $=$ or negation $\neq$, the
+predicate template grows during the solving process as
+$\mathbf{ax}-b \leq 0 \wedge -\mathbf{ax}+b \leq 0$ in the former
+case, and $\mathbf{ax}-b+1 \leq 0 \vee -\mathbf{ax}+b+1 \leq 0$ in the
+latter case.  We also thought it possible to obtain predicates that
+are similar to program invariants by considering multiple paths.
+
+For linear constraint satisfaction, we used GNU Linear Programming Kit
+(GLPK) first for its light computation load.  For Horn clause solving
+however, Our implementation make use of Z3 \cite{conf/tacas/MouraB08}
+as an SMT solver to obtain unsatisfiable core of the constraints.
 
 \section{Interpolating theorem prover}
 
-Our interpolating theorem prover is used as a sub-procedure to solve
-Horn clauses.
-
+There are some interpolating theorem provers known.
 \begin{itemize}
-\item CSIsat \cite{conf/cav/BeyerZM08}
-\item FOCI \cite{website/foci}
-\item CLP-Prover \cite{website/clp}
+\item \textsc{CSIsat} \cite{conf/cav/BeyerZM08} combines linear
+  arithmetic reasonings and SAT-based logical reasonings.
+\item \textsc{FOCI} \cite{website/foci} extracts an interpolant by the
+  proof-based method.
+\item \textsc{CLP-Prover} \cite{website/clp} generates an interpolant
+ from constraints by linear arithmetic reasonings. It only supports
+ conjunctive problems.
 \end{itemize}
 
-\section{Horn clause solver}
+In our experiment, we compared the performance of our algorithm with
+CSIsat, that is mainly used as a subprocedure of MoCHi.  Note that
+CSIsat may return different interpolants for an interpolating problem
+because of the randomized algorithm.
