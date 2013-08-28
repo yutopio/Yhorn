@@ -5,6 +5,7 @@ Our proposed algorithms have still numbers of rooms for further
 improvement.  Based on the experiment result from the previous
 chapter, here we give raise some analaysis and discussion for them.
 
+
 \paragraph{Space explosion for constraint duplication}
 Our experimental implementation did not simplify the linear constraint
 for every predicate variable and it caused a linear constraint
@@ -40,12 +41,13 @@ disjunctions.  It caused the loss of efficiency in solving constraints
 and generating unsatisfiable cores.
 
 We have also tried the quantifier elimination over real space, and the
-result was better than the integer version.  However, because our algorithm
-first treats all linear inequalities over integer space, more study on
-the gap betweem these two are required when we consider the completeness.
+result was better than the integer version.  However, because our
+algorithm first treats all linear inequalities over integer space,
+more study on the gap betweem these two are required when we consider
+the completeness.
+
 
 \paragraph{Solving linear constraints}
-
 Although we solve the constraints by a general SMT solver Z3, GNU
 Linear Programming Kit (GLPK) may be sufficient for solving
 constraints.  The linear programming solver should support sparse
@@ -53,11 +55,63 @@ matrix because our algorithm generates constraints that are sparse.
 
 
 \paragraph{Generation and choice of unsatisfiable core}
-Our Horn clause solver make use of Z3 to obtain an unsatisfiable core
-from the linear constraints.  However the extraction of unsatisfiable
-core from the proof may cost certain level of computation.
-Originally, it is better that the theorem prover customizes to extract
+We can efficiently build linear constraints for the given $G$ after
+the transformation in $\transGraph$~procedure by appropriate inference
+from the previous constraint and the SMT query result.  Our Horn
+clause solver make use of Z3 to obtain an unsatisfiable core from the
+linear constraints.  However the extraction of an unsatisfiable core
+from the proof sums up to a large portion of the whole computation
+time in our algorithm.
 
+Although our implementation in this work did not consider such the way
+of optimization to reduce the cost of linear constraints queries, it
+is necessary to reduce the number of them for reduce the computation
+cost.  For instance, the optimization is possible by appropriatealy
+updating $V_\star$ in $\solveHorn$~procedure since the vertices that
+are already examined for split does not need to be considered again.
+
+The choice of subset of constraints for an unsatisfiable core is also
+important.  In some cases, there exists different multiple cores and
+the algorithm returns a different shape of the solution in relation to
+the choice of them.  Thus, we need further study to optimize the order
+of choice of multiple unsatisfiable cores if ones exists.
+
+
+\paragraph{Separation of edges}
+To transform the graph by $\transGraph$~procedure, there may be
+multiple transformations possible.  For example, consider a predicate
+variable $P$ and edges $\left\lbrace e_1, e_2, e_3, e_4 \right\rbrace$
+that go out from the vertex.  If an unsatisfiable core contains a set
+of edges $\left\lbrace e_1, e_2 \right\rbrace$,
+$\transGraph$~procedure determines to split those edges by duplicating
+$P$.  However at this point, $e_3$ and $e_4$ are free to be connected
+to any duplication of $P$.  Alghough our current algorithm split
+$\left\lbrace e_1, e_2, e_3, e_4 \right\rbrace$ into four duplications
+$\left\lbrace e_1 \right\rbrace$ to $\left\lbrace e_4 \right\rbrace$,
+it is possible to split into $\left\lbrace e_1, e_3\right\rbrace$ and
+$\left\lbrace e_2, e_4 \right\rbrace$ for example.  By intellilgently
+choose this, we may be able to obtain much simpler solution than the
+current algorithm.
+
+We suggest to reduce this edge split problem into a graph coloring
+problem.  By generating a graph which a set of vertices have an edge
+of Horn graph as a label and solve a coloring problem on it, the
+algorithm can wisely determine the minuminm number of duplications.
+
+
+\paragraph{Support for Horn clauses with Recursions}
+Considering usages of Horn clause solving in program verification, it
+is useful to update our algorithm so that it can solve Horn clauses
+with recursions as well. For instance, this makes possible to generate
+invariants upon the loop programs on the control flow graphs, rather
+than to generate a set of disjunctive constraints
+\cite{conf/pldi/BeyerHMR07}.
+
+One known method to let the algorithm support Horn clauses with
+recursions is to unroll a looping predicate in the problem
+\cite{conf/ppdp/UnnoK09}.  By computing a fixedpoint of the predicate
+solution over unrolled programs, it is possible to virtually solve
+Horn clauses with recursions as well.
 
 
 \paragraph{Applications for other work}
@@ -72,4 +126,5 @@ other work when customized into different contexts.
 
 By puting such effort for further improvement on our algorithm, we can
 conclude that the algorithm may be able to achive better performance
-in Horn clause solving, and become a necessary tool for program verification.
+in Horn clause solving, and become a necessary tool for program
+verification.
