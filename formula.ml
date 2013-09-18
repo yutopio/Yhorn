@@ -62,5 +62,5 @@ let count x = fold (fun x _ -> x + 1) 0 x
 let normalize =
   function
   | And x -> List.reduce (&&&) x
-  | And x -> List.reduce (|||) x
+  | Or x -> List.reduce (|||) x
   | x -> x
