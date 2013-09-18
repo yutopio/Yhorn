@@ -327,25 +327,23 @@ let rec solveGraph (g, ps, vps) visited =
 
     let constrs = G.fold_succ (fun arrow -> (@) (MV.find arrow ret)) g v [] in
 
-    (* NOTE: Required for quantifier elimination.
     let quants =
       match G.V.label v with
       | VBot -> (* bot *) []
       | VPred -> MV.find v vps |> snd |> M.values
       | _ -> assert false
-    in *)
+    in
 
     let constr =
       if SV.mem v visited then
         (* No simplification. *)
         constrs
       else
-        (* TODO: Quantifier elimination. Also uncomment the block above.
+        (* Quantifier elimination. *)
         let quants = List.fold_left (fun a b -> S.add b a) S.empty quants in
         let constrs =
           And (List.map snd constrs) |>
-          AtpInterface.integer_qelim quants in *)
-        let constrs = And (List.map snd constrs) in
+          PplInterface.integer_qelim quants in
         [Simplified v, constrs]
     in
 
