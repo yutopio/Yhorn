@@ -13,9 +13,13 @@ OCAMLFIND = @OCAMLFIND@
 # Libraries
 OCAMLGRAPH = @OCAMLGRAPH@
 Z3ML = @Z3ML@
-LIB = unix graph z3 nums atp_batch
+MLGMP = @MLGMP@
+PPL = @PPL@
+LIB = unix nums graph z3 ppl_ocaml
 
-INCLUDES = -I $(OCAMLGRAPH) -I $(Z3ML) -I $(ATP)
+PPL_FLAGS = -cclib '-lppl -lmlgmp -lmpfr -lgmpxx -lgmp'
+
+INCLUDES = -I $(OCAMLGRAPH) -I $(Z3ML) -I $(MLGMP) -I $(PPL)
 BFLAGS = $(INCLUDES) -g -w -8 -annot
 OFLAGS = $(INCLUDES) -w -8 -annot
 
@@ -29,7 +33,7 @@ all: byte opt
 ######################################
 
 MOD  = version flags listEx id error util mapEx puf mTypes \
-       expr formula nf types parser lexer z3interface atpInterface horn \
+       expr formula nf types parser lexer z3interface pplInterface horn \
        interpolation
 MLI  = $(wildcard $(patsubst %, %.mli, $(MOD)))
 ML   = $(wildcard $(patsubst %, %.ml, $(MOD)))
@@ -49,22 +53,22 @@ byte: $(CMA)
 opt: $(CMXA)
 
 $(NAME).cma: $(NAME).cmo
-	$(OCAMLC) $(INCLUDES) -a -g -o $@ $^
+	$(OCAMLC) $(INCLUDES) $(PPL_FLAGS) -a -g -o $@ $^
 
 $(NAME).cmxa: $(NAME).cmx
-	$(OCAMLOPT) $(INCLUDES) -a -o $@ $^
+	$(OCAMLOPT) $(INCLUDES) $(PPL_FLAGS) -a -o $@ $^
 
 $(NAME).cmo: $(CMO)
-	$(OCAMLC) $(INCLUDES) -pack -g -o $@ $^
+	$(OCAMLC) $(INCLUDES) $(PPL_FLAGS) -pack -g -o $@ $^
 
 $(NAME).cmx: $(CMX)
-	$(OCAMLOPT) $(INCLUDES) -pack -o $@ $^
+	$(OCAMLOPT) $(INCLUDES) $(PPL_FLAGS) -pack -o $@ $^
 
 $(NAME).byte: $(CMO) interactive.cmo
-	$(OCAMLC) $(INCLUDES) -g -o $@ $(LIBCMA) $^
+	$(OCAMLC) $(INCLUDES) $(PPL_FLAGS) -g -o $@ $(LIBCMA) $^
 
 $(NAME).opt: $(CMX) interactive.cmx
-	$(OCAMLOPT) $(INCLUDES) -unsafe -inline 100 -o $@ $(LIBCMXA) $^
+	$(OCAMLOPT) $(INCLUDES) $(PPL_FLAGS) -unsafe -inline 100 -o $@ $(LIBCMXA) $^
 
 VERSION = 0.4
 
