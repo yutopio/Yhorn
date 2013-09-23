@@ -2,6 +2,15 @@
 module List = struct
   include List
 
+  let index_of x =
+    let rec aux i =
+      function
+      | [] -> -1
+      | e :: l ->
+        if x = e then i
+        else aux (i + 1) l in
+    aux 0
+
   let remove x =
     let rec inner ret =
       function

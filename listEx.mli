@@ -44,11 +44,15 @@ val stable_sort : ('a -> 'a -> int) -> 'a list -> 'a list
 val fast_sort : ('a -> 'a -> int) -> 'a list -> 'a list
 val merge : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list
 
+  val index_of : 'a -> 'a list -> int
+  (** Reports the index of the first occurrence of the specified
+      element in the list. *)
+
   val remove : 'a -> 'a list -> 'a list
-  (** Removes the first occurrence of a specific element from the List. *)
+  (** Removes the first occurrence of a specific element from the list. *)
 
   val remove_at : int -> 'a list -> 'a list
-  (** Removes the element at the specified index of the List. *)
+  (** Removes the element at the specified index of the list. *)
 
   val index_of : 'a -> 'a list -> int
   (** [index_of x l] returns the first index of an occurrence of element [x] in
