@@ -224,7 +224,7 @@ type constrTypes =
 | Coef of (Id.t * G.E.t) list
 | Simplified of G.V.t
 
-let rec solveGraph (g, ps, vps) visited =
+let rec solveGraph (g, ps, vps) visited constrs =
   (* DEBUG: *)
   if !Flags.enable_gv then (
     Types.Display.highlight_vertices := visited;
@@ -356,14 +356,14 @@ let rec solveGraph (g, ps, vps) visited =
       (name, ex) :: constrs,
       (name, tag) :: m) ([], []) in
 
-  let constrs = gen_constr MV.empty root in
+  let constrs = gen_constr constrs root in
   let root_constrs, symbol_map = MV.find root constrs |> split_tag in
   
   try
     let sol = Z3interface.solve root_constrs in
 
-    (* If solved, check whether the visited set contains all node. If not,
-       extend the set further. Compute frontier. *)
+    (* If solved, check whether the visited set contains all vertices.
+       If not, extend the set further. Compute frontier. *)
     let visited' =
       SV.fold (
         G.fold_succ (
@@ -374,6 +374,7 @@ let rec solveGraph (g, ps, vps) visited =
 
     if SV.cardinal visited <> SV.cardinal visited' then
       (* Broaden non-simplification vertices. *)
+      MV.filter (fun k _ -> not (SV.mem k visited')) constrs |>
       solveGraph (g, ps, vps) visited'
     else
       (* Finished all traversal. *)
@@ -406,10 +407,10 @@ let rec solveGraph (g, ps, vps) visited =
       ) g' None in
 
     match findMerge true with
-    | Some x -> split_vertex_conj (g, ps, vps) x
+    | Some x -> split_vertex_conj (g, ps, vps) x constrs
     | None ->
     match findMerge false with
-    | Some x -> split_vertex_disj (g, ps, vps) x
+    | Some x -> split_vertex_disj (g, ps, vps) x constrs
     | None ->
       let f v = SV.fold (fun e v' ->
         List.fold_left (fun v' x -> SV.add x v') v' (G.succ g e)) v v in
@@ -420,6 +421,7 @@ let rec solveGraph (g, ps, vps) visited =
            we don't have a solution. *)
         raise Not_found;
 
+      MV.filter (fun k _ -> not (SV.mem k visited')) constrs |>
       solveGraph (g, ps, vps) visited'
 
 and split_vertex (vp, (vps, vp's)) =
@@ -434,12 +436,25 @@ and split_vertex (vp, (vps, vp's)) =
 
   vp', (vps', vp's')
 
-and split_vertex_conj (g, ps, vps) x =
+and set_traverse g sv visited =
+  if SV.is_empty sv then visited
+  else
+    let v = SV.choose sv in
+    let vl = G.pred g v in
+    let sv = List.fold_left (fun sv v -> SV.add v sv) sv vl in
+    let visited = SV.add v visited in
+    let sv = SV.diff sv visited in
+    set_traverse g sv visited
+
+and split_vertex_conj (g, ps, vps) x constrs =
   (* Split DAG. *)
 
   (* TODO: Optimize the way of splitting by using Coloring problem. *)
   let vp = G.E.dst (List.hd x) in
   let copies = List.tl x in
+
+  (* Choose reconstruction vertices. *)
+  let recons = set_traverse g (SV.singleton vp) SV.empty in
 
   let g, (vps, vp's) =
     List.fold_left (fun (g', x) e ->
@@ -475,14 +490,18 @@ and split_vertex_conj (g, ps, vps) x =
 
   (* Retry. *)
   (* TODO: Rebuild visited node information; not from scratch. *)
+  MV.filter (fun k _ -> not (SV.mem k recons)) constrs |>
   solveGraph (g, ps, vps) (SV.add root SV.empty)
 
-and split_vertex_disj (g, ps, vps) x =
+and split_vertex_disj (g, ps, vps) x constrs =
   (* Split disjunction. *)
 
   (* TODO: Optimize the way of splitting by using Coloring problem. *)
   let vp = G.E.src (List.hd x) in
   let copies = List.tl x in
+
+  (* Choose reconstruction vertices. *)
+  let recons = set_traverse g (SV.singleton vp) SV.empty in
 
   (* Create new pred vertices for disjunction. *)
   let g, (vps, vp's) =
@@ -543,6 +562,7 @@ and split_vertex_disj (g, ps, vps) x =
 
   (* Retry. *)
   (* TODO: Rebuild visited node information; not from scratch. *)
+  MV.filter (fun k _ -> not (SV.mem k recons)) constrs |>
   solveGraph (g, ps, vps) (SV.add root SV.empty)
 
 let simplifyPCNF clauses =
@@ -612,7 +632,7 @@ let solve clauses =
   assert (not (Traverser.has_cycle g));
 
   let visited = SV.add root SV.empty in
-  let sol = solveGraph problem visited in
+  let sol = solveGraph problem visited MV.empty in
 
   (* Rename back to original predicate variable names and simplify. *)
   let sol = M.fold (fun k -> M.add (M.findDefault k k pm)) sol M.empty in
