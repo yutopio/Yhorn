@@ -2,7 +2,7 @@
 module List = struct
   include List
 
-  let index_of x =
+  let indexof x =
     let rec aux i =
       function
       | [] -> -1

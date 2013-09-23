@@ -44,7 +44,7 @@ val stable_sort : ('a -> 'a -> int) -> 'a list -> 'a list
 val fast_sort : ('a -> 'a -> int) -> 'a list -> 'a list
 val merge : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list
 
-  val index_of : 'a -> 'a list -> int
+  val indexof : 'a -> 'a list -> int
   (** Reports the index of the first occurrence of the specified
       element in the list. *)
 
