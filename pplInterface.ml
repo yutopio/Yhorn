@@ -70,9 +70,8 @@ let expr_of vl =
   | Greater_Or_Equal (t1, t2) -> GTE, f t1 t2
 
 let integer_qelim quants la =
-  if S.cardinal quants >= !Flags.ppl_quant_threshold then la else (
-
   let vars = S.diff (fvs la) quants in
+  if S.cardinal vars >= !Flags.ppl_quant_threshold then la else (
   let vars = S.fold (fun x l -> x :: l) vars [] in
   let la = Formula.normalize la in
 

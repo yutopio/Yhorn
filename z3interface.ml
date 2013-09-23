@@ -127,16 +127,18 @@ let solve constrs =
 
 let solve constr =
   if !Flags.debug_z3_lp then (
-    print_endline "Z3 problem:";
-    List.iter (fun (name, x) ->
-      print_endline (" (" ^ name ^ "): " ^
-        (Formula.print printExpr x))) constr;
+    let mv = ref M.empty in
+    let len = List.fold_left (fun sum (_, x) ->
+      Formula.map (renameExpr mv) x;
+      sum + Formula.count x) 0 constr in
+    print_endline ("Z3 problem [vars: " ^ string_of_int (M.cardinal !mv) ^ ", exprs: " ^ string_of_int len ^ "]");
 
+    print_string "Elapsed time: ";
     let _start = Sys.time () in
     let show_time () =
       let _end = Sys.time () in
       let elapsed = string_of_float (_end -. _start) in
-      print_endline ("Z3 elapsed time: " ^ elapsed ^ " sec.") in
+      print_endline (elapsed ^ " sec.") in
 
     try
       let sol = solve constr in
@@ -144,16 +146,16 @@ let solve constr =
 
       let conv k v l = (Id.print k ^ "=" ^ string_of_int v) :: l in
       let str_sol = String.concat ", " (M.fold conv sol []) in
-      print_endline ("Z3 solution: [" ^ str_sol ^ "]");
+      print_endline ("Solved");
       sol
     with
     | Unsatisfiable x as unsat ->
       show_time ();
-      print_endline ("Z3 solution: Unsatisfiable (" ^ String.concat ", " x ^ ")");
+      print_endline ("Unsatisfiable (Size: " ^ string_of_int (List.length x) ^ ")");
       raise unsat
     | Failure msg ->
       show_time ();
-      print_endline ("Z3 solution: Failure (" ^ msg ^ ")");
+      print_endline ("Failure (" ^ msg ^ ")");
       failwith msg)
   else solve constr
 

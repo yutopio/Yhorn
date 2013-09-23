@@ -2,7 +2,7 @@ open Types
 open Util
 
 let main _ =
-  Flags.enable_gv := true;
+  Flags.debug_z3_lp := true;
 
   let input =
     match Array.length (Sys.argv) with

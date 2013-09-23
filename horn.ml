@@ -226,11 +226,16 @@ type constrTypes =
 | Simplified of G.V.t
 
 let rec solveGraph (g, ps, vps) visited constrs =
+  print_string "#";
+
   (* DEBUG: *)
   if !Flags.enable_gv then (
     Types.Display.highlight_vertices := visited;
     display_with_gv (Operator.mirror g)
   );
+
+  if G.nb_vertex g > 875 then
+    Flags.ppl_debug_flag := true;
 
   let addPcoef e =
     let add (es, m) (k, v) =
@@ -246,6 +251,7 @@ let rec solveGraph (g, ps, vps) visited constrs =
     (M.fold (fun k v -> addPcoef None k (pi, v)) coef m), pi :: pis in
 
   let rec gen_constr ret v =
+    print_string ".";  flush_all ();
     if MV.mem v ret then
       (* If the vertex is already registered in the template list,
          simply return it. *)
@@ -408,10 +414,14 @@ let rec solveGraph (g, ps, vps) visited constrs =
       ) g' None in
 
     match findMerge true with
-    | Some x -> split_vertex_conj (g, ps, vps) x constrs
+    | Some x ->
+      print_endline ("Split conj [" ^ string_of_int (G.nb_vertex g) ^ "] " ^ string_of_float (Sys.time ()));
+      split_vertex_conj (g, ps, vps) x constrs
     | None ->
     match findMerge false with
-    | Some x -> split_vertex_disj (g, ps, vps) x constrs
+    | Some x ->
+      print_endline ("Split disj [" ^ string_of_int (G.nb_vertex g) ^ "] " ^ string_of_float (Sys.time ()));
+      split_vertex_disj (g, ps, vps) x constrs
     | None ->
       let f v = SV.fold (fun e v' ->
         List.fold_left (fun v' x -> SV.add x v') v' (G.succ g e)) v v in
@@ -421,6 +431,9 @@ let rec solveGraph (g, ps, vps) visited constrs =
         (* If all vertices are traversed and still unsatisfiable,
            we don't have a solution. *)
         raise Not_found;
+
+      print_endline ("Extend [" ^ string_of_int (G.nb_vertex g) ^ "]" ^ string_of_float (Sys.time ()));
+      print_endline ("Reconstrcut: " ^ string_of_int (SV.cardinal visited'));
 
       MV.filter (fun k _ -> not (SV.mem k visited')) constrs |>
       solveGraph (g, ps, vps) visited'
@@ -450,15 +463,19 @@ and set_traverse g sv visited =
 and split_vertex_conj (g, ps, vps) x constrs =
   (* Split DAG. *)
 
+  print_string "(";
+
   (* TODO: Optimize the way of splitting by using Coloring problem. *)
   let vp = G.E.dst (List.hd x) in
   let copies = List.tl x in
 
   (* Choose reconstruction vertices. *)
   let recons = set_traverse g (SV.singleton vp) SV.empty in
+  print_string ("Reconstrcut: " ^ string_of_int (SV.cardinal recons) ^ " *");
 
   let g, (vps, vp's) =
     List.fold_left (fun (g', x) e ->
+      print_string "*";
       let vp', x' = split_vertex (vp, x) in
 
       let g'= G.remove_edge_e g' e in
@@ -481,6 +498,7 @@ and split_vertex_conj (g, ps, vps) x constrs =
       g', x'
     ) (g, (vps, [])) copies in
 
+  print_string ")";
   let vp's = vp :: vp's in
   let p, _ = MV.find vp vps in
   let (binder, vpf) = M.find p ps in
@@ -493,7 +511,7 @@ and split_vertex_conj (g, ps, vps) x constrs =
   (* Retry. *)
   (* TODO: Rebuild visited node information; not from scratch. *)
   MV.filter (fun k _ -> not (SV.mem k recons)) constrs |>
-  solveGraph (g, ps, vps) (SV.add root SV.empty)
+  solveGraph (g, ps, vps) (SV.singleton root)
 
 and split_vertex_disj (g, ps, vps) x constrs =
   (* Split disjunction. *)
@@ -504,6 +522,7 @@ and split_vertex_disj (g, ps, vps) x constrs =
 
   (* Choose reconstruction vertices. *)
   let recons = set_traverse g (SV.singleton vp) SV.empty in
+  print_string ("Reconstrcut: " ^ string_of_int (SV.cardinal recons) ^ " ");
 
   (* Create new pred vertices for disjunction. *)
   let g, (vps, vp's) =
@@ -540,6 +559,7 @@ and split_vertex_disj (g, ps, vps) x constrs =
       repeat (fun _ l -> vp's :: l) (List.length lbls) [] |>
       List.direct_product |>
       List.fold_left (fun g choice ->
+        print_string "*";
         let arrow = G.V.create Arrow in
         let g =
           List.fold_left (fun g e ->
@@ -555,6 +575,7 @@ and split_vertex_disj (g, ps, vps) x constrs =
       ) g
     ) mv g' in
 
+  print_endline ")";
   let p, _ = MV.find vp vps in
   let (binder, vpf) = M.find p ps in
   let vpf =
