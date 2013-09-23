@@ -23,3 +23,8 @@ let debug_z3_lp = ref false
 (* If true, integer programming is performed for constraint solving. Otherwise
    performed on real space. *)
 let integer_programming = ref true
+
+(* Adjust PPL operations. *)
+let ppl_debug_flag = ref false
+let ppl_quant_chop = ref 100
+let ppl_quant_threshold = ref 340

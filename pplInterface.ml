@@ -70,7 +70,10 @@ let expr_of vl =
   | Greater_Or_Equal (t1, t2) -> GTE, f t1 t2
 
 let integer_qelim quants la =
+  if S.cardinal quants >= !Flags.ppl_quant_threshold then la else (
+
   let vars = S.diff (fvs la) quants in
+  let vars = S.fold (fun x l -> x :: l) vars [] in
   let la = Formula.normalize la in
 
   let vl = ref [] in
@@ -85,9 +88,31 @@ let integer_qelim quants la =
     | Term x -> [of_expr vl x] in
   let vl = !vl in
 
+  if !Flags.ppl_debug_flag then (
+    let str_vars = String.concat "," (List.map Id.print vars) in
+    print_endline ("Simplification [" ^ str_vars ^ "]: " ^
+                      Formula.print printExpr la));
+
   let poly = ppl_new_C_Polyhedron_from_constraints constrs in
-  let dim = S.fold (fun x l -> (List.index_of x vl) :: l) vars [] in
-  let _, vl = List.partition (fun x -> S.mem x vars) vl in
-  ppl_Polyhedron_remove_space_dimensions poly dim;
+
+  (* Eliminate qunatifiers by the specified number of variables in
+     every iteration. *)
+  let vl =
+    if !Flags.ppl_quant_chop <= 0 then (
+      List.map (fun x -> List.index_of x vl) vars |>
+      ppl_Polyhedron_remove_space_dimensions poly;
+      List.partition (fun x -> List.mem x vars) vl |> snd
+    ) else
+      List.chop !Flags.ppl_quant_chop vars |>
+      List.fold_left (fun vl var ->
+        List.map (fun x -> List.index_of x vl) var |>
+            ppl_Polyhedron_remove_space_dimensions poly;
+        List.partition (fun x -> List.mem x var) vl |> snd) vl
+  in
+
   let constrs = ppl_Polyhedron_get_constraints poly in
-  And (List.map (fun x -> Term (expr_of vl x)) constrs)
+  let ret = And (List.map (fun x -> Term (expr_of vl x)) constrs) in
+
+  if !Flags.ppl_debug_flag then
+    print_endline ("Simplified: " ^ Formula.print printExpr ret);
+  ret)
