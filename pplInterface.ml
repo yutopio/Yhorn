@@ -111,7 +111,11 @@ let integer_qelim quants la =
   in
 
   let constrs = ppl_Polyhedron_get_constraints poly in
-  let ret = And (List.map (fun x -> Term (expr_of vl x)) constrs) in
+  let ret =
+    if constrs = [] then
+      Term (EQ, M.empty) (* Tautology *)
+    else
+      And (List.map (fun x -> Term (expr_of vl x)) constrs) in
 
   if !Flags.ppl_debug_flag then
     print_endline ("Simplified: " ^ Formula.print printExpr ret);
