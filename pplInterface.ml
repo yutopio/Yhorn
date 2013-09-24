@@ -43,7 +43,7 @@ let of_expr vl (op, coef) =
     (* Connect two terms with a relation symbol. *)
     match op with
     | EQ -> Equal (t1, t2)
-    | NEQ -> failwith not_polyhedron
+    | NEQ -> failwith disjunctive_constr
     | LT -> Less_Than (t1, t2)
     | LTE -> Less_Or_Equal (t1, t2)
     | GT -> Greater_Than (t1, t2)
@@ -83,8 +83,8 @@ let integer_qelim quants la =
       List.map (
         function
         | Term x -> of_expr vl x
-        | _ -> failwith not_polyhedron) x
-    | Or x -> failwith not_polyhedron
+        | _ -> failwith disjunctive_constr) x
+    | Or x -> failwith disjunctive_constr
     | Term x -> [of_expr vl x] in
   let vl = !vl in
 
