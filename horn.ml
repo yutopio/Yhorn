@@ -191,7 +191,7 @@ let buildGraph clauses =
   let vlbot = G.V.create (VLinear bot) in
   let g =
     MV.fold (fun v (p, _) g ->
-      assert (G.mem_vertex g v);
+      let g = G.add_vertex g v in
       let g =
         if G.in_degree g v = 0 then
           let binder, Term v' = M.find p ps in assert (v = v');
