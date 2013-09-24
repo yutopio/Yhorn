@@ -5,6 +5,8 @@ open Glpk
 open MTypes
 open Util
 
+exception No_solution
+
 let eps = 1e-5 (* epsilon *)
 
 let solve constrs =
@@ -57,7 +59,12 @@ let solve constrs =
   load_sparse_matrix lp constrs;
   set_message_level lp 0;
   scale_problem lp;
-  interior lp;
+  try
+    interior lp;
 
-  let prim = get_col_primals lp in
-  M.map (fun i -> int_of_float prim.(i)) vm
+    let prim = get_col_primals lp in
+    M.map (fun i -> int_of_float prim.(i)) vm
+  with
+  | No_primal_feasible_solution
+  | No_dual_feasible_solution ->
+    raise No_solution

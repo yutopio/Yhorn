@@ -360,7 +360,7 @@ let rec solveGraph (g, ps, vps) visited constrs =
   let root_constrs, symbol_map = MV.find root constrs |> split_tag in
   
   try
-    let sol = Z3interface.solve root_constrs in
+    let sol = GlpkInterface.solve root_constrs in
 
     (* If solved, check whether the visited set contains all vertices.
        If not, extend the set further. Compute frontier. *)
@@ -383,8 +383,11 @@ let rec solveGraph (g, ps, vps) visited constrs =
         LTE, assignParameters sol pcoef) vps in
       M.map (fun (binder, vpf) ->
         (binder, Formula.map (fun v -> MV.find v vps) vpf)) ps
+  with GlpkInterface.No_solution ->
+    let uc =
+      try Z3interface.solve root_constrs; assert false
+      with Z3interface.Unsatisfiable uc -> uc in
 
-  with Z3interface.Unsatisfiable uc ->
     (* Restore constraint information. *)
     let uc_tags = List.map (fun x -> List.assoc x symbol_map) uc in
 
