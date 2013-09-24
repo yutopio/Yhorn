@@ -38,7 +38,7 @@ let solve constrs =
         if k = Id.const then (vm, constrs)
         else
           let j, vm =
-            if not (M.mem k vm) then
+            if M.mem k vm then
               M.find k vm, vm
             else
               let card = M.cardinal vm in
