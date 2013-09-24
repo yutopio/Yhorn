@@ -226,7 +226,11 @@ type constrTypes =
 | Simplified of G.V.t
 
 let rec solveGraph (g, ps, vps) visited constrs =
-  print_string "#";
+  print_newline ();
+  M.iter (fun k (_, f) ->
+    print_string ((Id.print k) ^ ": ");
+    print_endline (Formula.print (fun x -> "X") f)) ps;
+  flush_all ();
 
   (* DEBUG: *)
   if !Flags.enable_gv then (
