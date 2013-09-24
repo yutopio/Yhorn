@@ -485,7 +485,8 @@ and split_vertex_conj (g, ps, vps) x constrs =
   let (binder, vpf) = M.find p ps in
   let vpf =
     Formula.transform (fun x ->
-      if x = vp then And (List.map (fun x -> Term x) vp's) else Term x) vpf in
+      if x = vp then And (List.map (fun x -> Term x) vp's) else Term x) vpf |>
+    Formula.normalize in
   let ps = M.add p (binder, vpf) ps in
 
   (* Retry. *)
