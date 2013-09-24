@@ -59,8 +59,8 @@ let rec fold f seed =
 
 let count x = fold (fun x _ -> x + 1) 0 x
 
-let normalize =
+let rec normalize =
   function
-  | And x -> List.reduce (&&&) x
-  | Or x -> List.reduce (|||) x
+  | And x -> List.reduce (&&&) (List.map normalize x)
+  | Or x -> List.reduce (|||) (List.map normalize x)
   | x -> x
