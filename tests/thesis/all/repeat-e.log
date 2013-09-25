@@ -1,0 +1,143 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -gchi repeat-e.ml
+
+parsed::
+ let succ_1030 x_1031 = x_1031 + 1 
+ in
+ let rec repeat_1032 f_1033 n_1034 s_1035 =
+   if n_1034 = 0 then
+     s_1035
+   else
+     f_1033 (repeat_1032 f_1033 (n_1034 - 1) s_1035) 
+ in
+ let main_1036 n_1037 = if repeat_1032 succ_1030 n_1037 0 > n_1037 then
+                          ()
+                        else
+                          {fail} () 
+ in
+   ()
+
+set_target::
+ let succ_1030 x_1031 = x_1031 + 1 
+ in
+ let rec repeat_1032 f_1033 n_1034 s_1035 =
+   if n_1034 = 0 then
+     s_1035
+   else
+     f_1033 (repeat_1032 f_1033 (n_1034 - 1) s_1035) 
+ in
+ let main_1036 n_1037 = if repeat_1032 succ_1030 n_1037 0 > n_1037 then
+                          ()
+                        else
+                          {fail} () 
+ in
+ let main_1075 = let arg1_1074 = rand_int () 
+                 in
+                   main_1036 arg1_1074 
+ in
+   ()
+
+copy_poly::
+ let succ_1030 (x_1031:int) = x_1031 + 1 
+ in
+ let rec repeat_1076 (f_1033:(int -> int)) (n_1034:int) (s_1035:int) =
+   if n_1034 = 0 then
+     s_1035
+   else
+     f_1033 (repeat_1076 f_1033 (n_1034 - 1) s_1035) 
+ in
+ let main_1036 (n_1037:int) = if repeat_1076 succ_1030 n_1037 0 > n_1037 then
+                                ()
+                              else
+                                {fail} () 
+ in
+ let main_1075 = let arg1_1074 = rand_int () 
+                 in
+                   main_1036 arg1_1074 
+ in
+   ()
+
+CPS::
+ let succ_1030 (x_1031:int) (k_succ_1101:(int -> X)) = k_succ_1101 (x_1031 + 1) 
+ in
+ let rec repeat_1076 (f_1033:(int -> ((int -> X) -> X))) (n_1034:int) (s_1035:int) (k_repeat_1133:(
+   int -> X)) =
+   if n_1034 = 0 then
+     k_repeat_1133 s_1035
+   else
+     repeat_1076 f_1033 (n_1034 - 1) s_1035 (fun x_1161 -> f_1033 x_1161 k_repeat_1133) 
+ in
+ let main_1036 (n_1037:int) (k_main_1179:(unit -> X)) =
+   repeat_1076 succ_1030 n_1037 0
+     (fun x_1182 -> (if x_1182 > n_1037 then
+                       k_main_1179 ()
+                     else
+                       {|fail|} () k_main_1179)) 
+ in
+   rand_int_cps () (fun x_1218 -> main_1036 x_1218 (fun x_1215 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1243
+  main_1243 -> (rand_int f_1246)
+  f_1246 x_1218 -> (main_1036 x_1218 (f_1247 x_1218))
+  f_1247 x_1218 x_1215 -> end
+  f_main_1245 n_1037 k_main_1179 x_1182 when (x_1182 > n_1037) -> (k_main_1179 ())
+  f_main_1245 n_1037 k_main_1179 x_1182 when (not (x_1182 > n_1037)) -> (fail_1248 true k_main_1179)
+  f_repeat_1244 n_1034 s_1035 f_1033 k_repeat_1133 x_1161 -> (f_1033 x_1161 k_repeat_1133)
+  fail_1248 b k -> {fail} => (k ())
+  main_1036 n_1037 k_main_1179 -> (repeat_1076 succ_1030 n_1037 0 (f_main_1245 n_1037 k_main_1179))
+  repeat_1076 f_1033 n_1034 s_1035 k_repeat_1133 when (n_1034 = 0) -> (k_repeat_1133 s_1035)
+  repeat_1076 f_1033 n_1034 s_1035 k_repeat_1133 when (not (n_1034 = 0)) ->
+      (repeat_1076 f_1033 (n_1034 - 1) s_1035 (f_repeat_1244 n_1034 s_1035 f_1033 k_repeat_1133))
+  succ_1030 x_1031 k_succ_1101 -> (k_succ_1101 (x_1031 + 1))
+Types:
+  main_1243 : X
+  fail_1248 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  repeat_1076 : ((int -> (int -> X) -> X) -> int -> int -> (int -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1243 ... --> 
+  f_1246 ... --> 
+  main_1036 ... --> 
+  repeat_1076 [1/2] ... --> 
+  f_main_1245 [2/2] ... --> 
+  fail_1248 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... begin Cvc3Interface.solve(99)[1]
+  CVC3 input: PUSH;cnt18_v_sep_r_1298:INT;CHECKSAT (TRUE AND ((NOT (0 > cnt18_v_sep_r_1298)) AND ((cnt18_v_sep_r_1298 = 0) AND (TRUE AND (TRUE AND TRUE)))));COUNTERMODEL;POP;
+  CVC3 output: CVC> Satisfiable.
+  CVC3 output: Current scope level is 9.
+  CVC3 output: %Satisfiable  Variable Assignment: % 
+  CVC3 output: ASSERT (cnt18_v_sep_r_1298 = 0);
+  CVC3 output: CVC> 
+  v_sep_r_1298 = 0
+  end Cvc3Interface.solve(99)[1] (0.003999 sec.)
+DONE!
+
+Unsafe!
+
+Input for main:
+  0
+Error trace:
+  main 0 ->
+    repeat <fun> 0 0 ->
+      if true then ... ->
+    if false then ... ->
+    FAIL!
+
+cycles: 0
+total: 0.189 sec
+  abst: 0.001 sec
+  mc: 0.003 sec
+  refine: 0.005 sec
+    exparam: 0.000 sec

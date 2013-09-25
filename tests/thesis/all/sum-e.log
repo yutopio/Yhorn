@@ -1,0 +1,111 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -gchi sum-e.ml
+
+parsed::
+ let rec sum_1030 n_1031 = if n_1031 <= 0 then
+                             0
+                           else
+                             n_1031 + sum_1030 (n_1031 - 1) 
+ in
+ let main_1032 n_1033 = if n_1033 + 1 <= sum_1030 n_1033 then
+                          ()
+                        else
+                          {fail} () 
+ in
+   ()
+
+set_target::
+ let rec sum_1030 n_1031 = if n_1031 <= 0 then
+                             0
+                           else
+                             n_1031 + sum_1030 (n_1031 - 1) 
+ in
+ let main_1032 n_1033 = if n_1033 + 1 <= sum_1030 n_1033 then
+                          ()
+                        else
+                          {fail} () 
+ in
+ let main_1050 = let arg1_1049 = rand_int () 
+                 in
+                   main_1032 arg1_1049 
+ in
+   ()
+
+CPS::
+ let rec sum_1030 (n_1031:int) (k_sum_1075:(int -> X)) =
+   if n_1031 <= 0 then
+     k_sum_1075 0
+   else
+     sum_1030 (n_1031 - 1) (fun x_1079 -> k_sum_1075 (n_1031 + x_1079)) 
+ in
+ let main_1032 (n_1033:int) (k_main_1107:(unit -> X)) =
+   sum_1030 n_1033 (fun x_1111 -> (if n_1033 + 1 <= x_1111 then
+                                     k_main_1107 ()
+                                   else
+                                     {|fail|} () k_main_1107)) 
+ in
+   rand_int_cps () (fun x_1138 -> main_1032 x_1138 (fun x_1135 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1163
+  main_1163 -> (rand_int f_1166)
+  f_1166 x_1138 -> (main_1032 x_1138 (f_1167 x_1138))
+  f_1167 x_1138 x_1135 -> end
+  f_main_1165 n_1033 k_main_1107 x_1111 when ((n_1033 + 1) <= x_1111) -> (k_main_1107 ())
+  f_main_1165 n_1033 k_main_1107 x_1111 when (not ((n_1033 + 1) <= x_1111)) -> (fail_1168 true k_main_1107)
+  f_sum_1164 n_1031 k_sum_1075 x_1079 -> (k_sum_1075 (n_1031 + x_1079))
+  fail_1168 b k -> {fail} => (k ())
+  main_1032 n_1033 k_main_1107 -> (sum_1030 n_1033 (f_main_1165 n_1033 k_main_1107))
+  sum_1030 n_1031 k_sum_1075 when (n_1031 <= 0) -> (k_sum_1075 0)
+  sum_1030 n_1031 k_sum_1075 when (not (n_1031 <= 0)) -> (sum_1030 (n_1031 - 1) (f_sum_1164 n_1031 k_sum_1075))
+Types:
+  main_1163 : X
+  fail_1168 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  sum_1030 : (int -> (int -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1163 ... --> 
+  f_1166 ... --> 
+  main_1032 ... --> 
+  sum_1030 [1/2] ... --> 
+  f_main_1165 [2/2] ... --> 
+  fail_1168 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... begin Cvc3Interface.solve(104)[1]
+  CVC3 input: PUSH;cnt18_v_sep_r_1204:INT;CHECKSAT (TRUE AND ((NOT ((cnt18_v_sep_r_1204 + 1) <= 0)) AND ((cnt18_v_sep_r_1204 <= 0) AND (TRUE AND (TRUE AND TRUE)))));COUNTERMODEL;POP;
+  CVC3 output: CVC> Satisfiable.
+  CVC3 output: Current scope level is 9.
+  CVC3 output: %Satisfiable  Variable Assignment: % 
+  CVC3 output: ASSERT (cnt18_v_sep_r_1204 = 0);
+  CVC3 output: CVC> 
+  v_sep_r_1204 = 0
+  end Cvc3Interface.solve(104)[1] (0.004999 sec.)
+DONE!
+
+Unsafe!
+
+Input for main:
+  0
+Error trace:
+  main 0 ->
+    sum 0 ->
+      if true then ... ->
+    if false then ... ->
+    FAIL!
+
+cycles: 0
+total: 0.196 sec
+  abst: 0.002 sec
+  mc: 0.004 sec
+  refine: 0.006 sec
+    exparam: 0.000 sec

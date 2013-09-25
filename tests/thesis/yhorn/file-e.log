@@ -1,0 +1,202 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn file-e.ml
+
+parsed::
+ let open__1030 x_1031 = 1 
+ in
+ let close_1032 fp_1033 = 0 
+ in
+ let read_1034 fp_1035 = if fp_1035 = 0 then
+                           ()
+                         else
+                           {fail} () 
+ in
+ let rec read_n_1036 fp_1037 n_1038 =
+   if n_1038 <= 0 then
+     fp_1037
+   else
+     let u_1057 = read_1034 fp_1037 
+     in
+       read_n_1036 fp_1037 (n_1038 - 1) 
+ in
+ let main_1039 n_1040 =
+   let fp_1041 = open__1030 () 
+   in
+   let fp_1042 = read_n_1036 fp_1041 n_1040 
+   in
+     if fp_1042 = 0 then
+       ()
+     else
+       {fail} () 
+ in
+   ()
+
+set_target::
+ let open__1030 x_1031 = 1 
+ in
+ let close_1032 fp_1033 = 0 
+ in
+ let read_1034 fp_1035 = if fp_1035 = 0 then
+                           ()
+                         else
+                           {fail} () 
+ in
+ let rec read_n_1036 fp_1037 n_1038 =
+   if n_1038 <= 0 then
+     fp_1037
+   else
+     let u_1057 = read_1034 fp_1037 
+     in
+       read_n_1036 fp_1037 (n_1038 - 1) 
+ in
+ let main_1039 n_1040 =
+   let fp_1041 = open__1030 () 
+   in
+   let fp_1042 = read_n_1036 fp_1041 n_1040 
+   in
+     if fp_1042 = 0 then
+       ()
+     else
+       {fail} () 
+ in
+ let main_1067 = let arg1_1066 = rand_int () 
+                 in
+                   main_1039 arg1_1066 
+ in
+   ()
+
+copy_poly::
+ let open__1068 (x_1031:unit) = 1 
+ in
+ let close_1032 (fp_1033:unit) = 0 
+ in
+ let read_1034 (fp_1035:int) = if fp_1035 = 0 then
+                                 ()
+                               else
+                                 {fail} () 
+ in
+ let rec read_n_1036 (fp_1037:int) (n_1038:int) =
+   if n_1038 <= 0 then
+     fp_1037
+   else
+     let u_1057 = read_1034 fp_1037 
+     in
+       read_n_1036 fp_1037 (n_1038 - 1) 
+ in
+ let main_1039 (n_1040:int) =
+   let fp_1041 = open__1068 () 
+   in
+   let fp_1042 = read_n_1036 fp_1041 n_1040 
+   in
+     if fp_1042 = 0 then
+       ()
+     else
+       {fail} () 
+ in
+ let main_1067 = let arg1_1066 = rand_int () 
+                 in
+                   main_1039 arg1_1066 
+ in
+   ()
+
+CPS::
+ let open__1068 (x_1031:unit) (k_open__1093:(int -> X)) = k_open__1093 1 
+ in
+ let close_1032 (fp_1033:unit) (k_close_1107:(int -> X)) = k_close_1107 0 
+ in
+ let read_1034 (fp_1035:int) (k_read_1121:(unit -> X)) =
+   if fp_1035 = 0 then
+     k_read_1121 ()
+   else
+     {|fail|} () k_read_1121 
+ in
+ let rec read_n_1036 (fp_1037:int) (n_1038:int) (k_read_n_1149:(int -> X)) =
+   if n_1038 <= 0 then
+     k_read_n_1149 fp_1037
+   else
+     read_1034 fp_1037 (fun x_1152 -> read_n_1036 fp_1037 (n_1038 - 1) k_read_n_1149) 
+ in
+ let main_1039 (n_1040:int) (k_main_1191:(unit -> X)) =
+   open__1068 ()
+     (fun x_1194 ->
+        read_n_1036 x_1194 n_1040 (fun x_1207 -> (if x_1207 = 0 then
+                                                    k_main_1191 ()
+                                                  else
+                                                    {|fail|} () k_main_1191))) 
+ in
+   rand_int_cps () (fun x_1235 -> main_1039 x_1235 (fun x_1232 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1260
+  main_1260 -> (rand_int f_1264)
+  close_1032 fp_1033 k_close_1107 -> (k_close_1107 0)
+  f_1264 x_1235 -> (main_1039 x_1235 (f_1265 x_1235))
+  f_1265 x_1235 x_1232 -> end
+  f_main_1262 n_1040 k_main_1191 x_1194 -> (read_n_1036 x_1194 n_1040 (f_main_1263 n_1040 x_1194 k_main_1191))
+  f_main_1263 n_1040 x_1194 k_main_1191 x_1207 when (x_1207 = 0) -> (k_main_1191 ())
+  f_main_1263 n_1040 x_1194 k_main_1191 x_1207 when (not (x_1207 = 0)) -> (fail_1267 true k_main_1191)
+  f_read_n_1261 fp_1037 n_1038 k_read_n_1149 x_1152 -> (read_n_1036 fp_1037 (n_1038 - 1) k_read_n_1149)
+  fail_1266 b k -> {fail} => (k ())
+  fail_1267 b k -> {fail} => (k ())
+  main_1039 n_1040 k_main_1191 -> (open__1068 () (f_main_1262 n_1040 k_main_1191))
+  open__1068 x_1031 k_open__1093 -> (k_open__1093 1)
+  read_1034 fp_1035 k_read_1121 when (fp_1035 = 0) -> (k_read_1121 ())
+  read_1034 fp_1035 k_read_1121 when (not (fp_1035 = 0)) -> (fail_1266 true k_read_1121)
+  read_n_1036 fp_1037 n_1038 k_read_n_1149 when (n_1038 <= 0) -> (k_read_n_1149 fp_1037)
+  read_n_1036 fp_1037 n_1038 k_read_n_1149 when (not (n_1038 <= 0)) ->
+      (read_1034 fp_1037 (f_read_n_1261 fp_1037 n_1038 k_read_n_1149))
+Types:
+  main_1260 : X
+  fail_1266 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  fail_1267 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  read_n_1036 : (int -> int -> (int -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1260 ... --> 
+  f_1264 ... --> 
+  main_1039 ... --> 
+  open__1068 ... --> 
+  f_main_1262 ... --> 
+  read_n_1036 [1/2] ... --> 
+  f_main_1263 [2/2] ... --> 
+  fail_1267 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... begin Cvc3Interface.solve(129)[1]
+  CVC3 input: PUSH;cnt24_v_sep_r_1337:INT;CHECKSAT (TRUE AND ((NOT (1 = 0)) AND ((cnt24_v_sep_r_1337 <= 0) AND (TRUE AND (TRUE AND (TRUE AND (TRUE AND TRUE)))))));COUNTERMODEL;POP;
+  CVC3 output: CVC> Satisfiable.
+  CVC3 output: Current scope level is 9.
+  CVC3 output: %Satisfiable  Variable Assignment: % 
+  CVC3 output: ASSERT (cnt24_v_sep_r_1337 = 0);
+  CVC3 output: CVC> 
+  v_sep_r_1337 = 0
+  end Cvc3Interface.solve(129)[1] (0.004999 sec.)
+DONE!
+
+Unsafe!
+
+Input for main:
+  0
+Error trace:
+  main 0 ->
+    open_ () ->
+    read_n 1 0 ->
+      if true then ... ->
+    if false then ... ->
+    FAIL!
+
+cycles: 0
+total: 0.197 sec
+  abst: 0.003 sec
+  mc: 0.003 sec
+  refine: 0.006 sec
+    exparam: 0.000 sec

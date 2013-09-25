@@ -1,0 +1,548 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn bcopy4.ml
+
+parsed::
+ let array1_1030 i_1031 = 0 
+ in
+ let array2_1032 i_1033 = 0 
+ in
+ let update_1034 a_1035 i_1036 x_1037 j_1038 = if j_1038 = i_1036 then
+                                                 x_1037
+                                               else
+                                                 a_1035 j_1038 
+ in
+ let rec bcopy_aux_1039 m_1040 src_1041 des_1042 i_1043 =
+   if i_1043 >= m_1040 then
+     ()
+   else
+     let u_1131 = if 0 <= i_1043 && i_1043 <= m_1040 then
+                    ()
+                  else
+                    {fail} () 
+     in
+     let des_1044 = update_1034 des_1042 i_1043 (src_1041 i_1043) 
+     in
+       bcopy_aux_1039 m_1040 src_1041 des_1044 (i_1043 + 1) 
+ in
+ let main_1045 n_1046 =
+   let bcopy_1047 src_1048 des_1049 = bcopy_aux_1039 n_1046 src_1048 des_1049 0 
+   in
+     bcopy_1047 array1_1030 array2_1032 
+ in
+   ()
+
+set_target::
+ let array1_1030 i_1031 = 0 
+ in
+ let array2_1032 i_1033 = 0 
+ in
+ let update_1034 a_1035 i_1036 x_1037 j_1038 = if j_1038 = i_1036 then
+                                                 x_1037
+                                               else
+                                                 a_1035 j_1038 
+ in
+ let rec bcopy_aux_1039 m_1040 src_1041 des_1042 i_1043 =
+   if i_1043 >= m_1040 then
+     ()
+   else
+     let u_1131 = if 0 <= i_1043 && i_1043 <= m_1040 then
+                    ()
+                  else
+                    {fail} () 
+     in
+     let des_1044 = update_1034 des_1042 i_1043 (src_1041 i_1043) 
+     in
+       bcopy_aux_1039 m_1040 src_1041 des_1044 (i_1043 + 1) 
+ in
+ let main_1045 n_1046 =
+   let bcopy_1047 src_1048 des_1049 = bcopy_aux_1039 n_1046 src_1048 des_1049 0 
+   in
+     bcopy_1047 array1_1030 array2_1032 
+ in
+ let main_1170 = let arg1_1169 = rand_int () 
+                 in
+                   main_1045 arg1_1169 
+ in
+   ()
+
+copy_poly::
+ let array1_1175 (i_1031:int) = 0 
+ in
+ let array2_1174 (i_1033:int) = 0 
+ in
+ let update_1173 (a_1035:(int -> int)) (i_1036:int) (x_1037:int) (j_1038:int) =
+   if j_1038 = i_1036 then
+     x_1037
+   else
+     a_1035 j_1038 
+ in
+ let rec bcopy_aux_1172 (m_1040:int) (src_1041:(int -> int)) (des_1042:(
+   int -> int)) (i_1043:int) =
+   if i_1043 >= m_1040 then
+     ()
+   else
+     let u_1131 = if 0 <= i_1043 && i_1043 <= m_1040 then
+                    ()
+                  else
+                    {fail} () 
+     in
+     let des_1044 = update_1173 des_1042 i_1043 (src_1041 i_1043) 
+     in
+       bcopy_aux_1172 m_1040 src_1041 des_1044 (i_1043 + 1) 
+ in
+ let main_1045 (n_1046:int) =
+   let bcopy_1171 (src_1048:(int -> int)) (des_1049:(int -> int)) = bcopy_aux_1172 n_1046 src_1048 des_1049 0 
+   in
+     bcopy_1171 array1_1175 array2_1174 
+ in
+ let main_1170 = let arg1_1169 = rand_int () 
+                 in
+                   main_1045 arg1_1169 
+ in
+   ()
+
+CPS::
+ let array1_1175 (i_1031:int) (k_array1_1200:(int -> X)) = k_array1_1200 0 
+ in
+ let array2_1174 (i_1033:int) (k_array2_1214:(int -> X)) = k_array2_1214 0 
+ in
+ let update_1173
+   (a_1035:(int -> ((int -> X) -> X))) (i_1036:int) (x_1037:int) (j_1038:int) (k_update_1249:(
+   int -> X)) = if j_1038 = i_1036 then
+                  k_update_1249 x_1037
+                else
+                  a_1035 j_1038 k_update_1249 
+ in
+ let rec bcopy_aux_1172
+   (m_1040:int) (src_1041:(int -> ((int -> X) -> X))) (des_1042:(int -> ((int -> X) -> X))) (i_1043:int) (k_bcopy_aux_1310:(
+   unit -> X)) =
+   if i_1043 >= m_1040 then
+     k_bcopy_aux_1310 ()
+   else
+     let k_bcopy_aux_u_1327 (x_1313:unit) =
+       src_1041 i_1043
+         (fun x_1373 ->
+            bcopy_aux_1172 m_1040 src_1041 (update_1173 des_1042 i_1043 x_1373) (i_1043 + 1) k_bcopy_aux_1310) 
+     in
+     let k_bcopy_aux_u_1316 (b_1328:bool) =
+       if b_1328 then
+         k_bcopy_aux_u_1327 ()
+       else
+         {|fail|} () k_bcopy_aux_u_1327 
+     in
+       if 0 <= i_1043 then
+         k_bcopy_aux_u_1316 (i_1043 <= m_1040)
+       else
+         k_bcopy_aux_u_1316 false 
+ in
+ let main_1045 (n_1046:int) (k_main_1416:(unit -> X)) =
+   let bcopy_1171
+     (src_1048:(int -> ((int -> X) -> X))) (des_1049:(int -> ((int -> X) -> X))) (k_main_bcopy_1457:(
+     unit -> X)) = bcopy_aux_1172 n_1046 src_1048 des_1049 0 k_main_bcopy_1457 
+   in
+     bcopy_1171 array1_1175 array2_1174 k_main_1416 
+ in
+   rand_int_cps () (fun x_1517 -> main_1045 x_1517 (fun x_1514 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1542
+  main_1542 -> (rand_int f_1544)
+  array1_1175 i_1031 k_array1_1200 -> (k_array1_1200 0)
+  array2_1174 i_1033 k_array2_1214 -> (k_array2_1214 0)
+  bcopy_1171 n_1046 src_1048 des_1049 k_main_bcopy_1457 ->
+      (bcopy_aux_1172 n_1046 src_1048 des_1049 0 k_main_bcopy_1457)
+  bcopy_aux_1172 m_1040 src_1041 des_1042 i_1043 k_bcopy_aux_1310 when (i_1043 >= m_1040) -> (k_bcopy_aux_1310 ())
+  bcopy_aux_1172 m_1040 src_1041 des_1042 i_1043 k_bcopy_aux_1310 when (
+      not (i_1043 >= m_1040)) -> (br_bcopy_aux_1546 (0 <= i_1043) m_1040 src_1041 des_1042 i_1043 k_bcopy_aux_1310)
+  br_bcopy_aux_1546 b_1547 m_1040 src_1041 des_1042 i_1043 k_bcopy_aux_1310 when b_1547 ->
+      (k_bcopy_aux_u_1316 i_1043 m_1040 des_1042 k_bcopy_aux_1310 src_1041 (i_1043 <= m_1040))
+  br_bcopy_aux_1546 b_1547 m_1040 src_1041 des_1042 i_1043 k_bcopy_aux_1310 when (
+      not b_1547) -> (k_bcopy_aux_u_1316 i_1043 m_1040 des_1042 k_bcopy_aux_1310 src_1041 false)
+  f_1544 x_1517 -> (main_1045 x_1517 (f_1545 x_1517))
+  f_1545 x_1517 x_1514 -> end
+  f_k_bcopy_aux_u_1543 i_1043 m_1040 x_1313 des_1042 k_bcopy_aux_1310 src_1041 x_1373 ->
+      (bcopy_aux_1172 m_1040 src_1041 (update_1173 des_1042 i_1043 x_1373) (i_1043 + 1) k_bcopy_aux_1310)
+  fail_1548 b k -> {fail} => (k ())
+  k_bcopy_aux_u_1316 i_1043 m_1040 des_1042 k_bcopy_aux_1310 src_1041 b_1328 when b_1328 ->
+      (k_bcopy_aux_u_1327 i_1043 m_1040 des_1042 k_bcopy_aux_1310 src_1041 ())
+  k_bcopy_aux_u_1316 i_1043 m_1040 des_1042 k_bcopy_aux_1310 src_1041 b_1328 when (
+      not b_1328) -> (fail_1548 true (k_bcopy_aux_u_1327 i_1043 m_1040 des_1042 k_bcopy_aux_1310 src_1041))
+  k_bcopy_aux_u_1327 i_1043 m_1040 des_1042 k_bcopy_aux_1310 src_1041 x_1313 ->
+      (src_1041 i_1043 (f_k_bcopy_aux_u_1543 i_1043 m_1040 x_1313 des_1042 k_bcopy_aux_1310 src_1041))
+  main_1045 n_1046 k_main_1416 -> (bcopy_1171 n_1046 array1_1175 array2_1174 k_main_1416)
+  update_1173 a_1035 i_1036 x_1037 j_1038 k_update_1249 when (j_1038 = i_1036) -> (k_update_1249 x_1037)
+  update_1173 a_1035 i_1036 x_1037 j_1038 k_update_1249 when (not (j_1038 = i_1036)) -> (a_1035 j_1038 k_update_1249)
+Types:
+  main_1542 : X
+  bcopy_aux_1172 : (int -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> (unit -> X) -> X)
+  fail_1548 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1542 ... --> 
+  f_1544 ... --> 
+  main_1045 ... --> 
+  bcopy_1171 ... --> 
+  bcopy_aux_1172 [2/2] ... --> 
+  br_bcopy_aux_1546 [2/2] ... --> 
+  k_bcopy_aux_u_1316 [2/2] ... --> 
+  fail_1548 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 1; 1; 1; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(167)[1]
+  program:
+    main_1542  | true = ((Random.int 0) f_1544)
+    array1_1175 i_1031 k_array1_1200 | true = (k_array1_1200 0)
+    array2_1174 i_1033 k_array2_1214 | true = (k_array2_1214 0)
+    bcopy_1171 n_1046 src_1048 des_1049 k_main_bcopy_1457 | true = (bcopy_aux_1172
+                                                                    n_1046
+                                                                    src_1048
+                                                                    des_1049
+                                                                    0
+                                                                    k_main_bcopy_1457)
+    bcopy_aux_1172 m_1040 src_1041 des_1042 i_1043 k_bcopy_aux_1310 | (
+    i_1043 >= m_1040) = (k_bcopy_aux_1310 ())
+    bcopy_aux_1172 m_1040 src_1041 des_1042 i_1043 k_bcopy_aux_1310 | (
+    not (i_1043 >= m_1040)) = (br_bcopy_aux_1546 (0 <= i_1043)
+                                                 m_1040
+                                                 src_1041
+                                                 des_1042
+                                                 i_1043
+                                                 k_bcopy_aux_1310)
+    br_bcopy_aux_1546 b_1547 m_1040 src_1041 des_1042 i_1043 k_bcopy_aux_1310 | b_1547 = (
+    k_bcopy_aux_u_1316 i_1043
+                       m_1040
+                       des_1042
+                       k_bcopy_aux_1310
+                       src_1041
+                       (i_1043 <= m_1040))
+    br_bcopy_aux_1546 b_1547 m_1040 src_1041 des_1042 i_1043 k_bcopy_aux_1310 | (
+    not b_1547) = (k_bcopy_aux_u_1316 i_1043
+                                      m_1040
+                                      des_1042
+                                      k_bcopy_aux_1310
+                                      src_1041
+                                      false)
+    f_1544 x_1517 | true = (main_1045 x_1517
+                                      (f_1545 x_1517))
+    f_1545 x_1517 x_1514 | true = end
+    f_k_bcopy_aux_u_1543 i_1043 m_1040 x_1313 des_1042 k_bcopy_aux_1310 src_1041 x_1373 | true = (
+    bcopy_aux_1172 m_1040
+                   src_1041
+                   (update_1173 des_1042
+                                i_1043
+                                x_1373)
+                   (i_1043 + 1)
+                   k_bcopy_aux_1310)
+    fail_1548 b k | true = (fail ())
+    k_bcopy_aux_u_1316 i_1043 m_1040 des_1042 k_bcopy_aux_1310 src_1041 b_1328 | b_1328 = (
+    k_bcopy_aux_u_1327 i_1043
+                       m_1040
+                       des_1042
+                       k_bcopy_aux_1310
+                       src_1041
+                       ())
+    k_bcopy_aux_u_1316 i_1043 m_1040 des_1042 k_bcopy_aux_1310 src_1041 b_1328 | (
+    not b_1328) = (fail_1548 true
+                             (k_bcopy_aux_u_1327 i_1043
+                                                 m_1040
+                                                 des_1042
+                                                 k_bcopy_aux_1310
+                                                 src_1041))
+    k_bcopy_aux_u_1327 i_1043 m_1040 des_1042 k_bcopy_aux_1310 src_1041 x_1313 | true = (
+    src_1041 i_1043
+             (f_k_bcopy_aux_u_1543 i_1043
+                                   m_1040
+                                   x_1313
+                                   des_1042
+                                   k_bcopy_aux_1310
+                                   src_1041))
+    main_1045 n_1046 k_main_1416 | true = (bcopy_1171 n_1046
+                                                      array1_1175
+                                                      array2_1174
+                                                      k_main_1416)
+    update_1173 a_1035 i_1036 x_1037 j_1038 k_update_1249 | (j_1038 = i_1036) = (
+    k_update_1249 x_1037)
+    update_1173 a_1035 i_1036 x_1037 j_1038 k_update_1249 | (not (j_1038 = i_1036)) = (
+    a_1035 j_1038
+           k_update_1249)
+    main_1542:X
+    array1_1175:int -> (int -> X) -> X
+    array2_1174:int -> (int -> X) -> X
+    bcopy_1171:int -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> (unit -> X) -> X
+    bcopy_aux_1172:int -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> (unit -> X) -> X
+    br_bcopy_aux_1546:bool -> int -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> (unit -> X) -> X
+    f_1544:int -> X
+    f_1545:int -> unit -> X
+    f_k_bcopy_aux_u_1543:int ->
+                         int -> unit -> (int -> (int -> X) -> X) -> (unit -> X) -> (int -> (int -> X) -> X) -> int -> X
+    fail_1548:bool -> (unit -> X) -> X
+    k_bcopy_aux_u_1316:int -> int -> (int -> (int -> X) -> X) -> (unit -> X) -> (int -> (int -> X) -> X) -> bool -> X
+    k_bcopy_aux_u_1327:int -> int -> (int -> (int -> X) -> X) -> (unit -> X) -> (int -> (int -> X) -> X) -> unit -> X
+    main_1045:int -> (unit -> X) -> X
+    update_1173:(int -> (int -> X) -> X) -> int -> int -> int -> (int -> X) -> X
+  inlined functions: array1_1175,array2_1174,bcopy_1171,br_bcopy_aux_1546,f_1544,f_1545,f_k_bcopy_aux_u_1543,k_bcopy_aux_u_1316,k_bcopy_aux_u_1327,main_1045,update_1173
+  counterexample: 0:0:0:0:1:1:1:0
+  error traces:
+    [true.nop(<f_1544@4:0> = var2)
+     [true.(<main_1045@6:0> = <f_1544@4:0>)
+      [true.(<bcopy_1171@8:0> = <main_1045@6:0>)
+       [true.((<bcopy_aux_1172@10:0> = <bcopy_1171@8:0>) && (<bcopy_aux_1172@10:3> = 0))
+        [(not (<bcopy_aux_1172@10:3> >= <bcopy_aux_1172@10:0>)).
+         ((<br_bcopy_aux_1546@13:0> = (0 <= <bcopy_aux_1172@10:3>)) &&
+          ((<br_bcopy_aux_1546@13:1> = <bcopy_aux_1172@10:0>) && (<br_bcopy_aux_1546@13:4> = <bcopy_aux_1172@10:3>)))
+         [(not <br_bcopy_aux_1546@13:0>).
+          ((<k_bcopy_aux_u_1316@16:0> = <br_bcopy_aux_1546@13:4>) &&
+           ((<k_bcopy_aux_u_1316@16:1> = <br_bcopy_aux_1546@13:1>) && (<k_bcopy_aux_u_1316@16:5> = false)))
+          [(not <k_bcopy_aux_u_1316@16:5>).(<fail_1548@19:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(168)[2]
+    horn clauses:
+      P[<fail_1548@19:0>](<fail_1548@19:0>:bool)|- bot
+      
+      P[<k_bcopy_aux_u_1316@16:5>](<k_bcopy_aux_u_1316@16:0>:int,<k_bcopy_aux_u_1316@16:1>:int,false:bool),
+      <fail_1548@19:0> |- P[<fail_1548@19:0>](<fail_1548@19:0>:bool)
+      
+      P[<br_bcopy_aux_1546@13:4>](false:bool,<k_bcopy_aux_u_1316@16:1>:int,<k_bcopy_aux_u_1316@16:0>:int),
+      (not <k_bcopy_aux_u_1316@16:5>)
+      |- P[<k_bcopy_aux_u_1316@16:5>](<k_bcopy_aux_u_1316@16:0>:int,<k_bcopy_aux_u_1316@16:1>:int,
+                                      <k_bcopy_aux_u_1316@16:5>:bool)
+      
+      P[<bcopy_aux_1172@10:3>](<br_bcopy_aux_1546@13:1>:int,<br_bcopy_aux_1546@13:4>:int),
+      ((<br_bcopy_aux_1546@13:4> < <br_bcopy_aux_1546@13:1>) &&
+       (<br_bcopy_aux_1546@13:0> = (0 <= <br_bcopy_aux_1546@13:4>)))
+      |- P[<br_bcopy_aux_1546@13:4>](<br_bcopy_aux_1546@13:0>:bool,<br_bcopy_aux_1546@13:1>:int,
+                                     <br_bcopy_aux_1546@13:4>:int)
+      
+      P[<bcopy_1171@8:0>](<bcopy_aux_1172@10:0>:int), (<bcopy_aux_1172@10:3> = 0)
+      |- P[<bcopy_aux_1172@10:3>](<bcopy_aux_1172@10:0>:int,<bcopy_aux_1172@10:3>:int)
+      
+      P[<main_1045@6:0>](<bcopy_1171@8:0>:int)|- P[<bcopy_1171@8:0>](<bcopy_1171@8:0>:int)
+      
+      P[<f_1544@4:0>](<main_1045@6:0>:int)|- P[<main_1045@6:0>](<main_1045@6:0>:int)
+      
+      |- P[<f_1544@4:0>](<f_1544@4:0>:int)
+    call trees:
+      <main_1542@1>
+        <f_1544@4>
+          <main_1045@6>
+            <bcopy_1171@8>
+              <bcopy_aux_1172@10>
+                <br_bcopy_aux_1546@13>
+                  <k_bcopy_aux_u_1316@16>
+                    <fail_1548@19>
+    inlined horn clauses:
+      P[<fail_1548@19:0>](<fail_1548@19:0>:bool)|- bot
+      
+      P[<bcopy_aux_1172@10:3>](<k_bcopy_aux_u_1316@16:1>:int,<k_bcopy_aux_u_1316@16:0>:int),
+      ((<k_bcopy_aux_u_1316@16:0> < <k_bcopy_aux_u_1316@16:1>) && ((0 > <k_bcopy_aux_u_1316@16:0>) && <fail_1548@19:0>))
+      |- P[<fail_1548@19:0>](<fail_1548@19:0>:bool)
+      
+       (<bcopy_aux_1172@10:3> = 0) |- P[<bcopy_aux_1172@10:3>](<bcopy_aux_1172@10:0>:int,
+                                                               <bcopy_aux_1172@10:3>:int)
+    begin ParamSubstInfer.infer(1261)[3]
+      
+    end ParamSubstInfer.infer(1261)[3] (0.024996 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(1263)[3]
+      
+    end RefTypeInfer.elim_coeffs(1263)[3] (0.000000 sec.)
+    begin YhornInterface.solve(1422)[3]
+      begin HcSolver.solve_ub(1423)[4]
+        encoded:
+          P[<fail_1548@19:0>](<fail_1548@19:0>:int)|- bot
+          
+          P[<bcopy_aux_1172@10:3>](<k_bcopy_aux_u_1316@16:1>:int,<k_bcopy_aux_u_1316@16:0>:int),
+          ((<k_bcopy_aux_u_1316@16:0> < <k_bcopy_aux_u_1316@16:1>) &&
+           ((0 > <k_bcopy_aux_u_1316@16:0>) && (<fail_1548@19:0> = 1))) |- P[<fail_1548@19:0>](
+          <fail_1548@19:0>:int)
+          
+           (<bcopy_aux_1172@10:3> = 0) |- P[<bcopy_aux_1172@10:3>](<bcopy_aux_1172@10:0>:int,
+                                                                   <bcopy_aux_1172@10:3>:int)
+        input to Yhorn:
+          P[<fail_1548@19:0>](<fail_1548@19:0>:int)|- bot
+          
+          P[<bcopy_aux_1172@10:3>](<k_bcopy_aux_u_1316@16:1>:int,<k_bcopy_aux_u_1316@16:0>:int),
+          ((0 > <k_bcopy_aux_u_1316@16:0>) &&
+           ((<k_bcopy_aux_u_1316@16:0> < <k_bcopy_aux_u_1316@16:1>) && (<fail_1548@19:0> = 1)))
+          |- P[<fail_1548@19:0>](<fail_1548@19:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1548_sep_19_sep_0($6)) -> 1=0.
+(($6-1=0) & ($7-$8<0) & (-$7>0)) & (v_sep_bcopy_aux_1172_sep_10_sep_3($8,$7)) -> v_sep_fail_1548_sep_19_sep_0($6).
+$9=0 -> v_sep_bcopy_aux_1172_sep_10_sep_3($10,$9).
+
+
+v_sep_bcopy_aux_1172_sep_10_sep_3: X
+v_sep_fail_1548_sep_19_sep_0: X
+...
+v_sep_bcopy_aux_1172_sep_10_sep_3: X
+v_sep_fail_1548_sep_19_sep_0: X
+...
+v_sep_bcopy_aux_1172_sep_10_sep_3: X
+v_sep_fail_1548_sep_19_sep_0: X
+...(0=0) & (v_sep_fail_1548_sep_19_sep_0($6)) -> 1=0.
+(($6-1=0) & ($7-$8<0) & (-$7>0)) & (v_sep_bcopy_aux_1172_sep_10_sep_3($8,$7)) -> v_sep_fail_1548_sep_19_sep_0($6).
+$9=0 -> v_sep_bcopy_aux_1172_sep_10_sep_3($10,$9).
+
+           (<bcopy_aux_1172@10:3> = 0) |- P[<bcopy_aux_1172@10:3>](<bcopy_aux_1172@10:0>:int,
+                                                                   <bcopy_aux_1172@10:3>:int)
+        solution:
+          P[<bcopy_aux_1172@10:3>]($14:int,$16:int) = (0 <= $16)
+          P[<fail_1548@19:0>]($11:bool) = false
+        
+      end HcSolver.solve_ub(1423)[4] (0.009999 sec.)
+      begin HcSolver.check_validity(1531)[4]
+        input:
+          P[<fail_1548@19:0>](<fail_1548@19:0>:bool)|- bot
+          
+          P[<bcopy_aux_1172@10:3>](<k_bcopy_aux_u_1316@16:1>:int,<k_bcopy_aux_u_1316@16:0>:int),
+          ((<k_bcopy_aux_u_1316@16:0> < <k_bcopy_aux_u_1316@16:1>) &&
+           ((0 > <k_bcopy_aux_u_1316@16:0>) && <fail_1548@19:0>)) |- P[<fail_1548@19:0>](
+          <fail_1548@19:0>:bool)
+          
+           (<bcopy_aux_1172@10:3> = 0) |- P[<bcopy_aux_1172@10:3>](<bcopy_aux_1172@10:0>:int,
+                                                                   <bcopy_aux_1172@10:3>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(1531)[4] (0.003999 sec.)
+      solution:
+        P[<bcopy_aux_1172@10:3>]($14:int,$16:int) = (0 <= $16)
+        P[<fail_1548@19:0>]($11:bool) = false
+    end YhornInterface.solve(1422)[3] (0.013998 sec.)
+    
+  end RefTypeInfer.infer_etrs(168)[2] (0.045993 sec.)
+  refinement types:
+    main_1542: X
+    f_1544: v1:int -> X
+    main_1045: v1:int -> (v2:unit -> X) -> X
+    bcopy_1171: v1:int -> (v2:int -> (v3:int -> X) -> X) -> (v6:int -> (v7:int -> X) -> X) -> (v10:unit -> X) -> X
+    bcopy_aux_1172: v1:int ->
+                    (v2:int -> (v3:int -> X) -> X) ->
+                    (v6:int -> (v7:int -> X) -> X) -> v10:{v10:int | (0 <= v10)} -> (v11:unit -> X) -> X
+    br_bcopy_aux_1546: v1:bool ->
+                       v2:int ->
+                       (v3:int -> (v4:int -> X) -> X) ->
+                       (v7:int -> (v8:int -> X) -> X) -> v11:int -> (v12:unit -> X) -> X
+    k_bcopy_aux_u_1316: v1:int ->
+                        v2:int ->
+                        (v3:int -> (v4:int -> X) -> X) ->
+                        (v7:unit -> X) -> (v9:int -> (v10:int -> X) -> X) -> v13:bool -> X
+    fail_1548: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    array1_1175: var50:int -> (var49:int -> X) -> X
+    array2_1174: var54:int -> (var53:int -> X) -> X
+    f_1545: var57:int -> var56:unit -> X
+    f_k_bcopy_aux_u_1543: var72:int ->
+                          var71:int ->
+                          var70:unit ->
+                          (var69:int -> (var68:int -> X) -> X) ->
+                          (var65:unit -> X) -> (var63:int -> (var62:int -> X) -> X) -> var59:int -> X
+    k_bcopy_aux_u_1327: var86:int ->
+                        var85:int ->
+                        (var84:int -> (var83:int -> X) -> X) ->
+                        (var80:unit -> X) -> (var78:int -> (var77:int -> X) -> X) -> var74:unit -> X
+    update_1173: (var96:int -> (var95:int -> X) -> X) -> var92:int -> var91:int -> var90:int -> (var89:int -> X) -> X
+  abstraction types:
+    main_1542: X
+    f_1544: v1:int -> X
+    main_1045: v1:int -> (v2:unit -> X) -> X
+    bcopy_1171: v1:int -> (v2:int -> (v3:int -> X) -> X) -> (v6:int -> (v7:int -> X) -> X) -> (v10:unit -> X) -> X
+    bcopy_aux_1172: v1:int ->
+                    (v2:int -> (v3:int -> X) -> X) ->
+                    (v6:int -> (v7:int -> X) -> X) -> v10:int[v10 -> (
+                                                              0 <= v10)] -> (v11:unit -> X) -> X
+    br_bcopy_aux_1546: v1:bool ->
+                       v2:int ->
+                       (v3:int -> (v4:int -> X) -> X) ->
+                       (v7:int -> (v8:int -> X) -> X) -> v11:int -> (v12:unit -> X) -> X
+    k_bcopy_aux_u_1316: v1:int ->
+                        v2:int ->
+                        (v3:int -> (v4:int -> X) -> X) ->
+                        (v7:unit -> X) -> (v9:int -> (v10:int -> X) -> X) -> v13:bool -> X
+    fail_1548: v1:bool -> (v2:unit -> X) -> X
+    array1_1175: var50:int -> (var49:int -> X) -> X
+    array2_1174: var54:int -> (var53:int -> X) -> X
+    f_1545: var57:int -> var56:unit -> X
+    f_k_bcopy_aux_u_1543: var72:int ->
+                          var71:int ->
+                          var70:unit ->
+                          (var69:int -> (var68:int -> X) -> X) ->
+                          (var65:unit -> X) -> (var63:int -> (var62:int -> X) -> X) -> var59:int -> X
+    k_bcopy_aux_u_1327: var86:int ->
+                        var85:int ->
+                        (var84:int -> (var83:int -> X) -> X) ->
+                        (var80:unit -> X) -> (var78:int -> (var77:int -> X) -> X) -> var74:unit -> X
+    update_1173: (var96:int -> (var95:int -> X) -> X) -> var92:int -> var91:int -> var90:int -> (var89:int -> X) -> X
+  
+end AbsTypeInfer.refine(167)[1] (0.049992 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 1; 1
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1542
+  main_1542 -> (rand_int f_1544)
+  array1_1175 i_1031 k_array1_1200 -> (k_array1_1200 0)
+  array2_1174 i_1033 k_array2_1214 -> (k_array2_1214 0)
+  bcopy_1171 n_1046 src_1048 des_1049 k_main_bcopy_1457 ->
+      (bcopy_aux_1172 n_1046 src_1048 des_1049 0 k_main_bcopy_1457)
+  bcopy_aux_1172 m_1040 src_1041 des_1042 i_1043 k_bcopy_aux_1310 when (i_1043 >= m_1040) -> (k_bcopy_aux_1310 ())
+  bcopy_aux_1172 m_1040 src_1041 des_1042 i_1043 k_bcopy_aux_1310 when (
+      not (i_1043 >= m_1040)) -> (br_bcopy_aux_1546 (0 <= i_1043) m_1040 src_1041 des_1042 i_1043 k_bcopy_aux_1310)
+  br_bcopy_aux_1546 b_1547 m_1040 src_1041 des_1042 i_1043 k_bcopy_aux_1310 when b_1547 ->
+      (k_bcopy_aux_u_1316 i_1043 m_1040 des_1042 k_bcopy_aux_1310 src_1041 (i_1043 <= m_1040))
+  br_bcopy_aux_1546 b_1547 m_1040 src_1041 des_1042 i_1043 k_bcopy_aux_1310 when (
+      not b_1547) -> (k_bcopy_aux_u_1316 i_1043 m_1040 des_1042 k_bcopy_aux_1310 src_1041 false)
+  f_1544 x_1517 -> (main_1045 x_1517 (f_1545 x_1517))
+  f_1545 x_1517 x_1514 -> end
+  f_k_bcopy_aux_u_1543 i_1043 m_1040 x_1313 des_1042 k_bcopy_aux_1310 src_1041 x_1373 ->
+      (bcopy_aux_1172 m_1040 src_1041 (update_1173 des_1042 i_1043 x_1373) (i_1043 + 1) k_bcopy_aux_1310)
+  fail_1548 b k -> {fail} => (k ())
+  k_bcopy_aux_u_1316 i_1043 m_1040 des_1042 k_bcopy_aux_1310 src_1041 b_1328 when b_1328 ->
+      (k_bcopy_aux_u_1327 i_1043 m_1040 des_1042 k_bcopy_aux_1310 src_1041 ())
+  k_bcopy_aux_u_1316 i_1043 m_1040 des_1042 k_bcopy_aux_1310 src_1041 b_1328 when (
+      not b_1328) -> (fail_1548 true (k_bcopy_aux_u_1327 i_1043 m_1040 des_1042 k_bcopy_aux_1310 src_1041))
+  k_bcopy_aux_u_1327 i_1043 m_1040 des_1042 k_bcopy_aux_1310 src_1041 x_1313 ->
+      (src_1041 i_1043 (f_k_bcopy_aux_u_1543 i_1043 m_1040 x_1313 des_1042 k_bcopy_aux_1310 src_1041))
+  main_1045 n_1046 k_main_1416 -> (bcopy_1171 n_1046 array1_1175 array2_1174 k_main_1416)
+  update_1173 a_1035 i_1036 x_1037 j_1038 k_update_1249 when (j_1038 = i_1036) -> (k_update_1249 x_1037)
+  update_1173 a_1035 i_1036 x_1037 j_1038 k_update_1249 when (not (j_1038 = i_1036)) -> (a_1035 j_1038 k_update_1249)
+Types:
+  main_1542 : X
+  bcopy_aux_1172 : (int ->
+                    (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> x_14:int[x_14 >= 0] -> (unit -> X) -> X)
+  fail_1548 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Safe!
+
+Refinement Types:
+  bcopy_aux: (int -> ((int -> int) -> (Top -> ({x_4:int | x_4 >= 0} -> unit))))
+
+cycles: 1
+total: 0.328 sec
+  abst: 0.007 sec
+  mc: 0.029 sec
+  refine: 0.056 sec
+    exparam: 0.025 sec

@@ -1,0 +1,3322 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn gib.ml
+
+parsed::
+ let rec gib_1030 a_1031 b_1032 n_1033 =
+   if n_1033 = 0 then
+     a_1031
+   else
+     if n_1033 = 1 then
+       b_1032
+     else
+       gib_1030 a_1031 b_1032 (n_1033 - 1) + gib_1030 a_1031 b_1032 (n_1033 - 2) 
+ in
+ let main_1034 n_1035 a_1036 b_1037 =
+   if a_1036 >= 0 && b_1037 >= 0 then
+     if gib_1030 0 1 n_1035 >= 0 then
+       ()
+     else
+       {fail} ()
+   else
+     () 
+ in
+   ()
+
+set_target::
+ let rec gib_1030 a_1031 b_1032 n_1033 =
+   if n_1033 = 0 then
+     a_1031
+   else
+     if n_1033 = 1 then
+       b_1032
+     else
+       gib_1030 a_1031 b_1032 (n_1033 - 1) + gib_1030 a_1031 b_1032 (n_1033 - 2) 
+ in
+ let main_1034 n_1035 a_1036 b_1037 =
+   if a_1036 >= 0 && b_1037 >= 0 then
+     if gib_1030 0 1 n_1035 >= 0 then
+       ()
+     else
+       {fail} ()
+   else
+     () 
+ in
+ let main_1091 =
+   let arg1_1088 = rand_int () 
+   in
+   let arg2_1089 = rand_int () 
+   in
+   let arg3_1090 = rand_int () 
+   in
+     main_1034 arg1_1088 arg2_1089 arg3_1090 
+ in
+   ()
+
+CPS::
+ let rec gib_1030 (a_1031:int) (b_1032:int) (n_1033:int) (k_gib_1122:(
+   int -> X)) =
+   if n_1033 = 0 then
+     k_gib_1122 a_1031
+   else
+     if n_1033 = 1 then
+       k_gib_1122 b_1032
+     else
+       gib_1030 a_1031 b_1032 (n_1033 - 1)
+         (fun x_1125 -> gib_1030 a_1031 b_1032 (n_1033 - 2) (fun x_1126 -> k_gib_1122 (x_1125 + x_1126))) 
+ in
+ let main_1034 (n_1035:int) (a_1036:int) (b_1037:int) (k_main_1178:(unit -> X)) =
+   let k_main_1181 (b_1213:bool) =
+     if b_1213 then
+       gib_1030 0 1 n_1035 (fun x_1185 -> (if x_1185 >= 0 then
+                                             k_main_1178 ()
+                                           else
+                                             {|fail|} () k_main_1178))
+     else
+       k_main_1178 () 
+   in
+     if a_1036 >= 0 then
+       k_main_1181 (b_1037 >= 0)
+     else
+       k_main_1181 false 
+ in
+   rand_int_cps ()
+     (fun x_1219 ->
+        rand_int_cps ()
+          (fun x_1232 -> rand_int_cps () (fun x_1245 -> main_1034 x_1219 x_1232 x_1245 (fun x_1216 -> end))))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1278
+  main_1278 -> (rand_int f_1282)
+  br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 when b_1287 -> (k_gib_1122 b_1032)
+  br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 when (not b_1287) ->
+      (gib_1030 a_1031 b_1032 (n_1033 - 1) (f_gib_1279 a_1031 b_1032 n_1033 k_gib_1122))
+  f_1282 x_1219 -> (rand_int (f_1283 x_1219))
+  f_1283 x_1219 x_1232 -> (rand_int (f_1284 x_1219 x_1232))
+  f_1284 x_1219 x_1232 x_1245 -> (main_1034 x_1219 x_1232 x_1245 (f_1285 x_1219 x_1232 x_1245))
+  f_1285 x_1219 x_1232 x_1245 x_1216 -> end
+  f_gib_1279 a_1031 b_1032 n_1033 k_gib_1122 x_1125 ->
+      (gib_1030 a_1031 b_1032 (n_1033 - 2) (f_gib_1280 a_1031 b_1032 n_1033 x_1125 k_gib_1122))
+  f_gib_1280 a_1031 b_1032 n_1033 x_1125 k_gib_1122 x_1126 -> (k_gib_1122 (x_1125 + x_1126))
+  f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 when (x_1185 >= 0) -> (k_main_1178 ())
+  f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 when (not (x_1185 >= 0)) -> (fail_1288 true k_main_1178)
+  fail_1288 b k -> {fail} => (k ())
+  gib_1030 a_1031 b_1032 n_1033 k_gib_1122 when (n_1033 = 0) -> (k_gib_1122 a_1031)
+  gib_1030 a_1031 b_1032 n_1033 k_gib_1122 when (not (n_1033 = 0)) ->
+      (br_gib_1286 (n_1033 = 1) a_1031 b_1032 n_1033 k_gib_1122)
+  k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 when b_1213 ->
+      (gib_1030 0 1 n_1035 (f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178))
+  k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 when (not b_1213) -> (k_main_1178 ())
+  main_1034 n_1035 a_1036 b_1037 k_main_1178 when (a_1036 >= 0) ->
+      (k_main_1181 a_1036 b_1037 n_1035 k_main_1178 (b_1037 >= 0))
+  main_1034 n_1035 a_1036 b_1037 k_main_1178 when (not (a_1036 >= 0)) ->
+      (k_main_1181 a_1036 b_1037 n_1035 k_main_1178 false)
+Types:
+  main_1278 : X
+  fail_1288 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  gib_1030 : (int -> int -> int -> (int -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1278 ... --> 
+  f_1282 ... --> 
+  f_1283 ... --> 
+  f_1284 ... --> 
+  main_1034 [1/2] ... --> 
+  k_main_1181 [1/2] ... --> 
+  gib_1030 [2/2] ... --> 
+  br_gib_1286 [1/2] ... --> 
+  f_k_main_1281 [2/2] ... --> 
+  fail_1288 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 1; 0; 1; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(171)[1]
+  program:
+    main_1278  | true = ((Random.int 0) f_1282)
+    br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 | b_1287 = (k_gib_1122 b_1032)
+    br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 | (not b_1287) = (
+    gib_1030 a_1031
+             b_1032
+             (n_1033 - 1)
+             (f_gib_1279 a_1031
+                         b_1032
+                         n_1033
+                         k_gib_1122))
+    f_1282 x_1219 | true = ((Random.int 0) (f_1283 x_1219))
+    f_1283 x_1219 x_1232 | true = ((Random.int 0) (f_1284 x_1219
+                                                          x_1232))
+    f_1284 x_1219 x_1232 x_1245 | true = (main_1034 x_1219
+                                                    x_1232
+                                                    x_1245
+                                                    (f_1285 x_1219
+                                                            x_1232
+                                                            x_1245))
+    f_1285 x_1219 x_1232 x_1245 x_1216 | true = end
+    f_gib_1279 a_1031 b_1032 n_1033 k_gib_1122 x_1125 | true = (gib_1030
+                                                                  a_1031
+                                                                  b_1032
+                                                                  (n_1033 - 2)
+                                                                  (f_gib_1280 a_1031
+                                                                    b_1032
+                                                                    n_1033
+                                                                    x_1125
+                                                                    k_gib_1122))
+    f_gib_1280 a_1031 b_1032 n_1033 x_1125 k_gib_1122 x_1126 | true = (
+    k_gib_1122 (x_1125 + x_1126))
+    f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 | (x_1185 >= 0) = (
+    k_main_1178 ())
+    f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 | (not (
+                                                                    x_1185 >= 0)) = (
+    fail_1288 true
+              k_main_1178)
+    fail_1288 b k | true = (fail ())
+    gib_1030 a_1031 b_1032 n_1033 k_gib_1122 | (n_1033 = 0) = (k_gib_1122 a_1031)
+    gib_1030 a_1031 b_1032 n_1033 k_gib_1122 | (not (n_1033 = 0)) = (
+    br_gib_1286 (n_1033 = 1)
+                a_1031
+                b_1032
+                n_1033
+                k_gib_1122)
+    k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 | b_1213 = (gib_1030
+                                                                    0
+                                                                    1
+                                                                    n_1035
+                                                                    (
+                                                                    f_k_main_1281
+                                                                    a_1036
+                                                                    b_1037
+                                                                    b_1213
+                                                                    n_1035
+                                                                    k_main_1178))
+    k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 | (not b_1213) = (
+    k_main_1178 ())
+    main_1034 n_1035 a_1036 b_1037 k_main_1178 | (a_1036 >= 0) = (k_main_1181
+                                                                    a_1036
+                                                                    b_1037
+                                                                    n_1035
+                                                                    k_main_1178
+                                                                    (
+                                                                    b_1037 >= 0))
+    main_1034 n_1035 a_1036 b_1037 k_main_1178 | (not (a_1036 >= 0)) = (
+    k_main_1181 a_1036
+                b_1037
+                n_1035
+                k_main_1178
+                false)
+    main_1278:X
+    br_gib_1286:bool -> int -> int -> int -> (int -> X) -> X
+    f_1282:int -> X
+    f_1283:int -> int -> X
+    f_1284:int -> int -> int -> X
+    f_1285:int -> int -> int -> unit -> X
+    f_gib_1279:int -> int -> int -> (int -> X) -> int -> X
+    f_gib_1280:int -> int -> int -> int -> (int -> X) -> int -> X
+    f_k_main_1281:int -> int -> bool -> int -> (unit -> X) -> int -> X
+    fail_1288:bool -> (unit -> X) -> X
+    gib_1030:int -> int -> int -> (int -> X) -> X
+    k_main_1181:int -> int -> int -> (unit -> X) -> bool -> X
+    main_1034:int -> int -> int -> (unit -> X) -> X
+  inlined functions: br_gib_1286,f_1282,f_1283,f_1284,f_1285,f_gib_1279,f_gib_1280,f_k_main_1281,k_main_1181,main_1034
+  counterexample: 0:0:0:0:0:0:1:0:1:0
+  error traces:
+    [true.nop(<f_1282@4:0> = var2)
+     [true.nop((<f_1283@7:0> = <f_1282@4:0>) && (<f_1283@7:1> = var3))
+      [true.nop((<f_1284@10:0> = <f_1283@7:0>) && ((<f_1284@10:1> = <f_1283@7:1>) && (<f_1284@10:2> = var4)))
+       [true.
+        ((<main_1034@12:0> = <f_1284@10:0>) &&
+         ((<main_1034@12:1> = <f_1284@10:1>) && (<main_1034@12:2> = <f_1284@10:2>)))
+        [(<main_1034@12:1> >= 0).
+         ((<k_main_1181@15:0> = <main_1034@12:1>) &&
+          ((<k_main_1181@15:1> = <main_1034@12:2>) &&
+           ((<k_main_1181@15:2> = <main_1034@12:0>) && (<k_main_1181@15:4> = (<main_1034@12:2> >= 0)))))
+         [<k_main_1181@15:4>.
+          ((<gib_1030@18:0> = 0) && ((<gib_1030@18:1> = 1) && (<gib_1030@18:2> = <k_main_1181@15:2>)))
+          [(not (<gib_1030@18:2> = 0)).
+           ((<br_gib_1286@21:0> = (<gib_1030@18:2> = 1)) &&
+            ((<br_gib_1286@21:1> = <gib_1030@18:0>) &&
+             ((<br_gib_1286@21:2> = <gib_1030@18:1>) && (<br_gib_1286@21:3> = <gib_1030@18:2>))))
+           [<br_gib_1286@21:0>.(<<br_gib_1286@21:4>@24:0> = <br_gib_1286@21:2>)
+            [true.(<<gib_1030@18:3>@26:0> = <<br_gib_1286@21:4>@24:0>)
+             [true.
+              ((<f_k_main_1281@28:0> = <k_main_1181@15:0>) &&
+               ((<f_k_main_1281@28:1> = <k_main_1181@15:1>) &&
+                ((<f_k_main_1281@28:2> = <k_main_1181@15:4>) &&
+                 ((<f_k_main_1281@28:3> = <k_main_1181@15:2>) && (<f_k_main_1281@28:5> = <<gib_1030@18:3>@26:0>)))))
+              [(not (<f_k_main_1281@28:5> >= 0)).(<fail_1288@31:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(172)[2]
+    horn clauses:
+      P[<fail_1288@31:0>](<fail_1288@31:0>:bool)|- bot
+      
+      P[<f_k_main_1281@28:5>](<f_k_main_1281@28:0>:int,<f_k_main_1281@28:1>:int,<f_k_main_1281@28:2>:bool,<f_k_main_1281@28:3>:int,<f_k_main_1281@28:5>:int),
+      ((<f_k_main_1281@28:5> < 0) && <fail_1288@31:0>) |- P[<fail_1288@31:0>](
+      <fail_1288@31:0>:bool)
+      
+      P[<k_main_1181@15:4>](<f_k_main_1281@28:0>:int,<f_k_main_1281@28:1>:int,<f_k_main_1281@28:3>:int,<f_k_main_1281@28:2>:bool),
+      P[<<gib_1030@18:3>@26:0>](0:int,1:int,<f_k_main_1281@28:3>:int,<f_k_main_1281@28:5>:int), <f_k_main_1281@28:2>
+      |- P[<f_k_main_1281@28:5>](<f_k_main_1281@28:0>:int,<f_k_main_1281@28:1>:int,
+                                 <f_k_main_1281@28:2>:bool,<f_k_main_1281@28:3>:int,
+                                 <f_k_main_1281@28:5>:int)
+      
+      P[<gib_1030@18:2>](<gib_1030@18:0>:int,<gib_1030@18:1>:int,<gib_1030@18:2>:int),
+      P[<<br_gib_1286@21:4>@24:0>]((<gib_1030@18:2> = 1):bool,<gib_1030@18:0>:int,<gib_1030@18:1>:int,<gib_1030@18:2>:int,<<gib_1030@18:3>@26:0>:int),
+      (<gib_1030@18:2> <> 0)
+      |- P[<<gib_1030@18:3>@26:0>](<gib_1030@18:0>:int,<gib_1030@18:1>:int,
+                                   <gib_1030@18:2>:int,<<gib_1030@18:3>@26:0>:int)
+      
+      P[<br_gib_1286@21:3>](<br_gib_1286@21:0>:bool,<br_gib_1286@21:1>:int,<br_gib_1286@21:2>:int,<br_gib_1286@21:3>:int),
+      ((<<br_gib_1286@21:4>@24:0> = <br_gib_1286@21:2>) && <br_gib_1286@21:0>)
+      |- P[<<br_gib_1286@21:4>@24:0>](<br_gib_1286@21:0>:bool,<br_gib_1286@21:1>:int,
+                                      <br_gib_1286@21:2>:int,<br_gib_1286@21:3>:int,
+                                      <<br_gib_1286@21:4>@24:0>:int)
+      
+      P[<gib_1030@18:2>](<br_gib_1286@21:1>:int,<br_gib_1286@21:2>:int,<br_gib_1286@21:3>:int),
+      ((<br_gib_1286@21:3> <> 0) && (<br_gib_1286@21:0> = (<br_gib_1286@21:3> = 1)))
+      |- P[<br_gib_1286@21:3>](<br_gib_1286@21:0>:bool,<br_gib_1286@21:1>:int,
+                               <br_gib_1286@21:2>:int,<br_gib_1286@21:3>:int)
+      
+      P[<k_main_1181@15:4>](<k_main_1181@15:0>:int,<k_main_1181@15:1>:int,<gib_1030@18:2>:int,true:bool),
+      ((<gib_1030@18:1> = 1) && (<gib_1030@18:0> = 0))
+      |- P[<gib_1030@18:2>](<gib_1030@18:0>:int,<gib_1030@18:1>:int,<gib_1030@18:2>:int)
+      
+      P[<main_1034@12:2>](<k_main_1181@15:2>:int,<k_main_1181@15:0>:int,<k_main_1181@15:1>:int),
+      ((<k_main_1181@15:0> >= 0) && (<k_main_1181@15:4> = (<k_main_1181@15:1> >= 0)))
+      |- P[<k_main_1181@15:4>](<k_main_1181@15:0>:int,<k_main_1181@15:1>:int,
+                               <k_main_1181@15:2>:int,<k_main_1181@15:4>:bool)
+      
+      P[<f_1284@10:2>](<main_1034@12:0>:int,<main_1034@12:1>:int,<main_1034@12:2>:int)|- P[<main_1034@12:2>](
+      <main_1034@12:0>:int,<main_1034@12:1>:int,<main_1034@12:2>:int)
+      
+      P[<f_1283@7:1>](<f_1284@10:0>:int,<f_1284@10:1>:int)|- P[<f_1284@10:2>](
+      <f_1284@10:0>:int,<f_1284@10:1>:int,<f_1284@10:2>:int)
+      
+      P[<f_1282@4:0>](<f_1283@7:0>:int)|- P[<f_1283@7:1>](<f_1283@7:0>:int,
+                                                          <f_1283@7:1>:int)
+      
+      |- P[<f_1282@4:0>](<f_1282@4:0>:int)
+    call trees:
+      <main_1278@1>
+        <f_1282@4>
+          <f_1283@7>
+            <f_1284@10>
+              <main_1034@12>
+                <k_main_1181@15>
+                  <gib_1030@18>
+                    <br_gib_1286@21>
+                    </<br_gib_1286@21:4>@24>
+                  </<gib_1030@18:3>@26>
+                  <f_k_main_1281@28>
+                    <fail_1288@31>
+    inlined horn clauses:
+      P[<fail_1288@31:0>](<fail_1288@31:0>:bool)|- bot
+      
+      P[<<gib_1030@18:3>@26:0>](0:int,1:int,<f_k_main_1281@28:3>:int,<f_k_main_1281@28:5>:int),
+      ((<f_k_main_1281@28:5> < 0) && <fail_1288@31:0>) |- P[<fail_1288@31:0>](
+      <fail_1288@31:0>:bool)
+      
+      P[<gib_1030@18:2>](<gib_1030@18:0>:int,<gib_1030@18:1>:int,<gib_1030@18:2>:int),
+      ((<gib_1030@18:2> = 1) && (<<gib_1030@18:3>@26:0> = <gib_1030@18:1>))
+      |- P[<<gib_1030@18:3>@26:0>](<gib_1030@18:0>:int,<gib_1030@18:1>:int,
+                                   <gib_1030@18:2>:int,<<gib_1030@18:3>@26:0>:int)
+      
+       ((<gib_1030@18:1> = 1) && (<gib_1030@18:0> = 0))
+      |- P[<gib_1030@18:2>](<gib_1030@18:0>:int,<gib_1030@18:1>:int,<gib_1030@18:2>:int)
+    begin ParamSubstInfer.infer(2331)[3]
+      
+    end ParamSubstInfer.infer(2331)[3] (0.020997 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(2333)[3]
+      
+    end RefTypeInfer.elim_coeffs(2333)[3] (0.000999 sec.)
+    begin YhornInterface.solve(2526)[3]
+      begin HcSolver.solve_ub(2527)[4]
+        encoded:
+          P[<fail_1288@31:0>](<fail_1288@31:0>:int)|- bot
+          
+          P[<<gib_1030@18:3>@26:0>](0:int,1:int,<f_k_main_1281@28:3>:int,<f_k_main_1281@28:5>:int),
+          ((<f_k_main_1281@28:5> < 0) && (<fail_1288@31:0> = 1)) |- P[<fail_1288@31:0>](
+          <fail_1288@31:0>:int)
+          
+          P[<gib_1030@18:2>](<gib_1030@18:0>:int,<gib_1030@18:1>:int,<gib_1030@18:2>:int),
+          ((<gib_1030@18:2> = 1) && (<<gib_1030@18:3>@26:0> = <gib_1030@18:1>))
+          |- P[<<gib_1030@18:3>@26:0>](<gib_1030@18:0>:int,<gib_1030@18:1>:int,
+                                       <gib_1030@18:2>:int,<<gib_1030@18:3>@26:0>:int)
+          
+           ((<gib_1030@18:1> = 1) && (<gib_1030@18:0> = 0))
+          |- P[<gib_1030@18:2>](<gib_1030@18:0>:int,<gib_1030@18:1>:int,
+                                <gib_1030@18:2>:int)
+        input to Yhorn:
+          P[<fail_1288@31:0>](<fail_1288@31:0>:int)|- bot
+          
+          P[<<gib_1030@18:3>@26:0>](var5:int,var6:int,<f_k_main_1281@28:3>:int,<f_k_main_1281@28:5>:int),
+          ((<f_k_main_1281@28:5> < 0) && ((var6 = 1) && ((var5 = 0) && (<fail_1288@31:0> = 1))))
+          |- P[<fail_1288@31:0>](<fail_1288@31:0>:int)
+          
+          P[<gib_1030@18:2>](<gib_1030@18:0>:int,<gib_1030@18:1>:int,<gib_1030@18:2>:int),
+          ((<<gib_1030@18:3>@26:0> = <gib_1030@18:1>) && (<gib_1030@18:2> = 1))
+          |- P[<<gib_1030@18:3>@26:0>](<gib_1030@18:0>:int,<gib_1030@18:1>:int,
+                                       <gib_1030@18:2>:int,<<gib_1030@18:3>@26:0>:int)
+          
+           ((<gib_1030@18:0> = 0) && (<gib_1030@18:1> = 1))
+          |- P[<gib_1030@18:2>](<gib_1030@18:0>:int,<gib_1030@18:1>:int,
+                                <gib_1030@18:2>:int)Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1288_sep_31_sep_0($10)) -> 1=0.
+(($10-1=0) & ($11=0) & ($12-1=0) & ($13<0)) & (v_sep_gib_1030_sep_18_sep_3_sep_26_sep_0($11,$12,$14,$13)) -> v_sep_fail_1288_sep_31_sep_0($10).
+(($15-1=0) & ($16-$17=0)) & (v_sep_gib_1030_sep_18_sep_2($18,$17,$15)) -> v_sep_gib_1030_sep_18_sep_3_sep_26_sep_0($18,$17,$15,$16).
+($17-1=0) & ($18=0) -> v_sep_gib_1030_sep_18_sep_2($18,$17,$15).
+
+
+v_sep_fail_1288_sep_31_sep_0: X
+v_sep_gib_1030_sep_18_sep_2: X
+v_sep_gib_1030_sep_18_sep_3_sep_26_sep_0: X
+....
+v_sep_fail_1288_sep_31_sep_0: X
+v_sep_gib_1030_sep_18_sep_2: X
+v_sep_gib_1030_sep_18_sep_3_sep_26_sep_0: X
+...
+v_sep_fail_1288_sep_31_sep_0: X
+v_sep_gib_1030_sep_18_sep_2: X
+v_sep_gib_1030_sep_18_sep_3_sep_26_sep_0: X
+....
+v_sep_fail_1288_sep_31_sep_0: X
+v_sep_gib_1030_sep_18_sep_2: X
+v_sep_gib_1030_sep_18_sep_3_sep_26_sep_0: X
+....(0=0) & (v_sep_fail_1288_sep_31_sep_0($10)) -> 1=0.
+(($10-1=0) & ($11=0) & ($12-1=0) & ($13<0)) & (v_sep_gib_1030_sep_18_sep_3_sep_26_sep_0($11,$12,$14,$13)) -> v_sep_fail_1288_sep_31_sep_0($10).
+(($15-1=0) & ($16-$17=0)) & (v_sep_gib_1030_sep_18_sep_2($18,$17,$15)) -> v_sep_gib_1030_sep_18_sep_3_sep_26_sep_0($18,$17,$15,$16).
+($17-1=0) & ($18=0) -> v_sep_gib_1030_sep_18_sep_2($18,$17,$15).
+
+        solution:
+          P[<fail_1288@31:0>]($19:bool) = false
+          P[<gib_1030@18:2>]($31:int,$33:int,$35:int) = (1 <= $33)
+          P[<<gib_1030@18:3>@26:0>]($22:int,$24:int,$26:int,$28:int) = (1 <= $28)
+        
+      end HcSolver.solve_ub(2527)[4] (0.015998 sec.)
+      begin HcSolver.check_validity(2703)[4]
+        input:
+          P[<fail_1288@31:0>](<fail_1288@31:0>:bool)|- bot
+          
+          P[<<gib_1030@18:3>@26:0>](0:int,1:int,<f_k_main_1281@28:3>:int,<f_k_main_1281@28:5>:int),
+          ((<f_k_main_1281@28:5> < 0) && <fail_1288@31:0>) |- P[<fail_1288@31:0>](
+          <fail_1288@31:0>:bool)
+          
+          P[<gib_1030@18:2>](<gib_1030@18:0>:int,<gib_1030@18:1>:int,<gib_1030@18:2>:int),
+          ((<gib_1030@18:2> = 1) && (<<gib_1030@18:3>@26:0> = <gib_1030@18:1>))
+          |- P[<<gib_1030@18:3>@26:0>](<gib_1030@18:0>:int,<gib_1030@18:1>:int,
+                                       <gib_1030@18:2>:int,<<gib_1030@18:3>@26:0>:int)
+          
+           ((<gib_1030@18:1> = 1) && (<gib_1030@18:0> = 0))
+          |- P[<gib_1030@18:2>](<gib_1030@18:0>:int,<gib_1030@18:1>:int,
+                                <gib_1030@18:2>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(2703)[4] (0.008999 sec.)
+      solution:
+        P[<fail_1288@31:0>]($19:bool) = false
+        P[<gib_1030@18:2>]($31:int,$33:int,$35:int) = (1 <= $33)
+        P[<<gib_1030@18:3>@26:0>]($22:int,$24:int,$26:int,$28:int) = (1 <= $28)
+    end YhornInterface.solve(2526)[3] (0.024997 sec.)
+    
+  end RefTypeInfer.infer_etrs(172)[2] (0.058991 sec.)
+  refinement types:
+    main_1278: X
+    f_1282: v1:int -> X
+    f_1283: v1:int -> v2:int -> X
+    f_1284: v1:int -> v2:int -> v3:int -> X
+    main_1034: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> X
+    k_main_1181: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> v6:bool -> X
+    gib_1030: v1:int -> v2:int -> v3:{v3:int | (1 <= v2)} -> (v4:{v4:int | (1 <= v4)} -> X) -> X
+    br_gib_1286: v1:bool -> v2:int -> v3:int -> v4:int -> (v5:int -> X) -> X
+    f_k_main_1281: v1:int -> v2:int -> v3:bool -> v4:int -> (v5:unit -> X) -> v7:int -> X
+    fail_1288: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1285: var19:int -> var18:int -> var17:int -> var16:unit -> X
+    f_gib_1279: var26:int -> var25:int -> var24:int -> (var23:int -> X) -> var21:int -> X
+    f_gib_1280: var34:int -> var33:int -> var32:int -> var31:int -> (var30:int -> X) -> var28:int -> X
+  abstraction types:
+    main_1278: X
+    f_1282: v1:int -> X
+    f_1283: v1:int -> v2:int -> X
+    f_1284: v1:int -> v2:int -> v3:int -> X
+    main_1034: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> X
+    k_main_1181: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> v6:bool -> X
+    gib_1030: v1:int -> v2:int -> v3:int[v3 -> (1 <= v2)] -> (v4:int[v4 -> (
+                                                                    1 <= v4)] -> X) -> X
+    br_gib_1286: v1:bool -> v2:int -> v3:int -> v4:int -> (v5:int -> X) -> X
+    f_k_main_1281: v1:int -> v2:int -> v3:bool -> v4:int -> (v5:unit -> X) -> v7:int -> X
+    fail_1288: v1:bool -> (v2:unit -> X) -> X
+    f_1285: var19:int -> var18:int -> var17:int -> var16:unit -> X
+    f_gib_1279: var26:int -> var25:int -> var24:int -> (var23:int -> X) -> var21:int -> X
+    f_gib_1280: var34:int -> var33:int -> var32:int -> var31:int -> (var30:int -> X) -> var28:int -> X
+  
+end AbsTypeInfer.refine(171)[1] (0.063990 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 0; 0; 1; 0; 1
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1278
+  main_1278 -> (rand_int f_1282)
+  br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 when b_1287 -> (k_gib_1122 b_1032)
+  br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 when (not b_1287) ->
+      (gib_1030 a_1031 b_1032 (n_1033 - 1) (f_gib_1279 a_1031 b_1032 n_1033 k_gib_1122))
+  f_1282 x_1219 -> (rand_int (f_1283 x_1219))
+  f_1283 x_1219 x_1232 -> (rand_int (f_1284 x_1219 x_1232))
+  f_1284 x_1219 x_1232 x_1245 -> (main_1034 x_1219 x_1232 x_1245 (f_1285 x_1219 x_1232 x_1245))
+  f_1285 x_1219 x_1232 x_1245 x_1216 -> end
+  f_gib_1279 a_1031 b_1032 n_1033 k_gib_1122 x_1125 ->
+      (gib_1030 a_1031 b_1032 (n_1033 - 2) (f_gib_1280 a_1031 b_1032 n_1033 x_1125 k_gib_1122))
+  f_gib_1280 a_1031 b_1032 n_1033 x_1125 k_gib_1122 x_1126 -> (k_gib_1122 (x_1125 + x_1126))
+  f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 when (x_1185 >= 0) -> (k_main_1178 ())
+  f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 when (not (x_1185 >= 0)) -> (fail_1288 true k_main_1178)
+  fail_1288 b k -> {fail} => (k ())
+  gib_1030 a_1031 b_1032 n_1033 k_gib_1122 when (n_1033 = 0) -> (k_gib_1122 a_1031)
+  gib_1030 a_1031 b_1032 n_1033 k_gib_1122 when (not (n_1033 = 0)) ->
+      (br_gib_1286 (n_1033 = 1) a_1031 b_1032 n_1033 k_gib_1122)
+  k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 when b_1213 ->
+      (gib_1030 0 1 n_1035 (f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178))
+  k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 when (not b_1213) -> (k_main_1178 ())
+  main_1034 n_1035 a_1036 b_1037 k_main_1178 when (a_1036 >= 0) ->
+      (k_main_1181 a_1036 b_1037 n_1035 k_main_1178 (b_1037 >= 0))
+  main_1034 n_1035 a_1036 b_1037 k_main_1178 when (not (a_1036 >= 0)) ->
+      (k_main_1181 a_1036 b_1037 n_1035 k_main_1178 false)
+Types:
+  main_1278 : X
+  fail_1288 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  gib_1030 : (int -> x_2:int -> int[x_2 >= 1] -> (x_5:int[x_5 >= 1] -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1278 ... --> 
+  f_1282 ... --> 
+  f_1283 ... --> 
+  f_1284 ... --> 
+  main_1034 [1/2] ... --> 
+  k_main_1181 [1/2] ... --> 
+  gib_1030 [1/2] ... --> 
+  f_k_main_1281 [2/2] ... --> 
+  fail_1288 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 0; 1; 0
+
+(1-3) Checking counter-example ... DONE!
+
+(1-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(3502)[1]
+  program:
+    main_1278  | true = ((Random.int 0) f_1282)
+    br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 | b_1287 = (k_gib_1122 b_1032)
+    br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 | (not b_1287) = (
+    gib_1030 a_1031
+             b_1032
+             (n_1033 - 1)
+             (f_gib_1279 a_1031
+                         b_1032
+                         n_1033
+                         k_gib_1122))
+    f_1282 x_1219 | true = ((Random.int 0) (f_1283 x_1219))
+    f_1283 x_1219 x_1232 | true = ((Random.int 0) (f_1284 x_1219
+                                                          x_1232))
+    f_1284 x_1219 x_1232 x_1245 | true = (main_1034 x_1219
+                                                    x_1232
+                                                    x_1245
+                                                    (f_1285 x_1219
+                                                            x_1232
+                                                            x_1245))
+    f_1285 x_1219 x_1232 x_1245 x_1216 | true = end
+    f_gib_1279 a_1031 b_1032 n_1033 k_gib_1122 x_1125 | true = (gib_1030
+                                                                  a_1031
+                                                                  b_1032
+                                                                  (n_1033 - 2)
+                                                                  (f_gib_1280 a_1031
+                                                                    b_1032
+                                                                    n_1033
+                                                                    x_1125
+                                                                    k_gib_1122))
+    f_gib_1280 a_1031 b_1032 n_1033 x_1125 k_gib_1122 x_1126 | true = (
+    k_gib_1122 (x_1125 + x_1126))
+    f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 | (x_1185 >= 0) = (
+    k_main_1178 ())
+    f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 | (not (
+                                                                    x_1185 >= 0)) = (
+    fail_1288 true
+              k_main_1178)
+    fail_1288 b k | true = (fail ())
+    gib_1030 a_1031 b_1032 n_1033 k_gib_1122 | (n_1033 = 0) = (k_gib_1122 a_1031)
+    gib_1030 a_1031 b_1032 n_1033 k_gib_1122 | (not (n_1033 = 0)) = (
+    br_gib_1286 (n_1033 = 1)
+                a_1031
+                b_1032
+                n_1033
+                k_gib_1122)
+    k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 | b_1213 = (gib_1030
+                                                                    0
+                                                                    1
+                                                                    n_1035
+                                                                    (
+                                                                    f_k_main_1281
+                                                                    a_1036
+                                                                    b_1037
+                                                                    b_1213
+                                                                    n_1035
+                                                                    k_main_1178))
+    k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 | (not b_1213) = (
+    k_main_1178 ())
+    main_1034 n_1035 a_1036 b_1037 k_main_1178 | (a_1036 >= 0) = (k_main_1181
+                                                                    a_1036
+                                                                    b_1037
+                                                                    n_1035
+                                                                    k_main_1178
+                                                                    (
+                                                                    b_1037 >= 0))
+    main_1034 n_1035 a_1036 b_1037 k_main_1178 | (not (a_1036 >= 0)) = (
+    k_main_1181 a_1036
+                b_1037
+                n_1035
+                k_main_1178
+                false)
+    main_1278:X
+    br_gib_1286:bool -> int -> int -> int -> (int -> X) -> X
+    f_1282:int -> X
+    f_1283:int -> int -> X
+    f_1284:int -> int -> int -> X
+    f_1285:int -> int -> int -> unit -> X
+    f_gib_1279:int -> int -> int -> (int -> X) -> int -> X
+    f_gib_1280:int -> int -> int -> int -> (int -> X) -> int -> X
+    f_k_main_1281:int -> int -> bool -> int -> (unit -> X) -> int -> X
+    fail_1288:bool -> (unit -> X) -> X
+    gib_1030:int -> int -> int -> (int -> X) -> X
+    k_main_1181:int -> int -> int -> (unit -> X) -> bool -> X
+    main_1034:int -> int -> int -> (unit -> X) -> X
+  inlined functions: br_gib_1286,f_1282,f_1283,f_1284,f_1285,f_gib_1279,f_gib_1280,f_k_main_1281,k_main_1181,main_1034
+  counterexample: 0:0:0:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1282@37:0> = var35)
+     [true.nop((<f_1283@40:0> = <f_1282@37:0>) && (<f_1283@40:1> = var36))
+      [true.nop((<f_1284@43:0> = <f_1283@40:0>) && ((<f_1284@43:1> = <f_1283@40:1>) && (<f_1284@43:2> = var37)))
+       [true.
+        ((<main_1034@45:0> = <f_1284@43:0>) &&
+         ((<main_1034@45:1> = <f_1284@43:1>) && (<main_1034@45:2> = <f_1284@43:2>)))
+        [(<main_1034@45:1> >= 0).
+         ((<k_main_1181@48:0> = <main_1034@45:1>) &&
+          ((<k_main_1181@48:1> = <main_1034@45:2>) &&
+           ((<k_main_1181@48:2> = <main_1034@45:0>) && (<k_main_1181@48:4> = (<main_1034@45:2> >= 0)))))
+         [<k_main_1181@48:4>.
+          ((<gib_1030@51:0> = 0) && ((<gib_1030@51:1> = 1) && (<gib_1030@51:2> = <k_main_1181@48:2>)))
+          [(<gib_1030@51:2> = 0).(<<gib_1030@51:3>@54:0> = <gib_1030@51:0>)
+           [true.
+            ((<f_k_main_1281@56:0> = <k_main_1181@48:0>) &&
+             ((<f_k_main_1281@56:1> = <k_main_1181@48:1>) &&
+              ((<f_k_main_1281@56:2> = <k_main_1181@48:4>) &&
+               ((<f_k_main_1281@56:3> = <k_main_1181@48:2>) && (<f_k_main_1281@56:5> = <<gib_1030@51:3>@54:0>)))))
+            [(not (<f_k_main_1281@56:5> >= 0)).(<fail_1288@59:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(3503)[2]
+    horn clauses:
+      P[<fail_1288@59:0>](<fail_1288@59:0>:bool)|- bot
+      
+      P[<f_k_main_1281@56:5>](<f_k_main_1281@56:0>:int,<f_k_main_1281@56:1>:int,<f_k_main_1281@56:2>:bool,<f_k_main_1281@56:3>:int,<f_k_main_1281@56:5>:int),
+      ((<f_k_main_1281@56:5> < 0) && <fail_1288@59:0>) |- P[<fail_1288@59:0>](
+      <fail_1288@59:0>:bool)
+      
+      P[<k_main_1181@48:4>](<f_k_main_1281@56:0>:int,<f_k_main_1281@56:1>:int,<f_k_main_1281@56:3>:int,<f_k_main_1281@56:2>:bool),
+      P[<<gib_1030@51:3>@54:0>](0:int,1:int,<f_k_main_1281@56:3>:int,<f_k_main_1281@56:5>:int), <f_k_main_1281@56:2>
+      |- P[<f_k_main_1281@56:5>](<f_k_main_1281@56:0>:int,<f_k_main_1281@56:1>:int,
+                                 <f_k_main_1281@56:2>:bool,<f_k_main_1281@56:3>:int,
+                                 <f_k_main_1281@56:5>:int)
+      
+      P[<gib_1030@51:2>](<gib_1030@51:0>:int,<gib_1030@51:1>:int,<gib_1030@51:2>:int),
+      ((<gib_1030@51:2> = 0) && (<<gib_1030@51:3>@54:0> = <gib_1030@51:0>))
+      |- P[<<gib_1030@51:3>@54:0>](<gib_1030@51:0>:int,<gib_1030@51:1>:int,
+                                   <gib_1030@51:2>:int,<<gib_1030@51:3>@54:0>:int)
+      
+      P[<k_main_1181@48:4>](<k_main_1181@48:0>:int,<k_main_1181@48:1>:int,<gib_1030@51:2>:int,true:bool),
+      ((<gib_1030@51:1> = 1) && (<gib_1030@51:0> = 0))
+      |- P[<gib_1030@51:2>](<gib_1030@51:0>:int,<gib_1030@51:1>:int,<gib_1030@51:2>:int)
+      
+      P[<main_1034@45:2>](<k_main_1181@48:2>:int,<k_main_1181@48:0>:int,<k_main_1181@48:1>:int),
+      ((<k_main_1181@48:0> >= 0) && (<k_main_1181@48:4> = (<k_main_1181@48:1> >= 0)))
+      |- P[<k_main_1181@48:4>](<k_main_1181@48:0>:int,<k_main_1181@48:1>:int,
+                               <k_main_1181@48:2>:int,<k_main_1181@48:4>:bool)
+      
+      P[<f_1284@43:2>](<main_1034@45:0>:int,<main_1034@45:1>:int,<main_1034@45:2>:int)|- P[<main_1034@45:2>](
+      <main_1034@45:0>:int,<main_1034@45:1>:int,<main_1034@45:2>:int)
+      
+      P[<f_1283@40:1>](<f_1284@43:0>:int,<f_1284@43:1>:int)|- P[<f_1284@43:2>](
+      <f_1284@43:0>:int,<f_1284@43:1>:int,<f_1284@43:2>:int)
+      
+      P[<f_1282@37:0>](<f_1283@40:0>:int)|- P[<f_1283@40:1>](<f_1283@40:0>:int,
+                                                             <f_1283@40:1>:int)
+      
+      |- P[<f_1282@37:0>](<f_1282@37:0>:int)
+    call trees:
+      <main_1278@34>
+        <f_1282@37>
+          <f_1283@40>
+            <f_1284@43>
+              <main_1034@45>
+                <k_main_1181@48>
+                  <gib_1030@51>
+                  </<gib_1030@51:3>@54>
+                  <f_k_main_1281@56>
+                    <fail_1288@59>
+    inlined horn clauses:
+      P[<fail_1288@59:0>](<fail_1288@59:0>:bool)|- bot
+      
+      P[<<gib_1030@51:3>@54:0>](0:int,1:int,<f_k_main_1281@56:3>:int,<f_k_main_1281@56:5>:int),
+      ((<f_k_main_1281@56:5> < 0) && <fail_1288@59:0>) |- P[<fail_1288@59:0>](
+      <fail_1288@59:0>:bool)
+      
+      P[<gib_1030@51:2>](<gib_1030@51:0>:int,<gib_1030@51:1>:int,<gib_1030@51:2>:int),
+      ((<gib_1030@51:2> = 0) && (<<gib_1030@51:3>@54:0> = <gib_1030@51:0>))
+      |- P[<<gib_1030@51:3>@54:0>](<gib_1030@51:0>:int,<gib_1030@51:1>:int,
+                                   <gib_1030@51:2>:int,<<gib_1030@51:3>@54:0>:int)
+      
+       ((<gib_1030@51:1> = 1) && (<gib_1030@51:0> = 0))
+      |- P[<gib_1030@51:2>](<gib_1030@51:0>:int,<gib_1030@51:1>:int,<gib_1030@51:2>:int)
+    begin ParamSubstInfer.infer(5107)[3]
+      
+    end ParamSubstInfer.infer(5107)[3] (0.059991 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(5109)[3]
+      
+    end RefTypeInfer.elim_coeffs(5109)[3] (0.000999 sec.)
+    begin YhornInterface.solve(5294)[3]
+      begin HcSolver.solve_ub(5295)[4]
+        encoded:
+          P[<fail_1288@59:0>](<fail_1288@59:0>:int)|- bot
+          
+          P[<<gib_1030@51:3>@54:0>](0:int,1:int,<f_k_main_1281@56:3>:int,<f_k_main_1281@56:5>:int),
+          ((<f_k_main_1281@56:5> < 0) && (<fail_1288@59:0> = 1)) |- P[<fail_1288@59:0>](
+          <fail_1288@59:0>:int)
+          
+          P[<gib_1030@51:2>](<gib_1030@51:0>:int,<gib_1030@51:1>:int,<gib_1030@51:2>:int),
+          ((<gib_1030@51:2> = 0) && (<<gib_1030@51:3>@54:0> = <gib_1030@51:0>))
+          |- P[<<gib_1030@51:3>@54:0>](<gib_1030@51:0>:int,<gib_1030@51:1>:int,
+                                       <gib_1030@51:2>:int,<<gib_1030@51:3>@54:0>:int)
+          
+           ((<gib_1030@51:1> = 1) && (<gib_1030@51:0> = 0))
+          |- P[<gib_1030@51:2>](<gib_1030@51:0>:int,<gib_1030@51:1>:int,
+                                <gib_1030@51:2>:int)
+        input to Yhorn:
+          P[<fail_1288@59:0>](<fail_1288@59:0>:int)|- bot
+          
+          P[<<gib_1030@51:3>@54:0>](var38:int,var39:int,<f_k_main_1281@56:3>:int,<f_k_main_1281@56:5>:int),
+          ((<f_k_main_1281@56:5> < 0) && ((var39 = 1) && ((var38 = 0) && (<fail_1288@59:0> = 1))))
+          |- P[<fail_1288@59:0>](<fail_1288@59:0>:int)
+          
+          P[<gib_1030@51:2>](<gib_1030@51:0>:int,<gib_1030@51:1>:int,<gib_1030@51:2>:int),
+          ((<<gib_1030@51:3>@54:0> = <gib_1030@51:0>) && (<gib_1030@51:2> = 0))
+          |- P[<<gib_1030@51:3>@54:0>](<gib_1030@51:0>:int,<gib_1030@51:1>:int,
+                                       <gib_1030@51:2>:int,<<gib_1030@51:3>@54:0>:int)
+          
+           ((<gib_1030@51:0> = 0) && (<gib_1030@51:1> = 1))
+          |- P[<gib_1030@51:2>](<gib_1030@51:0>:int,<gib_1030@51:1>:int,
+                                <gib_1030@51:2>:int)Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1288_sep_59_sep_0($107)) -> 1=0.
+(($107-1=0) & ($108=0) & ($109-1=0) & ($110<0)) & (v_sep_gib_1030_sep_51_sep_3_sep_54_sep_0($108,$109,$111,$110)) -> v_sep_fail_1288_sep_59_sep_0($107).
+(($112=0) & ($113-$114=0)) & (v_sep_gib_1030_sep_51_sep_2($114,$115,$112)) -> v_sep_gib_1030_sep_51_sep_3_sep_54_sep_0($114,$115,$112,$113).
+($115-1=0) & ($114=0) -> v_sep_gib_1030_sep_51_sep_2($114,$115,$112).
+
+
+v_sep_fail_1288_sep_59_sep_0: X
+v_sep_gib_1030_sep_51_sep_2: X
+v_sep_gib_1030_sep_51_sep_3_sep_54_sep_0: X
+....
+v_sep_fail_1288_sep_59_sep_0: X
+v_sep_gib_1030_sep_51_sep_2: X
+v_sep_gib_1030_sep_51_sep_3_sep_54_sep_0: X
+...
+v_sep_fail_1288_sep_59_sep_0: X
+v_sep_gib_1030_sep_51_sep_2: X
+v_sep_gib_1030_sep_51_sep_3_sep_54_sep_0: X
+....
+v_sep_fail_1288_sep_59_sep_0: X
+v_sep_gib_1030_sep_51_sep_2: X
+v_sep_gib_1030_sep_51_sep_3_sep_54_sep_0: X
+....(0=0) & (v_sep_fail_1288_sep_59_sep_0($107)) -> 1=0.
+(($107-1=0) & ($108=0) & ($109-1=0) & ($110<0)) & (v_sep_gib_1030_sep_51_sep_3_sep_54_sep_0($108,$109,$111,$110)) -> v_sep_fail_1288_sep_59_sep_0($107).
+(($112=0) & ($113-$114=0)) & (v_sep_gib_1030_sep_51_sep_2($114,$115,$112)) -> v_sep_gib_1030_sep_51_sep_3_sep_54_sep_0($114,$115,$112,$113).
+($115-1=0) & ($114=0) -> v_sep_gib_1030_sep_51_sep_2($114,$115,$112).
+
+        solution:
+          P[<fail_1288@59:0>]($116:bool) = false
+          P[<gib_1030@51:2>]($128:int,$130:int,$132:int) = true
+          P[<<gib_1030@51:3>@54:0>]($119:int,$121:int,$123:int,$125:int) = ($119 <= $125)
+        
+      end HcSolver.solve_ub(5295)[4] (0.014998 sec.)
+      begin HcSolver.check_validity(5462)[4]
+        input:
+          P[<fail_1288@59:0>](<fail_1288@59:0>:bool)|- bot
+          
+          P[<<gib_1030@51:3>@54:0>](0:int,1:int,<f_k_main_1281@56:3>:int,<f_k_main_1281@56:5>:int),
+          ((<f_k_main_1281@56:5> < 0) && <fail_1288@59:0>) |- P[<fail_1288@59:0>](
+          <fail_1288@59:0>:bool)
+          
+          P[<gib_1030@51:2>](<gib_1030@51:0>:int,<gib_1030@51:1>:int,<gib_1030@51:2>:int),
+          ((<gib_1030@51:2> = 0) && (<<gib_1030@51:3>@54:0> = <gib_1030@51:0>))
+          |- P[<<gib_1030@51:3>@54:0>](<gib_1030@51:0>:int,<gib_1030@51:1>:int,
+                                       <gib_1030@51:2>:int,<<gib_1030@51:3>@54:0>:int)
+          
+           ((<gib_1030@51:1> = 1) && (<gib_1030@51:0> = 0))
+          |- P[<gib_1030@51:2>](<gib_1030@51:0>:int,<gib_1030@51:1>:int,
+                                <gib_1030@51:2>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(5462)[4] (0.006999 sec.)
+      solution:
+        P[<fail_1288@59:0>]($116:bool) = false
+        P[<gib_1030@51:2>]($128:int,$130:int,$132:int) = true
+        P[<<gib_1030@51:3>@54:0>]($119:int,$121:int,$123:int,$125:int) = ($119 <= $125)
+    end YhornInterface.solve(5294)[3] (0.021997 sec.)
+    
+  end RefTypeInfer.infer_etrs(3503)[2] (0.090986 sec.)
+  refinement types:
+    main_1278: X
+    f_1282: v1:int -> X
+    f_1283: v1:int -> v2:int -> X
+    f_1284: v1:int -> v2:int -> v3:int -> X
+    main_1034: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> X
+    k_main_1181: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> v6:bool -> X
+    gib_1030: v1:int -> v2:int -> v3:int -> (v4:{v4:int | (v1 <= v4)} -> X) -> X
+    f_k_main_1281: v1:int -> v2:int -> v3:bool -> v4:int -> (v5:unit -> X) -> v7:int -> X
+    fail_1288: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    br_gib_1286: var54:bool -> var53:int -> var52:int -> var51:int -> (var50:int -> X) -> X
+    f_1285: var59:int -> var58:int -> var57:int -> var56:unit -> X
+    f_gib_1279: var66:int -> var65:int -> var64:int -> (var63:int -> X) -> var61:int -> X
+    f_gib_1280: var74:int -> var73:int -> var72:int -> var71:int -> (var70:int -> X) -> var68:int -> X
+  abstraction types:
+    main_1278: X
+    f_1282: v1:int -> X
+    f_1283: v1:int -> v2:int -> X
+    f_1284: v1:int -> v2:int -> v3:int -> X
+    main_1034: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> X
+    k_main_1181: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> v6:bool -> X
+    gib_1030: v1:int -> v2:int -> v3:int -> (v4:int[v4 -> (v1 <= v4)] -> X) -> X
+    f_k_main_1281: v1:int -> v2:int -> v3:bool -> v4:int -> (v5:unit -> X) -> v7:int -> X
+    fail_1288: v1:bool -> (v2:unit -> X) -> X
+    br_gib_1286: var54:bool -> var53:int -> var52:int -> var51:int -> (var50:int -> X) -> X
+    f_1285: var59:int -> var58:int -> var57:int -> var56:unit -> X
+    f_gib_1279: var66:int -> var65:int -> var64:int -> (var63:int -> X) -> var61:int -> X
+    f_gib_1280: var74:int -> var73:int -> var72:int -> var71:int -> (var70:int -> X) -> var68:int -> X
+  
+end AbsTypeInfer.refine(3502)[1] (0.094986 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 2)::
+Main: main_1278
+  main_1278 -> (rand_int f_1282)
+  br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 when b_1287 -> (k_gib_1122 b_1032)
+  br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 when (not b_1287) ->
+      (gib_1030 a_1031 b_1032 (n_1033 - 1) (f_gib_1279 a_1031 b_1032 n_1033 k_gib_1122))
+  f_1282 x_1219 -> (rand_int (f_1283 x_1219))
+  f_1283 x_1219 x_1232 -> (rand_int (f_1284 x_1219 x_1232))
+  f_1284 x_1219 x_1232 x_1245 -> (main_1034 x_1219 x_1232 x_1245 (f_1285 x_1219 x_1232 x_1245))
+  f_1285 x_1219 x_1232 x_1245 x_1216 -> end
+  f_gib_1279 a_1031 b_1032 n_1033 k_gib_1122 x_1125 ->
+      (gib_1030 a_1031 b_1032 (n_1033 - 2) (f_gib_1280 a_1031 b_1032 n_1033 x_1125 k_gib_1122))
+  f_gib_1280 a_1031 b_1032 n_1033 x_1125 k_gib_1122 x_1126 -> (k_gib_1122 (x_1125 + x_1126))
+  f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 when (x_1185 >= 0) -> (k_main_1178 ())
+  f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 when (not (x_1185 >= 0)) -> (fail_1288 true k_main_1178)
+  fail_1288 b k -> {fail} => (k ())
+  gib_1030 a_1031 b_1032 n_1033 k_gib_1122 when (n_1033 = 0) -> (k_gib_1122 a_1031)
+  gib_1030 a_1031 b_1032 n_1033 k_gib_1122 when (not (n_1033 = 0)) ->
+      (br_gib_1286 (n_1033 = 1) a_1031 b_1032 n_1033 k_gib_1122)
+  k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 when b_1213 ->
+      (gib_1030 0 1 n_1035 (f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178))
+  k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 when (not b_1213) -> (k_main_1178 ())
+  main_1034 n_1035 a_1036 b_1037 k_main_1178 when (a_1036 >= 0) ->
+      (k_main_1181 a_1036 b_1037 n_1035 k_main_1178 (b_1037 >= 0))
+  main_1034 n_1035 a_1036 b_1037 k_main_1178 when (not (a_1036 >= 0)) ->
+      (k_main_1181 a_1036 b_1037 n_1035 k_main_1178 false)
+Types:
+  main_1278 : X
+  fail_1288 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  gib_1030 : (x_1:int -> x_2:int -> int[x_2 >= 1] -> (x_5:int[x_1 <= x_5; x_5 >= 1] -> X) -> X)
+  
+(2-1) Abstracting ... DONE!
+
+(2-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1278 ... --> 
+  f_1282 ... --> 
+  f_1283 ... --> 
+  f_1284 ... --> 
+  main_1034 [1/2] ... --> 
+  k_main_1181 [1/2] ... --> 
+  gib_1030 [2/2] ... --> 
+  br_gib_1286 [2/2] ... --> 
+  gib_1030 [1/2] ... --> 
+  f_gib_1279 ... --> 
+  gib_1030 [1/2] ... --> 
+  f_gib_1280 ... --> 
+  f_k_main_1281 [2/2] ... --> 
+  fail_1288 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 1; 1; 0; 0; 0; 0; 1; 0
+
+(2-3) Checking counter-example ... DONE!
+
+(2-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(6700)[1]
+  program:
+    main_1278  | true = ((Random.int 0) f_1282)
+    br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 | b_1287 = (k_gib_1122 b_1032)
+    br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 | (not b_1287) = (
+    gib_1030 a_1031
+             b_1032
+             (n_1033 - 1)
+             (f_gib_1279 a_1031
+                         b_1032
+                         n_1033
+                         k_gib_1122))
+    f_1282 x_1219 | true = ((Random.int 0) (f_1283 x_1219))
+    f_1283 x_1219 x_1232 | true = ((Random.int 0) (f_1284 x_1219
+                                                          x_1232))
+    f_1284 x_1219 x_1232 x_1245 | true = (main_1034 x_1219
+                                                    x_1232
+                                                    x_1245
+                                                    (f_1285 x_1219
+                                                            x_1232
+                                                            x_1245))
+    f_1285 x_1219 x_1232 x_1245 x_1216 | true = end
+    f_gib_1279 a_1031 b_1032 n_1033 k_gib_1122 x_1125 | true = (gib_1030
+                                                                  a_1031
+                                                                  b_1032
+                                                                  (n_1033 - 2)
+                                                                  (f_gib_1280 a_1031
+                                                                    b_1032
+                                                                    n_1033
+                                                                    x_1125
+                                                                    k_gib_1122))
+    f_gib_1280 a_1031 b_1032 n_1033 x_1125 k_gib_1122 x_1126 | true = (
+    k_gib_1122 (x_1125 + x_1126))
+    f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 | (x_1185 >= 0) = (
+    k_main_1178 ())
+    f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 | (not (
+                                                                    x_1185 >= 0)) = (
+    fail_1288 true
+              k_main_1178)
+    fail_1288 b k | true = (fail ())
+    gib_1030 a_1031 b_1032 n_1033 k_gib_1122 | (n_1033 = 0) = (k_gib_1122 a_1031)
+    gib_1030 a_1031 b_1032 n_1033 k_gib_1122 | (not (n_1033 = 0)) = (
+    br_gib_1286 (n_1033 = 1)
+                a_1031
+                b_1032
+                n_1033
+                k_gib_1122)
+    k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 | b_1213 = (gib_1030
+                                                                    0
+                                                                    1
+                                                                    n_1035
+                                                                    (
+                                                                    f_k_main_1281
+                                                                    a_1036
+                                                                    b_1037
+                                                                    b_1213
+                                                                    n_1035
+                                                                    k_main_1178))
+    k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 | (not b_1213) = (
+    k_main_1178 ())
+    main_1034 n_1035 a_1036 b_1037 k_main_1178 | (a_1036 >= 0) = (k_main_1181
+                                                                    a_1036
+                                                                    b_1037
+                                                                    n_1035
+                                                                    k_main_1178
+                                                                    (
+                                                                    b_1037 >= 0))
+    main_1034 n_1035 a_1036 b_1037 k_main_1178 | (not (a_1036 >= 0)) = (
+    k_main_1181 a_1036
+                b_1037
+                n_1035
+                k_main_1178
+                false)
+    main_1278:X
+    br_gib_1286:bool -> int -> int -> int -> (int -> X) -> X
+    f_1282:int -> X
+    f_1283:int -> int -> X
+    f_1284:int -> int -> int -> X
+    f_1285:int -> int -> int -> unit -> X
+    f_gib_1279:int -> int -> int -> (int -> X) -> int -> X
+    f_gib_1280:int -> int -> int -> int -> (int -> X) -> int -> X
+    f_k_main_1281:int -> int -> bool -> int -> (unit -> X) -> int -> X
+    fail_1288:bool -> (unit -> X) -> X
+    gib_1030:int -> int -> int -> (int -> X) -> X
+    k_main_1181:int -> int -> int -> (unit -> X) -> bool -> X
+    main_1034:int -> int -> int -> (unit -> X) -> X
+  inlined functions: br_gib_1286,f_1282,f_1283,f_1284,f_1285,f_gib_1279,f_gib_1280,f_k_main_1281,k_main_1181,main_1034
+  counterexample: 0:0:0:0:0:0:1:1:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1282@65:0> = var75)
+     [true.nop((<f_1283@68:0> = <f_1282@65:0>) && (<f_1283@68:1> = var76))
+      [true.nop((<f_1284@71:0> = <f_1283@68:0>) && ((<f_1284@71:1> = <f_1283@68:1>) && (<f_1284@71:2> = var77)))
+       [true.
+        ((<main_1034@73:0> = <f_1284@71:0>) &&
+         ((<main_1034@73:1> = <f_1284@71:1>) && (<main_1034@73:2> = <f_1284@71:2>)))
+        [(<main_1034@73:1> >= 0).
+         ((<k_main_1181@76:0> = <main_1034@73:1>) &&
+          ((<k_main_1181@76:1> = <main_1034@73:2>) &&
+           ((<k_main_1181@76:2> = <main_1034@73:0>) && (<k_main_1181@76:4> = (<main_1034@73:2> >= 0)))))
+         [<k_main_1181@76:4>.
+          ((<gib_1030@79:0> = 0) && ((<gib_1030@79:1> = 1) && (<gib_1030@79:2> = <k_main_1181@76:2>)))
+          [(not (<gib_1030@79:2> = 0)).
+           ((<br_gib_1286@82:0> = (<gib_1030@79:2> = 1)) &&
+            ((<br_gib_1286@82:1> = <gib_1030@79:0>) &&
+             ((<br_gib_1286@82:2> = <gib_1030@79:1>) && (<br_gib_1286@82:3> = <gib_1030@79:2>))))
+           [(not <br_gib_1286@82:0>).
+            ((<gib_1030@85:0> = <br_gib_1286@82:1>) &&
+             ((<gib_1030@85:1> = <br_gib_1286@82:2>) && (<gib_1030@85:2> = (<br_gib_1286@82:3> - 1))))
+            [(<gib_1030@85:2> = 0).(<<gib_1030@85:3>@88:0> = <gib_1030@85:0>)
+             [true.
+              ((<f_gib_1279@90:0> = <br_gib_1286@82:1>) &&
+               ((<f_gib_1279@90:1> = <br_gib_1286@82:2>) &&
+                ((<f_gib_1279@90:2> = <br_gib_1286@82:3>) && (<f_gib_1279@90:4> = <<gib_1030@85:3>@88:0>))))
+              [true.
+               ((<gib_1030@92:0> = <f_gib_1279@90:0>) &&
+                ((<gib_1030@92:1> = <f_gib_1279@90:1>) && (<gib_1030@92:2> = (<f_gib_1279@90:2> - 2))))
+               [(<gib_1030@92:2> = 0).(<<gib_1030@92:3>@95:0> = <gib_1030@92:0>)
+                [true.
+                 ((<f_gib_1280@97:0> = <f_gib_1279@90:0>) &&
+                  ((<f_gib_1280@97:1> = <f_gib_1279@90:1>) &&
+                   ((<f_gib_1280@97:2> = <f_gib_1279@90:2>) &&
+                    ((<f_gib_1280@97:3> = <f_gib_1279@90:4>) && (<f_gib_1280@97:5> = <<gib_1030@92:3>@95:0>)))))
+                 [true.(<<f_gib_1280@97:4>@99:0> = (<f_gib_1280@97:3> + <f_gib_1280@97:5>))
+                  [true.(<<f_gib_1279@90:3>@101:0> = <<f_gib_1280@97:4>@99:0>)
+                   [true.(<<br_gib_1286@82:4>@103:0> = <<f_gib_1279@90:3>@101:0>)
+                    [true.(<<gib_1030@79:3>@105:0> = <<br_gib_1286@82:4>@103:0>)
+                     [true.
+                      ((<f_k_main_1281@107:0> = <k_main_1181@76:0>) &&
+                       ((<f_k_main_1281@107:1> = <k_main_1181@76:1>) &&
+                        ((<f_k_main_1281@107:2> = <k_main_1181@76:4>) &&
+                         ((<f_k_main_1281@107:3> = <k_main_1181@76:2>) &&
+                          (<f_k_main_1281@107:5> = <<gib_1030@79:3>@105:0>)))))
+                      [(not (<f_k_main_1281@107:5> >= 0)).(<fail_1288@110:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(6701)[2]
+    horn clauses:
+      P[<fail_1288@110:0>](<fail_1288@110:0>:bool)|- bot
+      
+      P[<f_k_main_1281@107:5>](<f_k_main_1281@107:0>:int,<f_k_main_1281@107:1>:int,<f_k_main_1281@107:2>:bool,<f_k_main_1281@107:3>:int,<f_k_main_1281@107:5>:int),
+      ((<f_k_main_1281@107:5> < 0) && <fail_1288@110:0>) |- P[<fail_1288@110:0>](
+      <fail_1288@110:0>:bool)
+      
+      P[<k_main_1181@76:4>](<f_k_main_1281@107:0>:int,<f_k_main_1281@107:1>:int,<f_k_main_1281@107:3>:int,<f_k_main_1281@107:2>:bool),
+      P[<<gib_1030@79:3>@105:0>](0:int,1:int,<f_k_main_1281@107:3>:int,<f_k_main_1281@107:5>:int),
+      <f_k_main_1281@107:2>
+      |- P[<f_k_main_1281@107:5>](<f_k_main_1281@107:0>:int,<f_k_main_1281@107:1>:int,
+                                  <f_k_main_1281@107:2>:bool,<f_k_main_1281@107:3>:int,
+                                  <f_k_main_1281@107:5>:int)
+      
+      P[<gib_1030@79:2>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,<gib_1030@79:2>:int),
+      P[<<br_gib_1286@82:4>@103:0>]((<gib_1030@79:2> = 1):bool,<gib_1030@79:0>:int,<gib_1030@79:1>:int,<gib_1030@79:2>:int,<<gib_1030@79:3>@105:0>:int),
+      (<gib_1030@79:2> <> 0)
+      |- P[<<gib_1030@79:3>@105:0>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,
+                                    <gib_1030@79:2>:int,<<gib_1030@79:3>@105:0>:int)
+      
+      P[<br_gib_1286@82:3>](<br_gib_1286@82:0>:bool,<br_gib_1286@82:1>:int,<br_gib_1286@82:2>:int,<br_gib_1286@82:3>:int),
+      P[<<f_gib_1279@90:3>@101:0>](<br_gib_1286@82:1>:int,<br_gib_1286@82:2>:int,<br_gib_1286@82:3>:int,<<br_gib_1286@82:4>@103:0>:int),
+      (not <br_gib_1286@82:0>)
+      |- P[<<br_gib_1286@82:4>@103:0>](<br_gib_1286@82:0>:bool,<br_gib_1286@82:1>:int,
+                                       <br_gib_1286@82:2>:int,<br_gib_1286@82:3>:int,
+                                       <<br_gib_1286@82:4>@103:0>:int)
+      
+      P[<f_gib_1279@90:4>](<f_gib_1279@90:0>:int,<f_gib_1279@90:1>:int,<f_gib_1279@90:2>:int,<f_gib_1280@97:3>:int),
+      P[<<f_gib_1280@97:4>@99:0>](<f_gib_1279@90:0>:int,<f_gib_1279@90:1>:int,<f_gib_1279@90:2>:int,<f_gib_1280@97:3>:int,<<f_gib_1279@90:3>@101:0>:int)|- P[<<f_gib_1279@90:3>@101:0>](
+      <f_gib_1279@90:0>:int,<f_gib_1279@90:1>:int,<f_gib_1279@90:2>:int,
+      <<f_gib_1279@90:3>@101:0>:int)
+      
+      P[<f_gib_1280@97:5>](<f_gib_1280@97:0>:int,<f_gib_1280@97:1>:int,<f_gib_1280@97:2>:int,<f_gib_1280@97:3>:int,(
+                           <<f_gib_1280@97:4>@99:0> + (-1 * <f_gib_1280@97:3>)):int)|- P[<<f_gib_1280@97:4>@99:0>](
+      <f_gib_1280@97:0>:int,<f_gib_1280@97:1>:int,<f_gib_1280@97:2>:int,
+      <f_gib_1280@97:3>:int,<<f_gib_1280@97:4>@99:0>:int)
+      
+      P[<f_gib_1279@90:4>](<f_gib_1280@97:0>:int,<f_gib_1280@97:1>:int,<f_gib_1280@97:2>:int,<f_gib_1280@97:3>:int),
+      P[<<gib_1030@92:3>@95:0>](<f_gib_1280@97:0>:int,<f_gib_1280@97:1>:int,(
+                                -2 + <f_gib_1280@97:2>):int,<f_gib_1280@97:5>:int)|- P[<f_gib_1280@97:5>](
+      <f_gib_1280@97:0>:int,<f_gib_1280@97:1>:int,<f_gib_1280@97:2>:int,
+      <f_gib_1280@97:3>:int,<f_gib_1280@97:5>:int)
+      
+      P[<gib_1030@92:2>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,<gib_1030@92:2>:int),
+      ((<gib_1030@92:2> = 0) && (<<gib_1030@92:3>@95:0> = <gib_1030@92:0>))
+      |- P[<<gib_1030@92:3>@95:0>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,
+                                   <gib_1030@92:2>:int,<<gib_1030@92:3>@95:0>:int)
+      
+      P[<f_gib_1279@90:4>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,(2 + <gib_1030@92:2>):int,<f_gib_1279@90:4>:int)|- P[<gib_1030@92:2>](
+      <gib_1030@92:0>:int,<gib_1030@92:1>:int,<gib_1030@92:2>:int)
+      
+      P[<br_gib_1286@82:3>](false:bool,<f_gib_1279@90:0>:int,<f_gib_1279@90:1>:int,<f_gib_1279@90:2>:int),
+      P[<<gib_1030@85:3>@88:0>](<f_gib_1279@90:0>:int,<f_gib_1279@90:1>:int,(
+                                -1 + <f_gib_1279@90:2>):int,<f_gib_1279@90:4>:int)|- P[<f_gib_1279@90:4>](
+      <f_gib_1279@90:0>:int,<f_gib_1279@90:1>:int,<f_gib_1279@90:2>:int,
+      <f_gib_1279@90:4>:int)
+      
+      P[<gib_1030@85:2>](<gib_1030@85:0>:int,<gib_1030@85:1>:int,<gib_1030@85:2>:int),
+      ((<gib_1030@85:2> = 0) && (<<gib_1030@85:3>@88:0> = <gib_1030@85:0>))
+      |- P[<<gib_1030@85:3>@88:0>](<gib_1030@85:0>:int,<gib_1030@85:1>:int,
+                                   <gib_1030@85:2>:int,<<gib_1030@85:3>@88:0>:int)
+      
+      P[<br_gib_1286@82:3>](false:bool,<gib_1030@85:0>:int,<gib_1030@85:1>:int,(
+                            1 + <gib_1030@85:2>):int)|- P[<gib_1030@85:2>](
+      <gib_1030@85:0>:int,<gib_1030@85:1>:int,<gib_1030@85:2>:int)
+      
+      P[<gib_1030@79:2>](<br_gib_1286@82:1>:int,<br_gib_1286@82:2>:int,<br_gib_1286@82:3>:int),
+      ((<br_gib_1286@82:3> <> 0) && (<br_gib_1286@82:0> = (<br_gib_1286@82:3> = 1)))
+      |- P[<br_gib_1286@82:3>](<br_gib_1286@82:0>:bool,<br_gib_1286@82:1>:int,
+                               <br_gib_1286@82:2>:int,<br_gib_1286@82:3>:int)
+      
+      P[<k_main_1181@76:4>](<k_main_1181@76:0>:int,<k_main_1181@76:1>:int,<gib_1030@79:2>:int,true:bool),
+      ((<gib_1030@79:1> = 1) && (<gib_1030@79:0> = 0))
+      |- P[<gib_1030@79:2>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,<gib_1030@79:2>:int)
+      
+      P[<main_1034@73:2>](<k_main_1181@76:2>:int,<k_main_1181@76:0>:int,<k_main_1181@76:1>:int),
+      ((<k_main_1181@76:0> >= 0) && (<k_main_1181@76:4> = (<k_main_1181@76:1> >= 0)))
+      |- P[<k_main_1181@76:4>](<k_main_1181@76:0>:int,<k_main_1181@76:1>:int,
+                               <k_main_1181@76:2>:int,<k_main_1181@76:4>:bool)
+      
+      P[<f_1284@71:2>](<main_1034@73:0>:int,<main_1034@73:1>:int,<main_1034@73:2>:int)|- P[<main_1034@73:2>](
+      <main_1034@73:0>:int,<main_1034@73:1>:int,<main_1034@73:2>:int)
+      
+      P[<f_1283@68:1>](<f_1284@71:0>:int,<f_1284@71:1>:int)|- P[<f_1284@71:2>](
+      <f_1284@71:0>:int,<f_1284@71:1>:int,<f_1284@71:2>:int)
+      
+      P[<f_1282@65:0>](<f_1283@68:0>:int)|- P[<f_1283@68:1>](<f_1283@68:0>:int,
+                                                             <f_1283@68:1>:int)
+      
+      |- P[<f_1282@65:0>](<f_1282@65:0>:int)
+    call trees:
+      <main_1278@62>
+        <f_1282@65>
+          <f_1283@68>
+            <f_1284@71>
+              <main_1034@73>
+                <k_main_1181@76>
+                  <gib_1030@79>
+                    <br_gib_1286@82>
+                      <gib_1030@85>
+                      </<gib_1030@85:3>@88>
+                      <f_gib_1279@90>
+                        <gib_1030@92>
+                        </<gib_1030@92:3>@95>
+                        <f_gib_1280@97>
+                        </<f_gib_1280@97:4>@99>
+                      </<f_gib_1279@90:3>@101>
+                    </<br_gib_1286@82:4>@103>
+                  </<gib_1030@79:3>@105>
+                  <f_k_main_1281@107>
+                    <fail_1288@110>
+    inlined horn clauses:
+      P[<fail_1288@110:0>](<fail_1288@110:0>:bool)|- bot
+      
+      P[<<gib_1030@79:3>@105:0>](0:int,1:int,<f_k_main_1281@107:3>:int,<f_k_main_1281@107:5>:int),
+      ((<f_k_main_1281@107:5> < 0) && <fail_1288@110:0>) |- P[<fail_1288@110:0>](
+      <fail_1288@110:0>:bool)
+      
+      P[<gib_1030@79:2>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,<gib_1030@79:2>:int),
+      P[<<gib_1030@85:3>@88:0>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,(
+                                -1 + <gib_1030@79:2>):int,var79:int),
+      P[<<gib_1030@92:3>@95:0>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,(
+                                -2 + <gib_1030@79:2>):int,(<<gib_1030@79:3>@105:0> + (-1 * var79)):int),
+      ((<gib_1030@79:2> <> 0) && (<gib_1030@79:2> <> 1))
+      |- P[<<gib_1030@79:3>@105:0>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,
+                                    <gib_1030@79:2>:int,<<gib_1030@79:3>@105:0>:int)
+      
+      P[<gib_1030@92:2>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,<gib_1030@92:2>:int),
+      ((<gib_1030@92:2> = 0) && (<<gib_1030@92:3>@95:0> = <gib_1030@92:0>))
+      |- P[<<gib_1030@92:3>@95:0>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,
+                                   <gib_1030@92:2>:int,<<gib_1030@92:3>@95:0>:int)
+      
+      P[<gib_1030@79:2>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,(2 + <gib_1030@92:2>):int),
+      P[<<gib_1030@85:3>@88:0>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,(
+                                1 + <gib_1030@92:2>):int,<f_gib_1279@90:4>:int),
+      (((2 + <gib_1030@92:2>) <> 0) && ((1 + <gib_1030@92:2>) <> 0))
+      |- P[<gib_1030@92:2>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,<gib_1030@92:2>:int)
+      
+      P[<gib_1030@85:2>](<gib_1030@85:0>:int,<gib_1030@85:1>:int,<gib_1030@85:2>:int),
+      ((<gib_1030@85:2> = 0) && (<<gib_1030@85:3>@88:0> = <gib_1030@85:0>))
+      |- P[<<gib_1030@85:3>@88:0>](<gib_1030@85:0>:int,<gib_1030@85:1>:int,
+                                   <gib_1030@85:2>:int,<<gib_1030@85:3>@88:0>:int)
+      
+      P[<gib_1030@79:2>](<gib_1030@85:0>:int,<gib_1030@85:1>:int,(1 + <gib_1030@85:2>):int),
+      (((1 + <gib_1030@85:2>) <> 0) && (<gib_1030@85:2> <> 0))
+      |- P[<gib_1030@85:2>](<gib_1030@85:0>:int,<gib_1030@85:1>:int,<gib_1030@85:2>:int)
+      
+       ((<gib_1030@79:1> = 1) && (<gib_1030@79:0> = 0))
+      |- P[<gib_1030@79:2>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,<gib_1030@79:2>:int)
+    begin ParamSubstInfer.infer(10317)[3]
+      
+    end ParamSubstInfer.infer(10317)[3] (0.222966 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(10319)[3]
+      
+    end RefTypeInfer.elim_coeffs(10319)[3] (0.001000 sec.)
+    begin YhornInterface.solve(10792)[3]
+      begin HcSolver.solve_ub(10793)[4]
+        encoded:
+          P[<fail_1288@110:0>](<fail_1288@110:0>:int)|- bot
+          
+          P[<<gib_1030@79:3>@105:0>](0:int,1:int,<f_k_main_1281@107:3>:int,<f_k_main_1281@107:5>:int),
+          ((<f_k_main_1281@107:5> < 0) && (<fail_1288@110:0> = 1)) |- P[<fail_1288@110:0>](
+          <fail_1288@110:0>:int)
+          
+          P[<gib_1030@79:2>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,<gib_1030@79:2>:int),
+          P[<<gib_1030@85:3>@88:0>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,(
+                                    -1 + <gib_1030@79:2>):int,var79:int),
+          P[<<gib_1030@92:3>@95:0>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,(
+                                    -2 + <gib_1030@79:2>):int,(<<gib_1030@79:3>@105:0> + (-1 * var79)):int),
+          ((<gib_1030@79:2> <> 0) && (<gib_1030@79:2> <> 1))
+          |- P[<<gib_1030@79:3>@105:0>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,
+                                        <gib_1030@79:2>:int,<<gib_1030@79:3>@105:0>:int)
+          
+          P[<gib_1030@92:2>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,<gib_1030@92:2>:int),
+          ((<gib_1030@92:2> = 0) && (<<gib_1030@92:3>@95:0> = <gib_1030@92:0>))
+          |- P[<<gib_1030@92:3>@95:0>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,
+                                       <gib_1030@92:2>:int,<<gib_1030@92:3>@95:0>:int)
+          
+          P[<gib_1030@79:2>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,(
+                             2 + <gib_1030@92:2>):int),
+          P[<<gib_1030@85:3>@88:0>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,(
+                                    1 + <gib_1030@92:2>):int,<f_gib_1279@90:4>:int),
+          (((2 + <gib_1030@92:2>) <> 0) && ((1 + <gib_1030@92:2>) <> 0))
+          |- P[<gib_1030@92:2>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,
+                                <gib_1030@92:2>:int)
+          
+          P[<gib_1030@85:2>](<gib_1030@85:0>:int,<gib_1030@85:1>:int,<gib_1030@85:2>:int),
+          ((<gib_1030@85:2> = 0) && (<<gib_1030@85:3>@88:0> = <gib_1030@85:0>))
+          |- P[<<gib_1030@85:3>@88:0>](<gib_1030@85:0>:int,<gib_1030@85:1>:int,
+                                       <gib_1030@85:2>:int,<<gib_1030@85:3>@88:0>:int)
+          
+          P[<gib_1030@79:2>](<gib_1030@85:0>:int,<gib_1030@85:1>:int,(
+                             1 + <gib_1030@85:2>):int), (((1 + <gib_1030@85:2>) <> 0) && (<gib_1030@85:2> <> 0))
+          |- P[<gib_1030@85:2>](<gib_1030@85:0>:int,<gib_1030@85:1>:int,
+                                <gib_1030@85:2>:int)
+          
+           ((<gib_1030@79:1> = 1) && (<gib_1030@79:0> = 0))
+          |- P[<gib_1030@79:2>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,
+                                <gib_1030@79:2>:int)
+        input to Yhorn:
+          P[<fail_1288@110:0>](<fail_1288@110:0>:int)|- bot
+          
+          P[<<gib_1030@79:3>@105:0>](var80:int,var81:int,<f_k_main_1281@107:3>:int,<f_k_main_1281@107:5>:int),
+          ((<f_k_main_1281@107:5> < 0) && ((var81 = 1) && ((var80 = 0) && (<fail_1288@110:0> = 1))))
+          |- P[<fail_1288@110:0>](<fail_1288@110:0>:int)
+          
+          P[<gib_1030@79:2>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,<gib_1030@79:2>:int),
+          P[<<gib_1030@85:3>@88:0>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,var82:int,var79:int),
+          P[<<gib_1030@92:3>@95:0>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,var83:int,var84:int),
+          (((var84 + var79) = <<gib_1030@79:3>@105:0>) &&
+           (((2 + var83) = <gib_1030@79:2>) &&
+            (((1 + var82) = <gib_1030@79:2>) && ((<gib_1030@79:2> <> 1) && (<gib_1030@79:2> <> 0)))))
+          |- P[<<gib_1030@79:3>@105:0>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,
+                                        <gib_1030@79:2>:int,<<gib_1030@79:3>@105:0>:int)
+          
+          P[<gib_1030@92:2>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,<gib_1030@92:2>:int),
+          ((<<gib_1030@92:3>@95:0> = <gib_1030@92:0>) && (<gib_1030@92:2> = 0))
+          |- P[<<gib_1030@92:3>@95:0>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,
+                                       <gib_1030@92:2>:int,<<gib_1030@92:3>@95:0>:int)
+          
+          P[<gib_1030@79:2>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,var85:int),
+          P[<<gib_1030@85:3>@88:0>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,var86:int,<f_gib_1279@90:4>:int),
+          ((var86 = (1 + <gib_1030@92:2>)) &&
+           ((var85 = (2 + <gib_1030@92:2>)) && (((1 + <gib_1030@92:2>) <> 0) && ((2 + <gib_1030@92:2>) <> 0))))
+          |- P[<gib_1030@92:2>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,
+                                <gib_1030@92:2>:int)
+          
+          P[<gib_1030@85:2>](<gib_1030@85:0>:int,<gib_1030@85:1>:int,<gib_1030@85:2>:int),
+          ((<<gib_1030@85:3>@88:0> = <gib_1030@85:0>) && (<gib_1030@85:2> = 0))
+          |- P[<<gib_1030@85:3>@88:0>](<gib_1030@85:0>:int,<gib_1030@85:1>:int,
+                                       <gib_1030@85:2>:int,<<gib_1030@85:3>@88:0>:int)
+          
+          P[<gib_1030@79:2>](<gib_1030@85:0>:int,<gib_1030@85:1>:int,var87:int),
+          ((var87 = (1 + <gib_1030@85:2>)) && ((<gib_1030@85:2> <> 0) && ((1 + <gib_1030@85:2>) <> 0)))
+          |- P[<gib_1030@85:2>](<gib_1030@85:0>:int,<gib_1030@85:1>:int,
+                                <gib_1030@85:2>:int)
+          
+           ((<gib_1030@79:0> = 0) && (<gib_1030@79:1> = 1))
+          |- P[<gib_1030@79:2>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,
+                                <gib_1030@79:2>:int)Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1288_sep_110_sep_0($220)) -> 1=0.
+(($220-1=0) & ($221=0) & ($222-1=0) & ($223<0)) & (v_sep_gib_1030_sep_79_sep_3_sep_105_sep_0($221,$222,$224,$223)) -> v_sep_fail_1288_sep_110_sep_0($220).
+(($225<>0) & ($225-1<>0) & (-$225+$226+1=0) & (-$225+$227+2=0) & ($228+$229-$230=0)) & (v_sep_gib_1030_sep_92_sep_3_sep_95_sep_0($231,$232,$227,$228)) & (v_sep_gib_1030_sep_85_sep_3_sep_88_sep_0($231,$232,$226,$229)) & (v_sep_gib_1030_sep_79_sep_2($231,$232,$225)) -> v_sep_gib_1030_sep_79_sep_3_sep_105_sep_0($231,$232,$225,$230).
+(($233=0) & ($234-$235=0)) & (v_sep_gib_1030_sep_92_sep_2($235,$236,$233)) -> v_sep_gib_1030_sep_92_sep_3_sep_95_sep_0($235,$236,$233,$234).
+(($233+2<>0) & ($233+1<>0) & (-$233+$237-2=0) & (-$233+$238-1=0)) & (v_sep_gib_1030_sep_85_sep_3_sep_88_sep_0($235,$236,$238,$239)) & (v_sep_gib_1030_sep_79_sep_2($235,$236,$237)) -> v_sep_gib_1030_sep_92_sep_2($235,$236,$233).
+(($240=0) & ($241-$242=0)) & (v_sep_gib_1030_sep_85_sep_2($242,$243,$240)) -> v_sep_gib_1030_sep_85_sep_3_sep_88_sep_0($242,$243,$240,$241).
+(($240+1<>0) & ($240<>0) & (-$240+$244-1=0)) & (v_sep_gib_1030_sep_79_sep_2($242,$243,$244)) -> v_sep_gib_1030_sep_85_sep_2($242,$243,$240).
+($232-1=0) & ($231=0) -> v_sep_gib_1030_sep_79_sep_2($231,$232,$225).
+
+
+v_sep_fail_1288_sep_110_sep_0: X
+v_sep_gib_1030_sep_79_sep_2: X
+v_sep_gib_1030_sep_79_sep_3_sep_105_sep_0: X
+v_sep_gib_1030_sep_85_sep_2: X
+v_sep_gib_1030_sep_85_sep_3_sep_88_sep_0: X
+v_sep_gib_1030_sep_92_sep_2: X
+v_sep_gib_1030_sep_92_sep_3_sep_95_sep_0: X
+.............................
+v_sep_fail_1288_sep_110_sep_0: X
+v_sep_gib_1030_sep_79_sep_2: X
+v_sep_gib_1030_sep_79_sep_3_sep_105_sep_0: X
+v_sep_gib_1030_sep_85_sep_2: X
+v_sep_gib_1030_sep_85_sep_3_sep_88_sep_0: X
+v_sep_gib_1030_sep_92_sep_2: X
+v_sep_gib_1030_sep_92_sep_3_sep_95_sep_0: X
+...
+v_sep_fail_1288_sep_110_sep_0: X
+v_sep_gib_1030_sep_79_sep_2: X
+v_sep_gib_1030_sep_79_sep_3_sep_105_sep_0: X
+v_sep_gib_1030_sep_85_sep_2: X
+v_sep_gib_1030_sep_85_sep_3_sep_88_sep_0: X
+v_sep_gib_1030_sep_92_sep_2: X
+v_sep_gib_1030_sep_92_sep_3_sep_95_sep_0: X
+...............
+v_sep_fail_1288_sep_110_sep_0: X
+v_sep_gib_1030_sep_79_sep_2: X
+v_sep_gib_1030_sep_79_sep_3_sep_105_sep_0: X
+v_sep_gib_1030_sep_85_sep_2: X
+v_sep_gib_1030_sep_85_sep_3_sep_88_sep_0: X
+v_sep_gib_1030_sep_92_sep_2: X
+v_sep_gib_1030_sep_92_sep_3_sep_95_sep_0: X
+.................
+v_sep_fail_1288_sep_110_sep_0: X
+v_sep_gib_1030_sep_79_sep_2: X
+v_sep_gib_1030_sep_79_sep_3_sep_105_sep_0: X
+v_sep_gib_1030_sep_85_sep_2: X
+v_sep_gib_1030_sep_85_sep_3_sep_88_sep_0: X
+v_sep_gib_1030_sep_92_sep_2: X
+v_sep_gib_1030_sep_92_sep_3_sep_95_sep_0: X
+.............................(0=0) & (v_sep_fail_1288_sep_110_sep_0($220)) -> 1=0.
+(($220-1=0) & ($221=0) & ($222-1=0) & ($223<0)) & (v_sep_gib_1030_sep_79_sep_3_sep_105_sep_0($221,$222,$224,$223)) -> v_sep_fail_1288_sep_110_sep_0($220).
+(($225<>0) & ($225-1<>0) & (-$225+$226+1=0) & (-$225+$227+2=0) & ($228+$229-$230=0)) & (v_sep_gib_1030_sep_92_sep_3_sep_95_sep_0($231,$232,$227,$228)) & (v_sep_gib_1030_sep_85_sep_3_sep_88_sep_0($231,$232,$226,$229)) & (v_sep_gib_1030_sep_79_sep_2($231,$232,$225)) -> v_sep_gib_1030_sep_79_sep_3_sep_105_sep_0($231,$232,$225,$230).
+(($233=0) & ($234-$235=0)) & (v_sep_gib_1030_sep_92_sep_2($235,$236,$233)) -> v_sep_gib_1030_sep_92_sep_3_sep_95_sep_0($235,$236,$233,$234).
+(($233+2<>0) & ($233+1<>0) & (-$233+$237-2=0) & (-$233+$238-1=0)) & (v_sep_gib_1030_sep_85_sep_3_sep_88_sep_0($235,$236,$238,$239)) & (v_sep_gib_1030_sep_79_sep_2($235,$236,$237)) -> v_sep_gib_1030_sep_92_sep_2($235,$236,$233).
+(($240=0) & ($241-$242=0)) & (v_sep_gib_1030_sep_85_sep_2($242,$243,$240)) -> v_sep_gib_1030_sep_85_sep_3_sep_88_sep_0($242,$243,$240,$241).
+(($240+1<>0) & ($240<>0) & (-$240+$244-1=0)) & (v_sep_gib_1030_sep_79_sep_2($242,$243,$244)) -> v_sep_gib_1030_sep_85_sep_2($242,$243,$240).
+($232-1=0) & ($231=0) -> v_sep_gib_1030_sep_79_sep_2($231,$232,$225).
+
+        solution:
+          P[<fail_1288@110:0>]($245:bool) = false
+          P[<gib_1030@79:2>]($275:int,$277:int,$279:int) = true
+          P[<<gib_1030@79:3>@105:0>]($248:int,$250:int,$252:int,$254:int) = false
+          P[<gib_1030@85:2>]($289:int,$291:int,$293:int) = true
+          P[<<gib_1030@85:3>@88:0>]($266:int,$268:int,$270:int,$272:int) = ($270 <= 0)
+          P[<gib_1030@92:2>]($282:int,$284:int,$286:int) = ((1 + $286) <= 0)
+          P[<<gib_1030@92:3>@95:0>]($257:int,$259:int,$261:int,$263:int) = (1 <= $261)
+        
+      end HcSolver.solve_ub(10793)[4] (0.134979 sec.)
+      begin HcSolver.check_validity(11492)[4]
+        input:
+          P[<fail_1288@110:0>](<fail_1288@110:0>:bool)|- bot
+          
+          P[<<gib_1030@79:3>@105:0>](0:int,1:int,<f_k_main_1281@107:3>:int,<f_k_main_1281@107:5>:int),
+          ((<f_k_main_1281@107:5> < 0) && <fail_1288@110:0>) |- P[<fail_1288@110:0>](
+          <fail_1288@110:0>:bool)
+          
+          P[<gib_1030@79:2>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,<gib_1030@79:2>:int),
+          P[<<gib_1030@85:3>@88:0>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,(
+                                    -1 + <gib_1030@79:2>):int,var79:int),
+          P[<<gib_1030@92:3>@95:0>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,(
+                                    -2 + <gib_1030@79:2>):int,(<<gib_1030@79:3>@105:0> + (-1 * var79)):int),
+          ((<gib_1030@79:2> <> 0) && (<gib_1030@79:2> <> 1))
+          |- P[<<gib_1030@79:3>@105:0>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,
+                                        <gib_1030@79:2>:int,<<gib_1030@79:3>@105:0>:int)
+          
+          P[<gib_1030@92:2>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,<gib_1030@92:2>:int),
+          ((<gib_1030@92:2> = 0) && (<<gib_1030@92:3>@95:0> = <gib_1030@92:0>))
+          |- P[<<gib_1030@92:3>@95:0>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,
+                                       <gib_1030@92:2>:int,<<gib_1030@92:3>@95:0>:int)
+          
+          P[<gib_1030@79:2>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,(
+                             2 + <gib_1030@92:2>):int),
+          P[<<gib_1030@85:3>@88:0>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,(
+                                    1 + <gib_1030@92:2>):int,<f_gib_1279@90:4>:int),
+          (((2 + <gib_1030@92:2>) <> 0) && ((1 + <gib_1030@92:2>) <> 0))
+          |- P[<gib_1030@92:2>](<gib_1030@92:0>:int,<gib_1030@92:1>:int,
+                                <gib_1030@92:2>:int)
+          
+          P[<gib_1030@85:2>](<gib_1030@85:0>:int,<gib_1030@85:1>:int,<gib_1030@85:2>:int),
+          ((<gib_1030@85:2> = 0) && (<<gib_1030@85:3>@88:0> = <gib_1030@85:0>))
+          |- P[<<gib_1030@85:3>@88:0>](<gib_1030@85:0>:int,<gib_1030@85:1>:int,
+                                       <gib_1030@85:2>:int,<<gib_1030@85:3>@88:0>:int)
+          
+          P[<gib_1030@79:2>](<gib_1030@85:0>:int,<gib_1030@85:1>:int,(
+                             1 + <gib_1030@85:2>):int), (((1 + <gib_1030@85:2>) <> 0) && (<gib_1030@85:2> <> 0))
+          |- P[<gib_1030@85:2>](<gib_1030@85:0>:int,<gib_1030@85:1>:int,
+                                <gib_1030@85:2>:int)
+          
+           ((<gib_1030@79:1> = 1) && (<gib_1030@79:0> = 0))
+          |- P[<gib_1030@79:2>](<gib_1030@79:0>:int,<gib_1030@79:1>:int,
+                                <gib_1030@79:2>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(11492)[4] (0.004000 sec.)
+      solution:
+        P[<fail_1288@110:0>]($245:bool) = false
+        P[<gib_1030@79:2>]($275:int,$277:int,$279:int) = true
+        P[<<gib_1030@79:3>@105:0>]($248:int,$250:int,$252:int,$254:int) = false
+        P[<gib_1030@85:2>]($289:int,$291:int,$293:int) = true
+        P[<<gib_1030@85:3>@88:0>]($266:int,$268:int,$270:int,$272:int) = ($270 <= 0)
+        P[<gib_1030@92:2>]($282:int,$284:int,$286:int) = ((1 + $286) <= 0)
+        P[<<gib_1030@92:3>@95:0>]($257:int,$259:int,$261:int,$263:int) = (1 <= $261)
+    end YhornInterface.solve(10792)[3] (0.138979 sec.)
+    
+  end RefTypeInfer.infer_etrs(6701)[2] (0.385941 sec.)
+  refinement types:
+    main_1278: X
+    f_1282: v1:int -> X
+    f_1283: v1:int -> v2:int -> X
+    f_1284: v1:int -> v2:int -> v3:int -> X
+    main_1034: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> X
+    k_main_1181: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> v6:bool -> X
+    gib_1030: v1:int -> v2:int -> v3:int -> (v4:{v4:int | false} -> X) -> X
+    br_gib_1286: v1:bool -> v2:int -> v3:int -> v4:int -> (v5:int -> X) -> X
+    gib_1030: v1:int -> v2:int -> v3:int -> (v4:{v4:int | (v3 <= 0)} -> X) -> X
+    f_gib_1279: v1:int -> v2:int -> v3:int -> (v4:int -> X) -> v6:int -> X
+    gib_1030: v1:int -> v2:int -> v3:{v3:int | ((1 + v3) <= 0)} -> (v4:{v4:int | (1 <= v3)} -> X) -> X
+    f_gib_1280: v1:int -> v2:int -> v3:int -> v4:int -> (v5:int -> X) -> v7:int -> X
+    f_k_main_1281: v1:int -> v2:int -> v3:bool -> v4:int -> (v5:unit -> X) -> v7:int -> X
+    fail_1288: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1285: var100:int -> var99:int -> var98:int -> var97:unit -> X
+  abstraction types:
+    main_1278: X
+    f_1282: v1:int -> X
+    f_1283: v1:int -> v2:int -> X
+    f_1284: v1:int -> v2:int -> v3:int -> X
+    main_1034: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> X
+    k_main_1181: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> v6:bool -> X
+    gib_1030: var107:int ->
+              var108:int ->
+              var109:int[var109 -> ((1 + var109) <= 0)] ->
+              (var110:int[var110 -> (var109 <= 0),
+                          var110 -> (1 <= var109)] -> X) -> X
+    br_gib_1286: v1:bool -> v2:int -> v3:int -> v4:int -> (v5:int -> X) -> X
+    f_gib_1279: v1:int -> v2:int -> v3:int -> (v4:int -> X) -> v6:int -> X
+    f_gib_1280: v1:int -> v2:int -> v3:int -> v4:int -> (v5:int -> X) -> v7:int -> X
+    f_k_main_1281: v1:int -> v2:int -> v3:bool -> v4:int -> (v5:unit -> X) -> v7:int -> X
+    fail_1288: v1:bool -> (v2:unit -> X) -> X
+    f_1285: var100:int -> var99:int -> var98:int -> var97:unit -> X
+  
+end AbsTypeInfer.refine(6700)[1] (0.391940 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 0; 0; 1; 1; 0
+
+Program with abstraction types (CEGAR-cycle 3)::
+Main: main_1278
+  main_1278 -> (rand_int f_1282)
+  br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 when b_1287 -> (k_gib_1122 b_1032)
+  br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 when (not b_1287) ->
+      (gib_1030 a_1031 b_1032 (n_1033 - 1) (f_gib_1279 a_1031 b_1032 n_1033 k_gib_1122))
+  f_1282 x_1219 -> (rand_int (f_1283 x_1219))
+  f_1283 x_1219 x_1232 -> (rand_int (f_1284 x_1219 x_1232))
+  f_1284 x_1219 x_1232 x_1245 -> (main_1034 x_1219 x_1232 x_1245 (f_1285 x_1219 x_1232 x_1245))
+  f_1285 x_1219 x_1232 x_1245 x_1216 -> end
+  f_gib_1279 a_1031 b_1032 n_1033 k_gib_1122 x_1125 ->
+      (gib_1030 a_1031 b_1032 (n_1033 - 2) (f_gib_1280 a_1031 b_1032 n_1033 x_1125 k_gib_1122))
+  f_gib_1280 a_1031 b_1032 n_1033 x_1125 k_gib_1122 x_1126 -> (k_gib_1122 (x_1125 + x_1126))
+  f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 when (x_1185 >= 0) -> (k_main_1178 ())
+  f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 when (not (x_1185 >= 0)) -> (fail_1288 true k_main_1178)
+  fail_1288 b k -> {fail} => (k ())
+  gib_1030 a_1031 b_1032 n_1033 k_gib_1122 when (n_1033 = 0) -> (k_gib_1122 a_1031)
+  gib_1030 a_1031 b_1032 n_1033 k_gib_1122 when (not (n_1033 = 0)) ->
+      (br_gib_1286 (n_1033 = 1) a_1031 b_1032 n_1033 k_gib_1122)
+  k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 when b_1213 ->
+      (gib_1030 0 1 n_1035 (f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178))
+  k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 when (not b_1213) -> (k_main_1178 ())
+  main_1034 n_1035 a_1036 b_1037 k_main_1178 when (a_1036 >= 0) ->
+      (k_main_1181 a_1036 b_1037 n_1035 k_main_1178 (b_1037 >= 0))
+  main_1034 n_1035 a_1036 b_1037 k_main_1178 when (not (a_1036 >= 0)) ->
+      (k_main_1181 a_1036 b_1037 n_1035 k_main_1178 false)
+Types:
+  main_1278 : X
+  fail_1288 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  gib_1030 : (x_1:int ->
+              x_2:int -> x_3:int[x_3 <= -1; x_2 >= 1] -> (x_5:int[x_3 >= 1; x_3 <= 0; x_1 <= x_5; x_5 >= 1] -> X) -> X)
+  
+(3-1) Abstracting ... DONE!
+
+(3-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1278 ... --> 
+  f_1282 ... --> 
+  f_1283 ... --> 
+  f_1284 ... --> 
+  main_1034 [1/2] ... --> 
+  k_main_1181 [1/2] ... --> 
+  gib_1030 [2/2] ... --> 
+  br_gib_1286 [2/2] ... --> 
+  gib_1030 [2/2] ... --> 
+  br_gib_1286 [2/2] ... --> 
+  gib_1030 [2/2] ... --> 
+  br_gib_1286 [1/2] ... --> 
+  f_gib_1279 ... --> 
+  gib_1030 [1/2] ... --> 
+  f_gib_1280 ... --> 
+  f_gib_1279 ... --> 
+  gib_1030 [1/2] ... --> 
+  f_gib_1280 ... --> 
+  f_k_main_1281 [2/2] ... --> 
+  fail_1288 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 1; 1; 1; 1; 1; 0; 0; 0; 0; 0; 0; 0; 1; 0
+
+(3-3) Checking counter-example ... DONE!
+
+(3-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(13707)[1]
+  program:
+    main_1278  | true = ((Random.int 0) f_1282)
+    br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 | b_1287 = (k_gib_1122 b_1032)
+    br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 | (not b_1287) = (
+    gib_1030 a_1031
+             b_1032
+             (n_1033 - 1)
+             (f_gib_1279 a_1031
+                         b_1032
+                         n_1033
+                         k_gib_1122))
+    f_1282 x_1219 | true = ((Random.int 0) (f_1283 x_1219))
+    f_1283 x_1219 x_1232 | true = ((Random.int 0) (f_1284 x_1219
+                                                          x_1232))
+    f_1284 x_1219 x_1232 x_1245 | true = (main_1034 x_1219
+                                                    x_1232
+                                                    x_1245
+                                                    (f_1285 x_1219
+                                                            x_1232
+                                                            x_1245))
+    f_1285 x_1219 x_1232 x_1245 x_1216 | true = end
+    f_gib_1279 a_1031 b_1032 n_1033 k_gib_1122 x_1125 | true = (gib_1030
+                                                                  a_1031
+                                                                  b_1032
+                                                                  (n_1033 - 2)
+                                                                  (f_gib_1280 a_1031
+                                                                    b_1032
+                                                                    n_1033
+                                                                    x_1125
+                                                                    k_gib_1122))
+    f_gib_1280 a_1031 b_1032 n_1033 x_1125 k_gib_1122 x_1126 | true = (
+    k_gib_1122 (x_1125 + x_1126))
+    f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 | (x_1185 >= 0) = (
+    k_main_1178 ())
+    f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 | (not (
+                                                                    x_1185 >= 0)) = (
+    fail_1288 true
+              k_main_1178)
+    fail_1288 b k | true = (fail ())
+    gib_1030 a_1031 b_1032 n_1033 k_gib_1122 | (n_1033 = 0) = (k_gib_1122 a_1031)
+    gib_1030 a_1031 b_1032 n_1033 k_gib_1122 | (not (n_1033 = 0)) = (
+    br_gib_1286 (n_1033 = 1)
+                a_1031
+                b_1032
+                n_1033
+                k_gib_1122)
+    k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 | b_1213 = (gib_1030
+                                                                    0
+                                                                    1
+                                                                    n_1035
+                                                                    (
+                                                                    f_k_main_1281
+                                                                    a_1036
+                                                                    b_1037
+                                                                    b_1213
+                                                                    n_1035
+                                                                    k_main_1178))
+    k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 | (not b_1213) = (
+    k_main_1178 ())
+    main_1034 n_1035 a_1036 b_1037 k_main_1178 | (a_1036 >= 0) = (k_main_1181
+                                                                    a_1036
+                                                                    b_1037
+                                                                    n_1035
+                                                                    k_main_1178
+                                                                    (
+                                                                    b_1037 >= 0))
+    main_1034 n_1035 a_1036 b_1037 k_main_1178 | (not (a_1036 >= 0)) = (
+    k_main_1181 a_1036
+                b_1037
+                n_1035
+                k_main_1178
+                false)
+    main_1278:X
+    br_gib_1286:bool -> int -> int -> int -> (int -> X) -> X
+    f_1282:int -> X
+    f_1283:int -> int -> X
+    f_1284:int -> int -> int -> X
+    f_1285:int -> int -> int -> unit -> X
+    f_gib_1279:int -> int -> int -> (int -> X) -> int -> X
+    f_gib_1280:int -> int -> int -> int -> (int -> X) -> int -> X
+    f_k_main_1281:int -> int -> bool -> int -> (unit -> X) -> int -> X
+    fail_1288:bool -> (unit -> X) -> X
+    gib_1030:int -> int -> int -> (int -> X) -> X
+    k_main_1181:int -> int -> int -> (unit -> X) -> bool -> X
+    main_1034:int -> int -> int -> (unit -> X) -> X
+  inlined functions: br_gib_1286,f_1282,f_1283,f_1284,f_1285,f_gib_1279,f_gib_1280,f_k_main_1281,k_main_1181,main_1034
+  counterexample: 0:0:0:0:0:0:1:1:1:1:1:0:0:0:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1282@116:0> = var113)
+     [true.nop((<f_1283@119:0> = <f_1282@116:0>) && (<f_1283@119:1> = var114))
+      [true.nop((<f_1284@122:0> = <f_1283@119:0>) && ((<f_1284@122:1> = <f_1283@119:1>) && (<f_1284@122:2> = var115)))
+       [true.
+        ((<main_1034@124:0> = <f_1284@122:0>) &&
+         ((<main_1034@124:1> = <f_1284@122:1>) && (<main_1034@124:2> = <f_1284@122:2>)))
+        [(<main_1034@124:1> >= 0).
+         ((<k_main_1181@127:0> = <main_1034@124:1>) &&
+          ((<k_main_1181@127:1> = <main_1034@124:2>) &&
+           ((<k_main_1181@127:2> = <main_1034@124:0>) && (<k_main_1181@127:4> = (<main_1034@124:2> >= 0)))))
+         [<k_main_1181@127:4>.
+          ((<gib_1030@130:0> = 0) && ((<gib_1030@130:1> = 1) && (<gib_1030@130:2> = <k_main_1181@127:2>)))
+          [(not (<gib_1030@130:2> = 0)).
+           ((<br_gib_1286@133:0> = (<gib_1030@130:2> = 1)) &&
+            ((<br_gib_1286@133:1> = <gib_1030@130:0>) &&
+             ((<br_gib_1286@133:2> = <gib_1030@130:1>) && (<br_gib_1286@133:3> = <gib_1030@130:2>))))
+           [(not <br_gib_1286@133:0>).
+            ((<gib_1030@136:0> = <br_gib_1286@133:1>) &&
+             ((<gib_1030@136:1> = <br_gib_1286@133:2>) && (<gib_1030@136:2> = (<br_gib_1286@133:3> - 1))))
+            [(not (<gib_1030@136:2> = 0)).
+             ((<br_gib_1286@139:0> = (<gib_1030@136:2> = 1)) &&
+              ((<br_gib_1286@139:1> = <gib_1030@136:0>) &&
+               ((<br_gib_1286@139:2> = <gib_1030@136:1>) && (<br_gib_1286@139:3> = <gib_1030@136:2>))))
+             [(not <br_gib_1286@139:0>).
+              ((<gib_1030@142:0> = <br_gib_1286@139:1>) &&
+               ((<gib_1030@142:1> = <br_gib_1286@139:2>) && (<gib_1030@142:2> = (<br_gib_1286@139:3> - 1))))
+              [(not (<gib_1030@142:2> = 0)).
+               ((<br_gib_1286@145:0> = (<gib_1030@142:2> = 1)) &&
+                ((<br_gib_1286@145:1> = <gib_1030@142:0>) &&
+                 ((<br_gib_1286@145:2> = <gib_1030@142:1>) && (<br_gib_1286@145:3> = <gib_1030@142:2>))))
+               [<br_gib_1286@145:0>.(<<br_gib_1286@145:4>@148:0> = <br_gib_1286@145:2>)
+                [true.(<<gib_1030@142:3>@150:0> = <<br_gib_1286@145:4>@148:0>)
+                 [true.
+                  ((<f_gib_1279@152:0> = <br_gib_1286@139:1>) &&
+                   ((<f_gib_1279@152:1> = <br_gib_1286@139:2>) &&
+                    ((<f_gib_1279@152:2> = <br_gib_1286@139:3>) && (<f_gib_1279@152:4> = <<gib_1030@142:3>@150:0>))))
+                  [true.
+                   ((<gib_1030@154:0> = <f_gib_1279@152:0>) &&
+                    ((<gib_1030@154:1> = <f_gib_1279@152:1>) && (<gib_1030@154:2> = (<f_gib_1279@152:2> - 2))))
+                   [(<gib_1030@154:2> = 0).(<<gib_1030@154:3>@157:0> = <gib_1030@154:0>)
+                    [true.
+                     ((<f_gib_1280@159:0> = <f_gib_1279@152:0>) &&
+                      ((<f_gib_1280@159:1> = <f_gib_1279@152:1>) &&
+                       ((<f_gib_1280@159:2> = <f_gib_1279@152:2>) &&
+                        ((<f_gib_1280@159:3> = <f_gib_1279@152:4>) && (<f_gib_1280@159:5> = <<gib_1030@154:3>@157:0>)))))
+                     [true.(<<f_gib_1280@159:4>@161:0> = (<f_gib_1280@159:3> + <f_gib_1280@159:5>))
+                      [true.(<<f_gib_1279@152:3>@163:0> = <<f_gib_1280@159:4>@161:0>)
+                       [true.(<<br_gib_1286@139:4>@165:0> = <<f_gib_1279@152:3>@163:0>)
+                        [true.(<<gib_1030@136:3>@167:0> = <<br_gib_1286@139:4>@165:0>)
+                         [true.
+                          ((<f_gib_1279@169:0> = <br_gib_1286@133:1>) &&
+                           ((<f_gib_1279@169:1> = <br_gib_1286@133:2>) &&
+                            ((<f_gib_1279@169:2> = <br_gib_1286@133:3>) &&
+                             (<f_gib_1279@169:4> = <<gib_1030@136:3>@167:0>))))
+                          [true.
+                           ((<gib_1030@171:0> = <f_gib_1279@169:0>) &&
+                            ((<gib_1030@171:1> = <f_gib_1279@169:1>) && (<gib_1030@171:2> = (<f_gib_1279@169:2> - 2))))
+                           [(<gib_1030@171:2> = 0).(<<gib_1030@171:3>@174:0> = <gib_1030@171:0>)
+                            [true.
+                             ((<f_gib_1280@176:0> = <f_gib_1279@169:0>) &&
+                              ((<f_gib_1280@176:1> = <f_gib_1279@169:1>) &&
+                               ((<f_gib_1280@176:2> = <f_gib_1279@169:2>) &&
+                                ((<f_gib_1280@176:3> = <f_gib_1279@169:4>) &&
+                                 (<f_gib_1280@176:5> = <<gib_1030@171:3>@174:0>)))))
+                             [true.(<<f_gib_1280@176:4>@178:0> = (<f_gib_1280@176:3> + <f_gib_1280@176:5>))
+                              [true.(<<f_gib_1279@169:3>@180:0> = <<f_gib_1280@176:4>@178:0>)
+                               [true.(<<br_gib_1286@133:4>@182:0> = <<f_gib_1279@169:3>@180:0>)
+                                [true.(<<gib_1030@130:3>@184:0> = <<br_gib_1286@133:4>@182:0>)
+                                 [true.
+                                  ((<f_k_main_1281@186:0> = <k_main_1181@127:0>) &&
+                                   ((<f_k_main_1281@186:1> = <k_main_1181@127:1>) &&
+                                    ((<f_k_main_1281@186:2> = <k_main_1181@127:4>) &&
+                                     ((<f_k_main_1281@186:3> = <k_main_1181@127:2>) &&
+                                      (<f_k_main_1281@186:5> = <<gib_1030@130:3>@184:0>)))))
+                                  [(not (<f_k_main_1281@186:5> >= 0)).(<fail_1288@189:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(13708)[2]
+    horn clauses:
+      P[<fail_1288@189:0>](<fail_1288@189:0>:bool)|- bot
+      
+      P[<f_k_main_1281@186:5>](<f_k_main_1281@186:0>:int,<f_k_main_1281@186:1>:int,<f_k_main_1281@186:2>:bool,<f_k_main_1281@186:3>:int,<f_k_main_1281@186:5>:int),
+      ((<f_k_main_1281@186:5> < 0) && <fail_1288@189:0>) |- P[<fail_1288@189:0>](
+      <fail_1288@189:0>:bool)
+      
+      P[<k_main_1181@127:4>](<f_k_main_1281@186:0>:int,<f_k_main_1281@186:1>:int,<f_k_main_1281@186:3>:int,<f_k_main_1281@186:2>:bool),
+      P[<<gib_1030@130:3>@184:0>](0:int,1:int,<f_k_main_1281@186:3>:int,<f_k_main_1281@186:5>:int),
+      <f_k_main_1281@186:2>
+      |- P[<f_k_main_1281@186:5>](<f_k_main_1281@186:0>:int,<f_k_main_1281@186:1>:int,
+                                  <f_k_main_1281@186:2>:bool,<f_k_main_1281@186:3>:int,
+                                  <f_k_main_1281@186:5>:int)
+      
+      P[<gib_1030@130:2>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,<gib_1030@130:2>:int),
+      P[<<br_gib_1286@133:4>@182:0>]((<gib_1030@130:2> = 1):bool,<gib_1030@130:0>:int,<gib_1030@130:1>:int,<gib_1030@130:2>:int,<<gib_1030@130:3>@184:0>:int),
+      (<gib_1030@130:2> <> 0)
+      |- P[<<gib_1030@130:3>@184:0>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,
+                                     <gib_1030@130:2>:int,<<gib_1030@130:3>@184:0>:int)
+      
+      P[<br_gib_1286@133:3>](<br_gib_1286@133:0>:bool,<br_gib_1286@133:1>:int,<br_gib_1286@133:2>:int,<br_gib_1286@133:3>:int),
+      P[<<f_gib_1279@169:3>@180:0>](<br_gib_1286@133:1>:int,<br_gib_1286@133:2>:int,<br_gib_1286@133:3>:int,<<br_gib_1286@133:4>@182:0>:int),
+      (not <br_gib_1286@133:0>)
+      |- P[<<br_gib_1286@133:4>@182:0>](<br_gib_1286@133:0>:bool,<br_gib_1286@133:1>:int,
+                                        <br_gib_1286@133:2>:int,<br_gib_1286@133:3>:int,
+                                        <<br_gib_1286@133:4>@182:0>:int)
+      
+      P[<f_gib_1279@169:4>](<f_gib_1279@169:0>:int,<f_gib_1279@169:1>:int,<f_gib_1279@169:2>:int,<f_gib_1280@176:3>:int),
+      P[<<f_gib_1280@176:4>@178:0>](<f_gib_1279@169:0>:int,<f_gib_1279@169:1>:int,<f_gib_1279@169:2>:int,<f_gib_1280@176:3>:int,<<f_gib_1279@169:3>@180:0>:int)|- P[<<f_gib_1279@169:3>@180:0>](
+      <f_gib_1279@169:0>:int,<f_gib_1279@169:1>:int,<f_gib_1279@169:2>:int,
+      <<f_gib_1279@169:3>@180:0>:int)
+      
+      P[<f_gib_1280@176:5>](<f_gib_1280@176:0>:int,<f_gib_1280@176:1>:int,<f_gib_1280@176:2>:int,<f_gib_1280@176:3>:int,(
+                            <<f_gib_1280@176:4>@178:0> + (-1 * <f_gib_1280@176:3>)):int)|- P[<<f_gib_1280@176:4>@178:0>](
+      <f_gib_1280@176:0>:int,<f_gib_1280@176:1>:int,<f_gib_1280@176:2>:int,
+      <f_gib_1280@176:3>:int,<<f_gib_1280@176:4>@178:0>:int)
+      
+      P[<f_gib_1279@169:4>](<f_gib_1280@176:0>:int,<f_gib_1280@176:1>:int,<f_gib_1280@176:2>:int,<f_gib_1280@176:3>:int),
+      P[<<gib_1030@171:3>@174:0>](<f_gib_1280@176:0>:int,<f_gib_1280@176:1>:int,(
+                                  -2 + <f_gib_1280@176:2>):int,<f_gib_1280@176:5>:int)|- P[<f_gib_1280@176:5>](
+      <f_gib_1280@176:0>:int,<f_gib_1280@176:1>:int,<f_gib_1280@176:2>:int,
+      <f_gib_1280@176:3>:int,<f_gib_1280@176:5>:int)
+      
+      P[<gib_1030@171:2>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,<gib_1030@171:2>:int),
+      ((<gib_1030@171:2> = 0) && (<<gib_1030@171:3>@174:0> = <gib_1030@171:0>))
+      |- P[<<gib_1030@171:3>@174:0>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,
+                                     <gib_1030@171:2>:int,<<gib_1030@171:3>@174:0>:int)
+      
+      P[<f_gib_1279@169:4>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,(
+                            2 + <gib_1030@171:2>):int,<f_gib_1279@169:4>:int)|- P[<gib_1030@171:2>](
+      <gib_1030@171:0>:int,<gib_1030@171:1>:int,<gib_1030@171:2>:int)
+      
+      P[<br_gib_1286@133:3>](false:bool,<f_gib_1279@169:0>:int,<f_gib_1279@169:1>:int,<f_gib_1279@169:2>:int),
+      P[<<gib_1030@136:3>@167:0>](<f_gib_1279@169:0>:int,<f_gib_1279@169:1>:int,(
+                                  -1 + <f_gib_1279@169:2>):int,<f_gib_1279@169:4>:int)|- P[<f_gib_1279@169:4>](
+      <f_gib_1279@169:0>:int,<f_gib_1279@169:1>:int,<f_gib_1279@169:2>:int,
+      <f_gib_1279@169:4>:int)
+      
+      P[<gib_1030@136:2>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,<gib_1030@136:2>:int),
+      P[<<br_gib_1286@139:4>@165:0>]((<gib_1030@136:2> = 1):bool,<gib_1030@136:0>:int,<gib_1030@136:1>:int,<gib_1030@136:2>:int,<<gib_1030@136:3>@167:0>:int),
+      (<gib_1030@136:2> <> 0)
+      |- P[<<gib_1030@136:3>@167:0>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,
+                                     <gib_1030@136:2>:int,<<gib_1030@136:3>@167:0>:int)
+      
+      P[<br_gib_1286@139:3>](<br_gib_1286@139:0>:bool,<br_gib_1286@139:1>:int,<br_gib_1286@139:2>:int,<br_gib_1286@139:3>:int),
+      P[<<f_gib_1279@152:3>@163:0>](<br_gib_1286@139:1>:int,<br_gib_1286@139:2>:int,<br_gib_1286@139:3>:int,<<br_gib_1286@139:4>@165:0>:int),
+      (not <br_gib_1286@139:0>)
+      |- P[<<br_gib_1286@139:4>@165:0>](<br_gib_1286@139:0>:bool,<br_gib_1286@139:1>:int,
+                                        <br_gib_1286@139:2>:int,<br_gib_1286@139:3>:int,
+                                        <<br_gib_1286@139:4>@165:0>:int)
+      
+      P[<f_gib_1279@152:4>](<f_gib_1279@152:0>:int,<f_gib_1279@152:1>:int,<f_gib_1279@152:2>:int,<f_gib_1280@159:3>:int),
+      P[<<f_gib_1280@159:4>@161:0>](<f_gib_1279@152:0>:int,<f_gib_1279@152:1>:int,<f_gib_1279@152:2>:int,<f_gib_1280@159:3>:int,<<f_gib_1279@152:3>@163:0>:int)|- P[<<f_gib_1279@152:3>@163:0>](
+      <f_gib_1279@152:0>:int,<f_gib_1279@152:1>:int,<f_gib_1279@152:2>:int,
+      <<f_gib_1279@152:3>@163:0>:int)
+      
+      P[<f_gib_1280@159:5>](<f_gib_1280@159:0>:int,<f_gib_1280@159:1>:int,<f_gib_1280@159:2>:int,<f_gib_1280@159:3>:int,(
+                            <<f_gib_1280@159:4>@161:0> + (-1 * <f_gib_1280@159:3>)):int)|- P[<<f_gib_1280@159:4>@161:0>](
+      <f_gib_1280@159:0>:int,<f_gib_1280@159:1>:int,<f_gib_1280@159:2>:int,
+      <f_gib_1280@159:3>:int,<<f_gib_1280@159:4>@161:0>:int)
+      
+      P[<f_gib_1279@152:4>](<f_gib_1280@159:0>:int,<f_gib_1280@159:1>:int,<f_gib_1280@159:2>:int,<f_gib_1280@159:3>:int),
+      P[<<gib_1030@154:3>@157:0>](<f_gib_1280@159:0>:int,<f_gib_1280@159:1>:int,(
+                                  -2 + <f_gib_1280@159:2>):int,<f_gib_1280@159:5>:int)|- P[<f_gib_1280@159:5>](
+      <f_gib_1280@159:0>:int,<f_gib_1280@159:1>:int,<f_gib_1280@159:2>:int,
+      <f_gib_1280@159:3>:int,<f_gib_1280@159:5>:int)
+      
+      P[<gib_1030@154:2>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,<gib_1030@154:2>:int),
+      ((<gib_1030@154:2> = 0) && (<<gib_1030@154:3>@157:0> = <gib_1030@154:0>))
+      |- P[<<gib_1030@154:3>@157:0>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,
+                                     <gib_1030@154:2>:int,<<gib_1030@154:3>@157:0>:int)
+      
+      P[<f_gib_1279@152:4>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,(
+                            2 + <gib_1030@154:2>):int,<f_gib_1279@152:4>:int)|- P[<gib_1030@154:2>](
+      <gib_1030@154:0>:int,<gib_1030@154:1>:int,<gib_1030@154:2>:int)
+      
+      P[<br_gib_1286@139:3>](false:bool,<f_gib_1279@152:0>:int,<f_gib_1279@152:1>:int,<f_gib_1279@152:2>:int),
+      P[<<gib_1030@142:3>@150:0>](<f_gib_1279@152:0>:int,<f_gib_1279@152:1>:int,(
+                                  -1 + <f_gib_1279@152:2>):int,<f_gib_1279@152:4>:int)|- P[<f_gib_1279@152:4>](
+      <f_gib_1279@152:0>:int,<f_gib_1279@152:1>:int,<f_gib_1279@152:2>:int,
+      <f_gib_1279@152:4>:int)
+      
+      P[<gib_1030@142:2>](<gib_1030@142:0>:int,<gib_1030@142:1>:int,<gib_1030@142:2>:int),
+      P[<<br_gib_1286@145:4>@148:0>]((<gib_1030@142:2> = 1):bool,<gib_1030@142:0>:int,<gib_1030@142:1>:int,<gib_1030@142:2>:int,<<gib_1030@142:3>@150:0>:int),
+      (<gib_1030@142:2> <> 0)
+      |- P[<<gib_1030@142:3>@150:0>](<gib_1030@142:0>:int,<gib_1030@142:1>:int,
+                                     <gib_1030@142:2>:int,<<gib_1030@142:3>@150:0>:int)
+      
+      P[<br_gib_1286@145:3>](<br_gib_1286@145:0>:bool,<br_gib_1286@145:1>:int,<br_gib_1286@145:2>:int,<br_gib_1286@145:3>:int),
+      ((<<br_gib_1286@145:4>@148:0> = <br_gib_1286@145:2>) && <br_gib_1286@145:0>)
+      |- P[<<br_gib_1286@145:4>@148:0>](<br_gib_1286@145:0>:bool,<br_gib_1286@145:1>:int,
+                                        <br_gib_1286@145:2>:int,<br_gib_1286@145:3>:int,
+                                        <<br_gib_1286@145:4>@148:0>:int)
+      
+      P[<gib_1030@142:2>](<br_gib_1286@145:1>:int,<br_gib_1286@145:2>:int,<br_gib_1286@145:3>:int),
+      ((<br_gib_1286@145:3> <> 0) && (<br_gib_1286@145:0> = (<br_gib_1286@145:3> = 1)))
+      |- P[<br_gib_1286@145:3>](<br_gib_1286@145:0>:bool,<br_gib_1286@145:1>:int,
+                                <br_gib_1286@145:2>:int,<br_gib_1286@145:3>:int)
+      
+      P[<br_gib_1286@139:3>](false:bool,<gib_1030@142:0>:int,<gib_1030@142:1>:int,(
+                             1 + <gib_1030@142:2>):int)|- P[<gib_1030@142:2>](
+      <gib_1030@142:0>:int,<gib_1030@142:1>:int,<gib_1030@142:2>:int)
+      
+      P[<gib_1030@136:2>](<br_gib_1286@139:1>:int,<br_gib_1286@139:2>:int,<br_gib_1286@139:3>:int),
+      ((<br_gib_1286@139:3> <> 0) && (<br_gib_1286@139:0> = (<br_gib_1286@139:3> = 1)))
+      |- P[<br_gib_1286@139:3>](<br_gib_1286@139:0>:bool,<br_gib_1286@139:1>:int,
+                                <br_gib_1286@139:2>:int,<br_gib_1286@139:3>:int)
+      
+      P[<br_gib_1286@133:3>](false:bool,<gib_1030@136:0>:int,<gib_1030@136:1>:int,(
+                             1 + <gib_1030@136:2>):int)|- P[<gib_1030@136:2>](
+      <gib_1030@136:0>:int,<gib_1030@136:1>:int,<gib_1030@136:2>:int)
+      
+      P[<gib_1030@130:2>](<br_gib_1286@133:1>:int,<br_gib_1286@133:2>:int,<br_gib_1286@133:3>:int),
+      ((<br_gib_1286@133:3> <> 0) && (<br_gib_1286@133:0> = (<br_gib_1286@133:3> = 1)))
+      |- P[<br_gib_1286@133:3>](<br_gib_1286@133:0>:bool,<br_gib_1286@133:1>:int,
+                                <br_gib_1286@133:2>:int,<br_gib_1286@133:3>:int)
+      
+      P[<k_main_1181@127:4>](<k_main_1181@127:0>:int,<k_main_1181@127:1>:int,<gib_1030@130:2>:int,true:bool),
+      ((<gib_1030@130:1> = 1) && (<gib_1030@130:0> = 0))
+      |- P[<gib_1030@130:2>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,
+                             <gib_1030@130:2>:int)
+      
+      P[<main_1034@124:2>](<k_main_1181@127:2>:int,<k_main_1181@127:0>:int,<k_main_1181@127:1>:int),
+      ((<k_main_1181@127:0> >= 0) && (<k_main_1181@127:4> = (<k_main_1181@127:1> >= 0)))
+      |- P[<k_main_1181@127:4>](<k_main_1181@127:0>:int,<k_main_1181@127:1>:int,
+                                <k_main_1181@127:2>:int,<k_main_1181@127:4>:bool)
+      
+      P[<f_1284@122:2>](<main_1034@124:0>:int,<main_1034@124:1>:int,<main_1034@124:2>:int)|- P[<main_1034@124:2>](
+      <main_1034@124:0>:int,<main_1034@124:1>:int,<main_1034@124:2>:int)
+      
+      P[<f_1283@119:1>](<f_1284@122:0>:int,<f_1284@122:1>:int)|- P[<f_1284@122:2>](
+      <f_1284@122:0>:int,<f_1284@122:1>:int,<f_1284@122:2>:int)
+      
+      P[<f_1282@116:0>](<f_1283@119:0>:int)|- P[<f_1283@119:1>](<f_1283@119:0>:int,
+                                                                <f_1283@119:1>:int)
+      
+      |- P[<f_1282@116:0>](<f_1282@116:0>:int)
+    call trees:
+      <main_1278@113>
+        <f_1282@116>
+          <f_1283@119>
+            <f_1284@122>
+              <main_1034@124>
+                <k_main_1181@127>
+                  <gib_1030@130>
+                    <br_gib_1286@133>
+                      <gib_1030@136>
+                        <br_gib_1286@139>
+                          <gib_1030@142>
+                            <br_gib_1286@145>
+                            </<br_gib_1286@145:4>@148>
+                          </<gib_1030@142:3>@150>
+                          <f_gib_1279@152>
+                            <gib_1030@154>
+                            </<gib_1030@154:3>@157>
+                            <f_gib_1280@159>
+                            </<f_gib_1280@159:4>@161>
+                          </<f_gib_1279@152:3>@163>
+                        </<br_gib_1286@139:4>@165>
+                      </<gib_1030@136:3>@167>
+                      <f_gib_1279@169>
+                        <gib_1030@171>
+                        </<gib_1030@171:3>@174>
+                        <f_gib_1280@176>
+                        </<f_gib_1280@176:4>@178>
+                      </<f_gib_1279@169:3>@180>
+                    </<br_gib_1286@133:4>@182>
+                  </<gib_1030@130:3>@184>
+                  <f_k_main_1281@186>
+                    <fail_1288@189>
+    inlined horn clauses:
+      P[<fail_1288@189:0>](<fail_1288@189:0>:bool)|- bot
+      
+      P[<<gib_1030@130:3>@184:0>](0:int,1:int,<f_k_main_1281@186:3>:int,<f_k_main_1281@186:5>:int),
+      ((<f_k_main_1281@186:5> < 0) && <fail_1288@189:0>) |- P[<fail_1288@189:0>](
+      <fail_1288@189:0>:bool)
+      
+      P[<gib_1030@130:2>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,<gib_1030@130:2>:int),
+      P[<<gib_1030@136:3>@167:0>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,(
+                                  -1 + <gib_1030@130:2>):int,var118:int),
+      P[<<gib_1030@171:3>@174:0>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,(
+                                  -2 + <gib_1030@130:2>):int,(<<gib_1030@130:3>@184:0> + (-1 * var118)):int),
+      ((<gib_1030@130:2> <> 0) && (<gib_1030@130:2> <> 1))
+      |- P[<<gib_1030@130:3>@184:0>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,
+                                     <gib_1030@130:2>:int,<<gib_1030@130:3>@184:0>:int)
+      
+      P[<gib_1030@171:2>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,<gib_1030@171:2>:int),
+      ((<gib_1030@171:2> = 0) && (<<gib_1030@171:3>@174:0> = <gib_1030@171:0>))
+      |- P[<<gib_1030@171:3>@174:0>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,
+                                     <gib_1030@171:2>:int,<<gib_1030@171:3>@174:0>:int)
+      
+      P[<gib_1030@130:2>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,(
+                          2 + <gib_1030@171:2>):int),
+      P[<<gib_1030@136:3>@167:0>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,(
+                                  1 + <gib_1030@171:2>):int,<f_gib_1279@169:4>:int),
+      (((2 + <gib_1030@171:2>) <> 0) && ((1 + <gib_1030@171:2>) <> 0))
+      |- P[<gib_1030@171:2>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,
+                             <gib_1030@171:2>:int)
+      
+      P[<gib_1030@136:2>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,<gib_1030@136:2>:int),
+      P[<<gib_1030@142:3>@150:0>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,(
+                                  -1 + <gib_1030@136:2>):int,var119:int),
+      P[<<gib_1030@154:3>@157:0>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,(
+                                  -2 + <gib_1030@136:2>):int,(<<gib_1030@136:3>@167:0> + (-1 * var119)):int),
+      ((<gib_1030@136:2> <> 0) && (<gib_1030@136:2> <> 1))
+      |- P[<<gib_1030@136:3>@167:0>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,
+                                     <gib_1030@136:2>:int,<<gib_1030@136:3>@167:0>:int)
+      
+      P[<gib_1030@154:2>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,<gib_1030@154:2>:int),
+      ((<gib_1030@154:2> = 0) && (<<gib_1030@154:3>@157:0> = <gib_1030@154:0>))
+      |- P[<<gib_1030@154:3>@157:0>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,
+                                     <gib_1030@154:2>:int,<<gib_1030@154:3>@157:0>:int)
+      
+      P[<gib_1030@136:2>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,(
+                          2 + <gib_1030@154:2>):int),
+      P[<<gib_1030@142:3>@150:0>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,(
+                                  1 + <gib_1030@154:2>):int,<f_gib_1279@152:4>:int),
+      (((2 + <gib_1030@154:2>) <> 0) && ((1 + <gib_1030@154:2>) <> 0))
+      |- P[<gib_1030@154:2>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,
+                             <gib_1030@154:2>:int)
+      
+      P[<gib_1030@142:2>](<gib_1030@142:0>:int,<gib_1030@142:1>:int,<gib_1030@142:2>:int),
+      ((<gib_1030@142:2> = 1) && (<<gib_1030@142:3>@150:0> = <gib_1030@142:1>))
+      |- P[<<gib_1030@142:3>@150:0>](<gib_1030@142:0>:int,<gib_1030@142:1>:int,
+                                     <gib_1030@142:2>:int,<<gib_1030@142:3>@150:0>:int)
+      
+      P[<gib_1030@136:2>](<gib_1030@142:0>:int,<gib_1030@142:1>:int,(
+                          1 + <gib_1030@142:2>):int), (((1 + <gib_1030@142:2>) <> 0) && (<gib_1030@142:2> <> 0))
+      |- P[<gib_1030@142:2>](<gib_1030@142:0>:int,<gib_1030@142:1>:int,
+                             <gib_1030@142:2>:int)
+      
+      P[<gib_1030@130:2>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,(
+                          1 + <gib_1030@136:2>):int), (((1 + <gib_1030@136:2>) <> 0) && (<gib_1030@136:2> <> 0))
+      |- P[<gib_1030@136:2>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,
+                             <gib_1030@136:2>:int)
+      
+       ((<gib_1030@130:1> = 1) && (<gib_1030@130:0> = 0))
+      |- P[<gib_1030@130:2>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,
+                             <gib_1030@130:2>:int)
+    begin ParamSubstInfer.infer(19891)[3]
+      
+    end ParamSubstInfer.infer(19891)[3] (0.370943 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(19893)[3]
+      
+    end RefTypeInfer.elim_coeffs(19893)[3] (0.004999 sec.)
+    begin YhornInterface.solve(20662)[3]
+      begin HcSolver.solve_ub(20663)[4]
+        encoded:
+          P[<fail_1288@189:0>](<fail_1288@189:0>:int)|- bot
+          
+          P[<<gib_1030@130:3>@184:0>](0:int,1:int,<f_k_main_1281@186:3>:int,<f_k_main_1281@186:5>:int),
+          ((<f_k_main_1281@186:5> < 0) && (<fail_1288@189:0> = 1)) |- P[<fail_1288@189:0>](
+          <fail_1288@189:0>:int)
+          
+          P[<gib_1030@130:2>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,<gib_1030@130:2>:int),
+          P[<<gib_1030@136:3>@167:0>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,(
+                                      -1 + <gib_1030@130:2>):int,var118:int),
+          P[<<gib_1030@171:3>@174:0>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,(
+                                      -2 + <gib_1030@130:2>):int,(<<gib_1030@130:3>@184:0> + (-1 * var118)):int),
+          ((<gib_1030@130:2> <> 0) && (<gib_1030@130:2> <> 1))
+          |- P[<<gib_1030@130:3>@184:0>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,
+                                         <gib_1030@130:2>:int,<<gib_1030@130:3>@184:0>:int)
+          
+          P[<gib_1030@171:2>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,<gib_1030@171:2>:int),
+          ((<gib_1030@171:2> = 0) && (<<gib_1030@171:3>@174:0> = <gib_1030@171:0>))
+          |- P[<<gib_1030@171:3>@174:0>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,
+                                         <gib_1030@171:2>:int,<<gib_1030@171:3>@174:0>:int)
+          
+          P[<gib_1030@130:2>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,(
+                              2 + <gib_1030@171:2>):int),
+          P[<<gib_1030@136:3>@167:0>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,(
+                                      1 + <gib_1030@171:2>):int,<f_gib_1279@169:4>:int),
+          (((2 + <gib_1030@171:2>) <> 0) && ((1 + <gib_1030@171:2>) <> 0))
+          |- P[<gib_1030@171:2>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,
+                                 <gib_1030@171:2>:int)
+          
+          P[<gib_1030@136:2>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,<gib_1030@136:2>:int),
+          P[<<gib_1030@142:3>@150:0>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,(
+                                      -1 + <gib_1030@136:2>):int,var119:int),
+          P[<<gib_1030@154:3>@157:0>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,(
+                                      -2 + <gib_1030@136:2>):int,(<<gib_1030@136:3>@167:0> + (-1 * var119)):int),
+          ((<gib_1030@136:2> <> 0) && (<gib_1030@136:2> <> 1))
+          |- P[<<gib_1030@136:3>@167:0>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,
+                                         <gib_1030@136:2>:int,<<gib_1030@136:3>@167:0>:int)
+          
+          P[<gib_1030@154:2>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,<gib_1030@154:2>:int),
+          ((<gib_1030@154:2> = 0) && (<<gib_1030@154:3>@157:0> = <gib_1030@154:0>))
+          |- P[<<gib_1030@154:3>@157:0>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,
+                                         <gib_1030@154:2>:int,<<gib_1030@154:3>@157:0>:int)
+          
+          P[<gib_1030@136:2>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,(
+                              2 + <gib_1030@154:2>):int),
+          P[<<gib_1030@142:3>@150:0>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,(
+                                      1 + <gib_1030@154:2>):int,<f_gib_1279@152:4>:int),
+          (((2 + <gib_1030@154:2>) <> 0) && ((1 + <gib_1030@154:2>) <> 0))
+          |- P[<gib_1030@154:2>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,
+                                 <gib_1030@154:2>:int)
+          
+          P[<gib_1030@142:2>](<gib_1030@142:0>:int,<gib_1030@142:1>:int,<gib_1030@142:2>:int),
+          ((<gib_1030@142:2> = 1) && (<<gib_1030@142:3>@150:0> = <gib_1030@142:1>))
+          |- P[<<gib_1030@142:3>@150:0>](<gib_1030@142:0>:int,<gib_1030@142:1>:int,
+                                         <gib_1030@142:2>:int,<<gib_1030@142:3>@150:0>:int)
+          
+          P[<gib_1030@136:2>](<gib_1030@142:0>:int,<gib_1030@142:1>:int,(
+                              1 + <gib_1030@142:2>):int), (((1 + <gib_1030@142:2>) <> 0) && (<gib_1030@142:2> <> 0))
+          |- P[<gib_1030@142:2>](<gib_1030@142:0>:int,<gib_1030@142:1>:int,
+                                 <gib_1030@142:2>:int)
+          
+          P[<gib_1030@130:2>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,(
+                              1 + <gib_1030@136:2>):int), (((1 + <gib_1030@136:2>) <> 0) && (<gib_1030@136:2> <> 0))
+          |- P[<gib_1030@136:2>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,
+                                 <gib_1030@136:2>:int)
+          
+           ((<gib_1030@130:1> = 1) && (<gib_1030@130:0> = 0))
+          |- P[<gib_1030@130:2>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,
+                                 <gib_1030@130:2>:int)
+        input to Yhorn:
+          P[<fail_1288@189:0>](<fail_1288@189:0>:int)|- bot
+          
+          P[<<gib_1030@130:3>@184:0>](var120:int,var121:int,<f_k_main_1281@186:3>:int,<f_k_main_1281@186:5>:int),
+          ((<f_k_main_1281@186:5> < 0) && ((var121 = 1) && ((var120 = 0) && (<fail_1288@189:0> = 1))))
+          |- P[<fail_1288@189:0>](<fail_1288@189:0>:int)
+          
+          P[<gib_1030@130:2>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,<gib_1030@130:2>:int),
+          P[<<gib_1030@136:3>@167:0>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,var122:int,var118:int),
+          P[<<gib_1030@171:3>@174:0>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,var123:int,var124:int),
+          (((var124 + var118) = <<gib_1030@130:3>@184:0>) &&
+           (((2 + var123) = <gib_1030@130:2>) &&
+            (((1 + var122) = <gib_1030@130:2>) && ((<gib_1030@130:2> <> 1) && (<gib_1030@130:2> <> 0)))))
+          |- P[<<gib_1030@130:3>@184:0>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,
+                                         <gib_1030@130:2>:int,<<gib_1030@130:3>@184:0>:int)
+          
+          P[<gib_1030@171:2>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,<gib_1030@171:2>:int),
+          ((<<gib_1030@171:3>@174:0> = <gib_1030@171:0>) && (<gib_1030@171:2> = 0))
+          |- P[<<gib_1030@171:3>@174:0>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,
+                                         <gib_1030@171:2>:int,<<gib_1030@171:3>@174:0>:int)
+          
+          P[<gib_1030@130:2>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,var125:int),
+          P[<<gib_1030@136:3>@167:0>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,var126:int,<f_gib_1279@169:4>:int),
+          ((var126 = (1 + <gib_1030@171:2>)) &&
+           ((var125 = (2 + <gib_1030@171:2>)) && (((1 + <gib_1030@171:2>) <> 0) && ((2 + <gib_1030@171:2>) <> 0))))
+          |- P[<gib_1030@171:2>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,
+                                 <gib_1030@171:2>:int)
+          
+          P[<gib_1030@136:2>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,<gib_1030@136:2>:int),
+          P[<<gib_1030@142:3>@150:0>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,var127:int,var119:int),
+          P[<<gib_1030@154:3>@157:0>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,var128:int,var129:int),
+          (((var129 + var119) = <<gib_1030@136:3>@167:0>) &&
+           (((2 + var128) = <gib_1030@136:2>) &&
+            (((1 + var127) = <gib_1030@136:2>) && ((<gib_1030@136:2> <> 1) && (<gib_1030@136:2> <> 0)))))
+          |- P[<<gib_1030@136:3>@167:0>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,
+                                         <gib_1030@136:2>:int,<<gib_1030@136:3>@167:0>:int)
+          
+          P[<gib_1030@154:2>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,<gib_1030@154:2>:int),
+          ((<<gib_1030@154:3>@157:0> = <gib_1030@154:0>) && (<gib_1030@154:2> = 0))
+          |- P[<<gib_1030@154:3>@157:0>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,
+                                         <gib_1030@154:2>:int,<<gib_1030@154:3>@157:0>:int)
+          
+          P[<gib_1030@136:2>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,var130:int),
+          P[<<gib_1030@142:3>@150:0>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,var131:int,<f_gib_1279@152:4>:int),
+          ((var131 = (1 + <gib_1030@154:2>)) &&
+           ((var130 = (2 + <gib_1030@154:2>)) && (((1 + <gib_1030@154:2>) <> 0) && ((2 + <gib_1030@154:2>) <> 0))))
+          |- P[<gib_1030@154:2>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,
+                                 <gib_1030@154:2>:int)
+          
+          P[<gib_1030@142:2>](<gib_1030@142:0>:int,<gib_1030@142:1>:int,<gib_1030@142:2>:int),
+          ((<<gib_1030@142:3>@150:0> = <gib_1030@142:1>) && (<gib_1030@142:2> = 1))
+          |- P[<<gib_1030@142:3>@150:0>](<gib_1030@142:0>:int,<gib_1030@142:1>:int,
+                                         <gib_1030@142:2>:int,<<gib_1030@142:3>@150:0>:int)
+          
+          P[<gib_1030@136:2>](<gib_1030@142:0>:int,<gib_1030@142:1>:int,var132:int),
+          ((var132 = (1 + <gib_1030@142:2>)) && ((<gib_1030@142:2> <> 0) && ((1 + <gib_1030@142:2>) <> 0)))
+          |- P[<gib_1030@142:2>](<gib_1030@142:0>:int,<gib_1030@142:1>:int,
+                                 <gib_1030@142:2>:int)
+          
+          P[<gib_1030@130:2>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,var133:int),
+          ((var133 = (1 + <gib_1030@136:2>)) && ((<gib_1030@136:2> <> 0) && ((1 + <gib_1030@136:2>) <> 0)))
+          |- P[<gib_1030@136:2>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,
+                                 <gib_1030@136:2>:int)
+          
+           ((<gib_1030@130:0> = 0) && (<gib_1030@130:1> = 1))
+          |- P[<gib_1030@130:2>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,
+                                 <gib_1030@130:2>:int)Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1288_sep_189_sep_0($662)) -> 1=0.
+(($662-1=0) & ($663=0) & ($664-1=0) & ($665<0)) & (v_sep_gib_1030_sep_130_sep_3_sep_184_sep_0($663,$664,$666,$665)) -> v_sep_fail_1288_sep_189_sep_0($662).
+(($667<>0) & ($667-1<>0) & (-$667+$668+1=0) & (-$667+$669+2=0) & ($670+$671-$672=0)) & (v_sep_gib_1030_sep_171_sep_3_sep_174_sep_0($673,$674,$669,$670)) & (v_sep_gib_1030_sep_136_sep_3_sep_167_sep_0($673,$674,$668,$671)) & (v_sep_gib_1030_sep_130_sep_2($673,$674,$667)) -> v_sep_gib_1030_sep_130_sep_3_sep_184_sep_0($673,$674,$667,$672).
+(($675=0) & ($676-$677=0)) & (v_sep_gib_1030_sep_171_sep_2($677,$678,$675)) -> v_sep_gib_1030_sep_171_sep_3_sep_174_sep_0($677,$678,$675,$676).
+(($675+2<>0) & ($675+1<>0) & (-$675+$679-2=0) & (-$675+$680-1=0)) & (v_sep_gib_1030_sep_136_sep_3_sep_167_sep_0($677,$678,$680,$681)) & (v_sep_gib_1030_sep_130_sep_2($677,$678,$679)) -> v_sep_gib_1030_sep_171_sep_2($677,$678,$675).
+(($682<>0) & ($682-1<>0) & (-$682+$683+1=0) & (-$682+$684+2=0) & ($685+$686-$687=0)) & (v_sep_gib_1030_sep_154_sep_3_sep_157_sep_0($688,$689,$684,$685)) & (v_sep_gib_1030_sep_142_sep_3_sep_150_sep_0($688,$689,$683,$686)) & (v_sep_gib_1030_sep_136_sep_2($688,$689,$682)) -> v_sep_gib_1030_sep_136_sep_3_sep_167_sep_0($688,$689,$682,$687).
+(($690=0) & ($691-$692=0)) & (v_sep_gib_1030_sep_154_sep_2($692,$693,$690)) -> v_sep_gib_1030_sep_154_sep_3_sep_157_sep_0($692,$693,$690,$691).
+(($690+2<>0) & ($690+1<>0) & (-$690+$694-2=0) & (-$690+$695-1=0)) & (v_sep_gib_1030_sep_142_sep_3_sep_150_sep_0($692,$693,$695,$696)) & (v_sep_gib_1030_sep_136_sep_2($692,$693,$694)) -> v_sep_gib_1030_sep_154_sep_2($692,$693,$690).
+(($697-1=0) & ($698-$699=0)) & (v_sep_gib_1030_sep_142_sep_2($700,$699,$697)) -> v_sep_gib_1030_sep_142_sep_3_sep_150_sep_0($700,$699,$697,$698).
+(($697+1<>0) & ($697<>0) & (-$697+$701-1=0)) & (v_sep_gib_1030_sep_136_sep_2($700,$699,$701)) -> v_sep_gib_1030_sep_142_sep_2($700,$699,$697).
+(($682+1<>0) & ($682<>0) & (-$682+$702-1=0)) & (v_sep_gib_1030_sep_130_sep_2($688,$689,$702)) -> v_sep_gib_1030_sep_136_sep_2($688,$689,$682).
+($674-1=0) & ($673=0) -> v_sep_gib_1030_sep_130_sep_2($673,$674,$667).
+
+
+v_sep_fail_1288_sep_189_sep_0: X
+v_sep_gib_1030_sep_130_sep_2: X
+v_sep_gib_1030_sep_130_sep_3_sep_184_sep_0: X
+v_sep_gib_1030_sep_136_sep_2: X
+v_sep_gib_1030_sep_136_sep_3_sep_167_sep_0: X
+v_sep_gib_1030_sep_142_sep_2: X
+v_sep_gib_1030_sep_142_sep_3_sep_150_sep_0: X
+v_sep_gib_1030_sep_154_sep_2: X
+v_sep_gib_1030_sep_154_sep_3_sep_157_sep_0: X
+v_sep_gib_1030_sep_171_sep_2: X
+v_sep_gib_1030_sep_171_sep_3_sep_174_sep_0: X
+......................................................
+v_sep_fail_1288_sep_189_sep_0: X
+v_sep_gib_1030_sep_130_sep_2: X
+v_sep_gib_1030_sep_130_sep_3_sep_184_sep_0: X
+v_sep_gib_1030_sep_136_sep_2: X
+v_sep_gib_1030_sep_136_sep_3_sep_167_sep_0: X
+v_sep_gib_1030_sep_142_sep_2: X
+v_sep_gib_1030_sep_142_sep_3_sep_150_sep_0: X
+v_sep_gib_1030_sep_154_sep_2: X
+v_sep_gib_1030_sep_154_sep_3_sep_157_sep_0: X
+v_sep_gib_1030_sep_171_sep_2: X
+v_sep_gib_1030_sep_171_sep_3_sep_174_sep_0: X
+...
+v_sep_fail_1288_sep_189_sep_0: X
+v_sep_gib_1030_sep_130_sep_2: X
+v_sep_gib_1030_sep_130_sep_3_sep_184_sep_0: X
+v_sep_gib_1030_sep_136_sep_2: X
+v_sep_gib_1030_sep_136_sep_3_sep_167_sep_0: X
+v_sep_gib_1030_sep_142_sep_2: X
+v_sep_gib_1030_sep_142_sep_3_sep_150_sep_0: X
+v_sep_gib_1030_sep_154_sep_2: X
+v_sep_gib_1030_sep_154_sep_3_sep_157_sep_0: X
+v_sep_gib_1030_sep_171_sep_2: X
+v_sep_gib_1030_sep_171_sep_3_sep_174_sep_0: X
+...............
+v_sep_fail_1288_sep_189_sep_0: X
+v_sep_gib_1030_sep_130_sep_2: X
+v_sep_gib_1030_sep_130_sep_3_sep_184_sep_0: X
+v_sep_gib_1030_sep_136_sep_2: X
+v_sep_gib_1030_sep_136_sep_3_sep_167_sep_0: X
+v_sep_gib_1030_sep_142_sep_2: X
+v_sep_gib_1030_sep_142_sep_3_sep_150_sep_0: X
+v_sep_gib_1030_sep_154_sep_2: X
+v_sep_gib_1030_sep_154_sep_3_sep_157_sep_0: X
+v_sep_gib_1030_sep_171_sep_2: X
+v_sep_gib_1030_sep_171_sep_3_sep_174_sep_0: X
+............................
+v_sep_fail_1288_sep_189_sep_0: X
+v_sep_gib_1030_sep_130_sep_2: X
+v_sep_gib_1030_sep_130_sep_3_sep_184_sep_0: X
+v_sep_gib_1030_sep_136_sep_2: X
+v_sep_gib_1030_sep_136_sep_3_sep_167_sep_0: X
+v_sep_gib_1030_sep_142_sep_2: X
+v_sep_gib_1030_sep_142_sep_3_sep_150_sep_0: X
+v_sep_gib_1030_sep_154_sep_2: X
+v_sep_gib_1030_sep_154_sep_3_sep_157_sep_0: X
+v_sep_gib_1030_sep_171_sep_2: X
+v_sep_gib_1030_sep_171_sep_3_sep_174_sep_0: X
+..........................................
+v_sep_fail_1288_sep_189_sep_0: X
+v_sep_gib_1030_sep_130_sep_2: X
+v_sep_gib_1030_sep_130_sep_3_sep_184_sep_0: X
+v_sep_gib_1030_sep_136_sep_2: X
+v_sep_gib_1030_sep_136_sep_3_sep_167_sep_0: X
+v_sep_gib_1030_sep_142_sep_2: X
+v_sep_gib_1030_sep_142_sep_3_sep_150_sep_0: X
+v_sep_gib_1030_sep_154_sep_2: X
+v_sep_gib_1030_sep_154_sep_3_sep_157_sep_0: X
+v_sep_gib_1030_sep_171_sep_2: X
+v_sep_gib_1030_sep_171_sep_3_sep_174_sep_0: X
+......................................................(0=0) & (v_sep_fail_1288_sep_189_sep_0($662)) -> 1=0.
+(($662-1=0) & ($663=0) & ($664-1=0) & ($665<0)) & (v_sep_gib_1030_sep_130_sep_3_sep_184_sep_0($663,$664,$666,$665)) -> v_sep_fail_1288_sep_189_sep_0($662).
+(($667<>0) & ($667-1<>0) & (-$667+$668+1=0) & (-$667+$669+2=0) & ($670+$671-$672=0)) & (v_sep_gib_1030_sep_171_sep_3_sep_174_sep_0($673,$674,$669,$670)) & (v_sep_gib_1030_sep_136_sep_3_sep_167_sep_0($673,$674,$668,$671)) & (v_sep_gib_1030_sep_130_sep_2($673,$674,$667)) -> v_sep_gib_1030_sep_130_sep_3_sep_184_sep_0($673,$674,$667,$672).
+(($675=0) & ($676-$677=0)) & (v_sep_gib_1030_sep_171_sep_2($677,$678,$675)) -> v_sep_gib_1030_sep_171_sep_3_sep_174_sep_0($677,$678,$675,$676).
+(($675+2<>0) & ($675+1<>0) & (-$675+$679-2=0) & (-$675+$680-1=0)) & (v_sep_gib_1030_sep_136_sep_3_sep_167_sep_0($677,$678,$680,$681)) & (v_sep_gib_1030_sep_130_sep_2($677,$678,$679)) -> v_sep_gib_1030_sep_171_sep_2($677,$678,$675).
+(($682<>0) & ($682-1<>0) & (-$682+$683+1=0) & (-$682+$684+2=0) & ($685+$686-$687=0)) & (v_sep_gib_1030_sep_154_sep_3_sep_157_sep_0($688,$689,$684,$685)) & (v_sep_gib_1030_sep_142_sep_3_sep_150_sep_0($688,$689,$683,$686)) & (v_sep_gib_1030_sep_136_sep_2($688,$689,$682)) -> v_sep_gib_1030_sep_136_sep_3_sep_167_sep_0($688,$689,$682,$687).
+(($690=0) & ($691-$692=0)) & (v_sep_gib_1030_sep_154_sep_2($692,$693,$690)) -> v_sep_gib_1030_sep_154_sep_3_sep_157_sep_0($692,$693,$690,$691).
+(($690+2<>0) & ($690+1<>0) & (-$690+$694-2=0) & (-$690+$695-1=0)) & (v_sep_gib_1030_sep_142_sep_3_sep_150_sep_0($692,$693,$695,$696)) & (v_sep_gib_1030_sep_136_sep_2($692,$693,$694)) -> v_sep_gib_1030_sep_154_sep_2($692,$693,$690).
+(($697-1=0) & ($698-$699=0)) & (v_sep_gib_1030_sep_142_sep_2($700,$699,$697)) -> v_sep_gib_1030_sep_142_sep_3_sep_150_sep_0($700,$699,$697,$698).
+(($697+1<>0) & ($697<>0) & (-$697+$701-1=0)) & (v_sep_gib_1030_sep_136_sep_2($700,$699,$701)) -> v_sep_gib_1030_sep_142_sep_2($700,$699,$697).
+(($682+1<>0) & ($682<>0) & (-$682+$702-1=0)) & (v_sep_gib_1030_sep_130_sep_2($688,$689,$702)) -> v_sep_gib_1030_sep_136_sep_2($688,$689,$682).
+($674-1=0) & ($673=0) -> v_sep_gib_1030_sep_130_sep_2($673,$674,$667).
+
+        solution:
+          P[<fail_1288@189:0>]($703:bool) = false
+          P[<gib_1030@130:2>]($733:int,$735:int,$737:int) = true
+          P[<<gib_1030@130:3>@184:0>]($706:int,$708:int,$710:int,$712:int) = false
+          P[<gib_1030@136:2>]($765:int,$767:int,$769:int) = true
+          P[<<gib_1030@136:3>@167:0>]($724:int,$726:int,$728:int,$730:int) = (2 <= $728)
+          P[<gib_1030@142:2>]($779:int,$781:int,$783:int) = true
+          P[<<gib_1030@142:3>@150:0>]($756:int,$758:int,$760:int,$762:int) = true
+          P[<gib_1030@154:2>]($772:int,$774:int,$776:int) = true
+          P[<<gib_1030@154:3>@157:0>]($747:int,$749:int,$751:int,$753:int) = (0 <= $751)
+          P[<gib_1030@171:2>]($740:int,$742:int,$744:int) = (1 <= $744)
+          P[<<gib_1030@171:3>@174:0>]($715:int,$717:int,$719:int,$721:int) = ((1 + $719) <= 0)
+        
+      end HcSolver.solve_ub(20663)[4] (192.377754 sec.)
+      begin HcSolver.check_validity(21900)[4]
+        input:
+          P[<fail_1288@189:0>](<fail_1288@189:0>:bool)|- bot
+          
+          P[<<gib_1030@130:3>@184:0>](0:int,1:int,<f_k_main_1281@186:3>:int,<f_k_main_1281@186:5>:int),
+          ((<f_k_main_1281@186:5> < 0) && <fail_1288@189:0>) |- P[<fail_1288@189:0>](
+          <fail_1288@189:0>:bool)
+          
+          P[<gib_1030@130:2>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,<gib_1030@130:2>:int),
+          P[<<gib_1030@136:3>@167:0>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,(
+                                      -1 + <gib_1030@130:2>):int,var118:int),
+          P[<<gib_1030@171:3>@174:0>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,(
+                                      -2 + <gib_1030@130:2>):int,(<<gib_1030@130:3>@184:0> + (-1 * var118)):int),
+          ((<gib_1030@130:2> <> 0) && (<gib_1030@130:2> <> 1))
+          |- P[<<gib_1030@130:3>@184:0>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,
+                                         <gib_1030@130:2>:int,<<gib_1030@130:3>@184:0>:int)
+          
+          P[<gib_1030@171:2>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,<gib_1030@171:2>:int),
+          ((<gib_1030@171:2> = 0) && (<<gib_1030@171:3>@174:0> = <gib_1030@171:0>))
+          |- P[<<gib_1030@171:3>@174:0>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,
+                                         <gib_1030@171:2>:int,<<gib_1030@171:3>@174:0>:int)
+          
+          P[<gib_1030@130:2>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,(
+                              2 + <gib_1030@171:2>):int),
+          P[<<gib_1030@136:3>@167:0>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,(
+                                      1 + <gib_1030@171:2>):int,<f_gib_1279@169:4>:int),
+          (((2 + <gib_1030@171:2>) <> 0) && ((1 + <gib_1030@171:2>) <> 0))
+          |- P[<gib_1030@171:2>](<gib_1030@171:0>:int,<gib_1030@171:1>:int,
+                                 <gib_1030@171:2>:int)
+          
+          P[<gib_1030@136:2>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,<gib_1030@136:2>:int),
+          P[<<gib_1030@142:3>@150:0>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,(
+                                      -1 + <gib_1030@136:2>):int,var119:int),
+          P[<<gib_1030@154:3>@157:0>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,(
+                                      -2 + <gib_1030@136:2>):int,(<<gib_1030@136:3>@167:0> + (-1 * var119)):int),
+          ((<gib_1030@136:2> <> 0) && (<gib_1030@136:2> <> 1))
+          |- P[<<gib_1030@136:3>@167:0>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,
+                                         <gib_1030@136:2>:int,<<gib_1030@136:3>@167:0>:int)
+          
+          P[<gib_1030@154:2>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,<gib_1030@154:2>:int),
+          ((<gib_1030@154:2> = 0) && (<<gib_1030@154:3>@157:0> = <gib_1030@154:0>))
+          |- P[<<gib_1030@154:3>@157:0>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,
+                                         <gib_1030@154:2>:int,<<gib_1030@154:3>@157:0>:int)
+          
+          P[<gib_1030@136:2>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,(
+                              2 + <gib_1030@154:2>):int),
+          P[<<gib_1030@142:3>@150:0>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,(
+                                      1 + <gib_1030@154:2>):int,<f_gib_1279@152:4>:int),
+          (((2 + <gib_1030@154:2>) <> 0) && ((1 + <gib_1030@154:2>) <> 0))
+          |- P[<gib_1030@154:2>](<gib_1030@154:0>:int,<gib_1030@154:1>:int,
+                                 <gib_1030@154:2>:int)
+          
+          P[<gib_1030@142:2>](<gib_1030@142:0>:int,<gib_1030@142:1>:int,<gib_1030@142:2>:int),
+          ((<gib_1030@142:2> = 1) && (<<gib_1030@142:3>@150:0> = <gib_1030@142:1>))
+          |- P[<<gib_1030@142:3>@150:0>](<gib_1030@142:0>:int,<gib_1030@142:1>:int,
+                                         <gib_1030@142:2>:int,<<gib_1030@142:3>@150:0>:int)
+          
+          P[<gib_1030@136:2>](<gib_1030@142:0>:int,<gib_1030@142:1>:int,(
+                              1 + <gib_1030@142:2>):int), (((1 + <gib_1030@142:2>) <> 0) && (<gib_1030@142:2> <> 0))
+          |- P[<gib_1030@142:2>](<gib_1030@142:0>:int,<gib_1030@142:1>:int,
+                                 <gib_1030@142:2>:int)
+          
+          P[<gib_1030@130:2>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,(
+                              1 + <gib_1030@136:2>):int), (((1 + <gib_1030@136:2>) <> 0) && (<gib_1030@136:2> <> 0))
+          |- P[<gib_1030@136:2>](<gib_1030@136:0>:int,<gib_1030@136:1>:int,
+                                 <gib_1030@136:2>:int)
+          
+           ((<gib_1030@130:1> = 1) && (<gib_1030@130:0> = 0))
+          |- P[<gib_1030@130:2>](<gib_1030@130:0>:int,<gib_1030@130:1>:int,
+                                 <gib_1030@130:2>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(21900)[4] (0.006999 sec.)
+      solution:
+        P[<fail_1288@189:0>]($703:bool) = false
+        P[<gib_1030@130:2>]($733:int,$735:int,$737:int) = true
+        P[<<gib_1030@130:3>@184:0>]($706:int,$708:int,$710:int,$712:int) = false
+        P[<gib_1030@136:2>]($765:int,$767:int,$769:int) = true
+        P[<<gib_1030@136:3>@167:0>]($724:int,$726:int,$728:int,$730:int) = (2 <= $728)
+        P[<gib_1030@142:2>]($779:int,$781:int,$783:int) = true
+        P[<<gib_1030@142:3>@150:0>]($756:int,$758:int,$760:int,$762:int) = true
+        P[<gib_1030@154:2>]($772:int,$774:int,$776:int) = true
+        P[<<gib_1030@154:3>@157:0>]($747:int,$749:int,$751:int,$753:int) = (0 <= $751)
+        P[<gib_1030@171:2>]($740:int,$742:int,$744:int) = (1 <= $744)
+        P[<<gib_1030@171:3>@174:0>]($715:int,$717:int,$719:int,$721:int) = ((1 + $719) <= 0)
+    end YhornInterface.solve(20662)[3] (192.384753 sec.)
+    
+  end RefTypeInfer.infer_etrs(13708)[2] (192.809687 sec.)
+  refinement types:
+    main_1278: X
+    f_1282: v1:int -> X
+    f_1283: v1:int -> v2:int -> X
+    f_1284: v1:int -> v2:int -> v3:int -> X
+    main_1034: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> X
+    k_main_1181: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> v6:bool -> X
+    gib_1030: v1:int -> v2:int -> v3:int -> (v4:{v4:int | false} -> X) -> X
+    br_gib_1286: v1:bool -> v2:int -> v3:int -> v4:int -> (v5:int -> X) -> X
+    gib_1030: v1:int -> v2:int -> v3:int -> (v4:{v4:int | (2 <= v3)} -> X) -> X
+    br_gib_1286: v1:bool -> v2:int -> v3:int -> v4:int -> (v5:int -> X) -> X
+    gib_1030: v1:int -> v2:int -> v3:int -> (v4:int -> X) -> X
+    br_gib_1286: v1:bool -> v2:int -> v3:int -> v4:int -> (v5:int -> X) -> X
+    f_gib_1279: v1:int -> v2:int -> v3:int -> (v4:int -> X) -> v6:int -> X
+    gib_1030: v1:int -> v2:int -> v3:int -> (v4:{v4:int | (0 <= v3)} -> X) -> X
+    f_gib_1280: v1:int -> v2:int -> v3:int -> v4:int -> (v5:int -> X) -> v7:int -> X
+    f_gib_1279: v1:int -> v2:int -> v3:int -> (v4:int -> X) -> v6:int -> X
+    gib_1030: v1:int -> v2:int -> v3:{v3:int | (1 <= v3)} -> (v4:{v4:int | ((1 + v3) <= 0)} -> X) -> X
+    f_gib_1280: v1:int -> v2:int -> v3:int -> v4:int -> (v5:int -> X) -> v7:int -> X
+    f_k_main_1281: v1:int -> v2:int -> v3:bool -> v4:int -> (v5:unit -> X) -> v7:int -> X
+    fail_1288: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1285: var146:int -> var145:int -> var144:int -> var143:unit -> X
+  abstraction types:
+    main_1278: X
+    f_1282: v1:int -> X
+    f_1283: v1:int -> v2:int -> X
+    f_1284: v1:int -> v2:int -> v3:int -> X
+    main_1034: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> X
+    k_main_1181: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> v6:bool -> X
+    gib_1030: var165:int ->
+              var166:int ->
+              var167:int[var167 -> (1 <= var167)] ->
+              (var168:int[var168 -> (2 <= var167),
+                          var168 -> (0 <= var167),
+                          var168 -> ((1 + var167) <= 0)] -> X) -> X
+    br_gib_1286: var178:bool -> var179:int -> var180:int -> var181:int -> (var182:int -> X) -> X
+    f_gib_1279: var185:int -> var186:int -> var187:int -> (var188:int -> X) -> var190:int -> X
+    f_gib_1280: var192:int -> var193:int -> var194:int -> var195:int -> (var196:int -> X) -> var198:int -> X
+    f_k_main_1281: v1:int -> v2:int -> v3:bool -> v4:int -> (v5:unit -> X) -> v7:int -> X
+    fail_1288: v1:bool -> (v2:unit -> X) -> X
+    f_1285: var146:int -> var145:int -> var144:int -> var143:unit -> X
+  
+end AbsTypeInfer.refine(13707)[1] (192.818687 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 0; 0; 1; 1; 1; 1; 1; 0; 0; 0; 0; 0; 0
+
+Program with abstraction types (CEGAR-cycle 4)::
+Main: main_1278
+  main_1278 -> (rand_int f_1282)
+  br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 when b_1287 -> (k_gib_1122 b_1032)
+  br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 when (not b_1287) ->
+      (gib_1030 a_1031 b_1032 (n_1033 - 1) (f_gib_1279 a_1031 b_1032 n_1033 k_gib_1122))
+  f_1282 x_1219 -> (rand_int (f_1283 x_1219))
+  f_1283 x_1219 x_1232 -> (rand_int (f_1284 x_1219 x_1232))
+  f_1284 x_1219 x_1232 x_1245 -> (main_1034 x_1219 x_1232 x_1245 (f_1285 x_1219 x_1232 x_1245))
+  f_1285 x_1219 x_1232 x_1245 x_1216 -> end
+  f_gib_1279 a_1031 b_1032 n_1033 k_gib_1122 x_1125 ->
+      (gib_1030 a_1031 b_1032 (n_1033 - 2) (f_gib_1280 a_1031 b_1032 n_1033 x_1125 k_gib_1122))
+  f_gib_1280 a_1031 b_1032 n_1033 x_1125 k_gib_1122 x_1126 -> (k_gib_1122 (x_1125 + x_1126))
+  f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 when (x_1185 >= 0) -> (k_main_1178 ())
+  f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 when (not (x_1185 >= 0)) -> (fail_1288 true k_main_1178)
+  fail_1288 b k -> {fail} => (k ())
+  gib_1030 a_1031 b_1032 n_1033 k_gib_1122 when (n_1033 = 0) -> (k_gib_1122 a_1031)
+  gib_1030 a_1031 b_1032 n_1033 k_gib_1122 when (not (n_1033 = 0)) ->
+      (br_gib_1286 (n_1033 = 1) a_1031 b_1032 n_1033 k_gib_1122)
+  k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 when b_1213 ->
+      (gib_1030 0 1 n_1035 (f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178))
+  k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 when (not b_1213) -> (k_main_1178 ())
+  main_1034 n_1035 a_1036 b_1037 k_main_1178 when (a_1036 >= 0) ->
+      (k_main_1181 a_1036 b_1037 n_1035 k_main_1178 (b_1037 >= 0))
+  main_1034 n_1035 a_1036 b_1037 k_main_1178 when (not (a_1036 >= 0)) ->
+      (k_main_1181 a_1036 b_1037 n_1035 k_main_1178 false)
+Types:
+  main_1278 : X
+  fail_1288 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  gib_1030 : (x_1:int ->
+              x_2:int ->
+              x_3:int[x_3 >= 1; x_3 <= -1; x_2 >= 1] ->
+              (x_5:int[x_3 <= -1; x_3 >= 0; x_3 >= 2; x_3 >= 1; x_3 <= 0; x_1 <= x_5; x_5 >= 1] -> X) -> X)
+  
+(4-1) Abstracting ... DONE!
+
+(4-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1278 ... --> 
+  f_1282 ... --> 
+  f_1283 ... --> 
+  f_1284 ... --> 
+  main_1034 [1/2] ... --> 
+  k_main_1181 [1/2] ... --> 
+  gib_1030 [2/2] ... --> 
+  br_gib_1286 [2/2] ... --> 
+  gib_1030 [2/2] ... --> 
+  br_gib_1286 [2/2] ... --> 
+  gib_1030 [2/2] ... --> 
+  br_gib_1286 [1/2] ... --> 
+  f_gib_1279 ... --> 
+  gib_1030 [1/2] ... --> 
+  f_gib_1280 ... --> 
+  f_gib_1279 ... --> 
+  gib_1030 [2/2] ... --> 
+  br_gib_1286 [2/2] ... --> 
+  gib_1030 [2/2] ... --> 
+  br_gib_1286 [1/2] ... --> 
+  f_gib_1279 ... --> 
+  gib_1030 [1/2] ... --> 
+  f_gib_1280 ... --> 
+  f_gib_1280 ... --> 
+  f_k_main_1281 [2/2] ... --> 
+  fail_1288 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 1; 1; 1; 1; 1; 0; 0; 0; 0; 0; 1; 1; 1; 0; 0; 0; 0; 0; 1; 0
+
+(4-3) Checking counter-example ... DONE!
+
+(4-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(26617)[1]
+  program:
+    main_1278  | true = ((Random.int 0) f_1282)
+    br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 | b_1287 = (k_gib_1122 b_1032)
+    br_gib_1286 b_1287 a_1031 b_1032 n_1033 k_gib_1122 | (not b_1287) = (
+    gib_1030 a_1031
+             b_1032
+             (n_1033 - 1)
+             (f_gib_1279 a_1031
+                         b_1032
+                         n_1033
+                         k_gib_1122))
+    f_1282 x_1219 | true = ((Random.int 0) (f_1283 x_1219))
+    f_1283 x_1219 x_1232 | true = ((Random.int 0) (f_1284 x_1219
+                                                          x_1232))
+    f_1284 x_1219 x_1232 x_1245 | true = (main_1034 x_1219
+                                                    x_1232
+                                                    x_1245
+                                                    (f_1285 x_1219
+                                                            x_1232
+                                                            x_1245))
+    f_1285 x_1219 x_1232 x_1245 x_1216 | true = end
+    f_gib_1279 a_1031 b_1032 n_1033 k_gib_1122 x_1125 | true = (gib_1030
+                                                                  a_1031
+                                                                  b_1032
+                                                                  (n_1033 - 2)
+                                                                  (f_gib_1280 a_1031
+                                                                    b_1032
+                                                                    n_1033
+                                                                    x_1125
+                                                                    k_gib_1122))
+    f_gib_1280 a_1031 b_1032 n_1033 x_1125 k_gib_1122 x_1126 | true = (
+    k_gib_1122 (x_1125 + x_1126))
+    f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 | (x_1185 >= 0) = (
+    k_main_1178 ())
+    f_k_main_1281 a_1036 b_1037 b_1213 n_1035 k_main_1178 x_1185 | (not (
+                                                                    x_1185 >= 0)) = (
+    fail_1288 true
+              k_main_1178)
+    fail_1288 b k | true = (fail ())
+    gib_1030 a_1031 b_1032 n_1033 k_gib_1122 | (n_1033 = 0) = (k_gib_1122 a_1031)
+    gib_1030 a_1031 b_1032 n_1033 k_gib_1122 | (not (n_1033 = 0)) = (
+    br_gib_1286 (n_1033 = 1)
+                a_1031
+                b_1032
+                n_1033
+                k_gib_1122)
+    k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 | b_1213 = (gib_1030
+                                                                    0
+                                                                    1
+                                                                    n_1035
+                                                                    (
+                                                                    f_k_main_1281
+                                                                    a_1036
+                                                                    b_1037
+                                                                    b_1213
+                                                                    n_1035
+                                                                    k_main_1178))
+    k_main_1181 a_1036 b_1037 n_1035 k_main_1178 b_1213 | (not b_1213) = (
+    k_main_1178 ())
+    main_1034 n_1035 a_1036 b_1037 k_main_1178 | (a_1036 >= 0) = (k_main_1181
+                                                                    a_1036
+                                                                    b_1037
+                                                                    n_1035
+                                                                    k_main_1178
+                                                                    (
+                                                                    b_1037 >= 0))
+    main_1034 n_1035 a_1036 b_1037 k_main_1178 | (not (a_1036 >= 0)) = (
+    k_main_1181 a_1036
+                b_1037
+                n_1035
+                k_main_1178
+                false)
+    main_1278:X
+    br_gib_1286:bool -> int -> int -> int -> (int -> X) -> X
+    f_1282:int -> X
+    f_1283:int -> int -> X
+    f_1284:int -> int -> int -> X
+    f_1285:int -> int -> int -> unit -> X
+    f_gib_1279:int -> int -> int -> (int -> X) -> int -> X
+    f_gib_1280:int -> int -> int -> int -> (int -> X) -> int -> X
+    f_k_main_1281:int -> int -> bool -> int -> (unit -> X) -> int -> X
+    fail_1288:bool -> (unit -> X) -> X
+    gib_1030:int -> int -> int -> (int -> X) -> X
+    k_main_1181:int -> int -> int -> (unit -> X) -> bool -> X
+    main_1034:int -> int -> int -> (unit -> X) -> X
+  inlined functions: br_gib_1286,f_1282,f_1283,f_1284,f_1285,f_gib_1279,f_gib_1280,f_k_main_1281,k_main_1181,main_1034
+  counterexample: 0:0:0:0:0:0:1:1:1:1:1:0:0:0:0:0:1:1:1:0:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1282@195:0> = var200)
+     [true.nop((<f_1283@198:0> = <f_1282@195:0>) && (<f_1283@198:1> = var201))
+      [true.nop((<f_1284@201:0> = <f_1283@198:0>) && ((<f_1284@201:1> = <f_1283@198:1>) && (<f_1284@201:2> = var202)))
+       [true.
+        ((<main_1034@203:0> = <f_1284@201:0>) &&
+         ((<main_1034@203:1> = <f_1284@201:1>) && (<main_1034@203:2> = <f_1284@201:2>)))
+        [(<main_1034@203:1> >= 0).
+         ((<k_main_1181@206:0> = <main_1034@203:1>) &&
+          ((<k_main_1181@206:1> = <main_1034@203:2>) &&
+           ((<k_main_1181@206:2> = <main_1034@203:0>) && (<k_main_1181@206:4> = (<main_1034@203:2> >= 0)))))
+         [<k_main_1181@206:4>.
+          ((<gib_1030@209:0> = 0) && ((<gib_1030@209:1> = 1) && (<gib_1030@209:2> = <k_main_1181@206:2>)))
+          [(not (<gib_1030@209:2> = 0)).
+           ((<br_gib_1286@212:0> = (<gib_1030@209:2> = 1)) &&
+            ((<br_gib_1286@212:1> = <gib_1030@209:0>) &&
+             ((<br_gib_1286@212:2> = <gib_1030@209:1>) && (<br_gib_1286@212:3> = <gib_1030@209:2>))))
+           [(not <br_gib_1286@212:0>).
+            ((<gib_1030@215:0> = <br_gib_1286@212:1>) &&
+             ((<gib_1030@215:1> = <br_gib_1286@212:2>) && (<gib_1030@215:2> = (<br_gib_1286@212:3> - 1))))
+            [(not (<gib_1030@215:2> = 0)).
+             ((<br_gib_1286@218:0> = (<gib_1030@215:2> = 1)) &&
+              ((<br_gib_1286@218:1> = <gib_1030@215:0>) &&
+               ((<br_gib_1286@218:2> = <gib_1030@215:1>) && (<br_gib_1286@218:3> = <gib_1030@215:2>))))
+             [(not <br_gib_1286@218:0>).
+              ((<gib_1030@221:0> = <br_gib_1286@218:1>) &&
+               ((<gib_1030@221:1> = <br_gib_1286@218:2>) && (<gib_1030@221:2> = (<br_gib_1286@218:3> - 1))))
+              [(not (<gib_1030@221:2> = 0)).
+               ((<br_gib_1286@224:0> = (<gib_1030@221:2> = 1)) &&
+                ((<br_gib_1286@224:1> = <gib_1030@221:0>) &&
+                 ((<br_gib_1286@224:2> = <gib_1030@221:1>) && (<br_gib_1286@224:3> = <gib_1030@221:2>))))
+               [<br_gib_1286@224:0>.(<<br_gib_1286@224:4>@227:0> = <br_gib_1286@224:2>)
+                [true.(<<gib_1030@221:3>@229:0> = <<br_gib_1286@224:4>@227:0>)
+                 [true.
+                  ((<f_gib_1279@231:0> = <br_gib_1286@218:1>) &&
+                   ((<f_gib_1279@231:1> = <br_gib_1286@218:2>) &&
+                    ((<f_gib_1279@231:2> = <br_gib_1286@218:3>) && (<f_gib_1279@231:4> = <<gib_1030@221:3>@229:0>))))
+                  [true.
+                   ((<gib_1030@233:0> = <f_gib_1279@231:0>) &&
+                    ((<gib_1030@233:1> = <f_gib_1279@231:1>) && (<gib_1030@233:2> = (<f_gib_1279@231:2> - 2))))
+                   [(<gib_1030@233:2> = 0).(<<gib_1030@233:3>@236:0> = <gib_1030@233:0>)
+                    [true.
+                     ((<f_gib_1280@238:0> = <f_gib_1279@231:0>) &&
+                      ((<f_gib_1280@238:1> = <f_gib_1279@231:1>) &&
+                       ((<f_gib_1280@238:2> = <f_gib_1279@231:2>) &&
+                        ((<f_gib_1280@238:3> = <f_gib_1279@231:4>) && (<f_gib_1280@238:5> = <<gib_1030@233:3>@236:0>)))))
+                     [true.(<<f_gib_1280@238:4>@240:0> = (<f_gib_1280@238:3> + <f_gib_1280@238:5>))
+                      [true.(<<f_gib_1279@231:3>@242:0> = <<f_gib_1280@238:4>@240:0>)
+                       [true.(<<br_gib_1286@218:4>@244:0> = <<f_gib_1279@231:3>@242:0>)
+                        [true.(<<gib_1030@215:3>@246:0> = <<br_gib_1286@218:4>@244:0>)
+                         [true.
+                          ((<f_gib_1279@248:0> = <br_gib_1286@212:1>) &&
+                           ((<f_gib_1279@248:1> = <br_gib_1286@212:2>) &&
+                            ((<f_gib_1279@248:2> = <br_gib_1286@212:3>) &&
+                             (<f_gib_1279@248:4> = <<gib_1030@215:3>@246:0>))))
+                          [true.
+                           ((<gib_1030@250:0> = <f_gib_1279@248:0>) &&
+                            ((<gib_1030@250:1> = <f_gib_1279@248:1>) && (<gib_1030@250:2> = (<f_gib_1279@248:2> - 2))))
+                           [(not (<gib_1030@250:2> = 0)).
+                            ((<br_gib_1286@253:0> = (<gib_1030@250:2> = 1)) &&
+                             ((<br_gib_1286@253:1> = <gib_1030@250:0>) &&
+                              ((<br_gib_1286@253:2> = <gib_1030@250:1>) && (<br_gib_1286@253:3> = <gib_1030@250:2>))))
+                            [(not <br_gib_1286@253:0>).
+                             ((<gib_1030@256:0> = <br_gib_1286@253:1>) &&
+                              ((<gib_1030@256:1> = <br_gib_1286@253:2>) &&
+                               (<gib_1030@256:2> = (<br_gib_1286@253:3> - 1))))
+                             [(not (<gib_1030@256:2> = 0)).
+                              ((<br_gib_1286@259:0> = (<gib_1030@256:2> = 1)) &&
+                               ((<br_gib_1286@259:1> = <gib_1030@256:0>) &&
+                                ((<br_gib_1286@259:2> = <gib_1030@256:1>) && (<br_gib_1286@259:3> = <gib_1030@256:2>))))
+                              [<br_gib_1286@259:0>.(<<br_gib_1286@259:4>@262:0> = <br_gib_1286@259:2>)
+                               [true.(<<gib_1030@256:3>@264:0> = <<br_gib_1286@259:4>@262:0>)
+                                [true.
+                                 ((<f_gib_1279@266:0> = <br_gib_1286@253:1>) &&
+                                  ((<f_gib_1279@266:1> = <br_gib_1286@253:2>) &&
+                                   ((<f_gib_1279@266:2> = <br_gib_1286@253:3>) &&
+                                    (<f_gib_1279@266:4> = <<gib_1030@256:3>@264:0>))))
+                                 [true.
+                                  ((<gib_1030@268:0> = <f_gib_1279@266:0>) &&
+                                   ((<gib_1030@268:1> = <f_gib_1279@266:1>) &&
+                                    (<gib_1030@268:2> = (<f_gib_1279@266:2> - 2))))
+                                  [(<gib_1030@268:2> = 0).(<<gib_1030@268:3>@271:0> = <gib_1030@268:0>)
+                                   [true.
+                                    ((<f_gib_1280@273:0> = <f_gib_1279@266:0>) &&
+                                     ((<f_gib_1280@273:1> = <f_gib_1279@266:1>) &&
+                                      ((<f_gib_1280@273:2> = <f_gib_1279@266:2>) &&
+                                       ((<f_gib_1280@273:3> = <f_gib_1279@266:4>) &&
+                                        (<f_gib_1280@273:5> = <<gib_1030@268:3>@271:0>)))))
+                                    [true.(<<f_gib_1280@273:4>@275:0> = (<f_gib_1280@273:3> + <f_gib_1280@273:5>))
+                                     [true.(<<f_gib_1279@266:3>@277:0> = <<f_gib_1280@273:4>@275:0>)
+                                      [true.(<<br_gib_1286@253:4>@279:0> = <<f_gib_1279@266:3>@277:0>)
+                                       [true.(<<gib_1030@250:3>@281:0> = <<br_gib_1286@253:4>@279:0>)
+                                        [true.
+                                         ((<f_gib_1280@283:0> = <f_gib_1279@248:0>) &&
+                                          ((<f_gib_1280@283:1> = <f_gib_1279@248:1>) &&
+                                           ((<f_gib_1280@283:2> = <f_gib_1279@248:2>) &&
+                                            ((<f_gib_1280@283:3> = <f_gib_1279@248:4>) &&
+                                             (<f_gib_1280@283:5> = <<gib_1030@250:3>@281:0>)))))
+                                         [true.(<<f_gib_1280@283:4>@285:0> = (<f_gib_1280@283:3> + <f_gib_1280@283:5>))
+                                          [true.(<<f_gib_1279@248:3>@287:0> = <<f_gib_1280@283:4>@285:0>)
+                                           [true.(<<br_gib_1286@212:4>@289:0> = <<f_gib_1279@248:3>@287:0>)
+                                            [true.(<<gib_1030@209:3>@291:0> = <<br_gib_1286@212:4>@289:0>)
+                                             [true.
+                                              ((<f_k_main_1281@293:0> = <k_main_1181@206:0>) &&
+                                               ((<f_k_main_1281@293:1> = <k_main_1181@206:1>) &&
+                                                ((<f_k_main_1281@293:2> = <k_main_1181@206:4>) &&
+                                                 ((<f_k_main_1281@293:3> = <k_main_1181@206:2>) &&
+                                                  (<f_k_main_1281@293:5> = <<gib_1030@209:3>@291:0>)))))
+                                              [(not (<f_k_main_1281@293:5> >= 0)).(<fail_1288@296:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(26618)[2]
+    horn clauses:
+      P[<fail_1288@296:0>](<fail_1288@296:0>:bool)|- bot
+      
+      P[<f_k_main_1281@293:5>](<f_k_main_1281@293:0>:int,<f_k_main_1281@293:1>:int,<f_k_main_1281@293:2>:bool,<f_k_main_1281@293:3>:int,<f_k_main_1281@293:5>:int),
+      ((<f_k_main_1281@293:5> < 0) && <fail_1288@296:0>) |- P[<fail_1288@296:0>](
+      <fail_1288@296:0>:bool)
+      
+      P[<k_main_1181@206:4>](<f_k_main_1281@293:0>:int,<f_k_main_1281@293:1>:int,<f_k_main_1281@293:3>:int,<f_k_main_1281@293:2>:bool),
+      P[<<gib_1030@209:3>@291:0>](0:int,1:int,<f_k_main_1281@293:3>:int,<f_k_main_1281@293:5>:int),
+      <f_k_main_1281@293:2>
+      |- P[<f_k_main_1281@293:5>](<f_k_main_1281@293:0>:int,<f_k_main_1281@293:1>:int,
+                                  <f_k_main_1281@293:2>:bool,<f_k_main_1281@293:3>:int,
+                                  <f_k_main_1281@293:5>:int)
+      
+      P[<gib_1030@209:2>](<gib_1030@209:0>:int,<gib_1030@209:1>:int,<gib_1030@209:2>:int),
+      P[<<br_gib_1286@212:4>@289:0>]((<gib_1030@209:2> = 1):bool,<gib_1030@209:0>:int,<gib_1030@209:1>:int,<gib_1030@209:2>:int,<<gib_1030@209:3>@291:0>:int),
+      (<gib_1030@209:2> <> 0)
+      |- P[<<gib_1030@209:3>@291:0>](<gib_1030@209:0>:int,<gib_1030@209:1>:int,
+                                     <gib_1030@209:2>:int,<<gib_1030@209:3>@291:0>:int)
+      
+      P[<br_gib_1286@212:3>](<br_gib_1286@212:0>:bool,<br_gib_1286@212:1>:int,<br_gib_1286@212:2>:int,<br_gib_1286@212:3>:int),
+      P[<<f_gib_1279@248:3>@287:0>](<br_gib_1286@212:1>:int,<br_gib_1286@212:2>:int,<br_gib_1286@212:3>:int,<<br_gib_1286@212:4>@289:0>:int),
+      (not <br_gib_1286@212:0>)
+      |- P[<<br_gib_1286@212:4>@289:0>](<br_gib_1286@212:0>:bool,<br_gib_1286@212:1>:int,
+                                        <br_gib_1286@212:2>:int,<br_gib_1286@212:3>:int,
+                                        <<br_gib_1286@212:4>@289:0>:int)
+      
+      P[<f_gib_1279@248:4>](<f_gib_1279@248:0>:int,<f_gib_1279@248:1>:int,<f_gib_1279@248:2>:int,<f_gib_1280@283:3>:int),
+      P[<<f_gib_1280@283:4>@285:0>](<f_gib_1279@248:0>:int,<f_gib_1279@248:1>:int,<f_gib_1279@248:2>:int,<f_gib_1280@283:3>:int,<<f_gib_1279@248:3>@287:0>:int)|- P[<<f_gib_1279@248:3>@287:0>](
+      <f_gib_1279@248:0>:int,<f_gib_1279@248:1>:int,<f_gib_1279@248:2>:int,
+      <<f_gib_1279@248:3>@287:0>:int)
+      
+      P[<f_gib_1280@283:5>](<f_gib_1280@283:0>:int,<f_gib_1280@283:1>:int,<f_gib_1280@283:2>:int,<f_gib_1280@283:3>:int,(
+                            <<f_gib_1280@283:4>@285:0> + (-1 * <f_gib_1280@283:3>)):int)|- P[<<f_gib_1280@283:4>@285:0>](
+      <f_gib_1280@283:0>:int,<f_gib_1280@283:1>:int,<f_gib_1280@283:2>:int,
+      <f_gib_1280@283:3>:int,<<f_gib_1280@283:4>@285:0>:int)
+      
+      P[<f_gib_1279@248:4>](<f_gib_1280@283:0>:int,<f_gib_1280@283:1>:int,<f_gib_1280@283:2>:int,<f_gib_1280@283:3>:int),
+      P[<<gib_1030@250:3>@281:0>](<f_gib_1280@283:0>:int,<f_gib_1280@283:1>:int,(
+                                  -2 + <f_gib_1280@283:2>):int,<f_gib_1280@283:5>:int)|- P[<f_gib_1280@283:5>](
+      <f_gib_1280@283:0>:int,<f_gib_1280@283:1>:int,<f_gib_1280@283:2>:int,
+      <f_gib_1280@283:3>:int,<f_gib_1280@283:5>:int)
+      
+      P[<gib_1030@250:2>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,<gib_1030@250:2>:int),
+      P[<<br_gib_1286@253:4>@279:0>]((<gib_1030@250:2> = 1):bool,<gib_1030@250:0>:int,<gib_1030@250:1>:int,<gib_1030@250:2>:int,<<gib_1030@250:3>@281:0>:int),
+      (<gib_1030@250:2> <> 0)
+      |- P[<<gib_1030@250:3>@281:0>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,
+                                     <gib_1030@250:2>:int,<<gib_1030@250:3>@281:0>:int)
+      
+      P[<br_gib_1286@253:3>](<br_gib_1286@253:0>:bool,<br_gib_1286@253:1>:int,<br_gib_1286@253:2>:int,<br_gib_1286@253:3>:int),
+      P[<<f_gib_1279@266:3>@277:0>](<br_gib_1286@253:1>:int,<br_gib_1286@253:2>:int,<br_gib_1286@253:3>:int,<<br_gib_1286@253:4>@279:0>:int),
+      (not <br_gib_1286@253:0>)
+      |- P[<<br_gib_1286@253:4>@279:0>](<br_gib_1286@253:0>:bool,<br_gib_1286@253:1>:int,
+                                        <br_gib_1286@253:2>:int,<br_gib_1286@253:3>:int,
+                                        <<br_gib_1286@253:4>@279:0>:int)
+      
+      P[<f_gib_1279@266:4>](<f_gib_1279@266:0>:int,<f_gib_1279@266:1>:int,<f_gib_1279@266:2>:int,<f_gib_1280@273:3>:int),
+      P[<<f_gib_1280@273:4>@275:0>](<f_gib_1279@266:0>:int,<f_gib_1279@266:1>:int,<f_gib_1279@266:2>:int,<f_gib_1280@273:3>:int,<<f_gib_1279@266:3>@277:0>:int)|- P[<<f_gib_1279@266:3>@277:0>](
+      <f_gib_1279@266:0>:int,<f_gib_1279@266:1>:int,<f_gib_1279@266:2>:int,
+      <<f_gib_1279@266:3>@277:0>:int)
+      
+      P[<f_gib_1280@273:5>](<f_gib_1280@273:0>:int,<f_gib_1280@273:1>:int,<f_gib_1280@273:2>:int,<f_gib_1280@273:3>:int,(
+                            <<f_gib_1280@273:4>@275:0> + (-1 * <f_gib_1280@273:3>)):int)|- P[<<f_gib_1280@273:4>@275:0>](
+      <f_gib_1280@273:0>:int,<f_gib_1280@273:1>:int,<f_gib_1280@273:2>:int,
+      <f_gib_1280@273:3>:int,<<f_gib_1280@273:4>@275:0>:int)
+      
+      P[<f_gib_1279@266:4>](<f_gib_1280@273:0>:int,<f_gib_1280@273:1>:int,<f_gib_1280@273:2>:int,<f_gib_1280@273:3>:int),
+      P[<<gib_1030@268:3>@271:0>](<f_gib_1280@273:0>:int,<f_gib_1280@273:1>:int,(
+                                  -2 + <f_gib_1280@273:2>):int,<f_gib_1280@273:5>:int)|- P[<f_gib_1280@273:5>](
+      <f_gib_1280@273:0>:int,<f_gib_1280@273:1>:int,<f_gib_1280@273:2>:int,
+      <f_gib_1280@273:3>:int,<f_gib_1280@273:5>:int)
+      
+      P[<gib_1030@268:2>](<gib_1030@268:0>:int,<gib_1030@268:1>:int,<gib_1030@268:2>:int),
+      ((<gib_1030@268:2> = 0) && (<<gib_1030@268:3>@271:0> = <gib_1030@268:0>))
+      |- P[<<gib_1030@268:3>@271:0>](<gib_1030@268:0>:int,<gib_1030@268:1>:int,
+                                     <gib_1030@268:2>:int,<<gib_1030@268:3>@271:0>:int)
+      
+      P[<f_gib_1279@266:4>](<gib_1030@268:0>:int,<gib_1030@268:1>:int,(
+                            2 + <gib_1030@268:2>):int,<f_gib_1279@266:4>:int)|- P[<gib_1030@268:2>](
+      <gib_1030@268:0>:int,<gib_1030@268:1>:int,<gib_1030@268:2>:int)
+      
+      P[<br_gib_1286@253:3>](false:bool,<f_gib_1279@266:0>:int,<f_gib_1279@266:1>:int,<f_gib_1279@266:2>:int),
+      P[<<gib_1030@256:3>@264:0>](<f_gib_1279@266:0>:int,<f_gib_1279@266:1>:int,(
+                                  -1 + <f_gib_1279@266:2>):int,<f_gib_1279@266:4>:int)|- P[<f_gib_1279@266:4>](
+      <f_gib_1279@266:0>:int,<f_gib_1279@266:1>:int,<f_gib_1279@266:2>:int,
+      <f_gib_1279@266:4>:int)
+      
+      P[<gib_1030@256:2>](<gib_1030@256:0>:int,<gib_1030@256:1>:int,<gib_1030@256:2>:int),
+      P[<<br_gib_1286@259:4>@262:0>]((<gib_1030@256:2> = 1):bool,<gib_1030@256:0>:int,<gib_1030@256:1>:int,<gib_1030@256:2>:int,<<gib_1030@256:3>@264:0>:int),
+      (<gib_1030@256:2> <> 0)
+      |- P[<<gib_1030@256:3>@264:0>](<gib_1030@256:0>:int,<gib_1030@256:1>:int,
+                                     <gib_1030@256:2>:int,<<gib_1030@256:3>@264:0>:int)
+      
+      P[<br_gib_1286@259:3>](<br_gib_1286@259:0>:bool,<br_gib_1286@259:1>:int,<br_gib_1286@259:2>:int,<br_gib_1286@259:3>:int),
+      ((<<br_gib_1286@259:4>@262:0> = <br_gib_1286@259:2>) && <br_gib_1286@259:0>)
+      |- P[<<br_gib_1286@259:4>@262:0>](<br_gib_1286@259:0>:bool,<br_gib_1286@259:1>:int,
+                                        <br_gib_1286@259:2>:int,<br_gib_1286@259:3>:int,
+                                        <<br_gib_1286@259:4>@262:0>:int)
+      
+      P[<gib_1030@256:2>](<br_gib_1286@259:1>:int,<br_gib_1286@259:2>:int,<br_gib_1286@259:3>:int),
+      ((<br_gib_1286@259:3> <> 0) && (<br_gib_1286@259:0> = (<br_gib_1286@259:3> = 1)))
+      |- P[<br_gib_1286@259:3>](<br_gib_1286@259:0>:bool,<br_gib_1286@259:1>:int,
+                                <br_gib_1286@259:2>:int,<br_gib_1286@259:3>:int)
+      
+      P[<br_gib_1286@253:3>](false:bool,<gib_1030@256:0>:int,<gib_1030@256:1>:int,(
+                             1 + <gib_1030@256:2>):int)|- P[<gib_1030@256:2>](
+      <gib_1030@256:0>:int,<gib_1030@256:1>:int,<gib_1030@256:2>:int)
+      
+      P[<gib_1030@250:2>](<br_gib_1286@253:1>:int,<br_gib_1286@253:2>:int,<br_gib_1286@253:3>:int),
+      ((<br_gib_1286@253:3> <> 0) && (<br_gib_1286@253:0> = (<br_gib_1286@253:3> = 1)))
+      |- P[<br_gib_1286@253:3>](<br_gib_1286@253:0>:bool,<br_gib_1286@253:1>:int,
+                                <br_gib_1286@253:2>:int,<br_gib_1286@253:3>:int)
+      
+      P[<f_gib_1279@248:4>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,(
+                            2 + <gib_1030@250:2>):int,<f_gib_1279@248:4>:int)|- P[<gib_1030@250:2>](
+      <gib_1030@250:0>:int,<gib_1030@250:1>:int,<gib_1030@250:2>:int)
+      
+      P[<br_gib_1286@212:3>](false:bool,<f_gib_1279@248:0>:int,<f_gib_1279@248:1>:int,<f_gib_1279@248:2>:int),
+      P[<<gib_1030@215:3>@246:0>](<f_gib_1279@248:0>:int,<f_gib_1279@248:1>:int,(
+                                  -1 + <f_gib_1279@248:2>):int,<f_gib_1279@248:4>:int)|- P[<f_gib_1279@248:4>](
+      <f_gib_1279@248:0>:int,<f_gib_1279@248:1>:int,<f_gib_1279@248:2>:int,
+      <f_gib_1279@248:4>:int)
+      
+      P[<gib_1030@215:2>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,<gib_1030@215:2>:int),
+      P[<<br_gib_1286@218:4>@244:0>]((<gib_1030@215:2> = 1):bool,<gib_1030@215:0>:int,<gib_1030@215:1>:int,<gib_1030@215:2>:int,<<gib_1030@215:3>@246:0>:int),
+      (<gib_1030@215:2> <> 0)
+      |- P[<<gib_1030@215:3>@246:0>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,
+                                     <gib_1030@215:2>:int,<<gib_1030@215:3>@246:0>:int)
+      
+      P[<br_gib_1286@218:3>](<br_gib_1286@218:0>:bool,<br_gib_1286@218:1>:int,<br_gib_1286@218:2>:int,<br_gib_1286@218:3>:int),
+      P[<<f_gib_1279@231:3>@242:0>](<br_gib_1286@218:1>:int,<br_gib_1286@218:2>:int,<br_gib_1286@218:3>:int,<<br_gib_1286@218:4>@244:0>:int),
+      (not <br_gib_1286@218:0>)
+      |- P[<<br_gib_1286@218:4>@244:0>](<br_gib_1286@218:0>:bool,<br_gib_1286@218:1>:int,
+                                        <br_gib_1286@218:2>:int,<br_gib_1286@218:3>:int,
+                                        <<br_gib_1286@218:4>@244:0>:int)
+      
+      P[<f_gib_1279@231:4>](<f_gib_1279@231:0>:int,<f_gib_1279@231:1>:int,<f_gib_1279@231:2>:int,<f_gib_1280@238:3>:int),
+      P[<<f_gib_1280@238:4>@240:0>](<f_gib_1279@231:0>:int,<f_gib_1279@231:1>:int,<f_gib_1279@231:2>:int,<f_gib_1280@238:3>:int,<<f_gib_1279@231:3>@242:0>:int)|- P[<<f_gib_1279@231:3>@242:0>](
+      <f_gib_1279@231:0>:int,<f_gib_1279@231:1>:int,<f_gib_1279@231:2>:int,
+      <<f_gib_1279@231:3>@242:0>:int)
+      
+      P[<f_gib_1280@238:5>](<f_gib_1280@238:0>:int,<f_gib_1280@238:1>:int,<f_gib_1280@238:2>:int,<f_gib_1280@238:3>:int,(
+                            <<f_gib_1280@238:4>@240:0> + (-1 * <f_gib_1280@238:3>)):int)|- P[<<f_gib_1280@238:4>@240:0>](
+      <f_gib_1280@238:0>:int,<f_gib_1280@238:1>:int,<f_gib_1280@238:2>:int,
+      <f_gib_1280@238:3>:int,<<f_gib_1280@238:4>@240:0>:int)
+      
+      P[<f_gib_1279@231:4>](<f_gib_1280@238:0>:int,<f_gib_1280@238:1>:int,<f_gib_1280@238:2>:int,<f_gib_1280@238:3>:int),
+      P[<<gib_1030@233:3>@236:0>](<f_gib_1280@238:0>:int,<f_gib_1280@238:1>:int,(
+                                  -2 + <f_gib_1280@238:2>):int,<f_gib_1280@238:5>:int)|- P[<f_gib_1280@238:5>](
+      <f_gib_1280@238:0>:int,<f_gib_1280@238:1>:int,<f_gib_1280@238:2>:int,
+      <f_gib_1280@238:3>:int,<f_gib_1280@238:5>:int)
+      
+      P[<gib_1030@233:2>](<gib_1030@233:0>:int,<gib_1030@233:1>:int,<gib_1030@233:2>:int),
+      ((<gib_1030@233:2> = 0) && (<<gib_1030@233:3>@236:0> = <gib_1030@233:0>))
+      |- P[<<gib_1030@233:3>@236:0>](<gib_1030@233:0>:int,<gib_1030@233:1>:int,
+                                     <gib_1030@233:2>:int,<<gib_1030@233:3>@236:0>:int)
+      
+      P[<f_gib_1279@231:4>](<gib_1030@233:0>:int,<gib_1030@233:1>:int,(
+                            2 + <gib_1030@233:2>):int,<f_gib_1279@231:4>:int)|- P[<gib_1030@233:2>](
+      <gib_1030@233:0>:int,<gib_1030@233:1>:int,<gib_1030@233:2>:int)
+      
+      P[<br_gib_1286@218:3>](false:bool,<f_gib_1279@231:0>:int,<f_gib_1279@231:1>:int,<f_gib_1279@231:2>:int),
+      P[<<gib_1030@221:3>@229:0>](<f_gib_1279@231:0>:int,<f_gib_1279@231:1>:int,(
+                                  -1 + <f_gib_1279@231:2>):int,<f_gib_1279@231:4>:int)|- P[<f_gib_1279@231:4>](
+      <f_gib_1279@231:0>:int,<f_gib_1279@231:1>:int,<f_gib_1279@231:2>:int,
+      <f_gib_1279@231:4>:int)
+      
+      P[<gib_1030@221:2>](<gib_1030@221:0>:int,<gib_1030@221:1>:int,<gib_1030@221:2>:int),
+      P[<<br_gib_1286@224:4>@227:0>]((<gib_1030@221:2> = 1):bool,<gib_1030@221:0>:int,<gib_1030@221:1>:int,<gib_1030@221:2>:int,<<gib_1030@221:3>@229:0>:int),
+      (<gib_1030@221:2> <> 0)
+      |- P[<<gib_1030@221:3>@229:0>](<gib_1030@221:0>:int,<gib_1030@221:1>:int,
+                                     <gib_1030@221:2>:int,<<gib_1030@221:3>@229:0>:int)
+      
+      P[<br_gib_1286@224:3>](<br_gib_1286@224:0>:bool,<br_gib_1286@224:1>:int,<br_gib_1286@224:2>:int,<br_gib_1286@224:3>:int),
+      ((<<br_gib_1286@224:4>@227:0> = <br_gib_1286@224:2>) && <br_gib_1286@224:0>)
+      |- P[<<br_gib_1286@224:4>@227:0>](<br_gib_1286@224:0>:bool,<br_gib_1286@224:1>:int,
+                                        <br_gib_1286@224:2>:int,<br_gib_1286@224:3>:int,
+                                        <<br_gib_1286@224:4>@227:0>:int)
+      
+      P[<gib_1030@221:2>](<br_gib_1286@224:1>:int,<br_gib_1286@224:2>:int,<br_gib_1286@224:3>:int),
+      ((<br_gib_1286@224:3> <> 0) && (<br_gib_1286@224:0> = (<br_gib_1286@224:3> = 1)))
+      |- P[<br_gib_1286@224:3>](<br_gib_1286@224:0>:bool,<br_gib_1286@224:1>:int,
+                                <br_gib_1286@224:2>:int,<br_gib_1286@224:3>:int)
+      
+      P[<br_gib_1286@218:3>](false:bool,<gib_1030@221:0>:int,<gib_1030@221:1>:int,(
+                             1 + <gib_1030@221:2>):int)|- P[<gib_1030@221:2>](
+      <gib_1030@221:0>:int,<gib_1030@221:1>:int,<gib_1030@221:2>:int)
+      
+      P[<gib_1030@215:2>](<br_gib_1286@218:1>:int,<br_gib_1286@218:2>:int,<br_gib_1286@218:3>:int),
+      ((<br_gib_1286@218:3> <> 0) && (<br_gib_1286@218:0> = (<br_gib_1286@218:3> = 1)))
+      |- P[<br_gib_1286@218:3>](<br_gib_1286@218:0>:bool,<br_gib_1286@218:1>:int,
+                                <br_gib_1286@218:2>:int,<br_gib_1286@218:3>:int)
+      
+      P[<br_gib_1286@212:3>](false:bool,<gib_1030@215:0>:int,<gib_1030@215:1>:int,(
+                             1 + <gib_1030@215:2>):int)|- P[<gib_1030@215:2>](
+      <gib_1030@215:0>:int,<gib_1030@215:1>:int,<gib_1030@215:2>:int)
+      
+      P[<gib_1030@209:2>](<br_gib_1286@212:1>:int,<br_gib_1286@212:2>:int,<br_gib_1286@212:3>:int),
+      ((<br_gib_1286@212:3> <> 0) && (<br_gib_1286@212:0> = (<br_gib_1286@212:3> = 1)))
+      |- P[<br_gib_1286@212:3>](<br_gib_1286@212:0>:bool,<br_gib_1286@212:1>:int,
+                                <br_gib_1286@212:2>:int,<br_gib_1286@212:3>:int)
+      
+      P[<k_main_1181@206:4>](<k_main_1181@206:0>:int,<k_main_1181@206:1>:int,<gib_1030@209:2>:int,true:bool),
+      ((<gib_1030@209:1> = 1) && (<gib_1030@209:0> = 0))
+      |- P[<gib_1030@209:2>](<gib_1030@209:0>:int,<gib_1030@209:1>:int,
+                             <gib_1030@209:2>:int)
+      
+      P[<main_1034@203:2>](<k_main_1181@206:2>:int,<k_main_1181@206:0>:int,<k_main_1181@206:1>:int),
+      ((<k_main_1181@206:0> >= 0) && (<k_main_1181@206:4> = (<k_main_1181@206:1> >= 0)))
+      |- P[<k_main_1181@206:4>](<k_main_1181@206:0>:int,<k_main_1181@206:1>:int,
+                                <k_main_1181@206:2>:int,<k_main_1181@206:4>:bool)
+      
+      P[<f_1284@201:2>](<main_1034@203:0>:int,<main_1034@203:1>:int,<main_1034@203:2>:int)|- P[<main_1034@203:2>](
+      <main_1034@203:0>:int,<main_1034@203:1>:int,<main_1034@203:2>:int)
+      
+      P[<f_1283@198:1>](<f_1284@201:0>:int,<f_1284@201:1>:int)|- P[<f_1284@201:2>](
+      <f_1284@201:0>:int,<f_1284@201:1>:int,<f_1284@201:2>:int)
+      
+      P[<f_1282@195:0>](<f_1283@198:0>:int)|- P[<f_1283@198:1>](<f_1283@198:0>:int,
+                                                                <f_1283@198:1>:int)
+      
+      |- P[<f_1282@195:0>](<f_1282@195:0>:int)
+    call trees:
+      <main_1278@192>
+        <f_1282@195>
+          <f_1283@198>
+            <f_1284@201>
+              <main_1034@203>
+                <k_main_1181@206>
+                  <gib_1030@209>
+                    <br_gib_1286@212>
+                      <gib_1030@215>
+                        <br_gib_1286@218>
+                          <gib_1030@221>
+                            <br_gib_1286@224>
+                            </<br_gib_1286@224:4>@227>
+                          </<gib_1030@221:3>@229>
+                          <f_gib_1279@231>
+                            <gib_1030@233>
+                            </<gib_1030@233:3>@236>
+                            <f_gib_1280@238>
+                            </<f_gib_1280@238:4>@240>
+                          </<f_gib_1279@231:3>@242>
+                        </<br_gib_1286@218:4>@244>
+                      </<gib_1030@215:3>@246>
+                      <f_gib_1279@248>
+                        <gib_1030@250>
+                          <br_gib_1286@253>
+                            <gib_1030@256>
+                              <br_gib_1286@259>
+                              </<br_gib_1286@259:4>@262>
+                            </<gib_1030@256:3>@264>
+                            <f_gib_1279@266>
+                              <gib_1030@268>
+                              </<gib_1030@268:3>@271>
+                              <f_gib_1280@273>
+                              </<f_gib_1280@273:4>@275>
+                            </<f_gib_1279@266:3>@277>
+                          </<br_gib_1286@253:4>@279>
+                        </<gib_1030@250:3>@281>
+                        <f_gib_1280@283>
+                        </<f_gib_1280@283:4>@285>
+                      </<f_gib_1279@248:3>@287>
+                    </<br_gib_1286@212:4>@289>
+                  </<gib_1030@209:3>@291>
+                  <f_k_main_1281@293>
+                    <fail_1288@296>
+    inlined horn clauses:
+      P[<fail_1288@296:0>](<fail_1288@296:0>:bool)|- bot
+      
+      P[<<gib_1030@209:3>@291:0>](0:int,1:int,<f_k_main_1281@293:3>:int,<f_k_main_1281@293:5>:int),
+      ((<f_k_main_1281@293:5> < 0) && <fail_1288@296:0>) |- P[<fail_1288@296:0>](
+      <fail_1288@296:0>:bool)
+      
+      P[<gib_1030@209:2>](<gib_1030@209:0>:int,<gib_1030@209:1>:int,<gib_1030@209:2>:int),
+      P[<<gib_1030@215:3>@246:0>](<gib_1030@209:0>:int,<gib_1030@209:1>:int,(
+                                  -1 + <gib_1030@209:2>):int,var206:int),
+      P[<<gib_1030@250:3>@281:0>](<gib_1030@209:0>:int,<gib_1030@209:1>:int,(
+                                  -2 + <gib_1030@209:2>):int,(<<gib_1030@209:3>@291:0> + (-1 * var206)):int),
+      ((<gib_1030@209:2> <> 0) && (<gib_1030@209:2> <> 1))
+      |- P[<<gib_1030@209:3>@291:0>](<gib_1030@209:0>:int,<gib_1030@209:1>:int,
+                                     <gib_1030@209:2>:int,<<gib_1030@209:3>@291:0>:int)
+      
+      P[<gib_1030@250:2>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,<gib_1030@250:2>:int),
+      P[<<gib_1030@256:3>@264:0>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,(
+                                  -1 + <gib_1030@250:2>):int,var207:int),
+      P[<<gib_1030@268:3>@271:0>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,(
+                                  -2 + <gib_1030@250:2>):int,(<<gib_1030@250:3>@281:0> + (-1 * var207)):int),
+      ((<gib_1030@250:2> <> 0) && (<gib_1030@250:2> <> 1))
+      |- P[<<gib_1030@250:3>@281:0>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,
+                                     <gib_1030@250:2>:int,<<gib_1030@250:3>@281:0>:int)
+      
+      P[<gib_1030@268:2>](<gib_1030@268:0>:int,<gib_1030@268:1>:int,<gib_1030@268:2>:int),
+      ((<gib_1030@268:2> = 0) && (<<gib_1030@268:3>@271:0> = <gib_1030@268:0>))
+      |- P[<<gib_1030@268:3>@271:0>](<gib_1030@268:0>:int,<gib_1030@268:1>:int,
+                                     <gib_1030@268:2>:int,<<gib_1030@268:3>@271:0>:int)
+      
+      P[<gib_1030@250:2>](<gib_1030@268:0>:int,<gib_1030@268:1>:int,(
+                          2 + <gib_1030@268:2>):int),
+      P[<<gib_1030@256:3>@264:0>](<gib_1030@268:0>:int,<gib_1030@268:1>:int,(
+                                  1 + <gib_1030@268:2>):int,<f_gib_1279@266:4>:int),
+      (((2 + <gib_1030@268:2>) <> 0) && ((1 + <gib_1030@268:2>) <> 0))
+      |- P[<gib_1030@268:2>](<gib_1030@268:0>:int,<gib_1030@268:1>:int,
+                             <gib_1030@268:2>:int)
+      
+      P[<gib_1030@256:2>](<gib_1030@256:0>:int,<gib_1030@256:1>:int,<gib_1030@256:2>:int),
+      ((<gib_1030@256:2> = 1) && (<<gib_1030@256:3>@264:0> = <gib_1030@256:1>))
+      |- P[<<gib_1030@256:3>@264:0>](<gib_1030@256:0>:int,<gib_1030@256:1>:int,
+                                     <gib_1030@256:2>:int,<<gib_1030@256:3>@264:0>:int)
+      
+      P[<gib_1030@250:2>](<gib_1030@256:0>:int,<gib_1030@256:1>:int,(
+                          1 + <gib_1030@256:2>):int), (((1 + <gib_1030@256:2>) <> 0) && (<gib_1030@256:2> <> 0))
+      |- P[<gib_1030@256:2>](<gib_1030@256:0>:int,<gib_1030@256:1>:int,
+                             <gib_1030@256:2>:int)
+      
+      P[<gib_1030@209:2>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,(
+                          2 + <gib_1030@250:2>):int),
+      P[<<gib_1030@215:3>@246:0>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,(
+                                  1 + <gib_1030@250:2>):int,<f_gib_1279@248:4>:int),
+      (((2 + <gib_1030@250:2>) <> 0) && ((1 + <gib_1030@250:2>) <> 0))
+      |- P[<gib_1030@250:2>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,
+                             <gib_1030@250:2>:int)
+      
+      P[<gib_1030@215:2>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,<gib_1030@215:2>:int),
+      P[<<gib_1030@221:3>@229:0>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,(
+                                  -1 + <gib_1030@215:2>):int,var208:int),
+      P[<<gib_1030@233:3>@236:0>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,(
+                                  -2 + <gib_1030@215:2>):int,(<<gib_1030@215:3>@246:0> + (-1 * var208)):int),
+      ((<gib_1030@215:2> <> 0) && (<gib_1030@215:2> <> 1))
+      |- P[<<gib_1030@215:3>@246:0>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,
+                                     <gib_1030@215:2>:int,<<gib_1030@215:3>@246:0>:int)
+      
+      P[<gib_1030@233:2>](<gib_1030@233:0>:int,<gib_1030@233:1>:int,<gib_1030@233:2>:int),
+      ((<gib_1030@233:2> = 0) && (<<gib_1030@233:3>@236:0> = <gib_1030@233:0>))
+      |- P[<<gib_1030@233:3>@236:0>](<gib_1030@233:0>:int,<gib_1030@233:1>:int,
+                                     <gib_1030@233:2>:int,<<gib_1030@233:3>@236:0>:int)
+      
+      P[<gib_1030@215:2>](<gib_1030@233:0>:int,<gib_1030@233:1>:int,(
+                          2 + <gib_1030@233:2>):int),
+      P[<<gib_1030@221:3>@229:0>](<gib_1030@233:0>:int,<gib_1030@233:1>:int,(
+                                  1 + <gib_1030@233:2>):int,<f_gib_1279@231:4>:int),
+      (((2 + <gib_1030@233:2>) <> 0) && ((1 + <gib_1030@233:2>) <> 0))
+      |- P[<gib_1030@233:2>](<gib_1030@233:0>:int,<gib_1030@233:1>:int,
+                             <gib_1030@233:2>:int)
+      
+      P[<gib_1030@221:2>](<gib_1030@221:0>:int,<gib_1030@221:1>:int,<gib_1030@221:2>:int),
+      ((<gib_1030@221:2> = 1) && (<<gib_1030@221:3>@229:0> = <gib_1030@221:1>))
+      |- P[<<gib_1030@221:3>@229:0>](<gib_1030@221:0>:int,<gib_1030@221:1>:int,
+                                     <gib_1030@221:2>:int,<<gib_1030@221:3>@229:0>:int)
+      
+      P[<gib_1030@215:2>](<gib_1030@221:0>:int,<gib_1030@221:1>:int,(
+                          1 + <gib_1030@221:2>):int), (((1 + <gib_1030@221:2>) <> 0) && (<gib_1030@221:2> <> 0))
+      |- P[<gib_1030@221:2>](<gib_1030@221:0>:int,<gib_1030@221:1>:int,
+                             <gib_1030@221:2>:int)
+      
+      P[<gib_1030@209:2>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,(
+                          1 + <gib_1030@215:2>):int), (((1 + <gib_1030@215:2>) <> 0) && (<gib_1030@215:2> <> 0))
+      |- P[<gib_1030@215:2>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,
+                             <gib_1030@215:2>:int)
+      
+       ((<gib_1030@209:1> = 1) && (<gib_1030@209:0> = 0))
+      |- P[<gib_1030@209:2>](<gib_1030@209:0>:int,<gib_1030@209:1>:int,
+                             <gib_1030@209:2>:int)
+    begin ParamSubstInfer.infer(35368)[3]
+      
+    end ParamSubstInfer.infer(35368)[3] (0.665899 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(35370)[3]
+      
+    end RefTypeInfer.elim_coeffs(35370)[3] (0.006999 sec.)
+    begin YhornInterface.solve(36435)[3]
+      begin HcSolver.solve_ub(36436)[4]
+        encoded:
+          P[<fail_1288@296:0>](<fail_1288@296:0>:int)|- bot
+          
+          P[<<gib_1030@209:3>@291:0>](0:int,1:int,<f_k_main_1281@293:3>:int,<f_k_main_1281@293:5>:int),
+          ((<f_k_main_1281@293:5> < 0) && (<fail_1288@296:0> = 1)) |- P[<fail_1288@296:0>](
+          <fail_1288@296:0>:int)
+          
+          P[<gib_1030@209:2>](<gib_1030@209:0>:int,<gib_1030@209:1>:int,<gib_1030@209:2>:int),
+          P[<<gib_1030@215:3>@246:0>](<gib_1030@209:0>:int,<gib_1030@209:1>:int,(
+                                      -1 + <gib_1030@209:2>):int,var206:int),
+          P[<<gib_1030@250:3>@281:0>](<gib_1030@209:0>:int,<gib_1030@209:1>:int,(
+                                      -2 + <gib_1030@209:2>):int,(<<gib_1030@209:3>@291:0> + (-1 * var206)):int),
+          ((<gib_1030@209:2> <> 0) && (<gib_1030@209:2> <> 1))
+          |- P[<<gib_1030@209:3>@291:0>](<gib_1030@209:0>:int,<gib_1030@209:1>:int,
+                                         <gib_1030@209:2>:int,<<gib_1030@209:3>@291:0>:int)
+          
+          P[<gib_1030@250:2>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,<gib_1030@250:2>:int),
+          P[<<gib_1030@256:3>@264:0>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,(
+                                      -1 + <gib_1030@250:2>):int,var207:int),
+          P[<<gib_1030@268:3>@271:0>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,(
+                                      -2 + <gib_1030@250:2>):int,(<<gib_1030@250:3>@281:0> + (-1 * var207)):int),
+          ((<gib_1030@250:2> <> 0) && (<gib_1030@250:2> <> 1))
+          |- P[<<gib_1030@250:3>@281:0>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,
+                                         <gib_1030@250:2>:int,<<gib_1030@250:3>@281:0>:int)
+          
+          P[<gib_1030@268:2>](<gib_1030@268:0>:int,<gib_1030@268:1>:int,<gib_1030@268:2>:int),
+          ((<gib_1030@268:2> = 0) && (<<gib_1030@268:3>@271:0> = <gib_1030@268:0>))
+          |- P[<<gib_1030@268:3>@271:0>](<gib_1030@268:0>:int,<gib_1030@268:1>:int,
+                                         <gib_1030@268:2>:int,<<gib_1030@268:3>@271:0>:int)
+          
+          P[<gib_1030@250:2>](<gib_1030@268:0>:int,<gib_1030@268:1>:int,(
+                              2 + <gib_1030@268:2>):int),
+          P[<<gib_1030@256:3>@264:0>](<gib_1030@268:0>:int,<gib_1030@268:1>:int,(
+                                      1 + <gib_1030@268:2>):int,<f_gib_1279@266:4>:int),
+          (((2 + <gib_1030@268:2>) <> 0) && ((1 + <gib_1030@268:2>) <> 0))
+          |- P[<gib_1030@268:2>](<gib_1030@268:0>:int,<gib_1030@268:1>:int,
+                                 <gib_1030@268:2>:int)
+          
+          P[<gib_1030@256:2>](<gib_1030@256:0>:int,<gib_1030@256:1>:int,<gib_1030@256:2>:int),
+          ((<gib_1030@256:2> = 1) && (<<gib_1030@256:3>@264:0> = <gib_1030@256:1>))
+          |- P[<<gib_1030@256:3>@264:0>](<gib_1030@256:0>:int,<gib_1030@256:1>:int,
+                                         <gib_1030@256:2>:int,<<gib_1030@256:3>@264:0>:int)
+          
+          P[<gib_1030@250:2>](<gib_1030@256:0>:int,<gib_1030@256:1>:int,(
+                              1 + <gib_1030@256:2>):int), (((1 + <gib_1030@256:2>) <> 0) && (<gib_1030@256:2> <> 0))
+          |- P[<gib_1030@256:2>](<gib_1030@256:0>:int,<gib_1030@256:1>:int,
+                                 <gib_1030@256:2>:int)
+          
+          P[<gib_1030@209:2>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,(
+                              2 + <gib_1030@250:2>):int),
+          P[<<gib_1030@215:3>@246:0>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,(
+                                      1 + <gib_1030@250:2>):int,<f_gib_1279@248:4>:int),
+          (((2 + <gib_1030@250:2>) <> 0) && ((1 + <gib_1030@250:2>) <> 0))
+          |- P[<gib_1030@250:2>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,
+                                 <gib_1030@250:2>:int)
+          
+          P[<gib_1030@215:2>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,<gib_1030@215:2>:int),
+          P[<<gib_1030@221:3>@229:0>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,(
+                                      -1 + <gib_1030@215:2>):int,var208:int),
+          P[<<gib_1030@233:3>@236:0>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,(
+                                      -2 + <gib_1030@215:2>):int,(<<gib_1030@215:3>@246:0> + (-1 * var208)):int),
+          ((<gib_1030@215:2> <> 0) && (<gib_1030@215:2> <> 1))
+          |- P[<<gib_1030@215:3>@246:0>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,
+                                         <gib_1030@215:2>:int,<<gib_1030@215:3>@246:0>:int)
+          
+          P[<gib_1030@233:2>](<gib_1030@233:0>:int,<gib_1030@233:1>:int,<gib_1030@233:2>:int),
+          ((<gib_1030@233:2> = 0) && (<<gib_1030@233:3>@236:0> = <gib_1030@233:0>))
+          |- P[<<gib_1030@233:3>@236:0>](<gib_1030@233:0>:int,<gib_1030@233:1>:int,
+                                         <gib_1030@233:2>:int,<<gib_1030@233:3>@236:0>:int)
+          
+          P[<gib_1030@215:2>](<gib_1030@233:0>:int,<gib_1030@233:1>:int,(
+                              2 + <gib_1030@233:2>):int),
+          P[<<gib_1030@221:3>@229:0>](<gib_1030@233:0>:int,<gib_1030@233:1>:int,(
+                                      1 + <gib_1030@233:2>):int,<f_gib_1279@231:4>:int),
+          (((2 + <gib_1030@233:2>) <> 0) && ((1 + <gib_1030@233:2>) <> 0))
+          |- P[<gib_1030@233:2>](<gib_1030@233:0>:int,<gib_1030@233:1>:int,
+                                 <gib_1030@233:2>:int)
+          
+          P[<gib_1030@221:2>](<gib_1030@221:0>:int,<gib_1030@221:1>:int,<gib_1030@221:2>:int),
+          ((<gib_1030@221:2> = 1) && (<<gib_1030@221:3>@229:0> = <gib_1030@221:1>))
+          |- P[<<gib_1030@221:3>@229:0>](<gib_1030@221:0>:int,<gib_1030@221:1>:int,
+                                         <gib_1030@221:2>:int,<<gib_1030@221:3>@229:0>:int)
+          
+          P[<gib_1030@215:2>](<gib_1030@221:0>:int,<gib_1030@221:1>:int,(
+                              1 + <gib_1030@221:2>):int), (((1 + <gib_1030@221:2>) <> 0) && (<gib_1030@221:2> <> 0))
+          |- P[<gib_1030@221:2>](<gib_1030@221:0>:int,<gib_1030@221:1>:int,
+                                 <gib_1030@221:2>:int)
+          
+          P[<gib_1030@209:2>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,(
+                              1 + <gib_1030@215:2>):int), (((1 + <gib_1030@215:2>) <> 0) && (<gib_1030@215:2> <> 0))
+          |- P[<gib_1030@215:2>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,
+                                 <gib_1030@215:2>:int)
+          
+           ((<gib_1030@209:1> = 1) && (<gib_1030@209:0> = 0))
+          |- P[<gib_1030@209:2>](<gib_1030@209:0>:int,<gib_1030@209:1>:int,
+                                 <gib_1030@209:2>:int)
+        input to Yhorn:
+          P[<fail_1288@296:0>](<fail_1288@296:0>:int)|- bot
+          
+          P[<<gib_1030@209:3>@291:0>](var209:int,var210:int,<f_k_main_1281@293:3>:int,<f_k_main_1281@293:5>:int),
+          ((<f_k_main_1281@293:5> < 0) && ((var210 = 1) && ((var209 = 0) && (<fail_1288@296:0> = 1))))
+          |- P[<fail_1288@296:0>](<fail_1288@296:0>:int)
+          
+          P[<gib_1030@209:2>](<gib_1030@209:0>:int,<gib_1030@209:1>:int,<gib_1030@209:2>:int),
+          P[<<gib_1030@215:3>@246:0>](<gib_1030@209:0>:int,<gib_1030@209:1>:int,var211:int,var206:int),
+          P[<<gib_1030@250:3>@281:0>](<gib_1030@209:0>:int,<gib_1030@209:1>:int,var212:int,var213:int),
+          (((var213 + var206) = <<gib_1030@209:3>@291:0>) &&
+           (((2 + var212) = <gib_1030@209:2>) &&
+            (((1 + var211) = <gib_1030@209:2>) && ((<gib_1030@209:2> <> 1) && (<gib_1030@209:2> <> 0)))))
+          |- P[<<gib_1030@209:3>@291:0>](<gib_1030@209:0>:int,<gib_1030@209:1>:int,
+                                         <gib_1030@209:2>:int,<<gib_1030@209:3>@291:0>:int)
+          
+          P[<gib_1030@250:2>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,<gib_1030@250:2>:int),
+          P[<<gib_1030@256:3>@264:0>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,var214:int,var207:int),
+          P[<<gib_1030@268:3>@271:0>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,var215:int,var216:int),
+          (((var216 + var207) = <<gib_1030@250:3>@281:0>) &&
+           (((2 + var215) = <gib_1030@250:2>) &&
+            (((1 + var214) = <gib_1030@250:2>) && ((<gib_1030@250:2> <> 1) && (<gib_1030@250:2> <> 0)))))
+          |- P[<<gib_1030@250:3>@281:0>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,
+                                         <gib_1030@250:2>:int,<<gib_1030@250:3>@281:0>:int)
+          
+          P[<gib_1030@268:2>](<gib_1030@268:0>:int,<gib_1030@268:1>:int,<gib_1030@268:2>:int),
+          ((<<gib_1030@268:3>@271:0> = <gib_1030@268:0>) && (<gib_1030@268:2> = 0))
+          |- P[<<gib_1030@268:3>@271:0>](<gib_1030@268:0>:int,<gib_1030@268:1>:int,
+                                         <gib_1030@268:2>:int,<<gib_1030@268:3>@271:0>:int)
+          
+          P[<gib_1030@250:2>](<gib_1030@268:0>:int,<gib_1030@268:1>:int,var217:int),
+          P[<<gib_1030@256:3>@264:0>](<gib_1030@268:0>:int,<gib_1030@268:1>:int,var218:int,<f_gib_1279@266:4>:int),
+          ((var218 = (1 + <gib_1030@268:2>)) &&
+           ((var217 = (2 + <gib_1030@268:2>)) && (((1 + <gib_1030@268:2>) <> 0) && ((2 + <gib_1030@268:2>) <> 0))))
+          |- P[<gib_1030@268:2>](<gib_1030@268:0>:int,<gib_1030@268:1>:int,
+                                 <gib_1030@268:2>:int)
+          
+          P[<gib_1030@256:2>](<gib_1030@256:0>:int,<gib_1030@256:1>:int,<gib_1030@256:2>:int),
+          ((<<gib_1030@256:3>@264:0> = <gib_1030@256:1>) && (<gib_1030@256:2> = 1))
+          |- P[<<gib_1030@256:3>@264:0>](<gib_1030@256:0>:int,<gib_1030@256:1>:int,
+                                         <gib_1030@256:2>:int,<<gib_1030@256:3>@264:0>:int)
+          
+          P[<gib_1030@250:2>](<gib_1030@256:0>:int,<gib_1030@256:1>:int,var219:int),
+          ((var219 = (1 + <gib_1030@256:2>)) && ((<gib_1030@256:2> <> 0) && ((1 + <gib_1030@256:2>) <> 0)))
+          |- P[<gib_1030@256:2>](<gib_1030@256:0>:int,<gib_1030@256:1>:int,
+                                 <gib_1030@256:2>:int)
+          
+          P[<gib_1030@209:2>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,var220:int),
+          P[<<gib_1030@215:3>@246:0>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,var221:int,<f_gib_1279@248:4>:int),
+          ((var221 = (1 + <gib_1030@250:2>)) &&
+           ((var220 = (2 + <gib_1030@250:2>)) && (((1 + <gib_1030@250:2>) <> 0) && ((2 + <gib_1030@250:2>) <> 0))))
+          |- P[<gib_1030@250:2>](<gib_1030@250:0>:int,<gib_1030@250:1>:int,
+                                 <gib_1030@250:2>:int)
+          
+          P[<gib_1030@215:2>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,<gib_1030@215:2>:int),
+          P[<<gib_1030@221:3>@229:0>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,var222:int,var208:int),
+          P[<<gib_1030@233:3>@236:0>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,var223:int,var224:int),
+          (((var224 + var208) = <<gib_1030@215:3>@246:0>) &&
+           (((2 + var223) = <gib_1030@215:2>) &&
+            (((1 + var222) = <gib_1030@215:2>) && ((<gib_1030@215:2> <> 1) && (<gib_1030@215:2> <> 0)))))
+          |- P[<<gib_1030@215:3>@246:0>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,
+                                         <gib_1030@215:2>:int,<<gib_1030@215:3>@246:0>:int)
+          
+          P[<gib_1030@233:2>](<gib_1030@233:0>:int,<gib_1030@233:1>:int,<gib_1030@233:2>:int),
+          ((<<gib_1030@233:3>@236:0> = <gib_1030@233:0>) && (<gib_1030@233:2> = 0))
+          |- P[<<gib_1030@233:3>@236:0>](<gib_1030@233:0>:int,<gib_1030@233:1>:int,
+                                         <gib_1030@233:2>:int,<<gib_1030@233:3>@236:0>:int)
+          
+          P[<gib_1030@215:2>](<gib_1030@233:0>:int,<gib_1030@233:1>:int,var225:int),
+          P[<<gib_1030@221:3>@229:0>](<gib_1030@233:0>:int,<gib_1030@233:1>:int,var226:int,<f_gib_1279@231:4>:int),
+          ((var226 = (1 + <gib_1030@233:2>)) &&
+           ((var225 = (2 + <gib_1030@233:2>)) && (((1 + <gib_1030@233:2>) <> 0) && ((2 + <gib_1030@233:2>) <> 0))))
+          |- P[<gib_1030@233:2>](<gib_1030@233:0>:int,<gib_1030@233:1>:int,
+                                 <gib_1030@233:2>:int)
+          
+          P[<gib_1030@221:2>](<gib_1030@221:0>:int,<gib_1030@221:1>:int,<gib_1030@221:2>:int),
+          ((<<gib_1030@221:3>@229:0> = <gib_1030@221:1>) && (<gib_1030@221:2> = 1))
+          |- P[<<gib_1030@221:3>@229:0>](<gib_1030@221:0>:int,<gib_1030@221:1>:int,
+                                         <gib_1030@221:2>:int,<<gib_1030@221:3>@229:0>:int)
+          
+          P[<gib_1030@215:2>](<gib_1030@221:0>:int,<gib_1030@221:1>:int,var227:int),
+          ((var227 = (1 + <gib_1030@221:2>)) && ((<gib_1030@221:2> <> 0) && ((1 + <gib_1030@221:2>) <> 0)))
+          |- P[<gib_1030@221:2>](<gib_1030@221:0>:int,<gib_1030@221:1>:int,
+                                 <gib_1030@221:2>:int)
+          
+          P[<gib_1030@209:2>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,var228:int),
+          ((var228 = (1 + <gib_1030@215:2>)) && ((<gib_1030@215:2> <> 0) && ((1 + <gib_1030@215:2>) <> 0)))
+          |- P[<gib_1030@215:2>](<gib_1030@215:0>:int,<gib_1030@215:1>:int,
+                                 <gib_1030@215:2>:int)
+          
+           ((<gib_1030@209:0> = 0) && (<gib_1030@209:1> = 1))
+          |- P[<gib_1030@209:2>](<gib_1030@209:0>:int,<gib_1030@209:1>:int,
+                                 <gib_1030@209:2>:int)Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1288_sep_296_sep_0($1509)) -> 1=0.
+(($1509-1=0) & ($1510=0) & ($1511-1=0) & ($1512<0)) & (v_sep_gib_1030_sep_209_sep_3_sep_291_sep_0($1510,$1511,$1513,$1512)) -> v_sep_fail_1288_sep_296_sep_0($1509).
+(($1514<>0) & ($1514-1<>0) & (-$1514+$1515+1=0) & (-$1514+$1516+2=0) & ($1517+$1518-$1519=0)) & (v_sep_gib_1030_sep_250_sep_3_sep_281_sep_0($1520,$1521,$1516,$1517)) & (v_sep_gib_1030_sep_215_sep_3_sep_246_sep_0($1520,$1521,$1515,$1518)) & (v_sep_gib_1030_sep_209_sep_2($1520,$1521,$1514)) -> v_sep_gib_1030_sep_209_sep_3_sep_291_sep_0($1520,$1521,$1514,$1519).
+(($1522<>0) & ($1522-1<>0) & (-$1522+$1523+1=0) & (-$1522+$1524+2=0) & ($1525+$1526-$1527=0)) & (v_sep_gib_1030_sep_268_sep_3_sep_271_sep_0($1528,$1529,$1524,$1525)) & (v_sep_gib_1030_sep_256_sep_3_sep_264_sep_0($1528,$1529,$1523,$1526)) & (v_sep_gib_1030_sep_250_sep_2($1528,$1529,$1522)) -> v_sep_gib_1030_sep_250_sep_3_sep_281_sep_0($1528,$1529,$1522,$1527).
+(($1530=0) & ($1531-$1532=0)) & (v_sep_gib_1030_sep_268_sep_2($1532,$1533,$1530)) -> v_sep_gib_1030_sep_268_sep_3_sep_271_sep_0($1532,$1533,$1530,$1531).
+(($1530+2<>0) & ($1530+1<>0) & (-$1530+$1534-2=0) & (-$1530+$1535-1=0)) & (v_sep_gib_1030_sep_256_sep_3_sep_264_sep_0($1532,$1533,$1535,$1536)) & (v_sep_gib_1030_sep_250_sep_2($1532,$1533,$1534)) -> v_sep_gib_1030_sep_268_sep_2($1532,$1533,$1530).
+(($1537-1=0) & ($1538-$1539=0)) & (v_sep_gib_1030_sep_256_sep_2($1540,$1539,$1537)) -> v_sep_gib_1030_sep_256_sep_3_sep_264_sep_0($1540,$1539,$1537,$1538).
+(($1537+1<>0) & ($1537<>0) & (-$1537+$1541-1=0)) & (v_sep_gib_1030_sep_250_sep_2($1540,$1539,$1541)) -> v_sep_gib_1030_sep_256_sep_2($1540,$1539,$1537).
+(($1522+2<>0) & ($1522+1<>0) & (-$1522+$1542-2=0) & (-$1522+$1543-1=0)) & (v_sep_gib_1030_sep_215_sep_3_sep_246_sep_0($1528,$1529,$1543,$1544)) & (v_sep_gib_1030_sep_209_sep_2($1528,$1529,$1542)) -> v_sep_gib_1030_sep_250_sep_2($1528,$1529,$1522).
+(($1545<>0) & ($1545-1<>0) & (-$1545+$1546+1=0) & (-$1545+$1547+2=0) & ($1548+$1549-$1550=0)) & (v_sep_gib_1030_sep_233_sep_3_sep_236_sep_0($1551,$1552,$1547,$1548)) & (v_sep_gib_1030_sep_221_sep_3_sep_229_sep_0($1551,$1552,$1546,$1549)) & (v_sep_gib_1030_sep_215_sep_2($1551,$1552,$1545)) -> v_sep_gib_1030_sep_215_sep_3_sep_246_sep_0($1551,$1552,$1545,$1550).
+(($1553=0) & ($1554-$1555=0)) & (v_sep_gib_1030_sep_233_sep_2($1555,$1556,$1553)) -> v_sep_gib_1030_sep_233_sep_3_sep_236_sep_0($1555,$1556,$1553,$1554).
+(($1553+2<>0) & ($1553+1<>0) & (-$1553+$1557-2=0) & (-$1553+$1558-1=0)) & (v_sep_gib_1030_sep_221_sep_3_sep_229_sep_0($1555,$1556,$1558,$1559)) & (v_sep_gib_1030_sep_215_sep_2($1555,$1556,$1557)) -> v_sep_gib_1030_sep_233_sep_2($1555,$1556,$1553).
+(($1560-1=0) & ($1561-$1562=0)) & (v_sep_gib_1030_sep_221_sep_2($1563,$1562,$1560)) -> v_sep_gib_1030_sep_221_sep_3_sep_229_sep_0($1563,$1562,$1560,$1561).
+(($1560+1<>0) & ($1560<>0) & (-$1560+$1564-1=0)) & (v_sep_gib_1030_sep_215_sep_2($1563,$1562,$1564)) -> v_sep_gib_1030_sep_221_sep_2($1563,$1562,$1560).
+(($1545+1<>0) & ($1545<>0) & (-$1545+$1565-1=0)) & (v_sep_gib_1030_sep_209_sep_2($1551,$1552,$1565)) -> v_sep_gib_1030_sep_215_sep_2($1551,$1552,$1545).
+($1521-1=0) & ($1520=0) -> v_sep_gib_1030_sep_209_sep_2($1520,$1521,$1514).
+
+
+v_sep_fail_1288_sep_296_sep_0: X
+v_sep_gib_1030_sep_209_sep_2: X
+v_sep_gib_1030_sep_209_sep_3_sep_291_sep_0: X
+v_sep_gib_1030_sep_215_sep_2: X
+v_sep_gib_1030_sep_215_sep_3_sep_246_sep_0: X
+v_sep_gib_1030_sep_221_sep_2: X
+v_sep_gib_1030_sep_221_sep_3_sep_229_sep_0: X
+v_sep_gib_1030_sep_233_sep_2: X
+v_sep_gib_1030_sep_233_sep_3_sep_236_sep_0: X
+v_sep_gib_1030_sep_250_sep_2: X
+v_sep_gib_1030_sep_250_sep_3_sep_281_sep_0: X
+v_sep_gib_1030_sep_256_sep_2: X
+v_sep_gib_1030_sep_256_sep_3_sep_264_sep_0: X
+v_sep_gib_1030_sep_268_sep_2: X
+v_sep_gib_1030_sep_268_sep_3_sep_271_sep_0: X
+...............................................................................
+v_sep_fail_1288_sep_296_sep_0: X
+v_sep_gib_1030_sep_209_sep_2: X
+v_sep_gib_1030_sep_209_sep_3_sep_291_sep_0: X
+v_sep_gib_1030_sep_215_sep_2: X
+v_sep_gib_1030_sep_215_sep_3_sep_246_sep_0: X
+v_sep_gib_1030_sep_221_sep_2: X
+v_sep_gib_1030_sep_221_sep_3_sep_229_sep_0: X
+v_sep_gib_1030_sep_233_sep_2: X
+v_sep_gib_1030_sep_233_sep_3_sep_236_sep_0: X
+v_sep_gib_1030_sep_250_sep_2: X
+v_sep_gib_1030_sep_250_sep_3_sep_281_sep_0: X
+v_sep_gib_1030_sep_256_sep_2: X
+v_sep_gib_1030_sep_256_sep_3_sep_264_sep_0: X
+v_sep_gib_1030_sep_268_sep_2: X
+v_sep_gib_1030_sep_268_sep_3_sep_271_sep_0: X
+...
+v_sep_fail_1288_sep_296_sep_0: X
+v_sep_gib_1030_sep_209_sep_2: X
+v_sep_gib_1030_sep_209_sep_3_sep_291_sep_0: X
+v_sep_gib_1030_sep_215_sep_2: X
+v_sep_gib_1030_sep_215_sep_3_sep_246_sep_0: X
+v_sep_gib_1030_sep_221_sep_2: X
+v_sep_gib_1030_sep_221_sep_3_sep_229_sep_0: X
+v_sep_gib_1030_sep_233_sep_2: X
+v_sep_gib_1030_sep_233_sep_3_sep_236_sep_0: X
+v_sep_gib_1030_sep_250_sep_2: X
+v_sep_gib_1030_sep_250_sep_3_sep_281_sep_0: X
+v_sep_gib_1030_sep_256_sep_2: X
+v_sep_gib_1030_sep_256_sep_3_sep_264_sep_0: X
+v_sep_gib_1030_sep_268_sep_2: X
+v_sep_gib_1030_sep_268_sep_3_sep_271_sep_0: X
+...............
+v_sep_fail_1288_sep_296_sep_0: X
+v_sep_gib_1030_sep_209_sep_2: X
+v_sep_gib_1030_sep_209_sep_3_sep_291_sep_0: X
+v_sep_gib_1030_sep_215_sep_2: X
+v_sep_gib_1030_sep_215_sep_3_sep_246_sep_0: X
+v_sep_gib_1030_sep_221_sep_2: X
+v_sep_gib_1030_sep_221_sep_3_sep_229_sep_0: X
+v_sep_gib_1030_sep_233_sep_2: X
+v_sep_gib_1030_sep_233_sep_3_sep_236_sep_0: X
+v_sep_gib_1030_sep_250_sep_2: X
+v_sep_gib_1030_sep_250_sep_3_sep_281_sep_0: X
+v_sep_gib_1030_sep_256_sep_2: X
+v_sep_gib_1030_sep_256_sep_3_sep_264_sep_0: X
+v_sep_gib_1030_sep_268_sep_2: X
+v_sep_gib_1030_sep_268_sep_3_sep_271_sep_0: X
+.......................................
+v_sep_fail_1288_sep_296_sep_0: X
+v_sep_gib_1030_sep_209_sep_2: X
+v_sep_gib_1030_sep_209_sep_3_sep_291_sep_0: X
+v_sep_gib_1030_sep_215_sep_2: X
+v_sep_gib_1030_sep_215_sep_3_sep_246_sep_0: X
+v_sep_gib_1030_sep_221_sep_2: X
+v_sep_gib_1030_sep_221_sep_3_sep_229_sep_0: X
+v_sep_gib_1030_sep_233_sep_2: X
+v_sep_gib_1030_sep_233_sep_3_sep_236_sep_0: X
+v_sep_gib_1030_sep_250_sep_2: X
+v_sep_gib_1030_sep_250_sep_3_sep_281_sep_0: X
+v_sep_gib_1030_sep_256_sep_2: X
+v_sep_gib_1030_sep_256_sep_3_sep_264_sep_0: X
+v_sep_gib_1030_sep_268_sep_2: X
+v_sep_gib_1030_sep_268_sep_3_sep_271_sep_0: X
+.......................................................
+v_sep_fail_1288_sep_296_sep_0: X
+v_sep_gib_1030_sep_209_sep_2: X
+v_sep_gib_1030_sep_209_sep_3_sep_291_sep_0: X
+v_sep_gib_1030_sep_215_sep_2: X
+v_sep_gib_1030_sep_215_sep_3_sep_246_sep_0: X
+v_sep_gib_1030_sep_221_sep_2: X
+v_sep_gib_1030_sep_221_sep_3_sep_229_sep_0: X
+v_sep_gib_1030_sep_233_sep_2: X
+v_sep_gib_1030_sep_233_sep_3_sep_236_sep_0: X
+v_sep_gib_1030_sep_250_sep_2: X
+v_sep_gib_1030_sep_250_sep_3_sep_281_sep_0: X
+v_sep_gib_1030_sep_256_sep_2: X
+v_sep_gib_1030_sep_256_sep_3_sep_264_sep_0: X
+v_sep_gib_1030_sep_268_sep_2: X
+v_sep_gib_1030_sep_268_sep_3_sep_271_sep_0: X
+...........................................................
+        
+      end HcSolver.solve_ub(36436)[4] (8.764668 sec.)
+      
+    end YhornInterface.solve(36435)[3] (8.764668 sec.)
+    
+  end RefTypeInfer.infer_etrs(26618)[2] (9.494557 sec.)
+  

@@ -1,0 +1,2500 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn mem.ml
+
+parsed::
+ let rec mem_1030 x_1031 xs_1032 =
+   (match xs_1032 with
+      | [] -> false
+      | x'_1033::xs_1034 -> x_1031 = x'_1033 || mem_1030 x_1031 xs_1034) 
+ in
+ let rec make_list_1035 n_1036 x_1037 = if n_1036 < 0 then
+                                          []
+                                        else
+                                          x_1037::make_list_1035 (n_1036 - 1) x_1037 
+ in
+ let is_nil_1038 xs_1039 = (match xs_1039 with
+                              | [] -> true
+                              | _ -> false) 
+ in
+ let main_1040 n_1041 m_1042 =
+   let xs_1043 = make_list_1035 n_1041 m_1042 
+   in
+     if is_nil_1038 xs_1043 || mem_1030 m_1042 xs_1043 then
+       ()
+     else
+       {fail} () 
+ in
+   ()
+
+set_target::
+ let rec mem_1030 x_1031 xs_1032 =
+   (match xs_1032 with
+      | [] -> false
+      | x'_1033::xs_1034 -> x_1031 = x'_1033 || mem_1030 x_1031 xs_1034) 
+ in
+ let rec make_list_1035 n_1036 x_1037 = if n_1036 < 0 then
+                                          []
+                                        else
+                                          x_1037::make_list_1035 (n_1036 - 1) x_1037 
+ in
+ let is_nil_1038 xs_1039 = (match xs_1039 with
+                              | [] -> true
+                              | _ -> false) 
+ in
+ let main_1040 n_1041 m_1042 =
+   let xs_1043 = make_list_1035 n_1041 m_1042 
+   in
+     if is_nil_1038 xs_1043 || mem_1030 m_1042 xs_1043 then
+       ()
+     else
+       {fail} () 
+ in
+ let main_1079 = let arg1_1077 = rand_int () 
+                 in
+                 let arg2_1078 = rand_int () 
+                 in
+                   main_1040 arg1_1077 arg2_1078 
+ in
+   ()
+
+abst_list::
+ let rec mem_1030 (x_1031:int) (xs_1032:(int * (int -> int))) =
+   if fst xs_1032 = 0 then
+     false
+   else
+     if 1 <= fst xs_1032 then
+       let xs_1034 = (fst xs_1032 - 1, fun x_1084 -> (snd xs_1032) (x_1084 + 1)) 
+       in
+       let x'_1033 = (snd xs_1032) 0 
+       in
+         x_1031 = x'_1033 || mem_1030 x_1031 xs_1034
+     else
+       _|_ 
+ in
+ let rec make_list_1035 (n_1036:int) (x_1037:int) =
+   if n_1036 < 0 then
+     (0, fun x_1117 -> _|_)
+   else
+     let cons_make_list_1113 (x_1111:int) (xs_1112:(int * (int -> int))) =
+       (fst xs_1112 + 1, fun i_1110 -> (if i_1110 = 0 then
+                                          x_1111
+                                        else
+                                          (snd xs_1112) (i_1110 - 1))) 
+     in
+       cons_make_list_1113 x_1037 (make_list_1035 (n_1036 - 1) x_1037) 
+ in
+ let is_nil_1038 (xs_1039:(int * (int -> int))) = if fst xs_1039 = 0 then
+                                                    true
+                                                  else
+                                                    false 
+ in
+ let main_1040 (n_1041:int) (m_1042:int) =
+   let xs_1043 = make_list_1035 n_1041 m_1042 
+   in
+     if is_nil_1038 xs_1043 || mem_1030 m_1042 xs_1043 then
+       ()
+     else
+       {fail} () 
+ in
+ let main_1079 = let arg1_1077 = rand_int () 
+                 in
+                 let arg2_1078 = rand_int () 
+                 in
+                   main_1040 arg1_1077 arg2_1078 
+ in
+   ()
+
+CPS::
+ let rec mem_1030 (x_1031:int) (xs_1032:(int * (int -> ((int -> X) -> X)))) (k_mem_1190:(
+   bool -> X)) =
+   if fst xs_1032 = 0 then
+     k_mem_1190 false
+   else
+     if 1 <= fst xs_1032 then
+       (snd xs_1032) 0
+         (fun x_1237 ->
+            (if x_1031 = x_1237 then
+               k_mem_1190 true
+             else
+               mem_1030 x_1031
+                 (fst xs_1032 - 1, fun x_1084 -> fun k_mem_xs_1223 -> (snd xs_1032) (x_1084 + 1) k_mem_xs_1223)
+                 k_mem_1190))
+     else
+       _|_ 
+ in
+ let rec make_list_1035 (n_1036:int) (x_1037:int) (k_make_list_1313:(
+   (int * (int -> ((int -> X) -> X))) -> X)) =
+   if n_1036 < 0 then
+     k_make_list_1313 (0, fun x_1117 -> fun k_make_list_1325 -> _|_)
+   else
+     let cons_make_list_1113
+       (x_1111:int) (xs_1112:(int * (int -> ((int -> X) -> X)))) (k_make_list_cons_make_list_1372:(
+       (int * (int -> ((int -> X) -> X))) -> X)) =
+       k_make_list_cons_make_list_1372
+         (fst xs_1112 + 1,
+         fun i_1110 ->
+           fun k_make_list_cons_make_list_1387 ->
+             (if i_1110 = 0 then
+                k_make_list_cons_make_list_1387 x_1111
+              else
+                (snd xs_1112) (i_1110 - 1) k_make_list_cons_make_list_1387)) 
+     in
+       make_list_1035 (n_1036 - 1) x_1037 (fun x_1451 -> cons_make_list_1113 x_1037 x_1451 k_make_list_1313) 
+ in
+ let is_nil_1038 (xs_1039:(int * (int -> ((int -> X) -> X)))) (k_is_nil_1484:(
+   bool -> X)) = if fst xs_1039 = 0 then
+                   k_is_nil_1484 true
+                 else
+                   k_is_nil_1484 false 
+ in
+ let main_1040 (n_1041:int) (m_1042:int) (k_main_1508:(unit -> X)) =
+   make_list_1035 n_1041 m_1042
+     (fun x_1514 ->
+        (let k_main_1588 (b_1600:bool) = if b_1600 then
+                                           k_main_1508 ()
+                                         else
+                                           {|fail|} () k_main_1508 
+         in
+           is_nil_1038 x_1514
+             (fun b_1589 -> (if b_1589 then
+                               k_main_1588 true
+                             else
+                               mem_1030 m_1042 x_1514 k_main_1588)))) 
+ in
+   rand_int_cps () (fun x_1606 -> rand_int_cps () (fun x_1619 -> main_1040 x_1606 x_1619 (fun x_1603 -> end)))
+
+remove_pair::
+ let rec mem_1030 (x_1031:int) (xs1_1032:int) (xs2_1032:(int -> ((int -> X) -> X))) (k_mem_1190:(
+   bool -> X)) =
+   if xs1_1032 = 0 then
+     k_mem_1190 false
+   else
+     if 1 <= xs1_1032 then
+       xs2_1032 0
+         (fun x_1237 ->
+            (if x_1031 = x_1237 then
+               k_mem_1190 true
+             else
+               mem_1030 x_1031 (xs1_1032 - 1) (fun x_1084 -> fun k_mem_xs_1223 -> xs2_1032 (x_1084 + 1) k_mem_xs_1223)
+                 k_mem_1190))
+     else
+       _|_ 
+ in
+ let rec make_list_1035 (n_1036:int) (x_1037:int) (k_make_list_1313:(
+   int -> ((int -> ((int -> X) -> X)) -> X))) =
+   if n_1036 < 0 then
+     k_make_list_1313 0 (fun x_1117 -> fun k_make_list_1325 -> _|_)
+   else
+     let cons_make_list_1113
+       (x_1111:int) (xs1_1112:int) (xs2_1112:(int -> ((int -> X) -> X))) (k_make_list_cons_make_list_1372:(
+       int -> ((int -> ((int -> X) -> X)) -> X))) =
+       k_make_list_cons_make_list_1372 (xs1_1112 + 1)
+         (fun i_1110 ->
+            fun k_make_list_cons_make_list_1387 ->
+              (if i_1110 = 0 then
+                 k_make_list_cons_make_list_1387 x_1111
+               else
+                 xs2_1112 (i_1110 - 1) k_make_list_cons_make_list_1387)) 
+     in
+       make_list_1035 (n_1036 - 1) x_1037
+         (fun x1_1451 -> fun x2_1451 -> cons_make_list_1113 x_1037 x1_1451 x2_1451 k_make_list_1313) 
+ in
+ let is_nil_1038 (xs1_1039:int) (xs2_1039:(int -> ((int -> X) -> X))) (k_is_nil_1484:(
+   bool -> X)) = if xs1_1039 = 0 then
+                   k_is_nil_1484 true
+                 else
+                   k_is_nil_1484 false 
+ in
+ let main_1040 (n_1041:int) (m_1042:int) (k_main_1508:(unit -> X)) =
+   make_list_1035 n_1041 m_1042
+     (fun x1_1514 ->
+        fun x2_1514 ->
+          (let k_main_1588 (b_1600:bool) = if b_1600 then
+                                             k_main_1508 ()
+                                           else
+                                             {|fail|} () k_main_1508 
+           in
+             is_nil_1038 x1_1514 x2_1514
+               (fun b_1589 -> (if b_1589 then
+                                 k_main_1588 true
+                               else
+                                 mem_1030 m_1042 x1_1514 x2_1514 k_main_1588)))) 
+ in
+   rand_int_cps () (fun x_1606 -> rand_int_cps () (fun x_1619 -> main_1040 x_1606 x_1619 (fun x_1603 -> end)))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1681
+  main_1681 -> (rand_int f_1689)
+  br_mem_1692 b_1693 x_1031 xs1_1032 xs2_1032 k_mem_1190 when b_1693 ->
+      (xs2_1032 0 (f_mem_1682 x_1031 xs1_1032 k_mem_1190 xs2_1032))
+  br_mem_1692 b_1693 x_1031 xs1_1032 xs2_1032 k_mem_1190 when (not b_1693) -> _|_
+  cons_make_list_1113 n_1036 x_1037 x_1111 xs1_1112 xs2_1112 k_make_list_cons_make_list_1372 ->
+      (k_make_list_cons_make_list_1372 (xs1_1112 + 1) (f_cons_make_list_1685 n_1036 x_1037 x_1111 xs1_1112 xs2_1112))
+  f_1689 x_1606 -> (rand_int (f_1690 x_1606))
+  f_1690 x_1606 x_1619 -> (main_1040 x_1606 x_1619 (f_1691 x_1606 x_1619))
+  f_1691 x_1606 x_1619 x_1603 -> end
+  f_cons_make_list_1685 n_1036 x_1037 x_1111 xs1_1112 xs2_1112 i_1110 k_make_list_cons_make_list_1387 when (
+      i_1110 = 0) -> (k_make_list_cons_make_list_1387 x_1111)
+  f_cons_make_list_1685 n_1036 x_1037 x_1111 xs1_1112 xs2_1112 i_1110 k_make_list_cons_make_list_1387 when (
+      not (i_1110 = 0)) -> (xs2_1112 (i_1110 - 1) k_make_list_cons_make_list_1387)
+  f_main_1687 m_1042 n_1041 k_main_1508 x1_1514 x2_1514 ->
+      (is_nil_1038 x1_1514 x2_1514 (f_main_1688 m_1042 n_1041 x1_1514 k_main_1508 x2_1514))
+  f_main_1688 m_1042 n_1041 x1_1514 k_main_1508 x2_1514 b_1589 when b_1589 ->
+      (k_main_1588 m_1042 n_1041 x1_1514 k_main_1508 true)
+  f_main_1688 m_1042 n_1041 x1_1514 k_main_1508 x2_1514 b_1589 when (
+      not b_1589) -> (mem_1030 m_1042 x1_1514 x2_1514 (k_main_1588 m_1042 n_1041 x1_1514 k_main_1508))
+  f_make_list_1684 n_1036 x_1037 x_1117 k_make_list_1325 -> _|_
+  f_make_list_1686 n_1036 x_1037 k_make_list_1313 x1_1451 x2_1451 ->
+      (cons_make_list_1113 n_1036 x_1037 x_1037 x1_1451 x2_1451 k_make_list_1313)
+  f_mem_1682 x_1031 xs1_1032 k_mem_1190 xs2_1032 x_1237 when (x_1031 = x_1237) -> (k_mem_1190 true)
+  f_mem_1682 x_1031 xs1_1032 k_mem_1190 xs2_1032 x_1237 when (not (x_1031 = x_1237)) ->
+      (mem_1030 x_1031 (xs1_1032 - 1) (f_mem_1683 x_1031 x_1237 xs1_1032 xs2_1032) k_mem_1190)
+  f_mem_1683 x_1031 x_1237 xs1_1032 xs2_1032 x_1084 k_mem_xs_1223 -> (xs2_1032 (x_1084 + 1) k_mem_xs_1223)
+  fail_1694 b k -> {fail} => (k ())
+  is_nil_1038 xs1_1039 xs2_1039 k_is_nil_1484 when (xs1_1039 = 0) -> (k_is_nil_1484 true)
+  is_nil_1038 xs1_1039 xs2_1039 k_is_nil_1484 when (not (xs1_1039 = 0)) -> (k_is_nil_1484 false)
+  k_main_1588 m_1042 n_1041 x1_1514 k_main_1508 b_1600 when b_1600 -> (k_main_1508 ())
+  k_main_1588 m_1042 n_1041 x1_1514 k_main_1508 b_1600 when (not b_1600) -> (fail_1694 true k_main_1508)
+  main_1040 n_1041 m_1042 k_main_1508 -> (make_list_1035 n_1041 m_1042 (f_main_1687 m_1042 n_1041 k_main_1508))
+  make_list_1035 n_1036 x_1037 k_make_list_1313 when (n_1036 < 0) ->
+      (k_make_list_1313 0 (f_make_list_1684 n_1036 x_1037))
+  make_list_1035 n_1036 x_1037 k_make_list_1313 when (not (n_1036 < 0)) ->
+      (make_list_1035 (n_1036 - 1) x_1037 (f_make_list_1686 n_1036 x_1037 k_make_list_1313))
+  mem_1030 x_1031 xs1_1032 xs2_1032 k_mem_1190 when (xs1_1032 = 0) -> (k_mem_1190 false)
+  mem_1030 x_1031 xs1_1032 xs2_1032 k_mem_1190 when (not (xs1_1032 = 0)) ->
+      (br_mem_1692 (1 <= xs1_1032) x_1031 xs1_1032 xs2_1032 k_mem_1190)
+Types:
+  main_1681 : X
+  fail_1694 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  make_list_1035 : (int -> int -> (int -> (int -> (int -> X) -> X) -> X) -> X)
+  mem_1030 : (int -> int -> (int -> (int -> X) -> X) -> (x_10:bool[x_10] -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1681 ... --> 
+  f_1689 ... --> 
+  f_1690 ... --> 
+  main_1040 ... --> 
+  make_list_1035 [1/2] ... --> 
+  f_main_1687 ... --> 
+  is_nil_1038 [2/2] ... --> 
+  f_main_1688 [2/2] ... --> 
+  mem_1030 [1/2] ... --> 
+  k_main_1588 [2/2] ... --> 
+  fail_1694 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 1; 1; 0; 1; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(262)[1]
+  program:
+    main_1681  | true = ((Random.int 0) f_1689)
+    br_mem_1692 b_1693 x_1031 xs1_1032 xs2_1032 k_mem_1190 | b_1693 = (
+    xs2_1032 0
+             (f_mem_1682 x_1031
+                         xs1_1032
+                         k_mem_1190
+                         xs2_1032))
+    br_mem_1692 b_1693 x_1031 xs1_1032 xs2_1032 k_mem_1190 | (not b_1693) = bot
+    cons_make_list_1113 n_1036 x_1037 x_1111 xs1_1112 xs2_1112 k_make_list_cons_make_list_1372 | true = (
+    k_make_list_cons_make_list_1372 (xs1_1112 + 1)
+                                    (f_cons_make_list_1685 n_1036
+                                                           x_1037
+                                                           x_1111
+                                                           xs1_1112
+                                                           xs2_1112))
+    f_1689 x_1606 | true = ((Random.int 0) (f_1690 x_1606))
+    f_1690 x_1606 x_1619 | true = (main_1040 x_1606
+                                             x_1619
+                                             (f_1691 x_1606
+                                                     x_1619))
+    f_1691 x_1606 x_1619 x_1603 | true = end
+    f_cons_make_list_1685 n_1036 x_1037 x_1111 xs1_1112 xs2_1112 i_1110 k_make_list_cons_make_list_1387 | (
+    i_1110 = 0) = (k_make_list_cons_make_list_1387 x_1111)
+    f_cons_make_list_1685 n_1036 x_1037 x_1111 xs1_1112 xs2_1112 i_1110 k_make_list_cons_make_list_1387 | (
+    not (i_1110 = 0)) = (xs2_1112 (i_1110 - 1)
+                                  k_make_list_cons_make_list_1387)
+    f_main_1687 m_1042 n_1041 k_main_1508 x1_1514 x2_1514 | true = (is_nil_1038
+                                                                    x1_1514
+                                                                    x2_1514
+                                                                    (
+                                                                    f_main_1688
+                                                                    m_1042
+                                                                    n_1041
+                                                                    x1_1514
+                                                                    k_main_1508
+                                                                    x2_1514))
+    f_main_1688 m_1042 n_1041 x1_1514 k_main_1508 x2_1514 b_1589 | b_1589 = (
+    k_main_1588 m_1042
+                n_1041
+                x1_1514
+                k_main_1508
+                true)
+    f_main_1688 m_1042 n_1041 x1_1514 k_main_1508 x2_1514 b_1589 | (not b_1589) = (
+    mem_1030 m_1042
+             x1_1514
+             x2_1514
+             (k_main_1588 m_1042
+                          n_1041
+                          x1_1514
+                          k_main_1508))
+    f_make_list_1684 n_1036 x_1037 x_1117 k_make_list_1325 | true = bot
+    f_make_list_1686 n_1036 x_1037 k_make_list_1313 x1_1451 x2_1451 | true = (
+    cons_make_list_1113 n_1036
+                        x_1037
+                        x_1037
+                        x1_1451
+                        x2_1451
+                        k_make_list_1313)
+    f_mem_1682 x_1031 xs1_1032 k_mem_1190 xs2_1032 x_1237 | (x_1031 = x_1237) = (
+    k_mem_1190 true)
+    f_mem_1682 x_1031 xs1_1032 k_mem_1190 xs2_1032 x_1237 | (not (x_1031 = x_1237)) = (
+    mem_1030 x_1031
+             (xs1_1032 - 1)
+             (f_mem_1683 x_1031
+                         x_1237
+                         xs1_1032
+                         xs2_1032)
+             k_mem_1190)
+    f_mem_1683 x_1031 x_1237 xs1_1032 xs2_1032 x_1084 k_mem_xs_1223 | true = (
+    xs2_1032 (x_1084 + 1)
+             k_mem_xs_1223)
+    fail_1694 b k | true = (fail ())
+    is_nil_1038 xs1_1039 xs2_1039 k_is_nil_1484 | (xs1_1039 = 0) = (k_is_nil_1484 true)
+    is_nil_1038 xs1_1039 xs2_1039 k_is_nil_1484 | (not (xs1_1039 = 0)) = (
+    k_is_nil_1484 false)
+    k_main_1588 m_1042 n_1041 x1_1514 k_main_1508 b_1600 | b_1600 = (
+    k_main_1508 ())
+    k_main_1588 m_1042 n_1041 x1_1514 k_main_1508 b_1600 | (not b_1600) = (
+    fail_1694 true
+              k_main_1508)
+    main_1040 n_1041 m_1042 k_main_1508 | true = (make_list_1035 n_1041
+                                                                 m_1042
+                                                                 (f_main_1687 m_1042
+                                                                    n_1041
+                                                                    k_main_1508))
+    make_list_1035 n_1036 x_1037 k_make_list_1313 | (n_1036 < 0) = (k_make_list_1313 0
+                                                                    (f_make_list_1684 n_1036
+                                                                    x_1037))
+    make_list_1035 n_1036 x_1037 k_make_list_1313 | (not (n_1036 < 0)) = (
+    make_list_1035 (n_1036 - 1)
+                   x_1037
+                   (f_make_list_1686 n_1036
+                                     x_1037
+                                     k_make_list_1313))
+    mem_1030 x_1031 xs1_1032 xs2_1032 k_mem_1190 | (xs1_1032 = 0) = (
+    k_mem_1190 false)
+    mem_1030 x_1031 xs1_1032 xs2_1032 k_mem_1190 | (not (xs1_1032 = 0)) = (
+    br_mem_1692 (1 <= xs1_1032)
+                x_1031
+                xs1_1032
+                xs2_1032
+                k_mem_1190)
+    main_1681:X
+    br_mem_1692:bool -> int -> int -> (int -> (int -> X) -> X) -> (bool -> X) -> X
+    cons_make_list_1113:int ->
+                        int -> int -> int -> (int -> (int -> X) -> X) -> (int -> (int -> (int -> X) -> X) -> X) -> X
+    f_1689:int -> X
+    f_1690:int -> int -> X
+    f_1691:int -> int -> unit -> X
+    f_cons_make_list_1685:int -> int -> int -> int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    f_main_1687:int -> int -> (unit -> X) -> int -> (int -> (int -> X) -> X) -> X
+    f_main_1688:int -> int -> int -> (unit -> X) -> (int -> (int -> X) -> X) -> bool -> X
+    f_make_list_1684:int -> int -> int -> (int -> X) -> X
+    f_make_list_1686:int -> int -> (int -> (int -> (int -> X) -> X) -> X) -> int -> (int -> (int -> X) -> X) -> X
+    f_mem_1682:int -> int -> (bool -> X) -> (int -> (int -> X) -> X) -> int -> X
+    f_mem_1683:int -> int -> int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    fail_1694:bool -> (unit -> X) -> X
+    is_nil_1038:int -> (int -> (int -> X) -> X) -> (bool -> X) -> X
+    k_main_1588:int -> int -> int -> (unit -> X) -> bool -> X
+    main_1040:int -> int -> (unit -> X) -> X
+    make_list_1035:int -> int -> (int -> (int -> (int -> X) -> X) -> X) -> X
+    mem_1030:int -> int -> (int -> (int -> X) -> X) -> (bool -> X) -> X
+  inlined functions: br_mem_1692,cons_make_list_1113,f_1689,f_1690,f_1691,f_cons_make_list_1685,f_main_1687,f_main_1688,f_make_list_1684,f_make_list_1686,f_mem_1682,f_mem_1683,is_nil_1038,k_main_1588,main_1040
+  counterexample: 0:0:0:0:0:0:1:1:0:1:0
+  error traces:
+    [true.nop(<f_1689@4:0> = var2)
+     [true.nop((<f_1690@7:0> = <f_1689@4:0>) && (<f_1690@7:1> = var3))
+      [true.((<main_1040@9:0> = <f_1690@7:0>) && (<main_1040@9:1> = <f_1690@7:1>))
+       [true.((<make_list_1035@11:0> = <main_1040@9:0>) && (<make_list_1035@11:1> = <main_1040@9:1>))
+        [(<make_list_1035@11:0> < 0).(<<make_list_1035@11:2>@14:0> = 0)
+         [true.
+          ((<f_main_1687@16:0> = <main_1040@9:1>) &&
+           ((<f_main_1687@16:1> = <main_1040@9:0>) && (<f_main_1687@16:3> = <<make_list_1035@11:2>@14:0>)))
+          [true.(<is_nil_1038@18:0> = <f_main_1687@16:3>)
+           [(not (<is_nil_1038@18:0> = 0)).(<<is_nil_1038@18:2>@21:0> = false)
+            [true.
+             ((<f_main_1688@23:0> = <f_main_1687@16:0>) &&
+              ((<f_main_1688@23:1> = <f_main_1687@16:1>) &&
+               ((<f_main_1688@23:2> = <f_main_1687@16:3>) && (<f_main_1688@23:5> = <<is_nil_1038@18:2>@21:0>))))
+             [(not <f_main_1688@23:5>).
+              ((<mem_1030@26:0> = <f_main_1688@23:0>) && (<mem_1030@26:1> = <f_main_1688@23:2>))
+              [(<mem_1030@26:1> = 0).(<<mem_1030@26:3>@29:0> = false)
+               [true.
+                ((<k_main_1588@31:0> = <f_main_1688@23:0>) &&
+                 ((<k_main_1588@31:1> = <f_main_1688@23:1>) &&
+                  ((<k_main_1588@31:2> = <f_main_1688@23:2>) && (<k_main_1588@31:4> = <<mem_1030@26:3>@29:0>))))
+                [(not <k_main_1588@31:4>).(<fail_1694@34:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(263)[2]
+    horn clauses:
+      P[<fail_1694@34:0>](<fail_1694@34:0>:bool)|- bot
+      
+      P[<k_main_1588@31:4>](<k_main_1588@31:0>:int,<k_main_1588@31:1>:int,<k_main_1588@31:2>:int,false:bool),
+      <fail_1694@34:0> |- P[<fail_1694@34:0>](<fail_1694@34:0>:bool)
+      
+      P[<f_main_1688@23:5>](<k_main_1588@31:0>:int,<k_main_1588@31:1>:int,<k_main_1588@31:2>:int,false:bool),
+      P[<<mem_1030@26:3>@29:0>](<k_main_1588@31:0>:int,<k_main_1588@31:2>:int,<k_main_1588@31:4>:bool)|- P[<k_main_1588@31:4>](
+      <k_main_1588@31:0>:int,<k_main_1588@31:1>:int,<k_main_1588@31:2>:int,
+      <k_main_1588@31:4>:bool)
+      
+      P[<mem_1030@26:1>](<mem_1030@26:0>:int,<mem_1030@26:1>:int),
+      ((<mem_1030@26:1> = 0) && (not <<mem_1030@26:3>@29:0>))
+      |- P[<<mem_1030@26:3>@29:0>](<mem_1030@26:0>:int,<mem_1030@26:1>:int,
+                                   <<mem_1030@26:3>@29:0>:bool)
+      
+      P[<f_main_1688@23:5>](<mem_1030@26:0>:int,<f_main_1688@23:1>:int,<mem_1030@26:1>:int,false:bool)|- P[<mem_1030@26:1>](
+      <mem_1030@26:0>:int,<mem_1030@26:1>:int)
+      
+      P[<f_main_1687@16:3>](<f_main_1688@23:0>:int,<f_main_1688@23:1>:int,<f_main_1688@23:2>:int),
+      P[<<is_nil_1038@18:2>@21:0>](<f_main_1688@23:2>:int,<f_main_1688@23:5>:bool)|- P[<f_main_1688@23:5>](
+      <f_main_1688@23:0>:int,<f_main_1688@23:1>:int,<f_main_1688@23:2>:int,
+      <f_main_1688@23:5>:bool)
+      
+      P[<is_nil_1038@18:0>](<is_nil_1038@18:0>:int), ((<is_nil_1038@18:0> <> 0) && (not <<is_nil_1038@18:2>@21:0>))
+      |- P[<<is_nil_1038@18:2>@21:0>](<is_nil_1038@18:0>:int,<<is_nil_1038@18:2>@21:0>:bool)
+      
+      P[<f_main_1687@16:3>](<f_main_1687@16:0>:int,<f_main_1687@16:1>:int,<is_nil_1038@18:0>:int)|- P[<is_nil_1038@18:0>](
+      <is_nil_1038@18:0>:int)
+      
+      P[<main_1040@9:1>](<f_main_1687@16:1>:int,<f_main_1687@16:0>:int),
+      P[<<make_list_1035@11:2>@14:0>](<f_main_1687@16:1>:int,<f_main_1687@16:0>:int,<f_main_1687@16:3>:int)|- P[<f_main_1687@16:3>](
+      <f_main_1687@16:0>:int,<f_main_1687@16:1>:int,<f_main_1687@16:3>:int)
+      
+      P[<make_list_1035@11:1>](<make_list_1035@11:0>:int,<make_list_1035@11:1>:int),
+      ((<<make_list_1035@11:2>@14:0> = 0) && (<make_list_1035@11:0> < 0))
+      |- P[<<make_list_1035@11:2>@14:0>](<make_list_1035@11:0>:int,<make_list_1035@11:1>:int,
+                                         <<make_list_1035@11:2>@14:0>:int)
+      
+      P[<main_1040@9:1>](<make_list_1035@11:0>:int,<make_list_1035@11:1>:int)|- P[<make_list_1035@11:1>](
+      <make_list_1035@11:0>:int,<make_list_1035@11:1>:int)
+      
+      P[<f_1690@7:1>](<main_1040@9:0>:int,<main_1040@9:1>:int)|- P[<main_1040@9:1>](
+      <main_1040@9:0>:int,<main_1040@9:1>:int)
+      
+      P[<f_1689@4:0>](<f_1690@7:0>:int)|- P[<f_1690@7:1>](<f_1690@7:0>:int,
+                                                          <f_1690@7:1>:int)
+      
+      |- P[<f_1689@4:0>](<f_1689@4:0>:int)
+    call trees:
+      <main_1681@1>
+        <f_1689@4>
+          <f_1690@7>
+            <main_1040@9>
+              <make_list_1035@11>
+              </<make_list_1035@11:2>@14>
+              <f_main_1687@16>
+                <is_nil_1038@18>
+                </<is_nil_1038@18:2>@21>
+                <f_main_1688@23>
+                  <mem_1030@26>
+                  </<mem_1030@26:3>@29>
+                  <k_main_1588@31>
+                    <fail_1694@34>
+    inlined horn clauses:
+      P[<fail_1694@34:0>](<fail_1694@34:0>:bool)|- bot
+      
+      P[<<make_list_1035@11:2>@14:0>](<k_main_1588@31:1>:int,<k_main_1588@31:0>:int,<k_main_1588@31:2>:int),
+      P[<<mem_1030@26:3>@29:0>](<k_main_1588@31:0>:int,<k_main_1588@31:2>:int,false:bool),
+      ((<k_main_1588@31:2> <> 0) && <fail_1694@34:0>) |- P[<fail_1694@34:0>](
+      <fail_1694@34:0>:bool)
+      
+      P[<mem_1030@26:1>](<mem_1030@26:0>:int,<mem_1030@26:1>:int),
+      ((<mem_1030@26:1> = 0) && (not <<mem_1030@26:3>@29:0>))
+      |- P[<<mem_1030@26:3>@29:0>](<mem_1030@26:0>:int,<mem_1030@26:1>:int,
+                                   <<mem_1030@26:3>@29:0>:bool)
+      
+      P[<<make_list_1035@11:2>@14:0>](<f_main_1688@23:1>:int,<mem_1030@26:0>:int,<mem_1030@26:1>:int),
+      (<mem_1030@26:1> <> 0) |- P[<mem_1030@26:1>](<mem_1030@26:0>:int,
+                                                   <mem_1030@26:1>:int)
+      
+      P[<make_list_1035@11:1>](<make_list_1035@11:0>:int,<make_list_1035@11:1>:int),
+      ((<<make_list_1035@11:2>@14:0> = 0) && (<make_list_1035@11:0> < 0))
+      |- P[<<make_list_1035@11:2>@14:0>](<make_list_1035@11:0>:int,<make_list_1035@11:1>:int,
+                                         <<make_list_1035@11:2>@14:0>:int)
+      
+      |- P[<make_list_1035@11:1>](<make_list_1035@11:0>:int,<make_list_1035@11:1>:int)
+    begin ParamSubstInfer.infer(1691)[3]
+      
+    end ParamSubstInfer.infer(1691)[3] (0.019997 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(1693)[3]
+      
+    end RefTypeInfer.elim_coeffs(1693)[3] (0.001000 sec.)
+    begin YhornInterface.solve(1900)[3]
+      begin HcSolver.solve_ub(1901)[4]
+        encoded:
+          P[<fail_1694@34:0>](<fail_1694@34:0>:int)|- bot
+          
+          P[<<make_list_1035@11:2>@14:0>](<k_main_1588@31:1>:int,<k_main_1588@31:0>:int,<k_main_1588@31:2>:int),
+          P[<<mem_1030@26:3>@29:0>](<k_main_1588@31:0>:int,<k_main_1588@31:2>:int,0:int),
+          ((<k_main_1588@31:2> <> 0) && (<fail_1694@34:0> = 1)) |- P[<fail_1694@34:0>](
+          <fail_1694@34:0>:int)
+          
+          P[<mem_1030@26:1>](<mem_1030@26:0>:int,<mem_1030@26:1>:int),
+          ((<mem_1030@26:1> = 0) && (not (<<mem_1030@26:3>@29:0> = 1)))
+          |- P[<<mem_1030@26:3>@29:0>](<mem_1030@26:0>:int,<mem_1030@26:1>:int,
+                                       <<mem_1030@26:3>@29:0>:int)
+          
+          P[<<make_list_1035@11:2>@14:0>](<f_main_1688@23:1>:int,<mem_1030@26:0>:int,<mem_1030@26:1>:int),
+          (<mem_1030@26:1> <> 0) |- P[<mem_1030@26:1>](<mem_1030@26:0>:int,
+                                                       <mem_1030@26:1>:int)
+          
+          P[<make_list_1035@11:1>](<make_list_1035@11:0>:int,<make_list_1035@11:1>:int),
+          ((<<make_list_1035@11:2>@14:0> = 0) && (<make_list_1035@11:0> < 0))
+          |- P[<<make_list_1035@11:2>@14:0>](<make_list_1035@11:0>:int,
+                                             <make_list_1035@11:1>:int,
+                                             <<make_list_1035@11:2>@14:0>:int)
+          
+          |- P[<make_list_1035@11:1>](<make_list_1035@11:0>:int,<make_list_1035@11:1>:int)
+        input to Yhorn:
+          P[<fail_1694@34:0>](<fail_1694@34:0>:int)|- bot
+          
+          P[<<make_list_1035@11:2>@14:0>](<k_main_1588@31:1>:int,<k_main_1588@31:0>:int,<k_main_1588@31:2>:int),
+          P[<<mem_1030@26:3>@29:0>](<k_main_1588@31:0>:int,<k_main_1588@31:2>:int,var8:int),
+          ((<k_main_1588@31:2> <> 0) && ((var8 = 0) && (<fail_1694@34:0> = 1)))
+          |- P[<fail_1694@34:0>](<fail_1694@34:0>:int)
+          
+          P[<mem_1030@26:1>](<mem_1030@26:0>:int,<mem_1030@26:1>:int),
+          ((<<mem_1030@26:3>@29:0> <> 1) && (<mem_1030@26:1> = 0))
+          |- P[<<mem_1030@26:3>@29:0>](<mem_1030@26:0>:int,<mem_1030@26:1>:int,
+                                       <<mem_1030@26:3>@29:0>:int)
+          
+          P[<<make_list_1035@11:2>@14:0>](<f_main_1688@23:1>:int,<mem_1030@26:0>:int,<mem_1030@26:1>:int),
+          (<mem_1030@26:1> <> 0) |- P[<mem_1030@26:1>](<mem_1030@26:0>:int,
+                                                       <mem_1030@26:1>:int)
+          
+          P[<make_list_1035@11:1>](<make_list_1035@11:0>:int,<make_list_1035@11:1>:int),
+          ((<make_list_1035@11:0> < 0) && (<<make_list_1035@11:2>@14:0> = 0))
+          |- P[<<make_list_1035@11:2>@14:0>](<make_list_1035@11:0>:int,
+                                             <make_list_1035@11:1>:int,
+                                             <<make_list_1035@11:2>@14:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1694_sep_34_sep_0($13)) -> 1=0.
+(($13-1=0) & ($14=0) & ($15<>0)) & (v_sep_mem_1030_sep_26_sep_3_sep_29_sep_0($16,$15,$14)) & (v_sep_make_list_1035_sep_11_sep_2_sep_14_sep_0($17,$16,$15)) -> v_sep_fail_1694_sep_34_sep_0($13).
+(($18=0) & ($19-1<>0)) & (v_sep_mem_1030_sep_26_sep_1($20,$18)) -> v_sep_mem_1030_sep_26_sep_3_sep_29_sep_0($20,$18,$19).
+($18<>0) & (v_sep_make_list_1035_sep_11_sep_2_sep_14_sep_0($21,$20,$18)) -> v_sep_mem_1030_sep_26_sep_1($20,$18).
+(($22=0) & ($23<0)) & (v_sep_make_list_1035_sep_11_sep_1($23,$24)) -> v_sep_make_list_1035_sep_11_sep_2_sep_14_sep_0($23,$24,$22).
+0=0 -> v_sep_make_list_1035_sep_11_sep_1($23,$24).
+
+
+v_sep_fail_1694_sep_34_sep_0: X
+v_sep_make_list_1035_sep_11_sep_1: X
+v_sep_make_list_1035_sep_11_sep_2_sep_14_sep_0: X
+v_sep_mem_1030_sep_26_sep_1: X
+v_sep_mem_1030_sep_26_sep_3_sep_29_sep_0: X
+...........Split disj [24] 0.225965
+Reconstrcut: 3 **)
+
+v_sep_fail_1694_sep_34_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_11_sep_1: X
+v_sep_make_list_1035_sep_11_sep_2_sep_14_sep_0: X
+v_sep_mem_1030_sep_26_sep_1: X
+v_sep_mem_1030_sep_26_sep_3_sep_29_sep_0: X
+.......
+v_sep_fail_1694_sep_34_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_11_sep_1: X
+v_sep_make_list_1035_sep_11_sep_2_sep_14_sep_0: X
+v_sep_mem_1030_sep_26_sep_1: X
+v_sep_mem_1030_sep_26_sep_3_sep_29_sep_0: X
+.......Split conj [26] 0.232963
+(Reconstrcut: 8 **)
+v_sep_fail_1694_sep_34_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_11_sep_1: X
+v_sep_make_list_1035_sep_11_sep_2_sep_14_sep_0: X
+v_sep_mem_1030_sep_26_sep_1: X
+v_sep_mem_1030_sep_26_sep_3_sep_29_sep_0: (X) & (X)
+...........
+v_sep_fail_1694_sep_34_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_11_sep_1: X
+v_sep_make_list_1035_sep_11_sep_2_sep_14_sep_0: X
+v_sep_mem_1030_sep_26_sep_1: X
+v_sep_mem_1030_sep_26_sep_3_sep_29_sep_0: (X) & (X)
+.......
+v_sep_fail_1694_sep_34_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_11_sep_1: X
+v_sep_make_list_1035_sep_11_sep_2_sep_14_sep_0: X
+v_sep_mem_1030_sep_26_sep_1: X
+v_sep_mem_1030_sep_26_sep_3_sep_29_sep_0: (X) & (X)
+............
+v_sep_fail_1694_sep_34_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_11_sep_1: X
+v_sep_make_list_1035_sep_11_sep_2_sep_14_sep_0: X
+v_sep_mem_1030_sep_26_sep_1: X
+v_sep_mem_1030_sep_26_sep_3_sep_29_sep_0: (X) & (X)
+..............(0=0) & (v_sep_fail_1694_sep_34_sep_0($13)) -> 1=0.
+(($13-1=0) & ($14=0) & ($15<>0)) & (v_sep_mem_1030_sep_26_sep_3_sep_29_sep_0($16,$15,$14)) & (v_sep_make_list_1035_sep_11_sep_2_sep_14_sep_0($17,$16,$15)) -> v_sep_fail_1694_sep_34_sep_0($13).
+(($18=0) & ($19-1<>0)) & (v_sep_mem_1030_sep_26_sep_1($20,$18)) -> v_sep_mem_1030_sep_26_sep_3_sep_29_sep_0($20,$18,$19).
+($18<>0) & (v_sep_make_list_1035_sep_11_sep_2_sep_14_sep_0($21,$20,$18)) -> v_sep_mem_1030_sep_26_sep_1($20,$18).
+(($22=0) & ($23<0)) & (v_sep_make_list_1035_sep_11_sep_1($23,$24)) -> v_sep_make_list_1035_sep_11_sep_2_sep_14_sep_0($23,$24,$22).
+0=0 -> v_sep_make_list_1035_sep_11_sep_1($23,$24).
+
+          |- P[<make_list_1035@11:1>](<make_list_1035@11:0>:int,<make_list_1035@11:1>:int)
+        solution:
+          P[<fail_1694@34:0>]($25:bool) = false
+          P[<make_list_1035@11:1>]($47:int,$49:int) = true
+          P[<<make_list_1035@11:2>@14:0>]($35:int,$37:int,$39:int) = true
+          P[<mem_1030@26:1>]($42:int,$44:int) = true
+          P[<<mem_1030@26:3>@29:0>]($28:int,$30:int,$32:bool) = ($30 = 0)
+        
+      end HcSolver.solve_ub(1901)[4] (0.039994 sec.)
+      begin HcSolver.check_validity(2089)[4]
+        input:
+          P[<fail_1694@34:0>](<fail_1694@34:0>:bool)|- bot
+          
+          P[<<make_list_1035@11:2>@14:0>](<k_main_1588@31:1>:int,<k_main_1588@31:0>:int,<k_main_1588@31:2>:int),
+          P[<<mem_1030@26:3>@29:0>](<k_main_1588@31:0>:int,<k_main_1588@31:2>:int,false:bool),
+          ((<k_main_1588@31:2> <> 0) && <fail_1694@34:0>) |- P[<fail_1694@34:0>](
+          <fail_1694@34:0>:bool)
+          
+          P[<mem_1030@26:1>](<mem_1030@26:0>:int,<mem_1030@26:1>:int),
+          ((<mem_1030@26:1> = 0) && (not <<mem_1030@26:3>@29:0>))
+          |- P[<<mem_1030@26:3>@29:0>](<mem_1030@26:0>:int,<mem_1030@26:1>:int,
+                                       <<mem_1030@26:3>@29:0>:bool)
+          
+          P[<<make_list_1035@11:2>@14:0>](<f_main_1688@23:1>:int,<mem_1030@26:0>:int,<mem_1030@26:1>:int),
+          (<mem_1030@26:1> <> 0) |- P[<mem_1030@26:1>](<mem_1030@26:0>:int,
+                                                       <mem_1030@26:1>:int)
+          
+          P[<make_list_1035@11:1>](<make_list_1035@11:0>:int,<make_list_1035@11:1>:int),
+          ((<<make_list_1035@11:2>@14:0> = 0) && (<make_list_1035@11:0> < 0))
+          |- P[<<make_list_1035@11:2>@14:0>](<make_list_1035@11:0>:int,
+                                             <make_list_1035@11:1>:int,
+                                             <<make_list_1035@11:2>@14:0>:int)
+          
+          |- P[<make_list_1035@11:1>](<make_list_1035@11:0>:int,<make_list_1035@11:1>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(2089)[4] (0.002000 sec.)
+      solution:
+        P[<fail_1694@34:0>]($25:bool) = false
+        P[<make_list_1035@11:1>]($47:int,$49:int) = true
+        P[<<make_list_1035@11:2>@14:0>]($35:int,$37:int,$39:int) = true
+        P[<mem_1030@26:1>]($42:int,$44:int) = true
+        P[<<mem_1030@26:3>@29:0>]($28:int,$30:int,$32:bool) = ($30 = 0)
+    end YhornInterface.solve(1900)[3] (0.043993 sec.)
+    
+  end RefTypeInfer.infer_etrs(263)[2] (0.075988 sec.)
+  refinement types:
+    main_1681: X
+    f_1689: v1:int -> X
+    f_1690: v1:int -> v2:int -> X
+    main_1040: v1:int -> v2:int -> (v3:unit -> X) -> X
+    make_list_1035: v1:int -> v2:int -> (v3:int -> (v4:int -> (v5:int -> X) -> X) -> X) -> X
+    f_main_1687: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> (v6:int -> (v7:int -> X) -> X) -> X
+    is_nil_1038: v1:int -> (v2:int -> (v3:int -> X) -> X) -> (v6:bool -> X) -> X
+    f_main_1688: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> (v6:int -> (v7:int -> X) -> X) -> v10:bool -> X
+    mem_1030: v1:int -> v2:int -> (v3:int -> (v4:int -> X) -> X) -> (v7:{v7:bool | (v2 = 0)} -> X) -> X
+    k_main_1588: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> v6:bool -> X
+    fail_1694: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    br_mem_1692: var48:bool -> var47:int -> var46:int -> (var45:int -> (var44:int -> X) -> X) -> (var41:bool -> X) -> X
+    cons_make_list_1113: var63:int ->
+                         var62:int ->
+                         var61:int ->
+                         var60:int ->
+                         (var59:int -> (var58:int -> X) -> X) ->
+                         (var55:int -> (var54:int -> (var53:int -> X) -> X) -> X) -> X
+    f_1691: var67:int -> var66:int -> var65:unit -> X
+    f_cons_make_list_1685: var79:int ->
+                           var78:int ->
+                           var77:int ->
+                           var76:int -> (var75:int -> (var74:int -> X) -> X) -> var71:int -> (var70:int -> X) -> X
+    f_make_list_1684: var85:int -> var84:int -> var83:int -> (var82:int -> X) -> X
+    f_make_list_1686: var99:int ->
+                      var98:int ->
+                      (var97:int -> (var96:int -> (var95:int -> X) -> X) -> X) ->
+                      var91:int -> (var90:int -> (var89:int -> X) -> X) -> X
+    f_mem_1682: var109:int ->
+                var108:int -> (var107:bool -> X) -> (var105:int -> (var104:int -> X) -> X) -> var101:int -> X
+    f_mem_1683: var120:int ->
+                var119:int ->
+                var118:int -> (var117:int -> (var116:int -> X) -> X) -> var113:int -> (var112:int -> X) -> X
+  abstraction types:
+    main_1681: X
+    f_1689: v1:int -> X
+    f_1690: v1:int -> v2:int -> X
+    main_1040: v1:int -> v2:int -> (v3:unit -> X) -> X
+    make_list_1035: v1:int -> v2:int -> (v3:int -> (v4:int -> (v5:int -> X) -> X) -> X) -> X
+    f_main_1687: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> (v6:int -> (v7:int -> X) -> X) -> X
+    is_nil_1038: v1:int -> (v2:int -> (v3:int -> X) -> X) -> (v6:bool -> X) -> X
+    f_main_1688: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> (v6:int -> (v7:int -> X) -> X) -> v10:bool -> X
+    mem_1030: v1:int -> v2:int -> (v3:int -> (v4:int -> X) -> X) -> (v7:bool[v7 -> (
+                                                                    v2 = 0)] -> X) -> X
+    k_main_1588: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> v6:bool -> X
+    fail_1694: v1:bool -> (v2:unit -> X) -> X
+    br_mem_1692: var48:bool -> var47:int -> var46:int -> (var45:int -> (var44:int -> X) -> X) -> (var41:bool -> X) -> X
+    cons_make_list_1113: var63:int ->
+                         var62:int ->
+                         var61:int ->
+                         var60:int ->
+                         (var59:int -> (var58:int -> X) -> X) ->
+                         (var55:int -> (var54:int -> (var53:int -> X) -> X) -> X) -> X
+    f_1691: var67:int -> var66:int -> var65:unit -> X
+    f_cons_make_list_1685: var79:int ->
+                           var78:int ->
+                           var77:int ->
+                           var76:int -> (var75:int -> (var74:int -> X) -> X) -> var71:int -> (var70:int -> X) -> X
+    f_make_list_1684: var85:int -> var84:int -> var83:int -> (var82:int -> X) -> X
+    f_make_list_1686: var99:int ->
+                      var98:int ->
+                      (var97:int -> (var96:int -> (var95:int -> X) -> X) -> X) ->
+                      var91:int -> (var90:int -> (var89:int -> X) -> X) -> X
+    f_mem_1682: var109:int ->
+                var108:int -> (var107:bool -> X) -> (var105:int -> (var104:int -> X) -> X) -> var101:int -> X
+    f_mem_1683: var120:int ->
+                var119:int ->
+                var118:int -> (var117:int -> (var116:int -> X) -> X) -> var113:int -> (var112:int -> X) -> X
+  
+end AbsTypeInfer.refine(262)[1] (0.082987 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1681
+  main_1681 -> (rand_int f_1689)
+  br_mem_1692 b_1693 x_1031 xs1_1032 xs2_1032 k_mem_1190 when b_1693 ->
+      (xs2_1032 0 (f_mem_1682 x_1031 xs1_1032 k_mem_1190 xs2_1032))
+  br_mem_1692 b_1693 x_1031 xs1_1032 xs2_1032 k_mem_1190 when (not b_1693) -> _|_
+  cons_make_list_1113 n_1036 x_1037 x_1111 xs1_1112 xs2_1112 k_make_list_cons_make_list_1372 ->
+      (k_make_list_cons_make_list_1372 (xs1_1112 + 1) (f_cons_make_list_1685 n_1036 x_1037 x_1111 xs1_1112 xs2_1112))
+  f_1689 x_1606 -> (rand_int (f_1690 x_1606))
+  f_1690 x_1606 x_1619 -> (main_1040 x_1606 x_1619 (f_1691 x_1606 x_1619))
+  f_1691 x_1606 x_1619 x_1603 -> end
+  f_cons_make_list_1685 n_1036 x_1037 x_1111 xs1_1112 xs2_1112 i_1110 k_make_list_cons_make_list_1387 when (
+      i_1110 = 0) -> (k_make_list_cons_make_list_1387 x_1111)
+  f_cons_make_list_1685 n_1036 x_1037 x_1111 xs1_1112 xs2_1112 i_1110 k_make_list_cons_make_list_1387 when (
+      not (i_1110 = 0)) -> (xs2_1112 (i_1110 - 1) k_make_list_cons_make_list_1387)
+  f_main_1687 m_1042 n_1041 k_main_1508 x1_1514 x2_1514 ->
+      (is_nil_1038 x1_1514 x2_1514 (f_main_1688 m_1042 n_1041 x1_1514 k_main_1508 x2_1514))
+  f_main_1688 m_1042 n_1041 x1_1514 k_main_1508 x2_1514 b_1589 when b_1589 ->
+      (k_main_1588 m_1042 n_1041 x1_1514 k_main_1508 true)
+  f_main_1688 m_1042 n_1041 x1_1514 k_main_1508 x2_1514 b_1589 when (
+      not b_1589) -> (mem_1030 m_1042 x1_1514 x2_1514 (k_main_1588 m_1042 n_1041 x1_1514 k_main_1508))
+  f_make_list_1684 n_1036 x_1037 x_1117 k_make_list_1325 -> _|_
+  f_make_list_1686 n_1036 x_1037 k_make_list_1313 x1_1451 x2_1451 ->
+      (cons_make_list_1113 n_1036 x_1037 x_1037 x1_1451 x2_1451 k_make_list_1313)
+  f_mem_1682 x_1031 xs1_1032 k_mem_1190 xs2_1032 x_1237 when (x_1031 = x_1237) -> (k_mem_1190 true)
+  f_mem_1682 x_1031 xs1_1032 k_mem_1190 xs2_1032 x_1237 when (not (x_1031 = x_1237)) ->
+      (mem_1030 x_1031 (xs1_1032 - 1) (f_mem_1683 x_1031 x_1237 xs1_1032 xs2_1032) k_mem_1190)
+  f_mem_1683 x_1031 x_1237 xs1_1032 xs2_1032 x_1084 k_mem_xs_1223 -> (xs2_1032 (x_1084 + 1) k_mem_xs_1223)
+  fail_1694 b k -> {fail} => (k ())
+  is_nil_1038 xs1_1039 xs2_1039 k_is_nil_1484 when (xs1_1039 = 0) -> (k_is_nil_1484 true)
+  is_nil_1038 xs1_1039 xs2_1039 k_is_nil_1484 when (not (xs1_1039 = 0)) -> (k_is_nil_1484 false)
+  k_main_1588 m_1042 n_1041 x1_1514 k_main_1508 b_1600 when b_1600 -> (k_main_1508 ())
+  k_main_1588 m_1042 n_1041 x1_1514 k_main_1508 b_1600 when (not b_1600) -> (fail_1694 true k_main_1508)
+  main_1040 n_1041 m_1042 k_main_1508 -> (make_list_1035 n_1041 m_1042 (f_main_1687 m_1042 n_1041 k_main_1508))
+  make_list_1035 n_1036 x_1037 k_make_list_1313 when (n_1036 < 0) ->
+      (k_make_list_1313 0 (f_make_list_1684 n_1036 x_1037))
+  make_list_1035 n_1036 x_1037 k_make_list_1313 when (not (n_1036 < 0)) ->
+      (make_list_1035 (n_1036 - 1) x_1037 (f_make_list_1686 n_1036 x_1037 k_make_list_1313))
+  mem_1030 x_1031 xs1_1032 xs2_1032 k_mem_1190 when (xs1_1032 = 0) -> (k_mem_1190 false)
+  mem_1030 x_1031 xs1_1032 xs2_1032 k_mem_1190 when (not (xs1_1032 = 0)) ->
+      (br_mem_1692 (1 <= xs1_1032) x_1031 xs1_1032 xs2_1032 k_mem_1190)
+Types:
+  main_1681 : X
+  fail_1694 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  make_list_1035 : (int -> int -> (int -> (int -> (int -> X) -> X) -> X) -> X)
+  mem_1030 : (int -> x_2:int -> (int -> (int -> X) -> X) -> (x_10:bool[x_2 = 0; x_10] -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Filter option enabled.
+Restart CEGAR-loop.
+Program with abstraction types (CEGAR-cycle 2)::
+Main: main_1681
+  main_1681 -> (rand_int f_1689)
+  br_mem_1692 b_1693 x_1031 xs1_1032 xs2_1032 k_mem_1190 when b_1693 ->
+      (xs2_1032 0 (f_mem_1682 x_1031 xs1_1032 k_mem_1190 xs2_1032))
+  br_mem_1692 b_1693 x_1031 xs1_1032 xs2_1032 k_mem_1190 when (not b_1693) -> _|_
+  cons_make_list_1113 n_1036 x_1037 x_1111 xs1_1112 xs2_1112 k_make_list_cons_make_list_1372 ->
+      (k_make_list_cons_make_list_1372 (xs1_1112 + 1) (f_cons_make_list_1685 n_1036 x_1037 x_1111 xs1_1112 xs2_1112))
+  f_1689 x_1606 -> (rand_int (f_1690 x_1606))
+  f_1690 x_1606 x_1619 -> (main_1040 x_1606 x_1619 (f_1691 x_1606 x_1619))
+  f_1691 x_1606 x_1619 x_1603 -> end
+  f_cons_make_list_1685 n_1036 x_1037 x_1111 xs1_1112 xs2_1112 i_1110 k_make_list_cons_make_list_1387 when (
+      i_1110 = 0) -> (k_make_list_cons_make_list_1387 x_1111)
+  f_cons_make_list_1685 n_1036 x_1037 x_1111 xs1_1112 xs2_1112 i_1110 k_make_list_cons_make_list_1387 when (
+      not (i_1110 = 0)) -> (xs2_1112 (i_1110 - 1) k_make_list_cons_make_list_1387)
+  f_main_1687 m_1042 n_1041 k_main_1508 x1_1514 x2_1514 ->
+      (is_nil_1038 x1_1514 x2_1514 (f_main_1688 m_1042 n_1041 x1_1514 k_main_1508 x2_1514))
+  f_main_1688 m_1042 n_1041 x1_1514 k_main_1508 x2_1514 b_1589 when b_1589 ->
+      (k_main_1588 m_1042 n_1041 x1_1514 k_main_1508 true)
+  f_main_1688 m_1042 n_1041 x1_1514 k_main_1508 x2_1514 b_1589 when (
+      not b_1589) -> (mem_1030 m_1042 x1_1514 x2_1514 (k_main_1588 m_1042 n_1041 x1_1514 k_main_1508))
+  f_make_list_1684 n_1036 x_1037 x_1117 k_make_list_1325 -> _|_
+  f_make_list_1686 n_1036 x_1037 k_make_list_1313 x1_1451 x2_1451 ->
+      (cons_make_list_1113 n_1036 x_1037 x_1037 x1_1451 x2_1451 k_make_list_1313)
+  f_mem_1682 x_1031 xs1_1032 k_mem_1190 xs2_1032 x_1237 when (x_1031 = x_1237) -> (k_mem_1190 true)
+  f_mem_1682 x_1031 xs1_1032 k_mem_1190 xs2_1032 x_1237 when (not (x_1031 = x_1237)) ->
+      (mem_1030 x_1031 (xs1_1032 - 1) (f_mem_1683 x_1031 x_1237 xs1_1032 xs2_1032) k_mem_1190)
+  f_mem_1683 x_1031 x_1237 xs1_1032 xs2_1032 x_1084 k_mem_xs_1223 -> (xs2_1032 (x_1084 + 1) k_mem_xs_1223)
+  fail_1694 b k -> {fail} => (k ())
+  is_nil_1038 xs1_1039 xs2_1039 k_is_nil_1484 when (xs1_1039 = 0) -> (k_is_nil_1484 true)
+  is_nil_1038 xs1_1039 xs2_1039 k_is_nil_1484 when (not (xs1_1039 = 0)) -> (k_is_nil_1484 false)
+  k_main_1588 m_1042 n_1041 x1_1514 k_main_1508 b_1600 when b_1600 -> (k_main_1508 ())
+  k_main_1588 m_1042 n_1041 x1_1514 k_main_1508 b_1600 when (not b_1600) -> (fail_1694 true k_main_1508)
+  main_1040 n_1041 m_1042 k_main_1508 -> (make_list_1035 n_1041 m_1042 (f_main_1687 m_1042 n_1041 k_main_1508))
+  make_list_1035 n_1036 x_1037 k_make_list_1313 when (n_1036 < 0) ->
+      (k_make_list_1313 0 (f_make_list_1684 n_1036 x_1037))
+  make_list_1035 n_1036 x_1037 k_make_list_1313 when (not (n_1036 < 0)) ->
+      (make_list_1035 (n_1036 - 1) x_1037 (f_make_list_1686 n_1036 x_1037 k_make_list_1313))
+  mem_1030 x_1031 xs1_1032 xs2_1032 k_mem_1190 when (xs1_1032 = 0) -> (k_mem_1190 false)
+  mem_1030 x_1031 xs1_1032 xs2_1032 k_mem_1190 when (not (xs1_1032 = 0)) ->
+      (br_mem_1692 (1 <= xs1_1032) x_1031 xs1_1032 xs2_1032 k_mem_1190)
+Types:
+  main_1681 : X
+  fail_1694 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  make_list_1035 : (int -> int -> (int -> (int -> (int -> X) -> X) -> X) -> X)
+  mem_1030 : (int -> x_2:int -> (int -> (int -> X) -> X) -> (x_10:bool[x_2 = 0; x_10] -> X) -> X)
+  
+(2-1) Abstracting ... DONE!
+
+(2-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1681 ... --> 
+  f_1689 ... --> 
+  f_1690 ... --> 
+  main_1040 ... --> 
+  make_list_1035 [2/2] ... --> 
+  make_list_1035 [1/2] ... --> 
+  f_make_list_1686 ... --> 
+  cons_make_list_1113 ... --> 
+  f_main_1687 ... --> 
+  is_nil_1038 [2/2] ... --> 
+  f_main_1688 [2/2] ... --> 
+  mem_1030 [2/2] ... --> 
+  br_mem_1692 [1/2] ... --> 
+  f_cons_make_list_1685 [1/2] ... --> 
+  f_mem_1682 [2/2] ... --> 
+  mem_1030 [1/2] ... --> 
+  k_main_1588 [2/2] ... --> 
+  fail_1694 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 1; 0; 0; 0; 0; 1; 1; 1; 0; 0; 1; 0; 1; 0
+
+(2-3) Checking counter-example ... DONE!
+
+(2-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(3018)[1]
+  program:
+    main_1681  | true = ((Random.int 0) f_1689)
+    br_mem_1692 b_1693 x_1031 xs1_1032 xs2_1032 k_mem_1190 | b_1693 = (
+    xs2_1032 0
+             (f_mem_1682 x_1031
+                         xs1_1032
+                         k_mem_1190
+                         xs2_1032))
+    br_mem_1692 b_1693 x_1031 xs1_1032 xs2_1032 k_mem_1190 | (not b_1693) = bot
+    cons_make_list_1113 n_1036 x_1037 x_1111 xs1_1112 xs2_1112 k_make_list_cons_make_list_1372 | true = (
+    k_make_list_cons_make_list_1372 (xs1_1112 + 1)
+                                    (f_cons_make_list_1685 n_1036
+                                                           x_1037
+                                                           x_1111
+                                                           xs1_1112
+                                                           xs2_1112))
+    f_1689 x_1606 | true = ((Random.int 0) (f_1690 x_1606))
+    f_1690 x_1606 x_1619 | true = (main_1040 x_1606
+                                             x_1619
+                                             (f_1691 x_1606
+                                                     x_1619))
+    f_1691 x_1606 x_1619 x_1603 | true = end
+    f_cons_make_list_1685 n_1036 x_1037 x_1111 xs1_1112 xs2_1112 i_1110 k_make_list_cons_make_list_1387 | (
+    i_1110 = 0) = (k_make_list_cons_make_list_1387 x_1111)
+    f_cons_make_list_1685 n_1036 x_1037 x_1111 xs1_1112 xs2_1112 i_1110 k_make_list_cons_make_list_1387 | (
+    not (i_1110 = 0)) = (xs2_1112 (i_1110 - 1)
+                                  k_make_list_cons_make_list_1387)
+    f_main_1687 m_1042 n_1041 k_main_1508 x1_1514 x2_1514 | true = (is_nil_1038
+                                                                    x1_1514
+                                                                    x2_1514
+                                                                    (
+                                                                    f_main_1688
+                                                                    m_1042
+                                                                    n_1041
+                                                                    x1_1514
+                                                                    k_main_1508
+                                                                    x2_1514))
+    f_main_1688 m_1042 n_1041 x1_1514 k_main_1508 x2_1514 b_1589 | b_1589 = (
+    k_main_1588 m_1042
+                n_1041
+                x1_1514
+                k_main_1508
+                true)
+    f_main_1688 m_1042 n_1041 x1_1514 k_main_1508 x2_1514 b_1589 | (not b_1589) = (
+    mem_1030 m_1042
+             x1_1514
+             x2_1514
+             (k_main_1588 m_1042
+                          n_1041
+                          x1_1514
+                          k_main_1508))
+    f_make_list_1684 n_1036 x_1037 x_1117 k_make_list_1325 | true = bot
+    f_make_list_1686 n_1036 x_1037 k_make_list_1313 x1_1451 x2_1451 | true = (
+    cons_make_list_1113 n_1036
+                        x_1037
+                        x_1037
+                        x1_1451
+                        x2_1451
+                        k_make_list_1313)
+    f_mem_1682 x_1031 xs1_1032 k_mem_1190 xs2_1032 x_1237 | (x_1031 = x_1237) = (
+    k_mem_1190 true)
+    f_mem_1682 x_1031 xs1_1032 k_mem_1190 xs2_1032 x_1237 | (not (x_1031 = x_1237)) = (
+    mem_1030 x_1031
+             (xs1_1032 - 1)
+             (f_mem_1683 x_1031
+                         x_1237
+                         xs1_1032
+                         xs2_1032)
+             k_mem_1190)
+    f_mem_1683 x_1031 x_1237 xs1_1032 xs2_1032 x_1084 k_mem_xs_1223 | true = (
+    xs2_1032 (x_1084 + 1)
+             k_mem_xs_1223)
+    fail_1694 b k | true = (fail ())
+    is_nil_1038 xs1_1039 xs2_1039 k_is_nil_1484 | (xs1_1039 = 0) = (k_is_nil_1484 true)
+    is_nil_1038 xs1_1039 xs2_1039 k_is_nil_1484 | (not (xs1_1039 = 0)) = (
+    k_is_nil_1484 false)
+    k_main_1588 m_1042 n_1041 x1_1514 k_main_1508 b_1600 | b_1600 = (
+    k_main_1508 ())
+    k_main_1588 m_1042 n_1041 x1_1514 k_main_1508 b_1600 | (not b_1600) = (
+    fail_1694 true
+              k_main_1508)
+    main_1040 n_1041 m_1042 k_main_1508 | true = (make_list_1035 n_1041
+                                                                 m_1042
+                                                                 (f_main_1687 m_1042
+                                                                    n_1041
+                                                                    k_main_1508))
+    make_list_1035 n_1036 x_1037 k_make_list_1313 | (n_1036 < 0) = (k_make_list_1313 0
+                                                                    (f_make_list_1684 n_1036
+                                                                    x_1037))
+    make_list_1035 n_1036 x_1037 k_make_list_1313 | (not (n_1036 < 0)) = (
+    make_list_1035 (n_1036 - 1)
+                   x_1037
+                   (f_make_list_1686 n_1036
+                                     x_1037
+                                     k_make_list_1313))
+    mem_1030 x_1031 xs1_1032 xs2_1032 k_mem_1190 | (xs1_1032 = 0) = (
+    k_mem_1190 false)
+    mem_1030 x_1031 xs1_1032 xs2_1032 k_mem_1190 | (not (xs1_1032 = 0)) = (
+    br_mem_1692 (1 <= xs1_1032)
+                x_1031
+                xs1_1032
+                xs2_1032
+                k_mem_1190)
+    main_1681:X
+    br_mem_1692:bool -> int -> int -> (int -> (int -> X) -> X) -> (bool -> X) -> X
+    cons_make_list_1113:int ->
+                        int -> int -> int -> (int -> (int -> X) -> X) -> (int -> (int -> (int -> X) -> X) -> X) -> X
+    f_1689:int -> X
+    f_1690:int -> int -> X
+    f_1691:int -> int -> unit -> X
+    f_cons_make_list_1685:int -> int -> int -> int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    f_main_1687:int -> int -> (unit -> X) -> int -> (int -> (int -> X) -> X) -> X
+    f_main_1688:int -> int -> int -> (unit -> X) -> (int -> (int -> X) -> X) -> bool -> X
+    f_make_list_1684:int -> int -> int -> (int -> X) -> X
+    f_make_list_1686:int -> int -> (int -> (int -> (int -> X) -> X) -> X) -> int -> (int -> (int -> X) -> X) -> X
+    f_mem_1682:int -> int -> (bool -> X) -> (int -> (int -> X) -> X) -> int -> X
+    f_mem_1683:int -> int -> int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    fail_1694:bool -> (unit -> X) -> X
+    is_nil_1038:int -> (int -> (int -> X) -> X) -> (bool -> X) -> X
+    k_main_1588:int -> int -> int -> (unit -> X) -> bool -> X
+    main_1040:int -> int -> (unit -> X) -> X
+    make_list_1035:int -> int -> (int -> (int -> (int -> X) -> X) -> X) -> X
+    mem_1030:int -> int -> (int -> (int -> X) -> X) -> (bool -> X) -> X
+  inlined functions: br_mem_1692,cons_make_list_1113,f_1689,f_1690,f_1691,f_cons_make_list_1685,f_main_1687,f_main_1688,f_make_list_1684,f_make_list_1686,f_mem_1682,f_mem_1683,is_nil_1038,k_main_1588,main_1040
+  counterexample: 0:0:0:0:1:0:0:0:0:1:1:1:0:0:1:0:1:0
+  error traces:
+    [true.nop(<f_1689@40:0> = var121)
+     [true.nop((<f_1690@43:0> = <f_1689@40:0>) && (<f_1690@43:1> = var122))
+      [true.((<main_1040@45:0> = <f_1690@43:0>) && (<main_1040@45:1> = <f_1690@43:1>))
+       [true.((<make_list_1035@47:0> = <main_1040@45:0>) && (<make_list_1035@47:1> = <main_1040@45:1>))
+        [(not (<make_list_1035@47:0> < 0)).
+         ((<make_list_1035@50:0> = (<make_list_1035@47:0> - 1)) && (<make_list_1035@50:1> = <make_list_1035@47:1>))
+         [(<make_list_1035@50:0> < 0).(<<make_list_1035@50:2>@53:0> = 0)
+          [true.
+           ((<f_make_list_1686@55:0> = <make_list_1035@47:0>) &&
+            ((<f_make_list_1686@55:1> = <make_list_1035@47:1>) &&
+             (<f_make_list_1686@55:3> = <<make_list_1035@50:2>@53:0>)))
+           [true.
+            ((<cons_make_list_1113@57:0> = <f_make_list_1686@55:0>) &&
+             ((<cons_make_list_1113@57:1> = <f_make_list_1686@55:1>) &&
+              ((<cons_make_list_1113@57:2> = <f_make_list_1686@55:1>) &&
+               (<cons_make_list_1113@57:3> = <f_make_list_1686@55:3>))))
+            [true.(<<cons_make_list_1113@57:5>@59:0> = (<cons_make_list_1113@57:3> + 1))
+             [true.(<<f_make_list_1686@55:2>@61:0> = <<cons_make_list_1113@57:5>@59:0>)
+              [true.(<<make_list_1035@47:2>@63:0> = <<f_make_list_1686@55:2>@61:0>)
+               [true.
+                ((<f_main_1687@65:0> = <main_1040@45:1>) &&
+                 ((<f_main_1687@65:1> = <main_1040@45:0>) && (<f_main_1687@65:3> = <<make_list_1035@47:2>@63:0>)))
+                [true.(<is_nil_1038@67:0> = <f_main_1687@65:3>)
+                 [(not (<is_nil_1038@67:0> = 0)).(<<is_nil_1038@67:2>@70:0> = false)
+                  [true.
+                   ((<f_main_1688@72:0> = <f_main_1687@65:0>) &&
+                    ((<f_main_1688@72:1> = <f_main_1687@65:1>) &&
+                     ((<f_main_1688@72:2> = <f_main_1687@65:3>) && (<f_main_1688@72:5> = <<is_nil_1038@67:2>@70:0>))))
+                   [(not <f_main_1688@72:5>).
+                    ((<mem_1030@75:0> = <f_main_1688@72:0>) && (<mem_1030@75:1> = <f_main_1688@72:2>))
+                    [(not (<mem_1030@75:1> = 0)).
+                     ((<br_mem_1692@78:0> = (1 <= <mem_1030@75:1>)) &&
+                      ((<br_mem_1692@78:1> = <mem_1030@75:0>) && (<br_mem_1692@78:2> = <mem_1030@75:1>)))
+                     [<br_mem_1692@78:0>.(<<br_mem_1692@78:3>@81:0> = 0)
+                      [true.(<<mem_1030@75:2>@83:0> = <<br_mem_1692@78:3>@81:0>)
+                       [true.(<<f_main_1688@72:4>@85:0> = <<mem_1030@75:2>@83:0>)
+                        [true.(<<f_main_1687@65:4>@87:0> = <<f_main_1688@72:4>@85:0>)
+                         [true.(<<<make_list_1035@47:2>@63:1>@89:0> = <<f_main_1687@65:4>@87:0>)
+                          [true.(<<<f_make_list_1686@55:2>@61:1>@91:0> = <<<make_list_1035@47:2>@63:1>@89:0>)
+                           [true.(<<<cons_make_list_1113@57:5>@59:1>@93:0> = <<<f_make_list_1686@55:2>@61:1>@91:0>)
+                            [true.
+                             ((<f_cons_make_list_1685@95:0> = <cons_make_list_1113@57:0>) &&
+                              ((<f_cons_make_list_1685@95:1> = <cons_make_list_1113@57:1>) &&
+                               ((<f_cons_make_list_1685@95:2> = <cons_make_list_1113@57:2>) &&
+                                ((<f_cons_make_list_1685@95:3> = <cons_make_list_1113@57:3>) &&
+                                 (<f_cons_make_list_1685@95:5> = <<<cons_make_list_1113@57:5>@59:1>@93:0>)))))
+                             [(<f_cons_make_list_1685@95:5> = 0).
+                              (<<f_cons_make_list_1685@95:6>@98:0> = <f_cons_make_list_1685@95:2>)
+                              [true.
+                               (<<<<cons_make_list_1113@57:5>@59:1>@93:1>@100:0> = <<f_cons_make_list_1685@95:6>@98:0>)
+                               [true.
+                                (<<<<f_make_list_1686@55:2>@61:1>@91:1>@102:0> =
+                                 <<<<cons_make_list_1113@57:5>@59:1>@93:1>@100:0>)
+                                [true.
+                                 (<<<<make_list_1035@47:2>@63:1>@89:1>@104:0> =
+                                  <<<<f_make_list_1686@55:2>@61:1>@91:1>@102:0>)
+                                 [true.
+                                  (<<<f_main_1687@65:4>@87:1>@106:0> = <<<<make_list_1035@47:2>@63:1>@89:1>@104:0>)
+                                  [true.(<<<f_main_1688@72:4>@85:1>@108:0> = <<<f_main_1687@65:4>@87:1>@106:0>)
+                                   [true.(<<<mem_1030@75:2>@83:1>@110:0> = <<<f_main_1688@72:4>@85:1>@108:0>)
+                                    [true.(<<<br_mem_1692@78:3>@81:1>@112:0> = <<<mem_1030@75:2>@83:1>@110:0>)
+                                     [true.
+                                      ((<f_mem_1682@114:0> = <br_mem_1692@78:1>) &&
+                                       ((<f_mem_1682@114:1> = <br_mem_1692@78:2>) &&
+                                        (<f_mem_1682@114:4> = <<<br_mem_1692@78:3>@81:1>@112:0>)))
+                                      [(not (<f_mem_1682@114:0> = <f_mem_1682@114:4>)).
+                                       ((<mem_1030@117:0> = <f_mem_1682@114:0>) &&
+                                        (<mem_1030@117:1> = (<f_mem_1682@114:1> - 1)))
+                                       [(<mem_1030@117:1> = 0).(<<mem_1030@117:3>@120:0> = false)
+                                        [true.(<<f_mem_1682@114:2>@122:0> = <<mem_1030@117:3>@120:0>)
+                                         [true.(<<br_mem_1692@78:4>@124:0> = <<f_mem_1682@114:2>@122:0>)
+                                          [true.(<<mem_1030@75:3>@126:0> = <<br_mem_1692@78:4>@124:0>)
+                                           [true.
+                                            ((<k_main_1588@128:0> = <f_main_1688@72:0>) &&
+                                             ((<k_main_1588@128:1> = <f_main_1688@72:1>) &&
+                                              ((<k_main_1588@128:2> = <f_main_1688@72:2>) &&
+                                               (<k_main_1588@128:4> = <<mem_1030@75:3>@126:0>))))
+                                            [(not <k_main_1588@128:4>).(<fail_1694@131:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(3019)[2]
+    horn clauses:
+      P[<fail_1694@131:0>](<fail_1694@131:0>:bool)|- bot
+      
+      P[<k_main_1588@128:4>](<k_main_1588@128:0>:int,<k_main_1588@128:1>:int,<k_main_1588@128:2>:int,false:bool),
+      <fail_1694@131:0> |- P[<fail_1694@131:0>](<fail_1694@131:0>:bool)
+      
+      P[<f_main_1688@72:5>](<k_main_1588@128:0>:int,<k_main_1588@128:1>:int,<k_main_1588@128:2>:int,false:bool),
+      P[<<mem_1030@75:3>@126:0>](<k_main_1588@128:0>:int,<k_main_1588@128:2>:int,<k_main_1588@128:4>:bool)|- P[<k_main_1588@128:4>](
+      <k_main_1588@128:0>:int,<k_main_1588@128:1>:int,<k_main_1588@128:2>:int,
+      <k_main_1588@128:4>:bool)
+      
+      P[<mem_1030@75:1>](<mem_1030@75:0>:int,<mem_1030@75:1>:int),
+      P[<<br_mem_1692@78:4>@124:0>]((1 <= <mem_1030@75:1>):bool,<mem_1030@75:0>:int,<mem_1030@75:1>:int,<<mem_1030@75:3>@126:0>:bool),
+      (<mem_1030@75:1> <> 0)
+      |- P[<<mem_1030@75:3>@126:0>](<mem_1030@75:0>:int,<mem_1030@75:1>:int,
+                                    <<mem_1030@75:3>@126:0>:bool)
+      
+      P[<br_mem_1692@78:2>](<br_mem_1692@78:0>:bool,<br_mem_1692@78:1>:int,<br_mem_1692@78:2>:int),
+      P[<<f_mem_1682@114:2>@122:0>](<br_mem_1692@78:1>:int,<br_mem_1692@78:2>:int,<<br_mem_1692@78:4>@124:0>:bool),
+      <br_mem_1692@78:0>
+      |- P[<<br_mem_1692@78:4>@124:0>](<br_mem_1692@78:0>:bool,<br_mem_1692@78:1>:int,
+                                       <br_mem_1692@78:2>:int,<<br_mem_1692@78:4>@124:0>:bool)
+      
+      P[<f_mem_1682@114:4>](<f_mem_1682@114:0>:int,<f_mem_1682@114:1>:int,<f_mem_1682@114:4>:int),
+      P[<<mem_1030@117:3>@120:0>](<f_mem_1682@114:0>:int,(-1 + <f_mem_1682@114:1>):int,<<f_mem_1682@114:2>@122:0>:bool),
+      (<f_mem_1682@114:0> <> <f_mem_1682@114:4>)
+      |- P[<<f_mem_1682@114:2>@122:0>](<f_mem_1682@114:0>:int,<f_mem_1682@114:1>:int,
+                                       <<f_mem_1682@114:2>@122:0>:bool)
+      
+      P[<mem_1030@117:1>](<mem_1030@117:0>:int,<mem_1030@117:1>:int),
+      ((<mem_1030@117:1> = 0) && (not <<mem_1030@117:3>@120:0>))
+      |- P[<<mem_1030@117:3>@120:0>](<mem_1030@117:0>:int,<mem_1030@117:1>:int,
+                                     <<mem_1030@117:3>@120:0>:bool)
+      
+      P[<f_mem_1682@114:4>](<mem_1030@117:0>:int,(1 + <mem_1030@117:1>):int,<f_mem_1682@114:4>:int),
+      (<mem_1030@117:0> <> <f_mem_1682@114:4>) |- P[<mem_1030@117:1>](
+      <mem_1030@117:0>:int,<mem_1030@117:1>:int)
+      
+      P[<br_mem_1692@78:2>](true:bool,<f_mem_1682@114:0>:int,<f_mem_1682@114:1>:int),
+      P[<<<br_mem_1692@78:3>@81:1>@112:0>](true:bool,<f_mem_1682@114:0>:int,<f_mem_1682@114:1>:int,0:int,<f_mem_1682@114:4>:int)|- P[<f_mem_1682@114:4>](
+      <f_mem_1682@114:0>:int,<f_mem_1682@114:1>:int,<f_mem_1682@114:4>:int)
+      
+      P[<mem_1030@75:1>](<br_mem_1692@78:1>:int,<br_mem_1692@78:2>:int),
+      P[<<<mem_1030@75:2>@83:1>@110:0>](<br_mem_1692@78:1>:int,<br_mem_1692@78:2>:int,<<br_mem_1692@78:3>@81:0>:int,<<<br_mem_1692@78:3>@81:1>@112:0>:int),
+      P[<br_mem_1692@78:2>](<br_mem_1692@78:0>:bool,<br_mem_1692@78:1>:int,<br_mem_1692@78:2>:int),
+      ((<br_mem_1692@78:2> <> 0) && (<br_mem_1692@78:0> = (1 <= <br_mem_1692@78:2>)))
+      |- P[<<<br_mem_1692@78:3>@81:1>@112:0>](<br_mem_1692@78:0>:bool,
+                                              <br_mem_1692@78:1>:int,
+                                              <br_mem_1692@78:2>:int,
+                                              <<br_mem_1692@78:3>@81:0>:int,
+                                              <<<br_mem_1692@78:3>@81:1>@112:0>:int)
+      
+      P[<f_main_1688@72:5>](<mem_1030@75:0>:int,<f_main_1688@72:1>:int,<mem_1030@75:1>:int,false:bool),
+      P[<<<f_main_1688@72:4>@85:1>@108:0>](<mem_1030@75:0>:int,<f_main_1688@72:1>:int,<mem_1030@75:1>:int,<<mem_1030@75:2>@83:0>:int,<<<mem_1030@75:2>@83:1>@110:0>:int),
+      P[<mem_1030@75:1>](<mem_1030@75:0>:int,<mem_1030@75:1>:int)|- P[<<<mem_1030@75:2>@83:1>@110:0>](
+      <mem_1030@75:0>:int,<mem_1030@75:1>:int,<<mem_1030@75:2>@83:0>:int,
+      <<<mem_1030@75:2>@83:1>@110:0>:int)
+      
+      P[<f_main_1687@65:3>](<f_main_1688@72:0>:int,<f_main_1688@72:1>:int,<f_main_1688@72:2>:int),
+      P[<<<f_main_1687@65:4>@87:1>@106:0>](<f_main_1688@72:0>:int,<f_main_1688@72:1>:int,<f_main_1688@72:2>:int,<<f_main_1688@72:4>@85:0>:int,<<<f_main_1688@72:4>@85:1>@108:0>:int)|- P[<<<f_main_1688@72:4>@85:1>@108:0>](
+      <f_main_1688@72:0>:int,<f_main_1688@72:1>:int,<f_main_1688@72:2>:int,
+      <<f_main_1688@72:4>@85:0>:int,<<<f_main_1688@72:4>@85:1>@108:0>:int)
+      
+      P[<main_1040@45:1>](<f_main_1687@65:1>:int,<f_main_1687@65:0>:int),
+      P[<<make_list_1035@47:2>@63:0>](<f_main_1687@65:1>:int,<f_main_1687@65:0>:int,<f_main_1687@65:3>:int),
+      P[<<<<make_list_1035@47:2>@63:1>@89:1>@104:0>](<f_main_1687@65:1>:int,<f_main_1687@65:0>:int,<f_main_1687@65:3>:int,<<f_main_1687@65:4>@87:0>:int,<<<f_main_1687@65:4>@87:1>@106:0>:int),
+      P[<f_main_1687@65:3>](<f_main_1687@65:0>:int,<f_main_1687@65:1>:int,<f_main_1687@65:3>:int)|- P[<<<f_main_1687@65:4>@87:1>@106:0>](
+      <f_main_1687@65:0>:int,<f_main_1687@65:1>:int,<f_main_1687@65:3>:int,
+      <<f_main_1687@65:4>@87:0>:int,<<<f_main_1687@65:4>@87:1>@106:0>:int)
+      
+      P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int),
+      P[<<f_make_list_1686@55:2>@61:0>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int),
+      P[<<<<f_make_list_1686@55:2>@61:1>@91:1>@102:0>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int,<<<make_list_1035@47:2>@63:1>@89:0>:int,<<<<make_list_1035@47:2>@63:1>@89:1>@104:0>:int),
+      P[<<make_list_1035@47:2>@63:0>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int),
+      (<make_list_1035@47:0> >= 0)
+      |- P[<<<<make_list_1035@47:2>@63:1>@89:1>@104:0>](<make_list_1035@47:0>:int,
+                                                        <make_list_1035@47:1>:int,
+                                                        <<make_list_1035@47:2>@63:0>:int,
+                                                        <<<make_list_1035@47:2>@63:1>@89:0>:int,
+                                                        <<<<make_list_1035@47:2>@63:1>@89:1>@104:0>:int)
+      
+      P[<f_make_list_1686@55:3>](<f_make_list_1686@55:0>:int,<f_make_list_1686@55:1>:int,<cons_make_list_1113@57:3>:int),
+      P[<<cons_make_list_1113@57:5>@59:0>](<f_make_list_1686@55:0>:int,<f_make_list_1686@55:1>:int,<f_make_list_1686@55:1>:int,<cons_make_list_1113@57:3>:int,<<f_make_list_1686@55:2>@61:0>:int),
+      P[<<<<cons_make_list_1113@57:5>@59:1>@93:1>@100:0>](<f_make_list_1686@55:0>:int,<f_make_list_1686@55:1>:int,<f_make_list_1686@55:1>:int,<cons_make_list_1113@57:3>:int,<<f_make_list_1686@55:2>@61:0>:int,<<<f_make_list_1686@55:2>@61:1>@91:0>:int,<<<<f_make_list_1686@55:2>@61:1>@91:1>@102:0>:int),
+      P[<<f_make_list_1686@55:2>@61:0>](<f_make_list_1686@55:0>:int,<f_make_list_1686@55:1>:int,<<f_make_list_1686@55:2>@61:0>:int)|- P[<<<<f_make_list_1686@55:2>@61:1>@91:1>@102:0>](
+      <f_make_list_1686@55:0>:int,<f_make_list_1686@55:1>:int,<<f_make_list_1686@55:2>@61:0>:int,
+      <<<f_make_list_1686@55:2>@61:1>@91:0>:int,<<<<f_make_list_1686@55:2>@61:1>@91:1>@102:0>:int)
+      
+      P[<cons_make_list_1113@57:3>](<cons_make_list_1113@57:0>:int,<cons_make_list_1113@57:1>:int,<cons_make_list_1113@57:2>:int,<cons_make_list_1113@57:3>:int),
+      P[<<f_cons_make_list_1685@95:6>@98:0>](<cons_make_list_1113@57:0>:int,<cons_make_list_1113@57:1>:int,<cons_make_list_1113@57:2>:int,<cons_make_list_1113@57:3>:int,<<<cons_make_list_1113@57:5>@59:1>@93:0>:int,<<<<cons_make_list_1113@57:5>@59:1>@93:1>@100:0>:int),
+      P[<<cons_make_list_1113@57:5>@59:0>](<cons_make_list_1113@57:0>:int,<cons_make_list_1113@57:1>:int,<cons_make_list_1113@57:2>:int,<cons_make_list_1113@57:3>:int,<<cons_make_list_1113@57:5>@59:0>:int),
+      (<<cons_make_list_1113@57:5>@59:0> = (1 + <cons_make_list_1113@57:3>))
+      |- P[<<<<cons_make_list_1113@57:5>@59:1>@93:1>@100:0>](<cons_make_list_1113@57:0>:int,
+                                                             <cons_make_list_1113@57:1>:int,
+                                                             <cons_make_list_1113@57:2>:int,
+                                                             <cons_make_list_1113@57:3>:int,
+                                                             <<cons_make_list_1113@57:5>@59:0>:int,
+                                                             <<<cons_make_list_1113@57:5>@59:1>@93:0>:int,
+                                                             <<<<cons_make_list_1113@57:5>@59:1>@93:1>@100:0>:int)
+      
+      P[<f_cons_make_list_1685@95:5>](<f_cons_make_list_1685@95:0>:int,<f_cons_make_list_1685@95:1>:int,<f_cons_make_list_1685@95:2>:int,<f_cons_make_list_1685@95:3>:int,<f_cons_make_list_1685@95:5>:int),
+      ((<f_cons_make_list_1685@95:5> = 0) && (<<f_cons_make_list_1685@95:6>@98:0> = <f_cons_make_list_1685@95:2>))
+      |- P[<<f_cons_make_list_1685@95:6>@98:0>](<f_cons_make_list_1685@95:0>:int,
+                                                <f_cons_make_list_1685@95:1>:int,
+                                                <f_cons_make_list_1685@95:2>:int,
+                                                <f_cons_make_list_1685@95:3>:int,
+                                                <f_cons_make_list_1685@95:5>:int,
+                                                <<f_cons_make_list_1685@95:6>@98:0>:int)
+      
+      P[<cons_make_list_1113@57:3>](<f_cons_make_list_1685@95:0>:int,<f_cons_make_list_1685@95:1>:int,<f_cons_make_list_1685@95:2>:int,<f_cons_make_list_1685@95:3>:int),
+      P[<<<cons_make_list_1113@57:5>@59:1>@93:0>](<f_cons_make_list_1685@95:0>:int,<f_cons_make_list_1685@95:1>:int,<f_cons_make_list_1685@95:2>:int,<f_cons_make_list_1685@95:3>:int,(
+                                                  1 + <f_cons_make_list_1685@95:3>):int,<f_cons_make_list_1685@95:5>:int)|- P[<f_cons_make_list_1685@95:5>](
+      <f_cons_make_list_1685@95:0>:int,<f_cons_make_list_1685@95:1>:int,
+      <f_cons_make_list_1685@95:2>:int,<f_cons_make_list_1685@95:3>:int,
+      <f_cons_make_list_1685@95:5>:int)
+      
+      P[<f_make_list_1686@55:3>](<cons_make_list_1113@57:0>:int,<cons_make_list_1113@57:1>:int,<cons_make_list_1113@57:3>:int),
+      P[<<<f_make_list_1686@55:2>@61:1>@91:0>](<cons_make_list_1113@57:0>:int,<cons_make_list_1113@57:1>:int,<<cons_make_list_1113@57:5>@59:0>:int,<<<cons_make_list_1113@57:5>@59:1>@93:0>:int),
+      P[<cons_make_list_1113@57:3>](<cons_make_list_1113@57:0>:int,<cons_make_list_1113@57:1>:int,<cons_make_list_1113@57:2>:int,<cons_make_list_1113@57:3>:int),
+      (<cons_make_list_1113@57:1> = <cons_make_list_1113@57:2>)
+      |- P[<<<cons_make_list_1113@57:5>@59:1>@93:0>](<cons_make_list_1113@57:0>:int,
+                                                     <cons_make_list_1113@57:1>:int,
+                                                     <cons_make_list_1113@57:2>:int,
+                                                     <cons_make_list_1113@57:3>:int,
+                                                     <<cons_make_list_1113@57:5>@59:0>:int,
+                                                     <<<cons_make_list_1113@57:5>@59:1>@93:0>:int)
+      
+      P[<make_list_1035@47:1>](<f_make_list_1686@55:0>:int,<f_make_list_1686@55:1>:int),
+      P[<<<make_list_1035@47:2>@63:1>@89:0>](<f_make_list_1686@55:0>:int,<f_make_list_1686@55:1>:int,<<f_make_list_1686@55:2>@61:0>:int,<<<f_make_list_1686@55:2>@61:1>@91:0>:int),
+      (<f_make_list_1686@55:0> >= 0)
+      |- P[<<<f_make_list_1686@55:2>@61:1>@91:0>](<f_make_list_1686@55:0>:int,
+                                                  <f_make_list_1686@55:1>:int,
+                                                  <<f_make_list_1686@55:2>@61:0>:int,
+                                                  <<<f_make_list_1686@55:2>@61:1>@91:0>:int)
+      
+      P[<main_1040@45:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int),
+      P[<<f_main_1687@65:4>@87:0>](<make_list_1035@47:1>:int,<make_list_1035@47:0>:int,<<make_list_1035@47:2>@63:0>:int,<<<make_list_1035@47:2>@63:1>@89:0>:int),
+      P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int)|- P[<<<make_list_1035@47:2>@63:1>@89:0>](
+      <make_list_1035@47:0>:int,<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int,
+      <<<make_list_1035@47:2>@63:1>@89:0>:int)
+      
+      P[<f_main_1687@65:3>](<f_main_1687@65:0>:int,<f_main_1687@65:1>:int,<f_main_1687@65:3>:int),
+      P[<<f_main_1688@72:4>@85:0>](<f_main_1687@65:0>:int,<f_main_1687@65:1>:int,<f_main_1687@65:3>:int,<<f_main_1687@65:4>@87:0>:int)|- P[<<f_main_1687@65:4>@87:0>](
+      <f_main_1687@65:0>:int,<f_main_1687@65:1>:int,<f_main_1687@65:3>:int,
+      <<f_main_1687@65:4>@87:0>:int)
+      
+      P[<f_main_1688@72:5>](<f_main_1688@72:0>:int,<f_main_1688@72:1>:int,<f_main_1688@72:2>:int,false:bool),
+      P[<<mem_1030@75:2>@83:0>](<f_main_1688@72:0>:int,<f_main_1688@72:2>:int,<<f_main_1688@72:4>@85:0>:int)|- P[<<f_main_1688@72:4>@85:0>](
+      <f_main_1688@72:0>:int,<f_main_1688@72:1>:int,<f_main_1688@72:2>:int,
+      <<f_main_1688@72:4>@85:0>:int)
+      
+      P[<mem_1030@75:1>](<mem_1030@75:0>:int,<mem_1030@75:1>:int),
+      P[<<br_mem_1692@78:3>@81:0>]((1 <= <mem_1030@75:1>):bool,<mem_1030@75:0>:int,<mem_1030@75:1>:int,<<mem_1030@75:2>@83:0>:int),
+      (<mem_1030@75:1> <> 0)
+      |- P[<<mem_1030@75:2>@83:0>](<mem_1030@75:0>:int,<mem_1030@75:1>:int,
+                                   <<mem_1030@75:2>@83:0>:int)
+      
+      P[<br_mem_1692@78:2>](<br_mem_1692@78:0>:bool,<br_mem_1692@78:1>:int,<br_mem_1692@78:2>:int),
+      ((<<br_mem_1692@78:3>@81:0> = 0) && <br_mem_1692@78:0>)
+      |- P[<<br_mem_1692@78:3>@81:0>](<br_mem_1692@78:0>:bool,<br_mem_1692@78:1>:int,
+                                      <br_mem_1692@78:2>:int,<<br_mem_1692@78:3>@81:0>:int)
+      
+      P[<mem_1030@75:1>](<br_mem_1692@78:1>:int,<br_mem_1692@78:2>:int),
+      ((<br_mem_1692@78:2> <> 0) && (<br_mem_1692@78:0> = (1 <= <br_mem_1692@78:2>)))
+      |- P[<br_mem_1692@78:2>](<br_mem_1692@78:0>:bool,<br_mem_1692@78:1>:int,
+                               <br_mem_1692@78:2>:int)
+      
+      P[<f_main_1688@72:5>](<mem_1030@75:0>:int,<f_main_1688@72:1>:int,<mem_1030@75:1>:int,false:bool)|- P[<mem_1030@75:1>](
+      <mem_1030@75:0>:int,<mem_1030@75:1>:int)
+      
+      P[<f_main_1687@65:3>](<f_main_1688@72:0>:int,<f_main_1688@72:1>:int,<f_main_1688@72:2>:int),
+      P[<<is_nil_1038@67:2>@70:0>](<f_main_1688@72:2>:int,<f_main_1688@72:5>:bool)|- P[<f_main_1688@72:5>](
+      <f_main_1688@72:0>:int,<f_main_1688@72:1>:int,<f_main_1688@72:2>:int,
+      <f_main_1688@72:5>:bool)
+      
+      P[<is_nil_1038@67:0>](<is_nil_1038@67:0>:int), ((<is_nil_1038@67:0> <> 0) && (not <<is_nil_1038@67:2>@70:0>))
+      |- P[<<is_nil_1038@67:2>@70:0>](<is_nil_1038@67:0>:int,<<is_nil_1038@67:2>@70:0>:bool)
+      
+      P[<f_main_1687@65:3>](<f_main_1687@65:0>:int,<f_main_1687@65:1>:int,<is_nil_1038@67:0>:int)|- P[<is_nil_1038@67:0>](
+      <is_nil_1038@67:0>:int)
+      
+      P[<main_1040@45:1>](<f_main_1687@65:1>:int,<f_main_1687@65:0>:int),
+      P[<<make_list_1035@47:2>@63:0>](<f_main_1687@65:1>:int,<f_main_1687@65:0>:int,<f_main_1687@65:3>:int)|- P[<f_main_1687@65:3>](
+      <f_main_1687@65:0>:int,<f_main_1687@65:1>:int,<f_main_1687@65:3>:int)
+      
+      P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int),
+      P[<<f_make_list_1686@55:2>@61:0>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int),
+      (<make_list_1035@47:0> >= 0)
+      |- P[<<make_list_1035@47:2>@63:0>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int,
+                                         <<make_list_1035@47:2>@63:0>:int)
+      
+      P[<f_make_list_1686@55:3>](<f_make_list_1686@55:0>:int,<f_make_list_1686@55:1>:int,<cons_make_list_1113@57:3>:int),
+      P[<<cons_make_list_1113@57:5>@59:0>](<f_make_list_1686@55:0>:int,<f_make_list_1686@55:1>:int,<f_make_list_1686@55:1>:int,<cons_make_list_1113@57:3>:int,<<f_make_list_1686@55:2>@61:0>:int)|- P[<<f_make_list_1686@55:2>@61:0>](
+      <f_make_list_1686@55:0>:int,<f_make_list_1686@55:1>:int,<<f_make_list_1686@55:2>@61:0>:int)
+      
+      P[<cons_make_list_1113@57:3>](<cons_make_list_1113@57:0>:int,<cons_make_list_1113@57:1>:int,<cons_make_list_1113@57:2>:int,<cons_make_list_1113@57:3>:int),
+      (<<cons_make_list_1113@57:5>@59:0> = (1 + <cons_make_list_1113@57:3>))
+      |- P[<<cons_make_list_1113@57:5>@59:0>](<cons_make_list_1113@57:0>:int,
+                                              <cons_make_list_1113@57:1>:int,
+                                              <cons_make_list_1113@57:2>:int,
+                                              <cons_make_list_1113@57:3>:int,
+                                              <<cons_make_list_1113@57:5>@59:0>:int)
+      
+      P[<f_make_list_1686@55:3>](<cons_make_list_1113@57:0>:int,<cons_make_list_1113@57:1>:int,<cons_make_list_1113@57:3>:int),
+      (<cons_make_list_1113@57:1> = <cons_make_list_1113@57:2>)
+      |- P[<cons_make_list_1113@57:3>](<cons_make_list_1113@57:0>:int,
+                                       <cons_make_list_1113@57:1>:int,
+                                       <cons_make_list_1113@57:2>:int,
+                                       <cons_make_list_1113@57:3>:int)
+      
+      P[<make_list_1035@47:1>](<f_make_list_1686@55:0>:int,<f_make_list_1686@55:1>:int),
+      P[<<make_list_1035@50:2>@53:0>]((-1 + <f_make_list_1686@55:0>):int,<f_make_list_1686@55:1>:int,<f_make_list_1686@55:3>:int),
+      (<f_make_list_1686@55:0> >= 0)
+      |- P[<f_make_list_1686@55:3>](<f_make_list_1686@55:0>:int,<f_make_list_1686@55:1>:int,
+                                    <f_make_list_1686@55:3>:int)
+      
+      P[<make_list_1035@50:1>](<make_list_1035@50:0>:int,<make_list_1035@50:1>:int),
+      ((<<make_list_1035@50:2>@53:0> = 0) && (<make_list_1035@50:0> < 0))
+      |- P[<<make_list_1035@50:2>@53:0>](<make_list_1035@50:0>:int,<make_list_1035@50:1>:int,
+                                         <<make_list_1035@50:2>@53:0>:int)
+      
+      P[<make_list_1035@47:1>]((1 + <make_list_1035@50:0>):int,<make_list_1035@50:1>:int),
+      ((1 + <make_list_1035@50:0>) >= 0)
+      |- P[<make_list_1035@50:1>](<make_list_1035@50:0>:int,<make_list_1035@50:1>:int)
+      
+      P[<main_1040@45:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int)|- P[<make_list_1035@47:1>](
+      <make_list_1035@47:0>:int,<make_list_1035@47:1>:int)
+      
+      P[<f_1690@43:1>](<main_1040@45:0>:int,<main_1040@45:1>:int)|- P[<main_1040@45:1>](
+      <main_1040@45:0>:int,<main_1040@45:1>:int)
+      
+      P[<f_1689@40:0>](<f_1690@43:0>:int)|- P[<f_1690@43:1>](<f_1690@43:0>:int,
+                                                             <f_1690@43:1>:int)
+      
+      |- P[<f_1689@40:0>](<f_1689@40:0>:int)
+    call trees:
+      <main_1681@37>
+        <f_1689@40>
+          <f_1690@43>
+            <main_1040@45>
+              <make_list_1035@47>
+                <make_list_1035@50>
+                </<make_list_1035@50:2>@53>
+                <f_make_list_1686@55>
+                  <cons_make_list_1113@57>
+                  </<cons_make_list_1113@57:5>@59>
+                </<f_make_list_1686@55:2>@61>
+              </<make_list_1035@47:2>@63>
+              <f_main_1687@65>
+                <is_nil_1038@67>
+                </<is_nil_1038@67:2>@70>
+                <f_main_1688@72>
+                  <mem_1030@75>
+                    <br_mem_1692@78>
+                    </<br_mem_1692@78:3>@81>
+                  </<mem_1030@75:2>@83>
+                </<f_main_1688@72:4>@85>
+              </<f_main_1687@65:4>@87>
+              <<<make_list_1035@47:2>@63:1>@89>
+                <<<f_make_list_1686@55:2>@61:1>@91>
+                  <<<cons_make_list_1113@57:5>@59:1>@93>
+                    <f_cons_make_list_1685@95>
+                    </<f_cons_make_list_1685@95:6>@98>
+                  </<<<cons_make_list_1113@57:5>@59:1>@93:1>@100>
+                </<<<f_make_list_1686@55:2>@61:1>@91:1>@102>
+              </<<<make_list_1035@47:2>@63:1>@89:1>@104>
+              <<<f_main_1687@65:4>@87:1>@106>
+                <<<f_main_1688@72:4>@85:1>@108>
+                  <<<mem_1030@75:2>@83:1>@110>
+                    <<<br_mem_1692@78:3>@81:1>@112>
+                      <f_mem_1682@114>
+                        <mem_1030@117>
+                        </<mem_1030@117:3>@120>
+                      </<f_mem_1682@114:2>@122>
+                    </<br_mem_1692@78:4>@124>
+                  </<mem_1030@75:3>@126>
+                  <k_main_1588@128>
+                    <fail_1694@131>
+    inlined horn clauses:
+      P[<fail_1694@131:0>](<fail_1694@131:0>:bool)|- bot
+      
+      P[<<make_list_1035@47:2>@63:0>](<k_main_1588@128:1>:int,<k_main_1588@128:0>:int,<k_main_1588@128:2>:int),
+      P[<<mem_1030@75:3>@126:0>](<k_main_1588@128:0>:int,<k_main_1588@128:2>:int,false:bool),
+      ((<k_main_1588@128:2> <> 0) && <fail_1694@131:0>) |- P[<fail_1694@131:0>](
+      <fail_1694@131:0>:bool)
+      
+      P[<<<mem_1030@75:2>@83:1>@110:0>](<mem_1030@75:0>:int,<mem_1030@75:1>:int,0:int,var128:int),
+      P[<mem_1030@75:1>](<mem_1030@75:0>:int,<mem_1030@75:1>:int),
+      P[<<mem_1030@117:3>@120:0>](<mem_1030@75:0>:int,(-1 + <mem_1030@75:1>):int,<<mem_1030@75:3>@126:0>:bool),
+      ((<mem_1030@75:1> >= 1) && (<mem_1030@75:0> <> var128))
+      |- P[<<mem_1030@75:3>@126:0>](<mem_1030@75:0>:int,<mem_1030@75:1>:int,
+                                    <<mem_1030@75:3>@126:0>:bool)
+      
+      P[<mem_1030@117:1>](<mem_1030@117:0>:int,<mem_1030@117:1>:int),
+      ((<mem_1030@117:1> = 0) && (not <<mem_1030@117:3>@120:0>))
+      |- P[<<mem_1030@117:3>@120:0>](<mem_1030@117:0>:int,<mem_1030@117:1>:int,
+                                     <<mem_1030@117:3>@120:0>:bool)
+      
+      P[<<<mem_1030@75:2>@83:1>@110:0>](<mem_1030@117:0>:int,(1 + <mem_1030@117:1>):int,0:int,<f_mem_1682@114:4>:int),
+      P[<mem_1030@75:1>](<mem_1030@117:0>:int,(1 + <mem_1030@117:1>):int),
+      ((<mem_1030@117:0> <> <f_mem_1682@114:4>) && (<mem_1030@117:1> >= 0))
+      |- P[<mem_1030@117:1>](<mem_1030@117:0>:int,<mem_1030@117:1>:int)
+      
+      P[<<<<make_list_1035@47:2>@63:1>@89:1>@104:0>](<f_main_1688@72:1>:int,<mem_1030@75:0>:int,<mem_1030@75:1>:int,<<mem_1030@75:2>@83:0>:int,<<<mem_1030@75:2>@83:1>@110:0>:int),
+      P[<<make_list_1035@47:2>@63:0>](<f_main_1688@72:1>:int,<mem_1030@75:0>:int,<mem_1030@75:1>:int),
+      P[<mem_1030@75:1>](<mem_1030@75:0>:int,<mem_1030@75:1>:int), (<mem_1030@75:1> <> 0)
+      |- P[<<<mem_1030@75:2>@83:1>@110:0>](<mem_1030@75:0>:int,<mem_1030@75:1>:int,
+                                           <<mem_1030@75:2>@83:0>:int,
+                                           <<<mem_1030@75:2>@83:1>@110:0>:int)
+      
+      P[<<<make_list_1035@47:2>@63:1>@89:0>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int,<<<make_list_1035@47:2>@63:1>@89:0>:int),
+      P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int),
+      P[<<make_list_1035@50:2>@53:0>]((-1 + <make_list_1035@47:0>):int,<make_list_1035@47:1>:int,(
+                                      -1 + <<make_list_1035@47:2>@63:0>):int),
+      P[<<make_list_1035@47:2>@63:0>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int),
+      ((<<<make_list_1035@47:2>@63:1>@89:0> = 0) &&
+       ((<make_list_1035@47:0> >= 0) && (<<<<make_list_1035@47:2>@63:1>@89:1>@104:0> = <make_list_1035@47:1>)))
+      |- P[<<<<make_list_1035@47:2>@63:1>@89:1>@104:0>](<make_list_1035@47:0>:int,
+                                                        <make_list_1035@47:1>:int,
+                                                        <<make_list_1035@47:2>@63:0>:int,
+                                                        <<<make_list_1035@47:2>@63:1>@89:0>:int,
+                                                        <<<<make_list_1035@47:2>@63:1>@89:1>@104:0>:int)
+      
+      P[<<make_list_1035@47:2>@63:0>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int),
+      P[<<mem_1030@75:2>@83:0>](<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int,<<<make_list_1035@47:2>@63:1>@89:0>:int),
+      P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int),
+      (<<make_list_1035@47:2>@63:0> <> 0)
+      |- P[<<<make_list_1035@47:2>@63:1>@89:0>](<make_list_1035@47:0>:int,
+                                                <make_list_1035@47:1>:int,
+                                                <<make_list_1035@47:2>@63:0>:int,
+                                                <<<make_list_1035@47:2>@63:1>@89:0>:int)
+      
+      P[<mem_1030@75:1>](<mem_1030@75:0>:int,<mem_1030@75:1>:int),
+      ((<<mem_1030@75:2>@83:0> = 0) && (<mem_1030@75:1> >= 1))
+      |- P[<<mem_1030@75:2>@83:0>](<mem_1030@75:0>:int,<mem_1030@75:1>:int,
+                                   <<mem_1030@75:2>@83:0>:int)
+      
+      P[<<make_list_1035@47:2>@63:0>](<f_main_1688@72:1>:int,<mem_1030@75:0>:int,<mem_1030@75:1>:int),
+      (<mem_1030@75:1> <> 0) |- P[<mem_1030@75:1>](<mem_1030@75:0>:int,
+                                                   <mem_1030@75:1>:int)
+      
+      P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int),
+      P[<<make_list_1035@50:2>@53:0>]((-1 + <make_list_1035@47:0>):int,<make_list_1035@47:1>:int,(
+                                      -1 + <<make_list_1035@47:2>@63:0>):int), (
+      <make_list_1035@47:0> >= 0)
+      |- P[<<make_list_1035@47:2>@63:0>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int,
+                                         <<make_list_1035@47:2>@63:0>:int)
+      
+      P[<make_list_1035@50:1>](<make_list_1035@50:0>:int,<make_list_1035@50:1>:int),
+      ((<<make_list_1035@50:2>@53:0> = 0) && (<make_list_1035@50:0> < 0))
+      |- P[<<make_list_1035@50:2>@53:0>](<make_list_1035@50:0>:int,<make_list_1035@50:1>:int,
+                                         <<make_list_1035@50:2>@53:0>:int)
+      
+      P[<make_list_1035@47:1>]((1 + <make_list_1035@50:0>):int,<make_list_1035@50:1>:int),
+      ((1 + <make_list_1035@50:0>) >= 0)
+      |- P[<make_list_1035@50:1>](<make_list_1035@50:0>:int,<make_list_1035@50:1>:int)
+      
+      |- P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int)
+    begin ParamSubstInfer.infer(9602)[3]
+      
+    end ParamSubstInfer.infer(9602)[3] (0.063991 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(9604)[3]
+      
+    end RefTypeInfer.elim_coeffs(9604)[3] (0.000999 sec.)
+    begin YhornInterface.solve(10243)[3]
+      begin HcSolver.solve_ub(10244)[4]
+        encoded:
+          P[<fail_1694@131:0>](<fail_1694@131:0>:int)|- bot
+          
+          P[<<make_list_1035@47:2>@63:0>](<k_main_1588@128:1>:int,<k_main_1588@128:0>:int,<k_main_1588@128:2>:int),
+          P[<<mem_1030@75:3>@126:0>](<k_main_1588@128:0>:int,<k_main_1588@128:2>:int,0:int),
+          ((<k_main_1588@128:2> <> 0) && (<fail_1694@131:0> = 1)) |- P[<fail_1694@131:0>](
+          <fail_1694@131:0>:int)
+          
+          P[<<<mem_1030@75:2>@83:1>@110:0>](<mem_1030@75:0>:int,<mem_1030@75:1>:int,0:int,var128:int),
+          P[<mem_1030@75:1>](<mem_1030@75:0>:int,<mem_1030@75:1>:int),
+          P[<<mem_1030@117:3>@120:0>](<mem_1030@75:0>:int,(-1 + <mem_1030@75:1>):int,<<mem_1030@75:3>@126:0>:int),
+          ((<mem_1030@75:1> >= 1) && (<mem_1030@75:0> <> var128))
+          |- P[<<mem_1030@75:3>@126:0>](<mem_1030@75:0>:int,<mem_1030@75:1>:int,
+                                        <<mem_1030@75:3>@126:0>:int)
+          
+          P[<mem_1030@117:1>](<mem_1030@117:0>:int,<mem_1030@117:1>:int),
+          ((<mem_1030@117:1> = 0) && (not (<<mem_1030@117:3>@120:0> = 1)))
+          |- P[<<mem_1030@117:3>@120:0>](<mem_1030@117:0>:int,<mem_1030@117:1>:int,
+                                         <<mem_1030@117:3>@120:0>:int)
+          
+          P[<<<mem_1030@75:2>@83:1>@110:0>](<mem_1030@117:0>:int,(1 + <mem_1030@117:1>):int,0:int,<f_mem_1682@114:4>:int),
+          P[<mem_1030@75:1>](<mem_1030@117:0>:int,(1 + <mem_1030@117:1>):int),
+          ((<mem_1030@117:0> <> <f_mem_1682@114:4>) && (<mem_1030@117:1> >= 0))
+          |- P[<mem_1030@117:1>](<mem_1030@117:0>:int,<mem_1030@117:1>:int)
+          
+          P[<<<<make_list_1035@47:2>@63:1>@89:1>@104:0>](<f_main_1688@72:1>:int,<mem_1030@75:0>:int,<mem_1030@75:1>:int,<<mem_1030@75:2>@83:0>:int,<<<mem_1030@75:2>@83:1>@110:0>:int),
+          P[<<make_list_1035@47:2>@63:0>](<f_main_1688@72:1>:int,<mem_1030@75:0>:int,<mem_1030@75:1>:int),
+          P[<mem_1030@75:1>](<mem_1030@75:0>:int,<mem_1030@75:1>:int), (
+          <mem_1030@75:1> <> 0)
+          |- P[<<<mem_1030@75:2>@83:1>@110:0>](<mem_1030@75:0>:int,<mem_1030@75:1>:int,
+                                               <<mem_1030@75:2>@83:0>:int,
+                                               <<<mem_1030@75:2>@83:1>@110:0>:int)
+          
+          P[<<<make_list_1035@47:2>@63:1>@89:0>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int,<<<make_list_1035@47:2>@63:1>@89:0>:int),
+          P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int),
+          P[<<make_list_1035@50:2>@53:0>]((-1 + <make_list_1035@47:0>):int,<make_list_1035@47:1>:int,(
+                                          -1 + <<make_list_1035@47:2>@63:0>):int),
+          P[<<make_list_1035@47:2>@63:0>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int),
+          ((<<<make_list_1035@47:2>@63:1>@89:0> = 0) &&
+           ((<make_list_1035@47:0> >= 0) && (<<<<make_list_1035@47:2>@63:1>@89:1>@104:0> = <make_list_1035@47:1>)))
+          |- P[<<<<make_list_1035@47:2>@63:1>@89:1>@104:0>](<make_list_1035@47:0>:int,
+                                                            <make_list_1035@47:1>:int,
+                                                            <<make_list_1035@47:2>@63:0>:int,
+                                                            <<<make_list_1035@47:2>@63:1>@89:0>:int,
+                                                            <<<<make_list_1035@47:2>@63:1>@89:1>@104:0>:int)
+          
+          P[<<make_list_1035@47:2>@63:0>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int),
+          P[<<mem_1030@75:2>@83:0>](<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int,<<<make_list_1035@47:2>@63:1>@89:0>:int),
+          P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int),
+          (<<make_list_1035@47:2>@63:0> <> 0)
+          |- P[<<<make_list_1035@47:2>@63:1>@89:0>](<make_list_1035@47:0>:int,
+                                                    <make_list_1035@47:1>:int,
+                                                    <<make_list_1035@47:2>@63:0>:int,
+                                                    <<<make_list_1035@47:2>@63:1>@89:0>:int)
+          
+          P[<mem_1030@75:1>](<mem_1030@75:0>:int,<mem_1030@75:1>:int),
+          ((<<mem_1030@75:2>@83:0> = 0) && (<mem_1030@75:1> >= 1))
+          |- P[<<mem_1030@75:2>@83:0>](<mem_1030@75:0>:int,<mem_1030@75:1>:int,
+                                       <<mem_1030@75:2>@83:0>:int)
+          
+          P[<<make_list_1035@47:2>@63:0>](<f_main_1688@72:1>:int,<mem_1030@75:0>:int,<mem_1030@75:1>:int),
+          (<mem_1030@75:1> <> 0) |- P[<mem_1030@75:1>](<mem_1030@75:0>:int,
+                                                       <mem_1030@75:1>:int)
+          
+          P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int),
+          P[<<make_list_1035@50:2>@53:0>]((-1 + <make_list_1035@47:0>):int,<make_list_1035@47:1>:int,(
+                                          -1 + <<make_list_1035@47:2>@63:0>):int), (
+          <make_list_1035@47:0> >= 0)
+          |- P[<<make_list_1035@47:2>@63:0>](<make_list_1035@47:0>:int,
+                                             <make_list_1035@47:1>:int,
+                                             <<make_list_1035@47:2>@63:0>:int)
+          
+          P[<make_list_1035@50:1>](<make_list_1035@50:0>:int,<make_list_1035@50:1>:int),
+          ((<<make_list_1035@50:2>@53:0> = 0) && (<make_list_1035@50:0> < 0))
+          |- P[<<make_list_1035@50:2>@53:0>](<make_list_1035@50:0>:int,
+                                             <make_list_1035@50:1>:int,
+                                             <<make_list_1035@50:2>@53:0>:int)
+          
+          P[<make_list_1035@47:1>]((1 + <make_list_1035@50:0>):int,<make_list_1035@50:1>:int),
+          ((1 + <make_list_1035@50:0>) >= 0)
+          |- P[<make_list_1035@50:1>](<make_list_1035@50:0>:int,<make_list_1035@50:1>:int)
+          
+          |- P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int)
+        input to Yhorn:
+          P[<fail_1694@131:0>](<fail_1694@131:0>:int)|- bot
+          
+          P[<<make_list_1035@47:2>@63:0>](<k_main_1588@128:1>:int,<k_main_1588@128:0>:int,<k_main_1588@128:2>:int),
+          P[<<mem_1030@75:3>@126:0>](<k_main_1588@128:0>:int,<k_main_1588@128:2>:int,var129:int),
+          ((<k_main_1588@128:2> <> 0) && ((var129 = 0) && (<fail_1694@131:0> = 1)))
+          |- P[<fail_1694@131:0>](<fail_1694@131:0>:int)
+          
+          P[<<<mem_1030@75:2>@83:1>@110:0>](<mem_1030@75:0>:int,<mem_1030@75:1>:int,var130:int,var128:int),
+          P[<mem_1030@75:1>](<mem_1030@75:0>:int,<mem_1030@75:1>:int),
+          P[<<mem_1030@117:3>@120:0>](<mem_1030@75:0>:int,var131:int,<<mem_1030@75:3>@126:0>:int),
+          (((1 + var131) = <mem_1030@75:1>) &&
+           ((<mem_1030@75:0> <> var128) && ((<mem_1030@75:1> >= 1) && (var130 = 0))))
+          |- P[<<mem_1030@75:3>@126:0>](<mem_1030@75:0>:int,<mem_1030@75:1>:int,
+                                        <<mem_1030@75:3>@126:0>:int)
+          
+          P[<mem_1030@117:1>](<mem_1030@117:0>:int,<mem_1030@117:1>:int),
+          ((<<mem_1030@117:3>@120:0> <> 1) && (<mem_1030@117:1> = 0))
+          |- P[<<mem_1030@117:3>@120:0>](<mem_1030@117:0>:int,<mem_1030@117:1>:int,
+                                         <<mem_1030@117:3>@120:0>:int)
+          
+          P[<<<mem_1030@75:2>@83:1>@110:0>](<mem_1030@117:0>:int,var132:int,var133:int,<f_mem_1682@114:4>:int),
+          P[<mem_1030@75:1>](<mem_1030@117:0>:int,var134:int),
+          ((var134 = (1 + <mem_1030@117:1>)) &&
+           ((var132 = (1 + <mem_1030@117:1>)) &&
+            ((<mem_1030@117:1> >= 0) && ((<mem_1030@117:0> <> <f_mem_1682@114:4>) && (var133 = 0)))))
+          |- P[<mem_1030@117:1>](<mem_1030@117:0>:int,<mem_1030@117:1>:int)
+          
+          P[<<<<make_list_1035@47:2>@63:1>@89:1>@104:0>](<f_main_1688@72:1>:int,<mem_1030@75:0>:int,<mem_1030@75:1>:int,<<mem_1030@75:2>@83:0>:int,<<<mem_1030@75:2>@83:1>@110:0>:int),
+          P[<<make_list_1035@47:2>@63:0>](<f_main_1688@72:1>:int,<mem_1030@75:0>:int,<mem_1030@75:1>:int),
+          P[<mem_1030@75:1>](<mem_1030@75:0>:int,<mem_1030@75:1>:int), (
+          <mem_1030@75:1> <> 0)
+          |- P[<<<mem_1030@75:2>@83:1>@110:0>](<mem_1030@75:0>:int,<mem_1030@75:1>:int,
+                                               <<mem_1030@75:2>@83:0>:int,
+                                               <<<mem_1030@75:2>@83:1>@110:0>:int)
+          
+          P[<<<make_list_1035@47:2>@63:1>@89:0>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int,<<<make_list_1035@47:2>@63:1>@89:0>:int),
+          P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int),
+          P[<<make_list_1035@50:2>@53:0>](var135:int,<make_list_1035@47:1>:int,var136:int),
+          P[<<make_list_1035@47:2>@63:0>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int),
+          ((<<<<make_list_1035@47:2>@63:1>@89:1>@104:0> = <make_list_1035@47:1>) &&
+           (((1 + var136) = <<make_list_1035@47:2>@63:0>) &&
+            (((1 + var135) = <make_list_1035@47:0>) &&
+             ((<make_list_1035@47:0> >= 0) && (<<<make_list_1035@47:2>@63:1>@89:0> = 0)))))
+          |- P[<<<<make_list_1035@47:2>@63:1>@89:1>@104:0>](<make_list_1035@47:0>:int,
+                                                            <make_list_1035@47:1>:int,
+                                                            <<make_list_1035@47:2>@63:0>:int,
+                                                            <<<make_list_1035@47:2>@63:1>@89:0>:int,
+                                                            <<<<make_list_1035@47:2>@63:1>@89:1>@104:0>:int)
+          
+          P[<<make_list_1035@47:2>@63:0>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int),
+          P[<<mem_1030@75:2>@83:0>](<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int,<<<make_list_1035@47:2>@63:1>@89:0>:int),
+          P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int),
+          (<<make_list_1035@47:2>@63:0> <> 0)
+          |- P[<<<make_list_1035@47:2>@63:1>@89:0>](<make_list_1035@47:0>:int,
+                                                    <make_list_1035@47:1>:int,
+                                                    <<make_list_1035@47:2>@63:0>:int,
+                                                    <<<make_list_1035@47:2>@63:1>@89:0>:int)
+          
+          P[<mem_1030@75:1>](<mem_1030@75:0>:int,<mem_1030@75:1>:int),
+          ((<mem_1030@75:1> >= 1) && (<<mem_1030@75:2>@83:0> = 0))
+          |- P[<<mem_1030@75:2>@83:0>](<mem_1030@75:0>:int,<mem_1030@75:1>:int,
+                                       <<mem_1030@75:2>@83:0>:int)
+          
+          P[<<make_list_1035@47:2>@63:0>](<f_main_1688@72:1>:int,<mem_1030@75:0>:int,<mem_1030@75:1>:int),
+          (<mem_1030@75:1> <> 0) |- P[<mem_1030@75:1>](<mem_1030@75:0>:int,
+                                                       <mem_1030@75:1>:int)
+          
+          P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int),
+          P[<<make_list_1035@50:2>@53:0>](var137:int,<make_list_1035@47:1>:int,var138:int),
+          (((1 + var138) = <<make_list_1035@47:2>@63:0>) &&
+           (((1 + var137) = <make_list_1035@47:0>) && (<make_list_1035@47:0> >= 0)))
+          |- P[<<make_list_1035@47:2>@63:0>](<make_list_1035@47:0>:int,
+                                             <make_list_1035@47:1>:int,
+                                             <<make_list_1035@47:2>@63:0>:int)
+          
+          P[<make_list_1035@50:1>](<make_list_1035@50:0>:int,<make_list_1035@50:1>:int),
+          ((<make_list_1035@50:0> < 0) && (<<make_list_1035@50:2>@53:0> = 0))
+          |- P[<<make_list_1035@50:2>@53:0>](<make_list_1035@50:0>:int,
+                                             <make_list_1035@50:1>:int,
+                                             <<make_list_1035@50:2>@53:0>:int)
+          
+          P[<make_list_1035@47:1>](var139:int,<make_list_1035@50:1>:int),
+          ((var139 = (1 + <make_list_1035@50:0>)) && ((1 + <make_list_1035@50:0>) >= 0))
+          |- P[<make_list_1035@50:1>](<make_list_1035@50:0>:int,<make_list_1035@50:1>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1694_sep_131_sep_0($257)) -> 1=0.
+(($257-1=0) & ($258=0) & ($259<>0)) & (v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0($260,$259,$258)) & (v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0($261,$260,$259)) -> v_sep_fail_1694_sep_131_sep_0($257).
+(($262=0) & ($263-1>=0) & ($264-$265<>0) & (-$263+$266+1=0)) & (v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0($264,$266,$267)) & (v_sep_mem_1030_sep_75_sep_1($264,$263)) & (v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0($264,$263,$262,$265)) -> v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0($264,$263,$267).
+(($268=0) & ($269-1<>0)) & (v_sep_mem_1030_sep_117_sep_1($270,$268)) -> v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0($270,$268,$269).
+(($271=0) & ($270-$272<>0) & ($268>=0) & (-$268+$273-1=0) & (-$268+$274-1=0)) & (v_sep_mem_1030_sep_75_sep_1($270,$274)) & (v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0($270,$273,$271,$272)) -> v_sep_mem_1030_sep_117_sep_1($270,$268).
+($263<>0) & (v_sep_mem_1030_sep_75_sep_1($264,$263)) & (v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0($275,$264,$263)) & (v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0($275,$264,$263,$276,$277)) -> v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0($264,$263,$276,$277).
+(($278=0) & ($279>=0) & (-$279+$280+1=0) & ($281-$282+1=0) & ($283-$284=0)) & (v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0($279,$284,$282)) & (v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0($280,$284,$281)) & (v_sep_make_list_1035_sep_47_sep_1($279,$284)) & (v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0($279,$284,$282,$278)) -> v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0($279,$284,$282,$278,$283).
+($282<>0) & (v_sep_make_list_1035_sep_47_sep_1($279,$284)) & (v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0($284,$282,$278)) & (v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0($279,$284,$282)) -> v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0($279,$284,$282,$278).
+(($276=0) & ($263-1>=0)) & (v_sep_mem_1030_sep_75_sep_1($264,$263)) -> v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0($264,$263,$276).
+($263<>0) & (v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0($275,$264,$263)) -> v_sep_mem_1030_sep_75_sep_1($264,$263).
+(($279>=0) & (-$279+$285+1=0) & (-$282+$286+1=0)) & (v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0($285,$284,$286)) & (v_sep_make_list_1035_sep_47_sep_1($279,$284)) -> v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0($279,$284,$282).
+(($287=0) & ($288<0)) & (v_sep_make_list_1035_sep_50_sep_1($288,$289)) -> v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0($288,$289,$287).
+(($288+1>=0) & (-$288+$290-1=0)) & (v_sep_make_list_1035_sep_47_sep_1($290,$289)) -> v_sep_make_list_1035_sep_50_sep_1($288,$289).
+0=0 -> v_sep_make_list_1035_sep_47_sep_1($279,$284).
+
+
+v_sep_fail_1694_sep_131_sep_0: X
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: X
+v_sep_mem_1030_sep_75_sep_1: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: X
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: X
+.........................................Split disj [56] 0.420935
+Reconstrcut: 3 **)
+
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: X
+v_sep_mem_1030_sep_75_sep_1: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: X
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: X
+.......Extend [58]0.423935
+Reconstrcut: 6
+
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: X
+v_sep_mem_1030_sep_75_sep_1: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: X
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: X
+.......Split conj [58] 0.427934
+(Reconstrcut: 8 **)
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: X
+v_sep_mem_1030_sep_75_sep_1: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: X
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & (X)
+...................Extend [61]0.433933
+Reconstrcut: 6
+
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: X
+v_sep_mem_1030_sep_75_sep_1: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: X
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & (X)
+.......Split conj [61] 0.437933
+(Reconstrcut: 33 *********)
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: X
+v_sep_mem_1030_sep_75_sep_1: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: X
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & (X)
+..............................................................Extend [77]0.456929
+Reconstrcut: 6
+
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: X
+v_sep_mem_1030_sep_75_sep_1: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: X
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & (X)
+.......Split disj [77] 0.460928
+Reconstrcut: 5 **)
+
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: X
+v_sep_mem_1030_sep_75_sep_1: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: X
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.............
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: X
+v_sep_mem_1030_sep_75_sep_1: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: X
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.........
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: X
+v_sep_mem_1030_sep_75_sep_1: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: X
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.........................Split conj [79] 0.483925
+(Reconstrcut: 16 ****)
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: X
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.............................
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: X
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.........
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: X
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.........................Split conj [88] 0.51892
+(Reconstrcut: 41 *********)
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: X
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+....................................................................
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: X
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.........
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: X
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.........................Split conj [112] 0.567913
+(Reconstrcut: 31 ******)
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.....................................................................
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.........
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.........................
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+..................................................................
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.......................................................................................
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: X
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+...............................................................................................................Split conj [127] 2.368639
+(Reconstrcut: 28 ********)
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.............................................................
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.........
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.........................
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+..................................................................
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+...................................................................................................................
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: X
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+...........................................................................................................................................Split conj [148] 8.545699
+(Reconstrcut: 70 ************)
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.................................................................................................................................................
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.........
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.........................
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+..................................................................
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+...............................................................................................................................................
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+.......................................................................................................................................................................
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+............................................................................................................................................................................................
+v_sep_fail_1694_sep_131_sep_0: (X) | (X)
+v_sep_make_list_1035_sep_47_sep_1: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0: X
+v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_make_list_1035_sep_50_sep_1: X
+v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0: X
+v_sep_mem_1030_sep_117_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0: (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_1: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0: X
+v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0: (X) & ((X) | (X))
+..............................................................................................................................................................................................(0=0) & (v_sep_fail_1694_sep_131_sep_0($257)) -> 1=0.
+(($257-1=0) & ($258=0) & ($259<>0)) & (v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0($260,$259,$258)) & (v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0($261,$260,$259)) -> v_sep_fail_1694_sep_131_sep_0($257).
+(($262=0) & ($263-1>=0) & ($264-$265<>0) & (-$263+$266+1=0)) & (v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0($264,$266,$267)) & (v_sep_mem_1030_sep_75_sep_1($264,$263)) & (v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0($264,$263,$262,$265)) -> v_sep_mem_1030_sep_75_sep_3_sep_126_sep_0($264,$263,$267).
+(($268=0) & ($269-1<>0)) & (v_sep_mem_1030_sep_117_sep_1($270,$268)) -> v_sep_mem_1030_sep_117_sep_3_sep_120_sep_0($270,$268,$269).
+(($271=0) & ($270-$272<>0) & ($268>=0) & (-$268+$273-1=0) & (-$268+$274-1=0)) & (v_sep_mem_1030_sep_75_sep_1($270,$274)) & (v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0($270,$273,$271,$272)) -> v_sep_mem_1030_sep_117_sep_1($270,$268).
+($263<>0) & (v_sep_mem_1030_sep_75_sep_1($264,$263)) & (v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0($275,$264,$263)) & (v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0($275,$264,$263,$276,$277)) -> v_sep_mem_1030_sep_75_sep_2_sep_83_sep_1_sep_110_sep_0($264,$263,$276,$277).
+(($278=0) & ($279>=0) & (-$279+$280+1=0) & ($281-$282+1=0) & ($283-$284=0)) & (v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0($279,$284,$282)) & (v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0($280,$284,$281)) & (v_sep_make_list_1035_sep_47_sep_1($279,$284)) & (v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0($279,$284,$282,$278)) -> v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_1_sep_104_sep_0($279,$284,$282,$278,$283).
+($282<>0) & (v_sep_make_list_1035_sep_47_sep_1($279,$284)) & (v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0($284,$282,$278)) & (v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0($279,$284,$282)) -> v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_1_sep_89_sep_0($279,$284,$282,$278).
+(($276=0) & ($263-1>=0)) & (v_sep_mem_1030_sep_75_sep_1($264,$263)) -> v_sep_mem_1030_sep_75_sep_2_sep_83_sep_0($264,$263,$276).
+($263<>0) & (v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0($275,$264,$263)) -> v_sep_mem_1030_sep_75_sep_1($264,$263).
+(($279>=0) & (-$279+$285+1=0) & (-$282+$286+1=0)) & (v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0($285,$284,$286)) & (v_sep_make_list_1035_sep_47_sep_1($279,$284)) -> v_sep_make_list_1035_sep_47_sep_2_sep_63_sep_0($279,$284,$282).
+(($287=0) & ($288<0)) & (v_sep_make_list_1035_sep_50_sep_1($288,$289)) -> v_sep_make_list_1035_sep_50_sep_2_sep_53_sep_0($288,$289,$287).
+(($288+1>=0) & (-$288+$290-1=0)) & (v_sep_make_list_1035_sep_47_sep_1($290,$289)) -> v_sep_make_list_1035_sep_50_sep_1($288,$289).
+0=0 -> v_sep_make_list_1035_sep_47_sep_1($279,$284).
+
+          |- P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int)
+        solution:
+          P[<fail_1694@131:0>]($291:bool) = false
+          P[<make_list_1035@47:1>]($352:int,$354:int) = true
+          P[<<make_list_1035@47:2>@63:0>]($301:int,$303:int,$305:int) = true
+          P[<<<make_list_1035@47:2>@63:1>@89:0>]($357:int,$359:int,$361:int,$363:int) = true
+          P[<<<<make_list_1035@47:2>@63:1>@89:1>@104:0>]($334:int,$336:int,$338:int,$340:int,$342:int) = ($342 = $336)
+          P[<make_list_1035@50:1>]($373:int,$375:int) = true
+          P[<<make_list_1035@50:2>@53:0>]($345:int,$347:int,$349:int) = true
+          P[<mem_1030@117:1>]($329:int,$331:int) = true
+          P[<<mem_1030@117:3>@120:0>]($308:int,$310:int,$312:bool) = true
+          P[<mem_1030@75:1>]($315:int,$317:int) = true
+          P[<<mem_1030@75:2>@83:0>]($366:int,$368:int,$370:int) = true
+          P[<<<mem_1030@75:2>@83:1>@110:0>]($320:int,$322:int,$324:int,$326:int) = ($320 = $326)
+          P[<<mem_1030@75:3>@126:0>]($294:int,$296:int,$298:bool) = false
+        
+      end HcSolver.solve_ub(10244)[4] (14.417809 sec.)
+      begin HcSolver.check_validity(11303)[4]
+        input:
+          P[<fail_1694@131:0>](<fail_1694@131:0>:bool)|- bot
+          
+          P[<<make_list_1035@47:2>@63:0>](<k_main_1588@128:1>:int,<k_main_1588@128:0>:int,<k_main_1588@128:2>:int),
+          P[<<mem_1030@75:3>@126:0>](<k_main_1588@128:0>:int,<k_main_1588@128:2>:int,false:bool),
+          ((<k_main_1588@128:2> <> 0) && <fail_1694@131:0>) |- P[<fail_1694@131:0>](
+          <fail_1694@131:0>:bool)
+          
+          P[<<<mem_1030@75:2>@83:1>@110:0>](<mem_1030@75:0>:int,<mem_1030@75:1>:int,0:int,var128:int),
+          P[<mem_1030@75:1>](<mem_1030@75:0>:int,<mem_1030@75:1>:int),
+          P[<<mem_1030@117:3>@120:0>](<mem_1030@75:0>:int,(-1 + <mem_1030@75:1>):int,<<mem_1030@75:3>@126:0>:bool),
+          ((<mem_1030@75:1> >= 1) && (<mem_1030@75:0> <> var128))
+          |- P[<<mem_1030@75:3>@126:0>](<mem_1030@75:0>:int,<mem_1030@75:1>:int,
+                                        <<mem_1030@75:3>@126:0>:bool)
+          
+          P[<mem_1030@117:1>](<mem_1030@117:0>:int,<mem_1030@117:1>:int),
+          ((<mem_1030@117:1> = 0) && (not <<mem_1030@117:3>@120:0>))
+          |- P[<<mem_1030@117:3>@120:0>](<mem_1030@117:0>:int,<mem_1030@117:1>:int,
+                                         <<mem_1030@117:3>@120:0>:bool)
+          
+          P[<<<mem_1030@75:2>@83:1>@110:0>](<mem_1030@117:0>:int,(1 + <mem_1030@117:1>):int,0:int,<f_mem_1682@114:4>:int),
+          P[<mem_1030@75:1>](<mem_1030@117:0>:int,(1 + <mem_1030@117:1>):int),
+          ((<mem_1030@117:0> <> <f_mem_1682@114:4>) && (<mem_1030@117:1> >= 0))
+          |- P[<mem_1030@117:1>](<mem_1030@117:0>:int,<mem_1030@117:1>:int)
+          
+          P[<<<<make_list_1035@47:2>@63:1>@89:1>@104:0>](<f_main_1688@72:1>:int,<mem_1030@75:0>:int,<mem_1030@75:1>:int,<<mem_1030@75:2>@83:0>:int,<<<mem_1030@75:2>@83:1>@110:0>:int),
+          P[<<make_list_1035@47:2>@63:0>](<f_main_1688@72:1>:int,<mem_1030@75:0>:int,<mem_1030@75:1>:int),
+          P[<mem_1030@75:1>](<mem_1030@75:0>:int,<mem_1030@75:1>:int), (
+          <mem_1030@75:1> <> 0)
+          |- P[<<<mem_1030@75:2>@83:1>@110:0>](<mem_1030@75:0>:int,<mem_1030@75:1>:int,
+                                               <<mem_1030@75:2>@83:0>:int,
+                                               <<<mem_1030@75:2>@83:1>@110:0>:int)
+          
+          P[<<<make_list_1035@47:2>@63:1>@89:0>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int,<<<make_list_1035@47:2>@63:1>@89:0>:int),
+          P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int),
+          P[<<make_list_1035@50:2>@53:0>]((-1 + <make_list_1035@47:0>):int,<make_list_1035@47:1>:int,(
+                                          -1 + <<make_list_1035@47:2>@63:0>):int),
+          P[<<make_list_1035@47:2>@63:0>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int),
+          ((<<<make_list_1035@47:2>@63:1>@89:0> = 0) &&
+           ((<make_list_1035@47:0> >= 0) && (<<<<make_list_1035@47:2>@63:1>@89:1>@104:0> = <make_list_1035@47:1>)))
+          |- P[<<<<make_list_1035@47:2>@63:1>@89:1>@104:0>](<make_list_1035@47:0>:int,
+                                                            <make_list_1035@47:1>:int,
+                                                            <<make_list_1035@47:2>@63:0>:int,
+                                                            <<<make_list_1035@47:2>@63:1>@89:0>:int,
+                                                            <<<<make_list_1035@47:2>@63:1>@89:1>@104:0>:int)
+          
+          P[<<make_list_1035@47:2>@63:0>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int),
+          P[<<mem_1030@75:2>@83:0>](<make_list_1035@47:1>:int,<<make_list_1035@47:2>@63:0>:int,<<<make_list_1035@47:2>@63:1>@89:0>:int),
+          P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int),
+          (<<make_list_1035@47:2>@63:0> <> 0)
+          |- P[<<<make_list_1035@47:2>@63:1>@89:0>](<make_list_1035@47:0>:int,
+                                                    <make_list_1035@47:1>:int,
+                                                    <<make_list_1035@47:2>@63:0>:int,
+                                                    <<<make_list_1035@47:2>@63:1>@89:0>:int)
+          
+          P[<mem_1030@75:1>](<mem_1030@75:0>:int,<mem_1030@75:1>:int),
+          ((<<mem_1030@75:2>@83:0> = 0) && (<mem_1030@75:1> >= 1))
+          |- P[<<mem_1030@75:2>@83:0>](<mem_1030@75:0>:int,<mem_1030@75:1>:int,
+                                       <<mem_1030@75:2>@83:0>:int)
+          
+          P[<<make_list_1035@47:2>@63:0>](<f_main_1688@72:1>:int,<mem_1030@75:0>:int,<mem_1030@75:1>:int),
+          (<mem_1030@75:1> <> 0) |- P[<mem_1030@75:1>](<mem_1030@75:0>:int,
+                                                       <mem_1030@75:1>:int)
+          
+          P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int),
+          P[<<make_list_1035@50:2>@53:0>]((-1 + <make_list_1035@47:0>):int,<make_list_1035@47:1>:int,(
+                                          -1 + <<make_list_1035@47:2>@63:0>):int), (
+          <make_list_1035@47:0> >= 0)
+          |- P[<<make_list_1035@47:2>@63:0>](<make_list_1035@47:0>:int,
+                                             <make_list_1035@47:1>:int,
+                                             <<make_list_1035@47:2>@63:0>:int)
+          
+          P[<make_list_1035@50:1>](<make_list_1035@50:0>:int,<make_list_1035@50:1>:int),
+          ((<<make_list_1035@50:2>@53:0> = 0) && (<make_list_1035@50:0> < 0))
+          |- P[<<make_list_1035@50:2>@53:0>](<make_list_1035@50:0>:int,
+                                             <make_list_1035@50:1>:int,
+                                             <<make_list_1035@50:2>@53:0>:int)
+          
+          P[<make_list_1035@47:1>]((1 + <make_list_1035@50:0>):int,<make_list_1035@50:1>:int),
+          ((1 + <make_list_1035@50:0>) >= 0)
+          |- P[<make_list_1035@50:1>](<make_list_1035@50:0>:int,<make_list_1035@50:1>:int)
+          
+          |- P[<make_list_1035@47:1>](<make_list_1035@47:0>:int,<make_list_1035@47:1>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(11303)[4] (0.002999 sec.)
+      solution:
+        P[<fail_1694@131:0>]($291:bool) = false
+        P[<make_list_1035@47:1>]($352:int,$354:int) = true
+        P[<<make_list_1035@47:2>@63:0>]($301:int,$303:int,$305:int) = true
+        P[<<<make_list_1035@47:2>@63:1>@89:0>]($357:int,$359:int,$361:int,$363:int) = true
+        P[<<<<make_list_1035@47:2>@63:1>@89:1>@104:0>]($334:int,$336:int,$338:int,$340:int,$342:int) = ($342 = $336)
+        P[<make_list_1035@50:1>]($373:int,$375:int) = true
+        P[<<make_list_1035@50:2>@53:0>]($345:int,$347:int,$349:int) = true
+        P[<mem_1030@117:1>]($329:int,$331:int) = true
+        P[<<mem_1030@117:3>@120:0>]($308:int,$310:int,$312:bool) = true
+        P[<mem_1030@75:1>]($315:int,$317:int) = true
+        P[<<mem_1030@75:2>@83:0>]($366:int,$368:int,$370:int) = true
+        P[<<<mem_1030@75:2>@83:1>@110:0>]($320:int,$322:int,$324:int,$326:int) = ($320 = $326)
+        P[<<mem_1030@75:3>@126:0>]($294:int,$296:int,$298:bool) = false
+    end YhornInterface.solve(10243)[3] (14.421808 sec.)
+    
+  end RefTypeInfer.infer_etrs(3019)[2] (14.547789 sec.)
+  refinement types:
+    main_1681: X
+    f_1689: v1:int -> X
+    f_1690: v1:int -> v2:int -> X
+    main_1040: v1:int -> v2:int -> (v3:unit -> X) -> X
+    make_list_1035: v1:int -> v2:int -> (v3:int -> (v4:int -> (v5:{v5:int | (v5 = v2)} -> X) -> X) -> X) -> X
+    make_list_1035: v1:int -> v2:int -> (v3:int -> (v4:int -> (v5:int -> X) -> X) -> X) -> X
+    f_make_list_1686: v1:int ->
+                      v2:int ->
+                      (v3:int -> (v4:int -> (v5:int -> X) -> X) -> X) ->
+                      v9:int -> (v10:int -> (v11:int -> X) -> X) -> X
+    cons_make_list_1113: v1:int ->
+                         v2:int ->
+                         v3:int ->
+                         v4:int ->
+                         (v5:int -> (v6:int -> X) -> X) -> (v9:int -> (v10:int -> (v11:int -> X) -> X) -> X) -> X
+    f_main_1687: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> (v6:int -> (v7:int -> X) -> X) -> X
+    is_nil_1038: v1:int -> (v2:int -> (v3:int -> X) -> X) -> (v6:bool -> X) -> X
+    f_main_1688: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> (v6:int -> (v7:int -> X) -> X) -> v10:bool -> X
+    mem_1030: v1:int -> v2:int -> (v3:int -> (v4:{v4:int | (v1 = v4)} -> X) -> X) -> (v7:{v7:bool | false} -> X) -> X
+    br_mem_1692: v1:bool -> v2:int -> v3:int -> (v4:int -> (v5:int -> X) -> X) -> (v8:bool -> X) -> X
+    f_cons_make_list_1685: v1:int ->
+                           v2:int ->
+                           v3:int -> v4:int -> (v5:int -> (v6:int -> X) -> X) -> v9:int -> (v10:int -> X) -> X
+    f_mem_1682: v1:int -> v2:int -> (v3:bool -> X) -> (v5:int -> (v6:int -> X) -> X) -> v9:int -> X
+    mem_1030: v1:int -> v2:int -> (v3:int -> (v4:int -> X) -> X) -> (v7:bool -> X) -> X
+    k_main_1588: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> v6:bool -> X
+    fail_1694: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1691: var181:int -> var180:int -> var179:unit -> X
+    f_make_list_1684: var187:int -> var186:int -> var185:int -> (var184:int -> X) -> X
+    f_mem_1683: var198:int ->
+                var197:int ->
+                var196:int -> (var195:int -> (var194:int -> X) -> X) -> var191:int -> (var190:int -> X) -> X
+  abstraction types:
+    main_1681: X
+    f_1689: v1:int -> X
+    f_1690: v1:int -> v2:int -> X
+    main_1040: v1:int -> v2:int -> (v3:unit -> X) -> X
+    make_list_1035: var199:int ->
+                    var200:int ->
+                    (var201:int -> (var202:int -> (var203:int[var203 -> (
+                                                              var203 = var200)] -> X) -> X) -> X) -> X
+    f_make_list_1686: v1:int ->
+                      v2:int ->
+                      (v3:int -> (v4:int -> (v5:int -> X) -> X) -> X) ->
+                      v9:int -> (v10:int -> (v11:int -> X) -> X) -> X
+    cons_make_list_1113: v1:int ->
+                         v2:int ->
+                         v3:int ->
+                         v4:int ->
+                         (v5:int -> (v6:int -> X) -> X) -> (v9:int -> (v10:int -> (v11:int -> X) -> X) -> X) -> X
+    f_main_1687: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> (v6:int -> (v7:int -> X) -> X) -> X
+    is_nil_1038: v1:int -> (v2:int -> (v3:int -> X) -> X) -> (v6:bool -> X) -> X
+    f_main_1688: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> (v6:int -> (v7:int -> X) -> X) -> v10:bool -> X
+    mem_1030: var208:int ->
+              var209:int ->
+              (var210:int -> (var211:int[var211 -> (var208 = var211)] -> X) -> X) -> (var214:bool -> X) -> X
+    br_mem_1692: v1:bool -> v2:int -> v3:int -> (v4:int -> (v5:int -> X) -> X) -> (v8:bool -> X) -> X
+    f_cons_make_list_1685: v1:int ->
+                           v2:int ->
+                           v3:int -> v4:int -> (v5:int -> (v6:int -> X) -> X) -> v9:int -> (v10:int -> X) -> X
+    f_mem_1682: v1:int -> v2:int -> (v3:bool -> X) -> (v5:int -> (v6:int -> X) -> X) -> v9:int -> X
+    k_main_1588: v1:int -> v2:int -> v3:int -> (v4:unit -> X) -> v6:bool -> X
+    fail_1694: v1:bool -> (v2:unit -> X) -> X
+    f_1691: var181:int -> var180:int -> var179:unit -> X
+    f_make_list_1684: var187:int -> var186:int -> var185:int -> (var184:int -> X) -> X
+    f_mem_1683: var198:int ->
+                var197:int ->
+                var196:int -> (var195:int -> (var194:int -> X) -> X) -> var191:int -> (var190:int -> X) -> X
+  
+end AbsTypeInfer.refine(3018)[1] (14.561787 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 1; 0; 0; 0; 0; 1; 1; 1; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 3)::
+Main: main_1681
+  main_1681 -> (rand_int f_1689)
+  br_mem_1692 b_1693 x_1031 xs1_1032 xs2_1032 k_mem_1190 when b_1693 ->
+      (xs2_1032 0 (f_mem_1682 x_1031 xs1_1032 k_mem_1190 xs2_1032))
+  br_mem_1692 b_1693 x_1031 xs1_1032 xs2_1032 k_mem_1190 when (not b_1693) -> _|_
+  cons_make_list_1113 n_1036 x_1037 x_1111 xs1_1112 xs2_1112 k_make_list_cons_make_list_1372 ->
+      (k_make_list_cons_make_list_1372 (xs1_1112 + 1) (f_cons_make_list_1685 n_1036 x_1037 x_1111 xs1_1112 xs2_1112))
+  f_1689 x_1606 -> (rand_int (f_1690 x_1606))
+  f_1690 x_1606 x_1619 -> (main_1040 x_1606 x_1619 (f_1691 x_1606 x_1619))
+  f_1691 x_1606 x_1619 x_1603 -> end
+  f_cons_make_list_1685 n_1036 x_1037 x_1111 xs1_1112 xs2_1112 i_1110 k_make_list_cons_make_list_1387 when (
+      i_1110 = 0) -> (k_make_list_cons_make_list_1387 x_1111)
+  f_cons_make_list_1685 n_1036 x_1037 x_1111 xs1_1112 xs2_1112 i_1110 k_make_list_cons_make_list_1387 when (
+      not (i_1110 = 0)) -> (xs2_1112 (i_1110 - 1) k_make_list_cons_make_list_1387)
+  f_main_1687 m_1042 n_1041 k_main_1508 x1_1514 x2_1514 ->
+      (is_nil_1038 x1_1514 x2_1514 (f_main_1688 m_1042 n_1041 x1_1514 k_main_1508 x2_1514))
+  f_main_1688 m_1042 n_1041 x1_1514 k_main_1508 x2_1514 b_1589 when b_1589 ->
+      (k_main_1588 m_1042 n_1041 x1_1514 k_main_1508 true)
+  f_main_1688 m_1042 n_1041 x1_1514 k_main_1508 x2_1514 b_1589 when (
+      not b_1589) -> (mem_1030 m_1042 x1_1514 x2_1514 (k_main_1588 m_1042 n_1041 x1_1514 k_main_1508))
+  f_make_list_1684 n_1036 x_1037 x_1117 k_make_list_1325 -> _|_
+  f_make_list_1686 n_1036 x_1037 k_make_list_1313 x1_1451 x2_1451 ->
+      (cons_make_list_1113 n_1036 x_1037 x_1037 x1_1451 x2_1451 k_make_list_1313)
+  f_mem_1682 x_1031 xs1_1032 k_mem_1190 xs2_1032 x_1237 when (x_1031 = x_1237) -> (k_mem_1190 true)
+  f_mem_1682 x_1031 xs1_1032 k_mem_1190 xs2_1032 x_1237 when (not (x_1031 = x_1237)) ->
+      (mem_1030 x_1031 (xs1_1032 - 1) (f_mem_1683 x_1031 x_1237 xs1_1032 xs2_1032) k_mem_1190)
+  f_mem_1683 x_1031 x_1237 xs1_1032 xs2_1032 x_1084 k_mem_xs_1223 -> (xs2_1032 (x_1084 + 1) k_mem_xs_1223)
+  fail_1694 b k -> {fail} => (k ())
+  is_nil_1038 xs1_1039 xs2_1039 k_is_nil_1484 when (xs1_1039 = 0) -> (k_is_nil_1484 true)
+  is_nil_1038 xs1_1039 xs2_1039 k_is_nil_1484 when (not (xs1_1039 = 0)) -> (k_is_nil_1484 false)
+  k_main_1588 m_1042 n_1041 x1_1514 k_main_1508 b_1600 when b_1600 -> (k_main_1508 ())
+  k_main_1588 m_1042 n_1041 x1_1514 k_main_1508 b_1600 when (not b_1600) -> (fail_1694 true k_main_1508)
+  main_1040 n_1041 m_1042 k_main_1508 -> (make_list_1035 n_1041 m_1042 (f_main_1687 m_1042 n_1041 k_main_1508))
+  make_list_1035 n_1036 x_1037 k_make_list_1313 when (n_1036 < 0) ->
+      (k_make_list_1313 0 (f_make_list_1684 n_1036 x_1037))
+  make_list_1035 n_1036 x_1037 k_make_list_1313 when (not (n_1036 < 0)) ->
+      (make_list_1035 (n_1036 - 1) x_1037 (f_make_list_1686 n_1036 x_1037 k_make_list_1313))
+  mem_1030 x_1031 xs1_1032 xs2_1032 k_mem_1190 when (xs1_1032 = 0) -> (k_mem_1190 false)
+  mem_1030 x_1031 xs1_1032 xs2_1032 k_mem_1190 when (not (xs1_1032 = 0)) ->
+      (br_mem_1692 (1 <= xs1_1032) x_1031 xs1_1032 xs2_1032 k_mem_1190)
+Types:
+  main_1681 : X
+  fail_1694 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  make_list_1035 : (int -> x_2:int -> (int -> (int -> (x_8:int[x_2 = x_8] -> X) -> X) -> X) -> X)
+  mem_1030 : (x_1:int -> x_2:int -> (int -> (x_6:int[x_1 = x_6] -> X) -> X) -> (x_10:bool[x_2 = 0; x_10] -> X) -> X)
+  
+(3-1) Abstracting ... DONE!
+
+(3-2) Checking HORS ... DONE!
+
+Safe!
+
+Refinement Types:
+  make_list: (int -> (x_2:int -> ({x_5:int | x_2 = x_5} list)))
+  mem: ((int -> (x_2:(Bottom list) -> {x_3:bool | not x_3 && fst x_2 = 0})) /\ 
+        (x_6:int -> (x_7:({x_12:int | x_6 = x_12} list) -> ({true} \/ {x_9:bool | not x_9 && fst x_7 = 0}))))
+
+cycles: 3
+total: 14.951 sec
+  abst: 0.027 sec
+  mc: 0.040 sec
+  refine: 14.656 sec
+    exparam: 0.084 sec

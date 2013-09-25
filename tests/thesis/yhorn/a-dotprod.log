@@ -1,0 +1,1995 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn a-dotprod.ml
+
+parsed::
+ let make_array_1030 n_1031 i_1032 = let u_1045 = if 0 <= i_1032 && i_1032 < n_1031 then
+                                                    ()
+                                                  else
+                                                    {fail} () 
+                                     in
+                                       0 
+ in
+ let rec dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 =
+   if i_1037 >= n_1034 then
+     sum_1038
+   else
+     dotprod_1033 n_1034 v1_1035 v2_1036 (i_1037 + 1) (sum_1038 + (v1_1035 i_1037 * v2_1036 i_1037)) 
+ in
+ let main_1039 z_1040 n_1041 =
+   let v1_1042 = make_array_1030 n_1041 
+   in
+   let v2_1043 = make_array_1030 n_1041 
+   in
+     if z_1040 = 0 then
+       let u_1141 = dotprod_1033 n_1041 v1_1042 v2_1043 z_1040 z_1040 
+       in
+         ()
+     else
+       () 
+ in
+   ()
+
+set_target::
+ let make_array_1030 n_1031 i_1032 = let u_1045 = if 0 <= i_1032 && i_1032 < n_1031 then
+                                                    ()
+                                                  else
+                                                    {fail} () 
+                                     in
+                                       0 
+ in
+ let rec dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 =
+   if i_1037 >= n_1034 then
+     sum_1038
+   else
+     dotprod_1033 n_1034 v1_1035 v2_1036 (i_1037 + 1) (sum_1038 + (v1_1035 i_1037 * v2_1036 i_1037)) 
+ in
+ let main_1039 z_1040 n_1041 =
+   let v1_1042 = make_array_1030 n_1041 
+   in
+   let v2_1043 = make_array_1030 n_1041 
+   in
+     if z_1040 = 0 then
+       let u_1141 = dotprod_1033 n_1041 v1_1042 v2_1043 z_1040 z_1040 
+       in
+         ()
+     else
+       () 
+ in
+ let main_1144 = let arg1_1142 = rand_int () 
+                 in
+                 let arg2_1143 = rand_int () 
+                 in
+                   main_1039 arg1_1142 arg2_1143 
+ in
+   ()
+
+CPS::
+ let make_array_1030 (n_1031:int) (i_1032:int) (k_make_array_1172:(int -> X)) =
+   let k_make_array_u_1189 (x_1175:unit) = k_make_array_1172 0 
+   in
+   let k_make_array_u_1178 (b_1190:bool) =
+     if b_1190 then
+       k_make_array_u_1189 ()
+     else
+       {|fail|} () k_make_array_u_1189 
+   in
+     if 0 <= i_1032 then
+       k_make_array_u_1178 (i_1032 < n_1031)
+     else
+       k_make_array_u_1178 false 
+ in
+ let rec dotprod_1033
+   (n_1034:int) (v1_1035:(int -> ((int -> X) -> X))) (v2_1036:(int -> ((int -> X) -> X))) (i_1037:int) (sum_1038:int) (k_dotprod_1240:(
+   int -> X)) =
+   if i_1037 >= n_1034 then
+     k_dotprod_1240 sum_1038
+   else
+     v1_1035 i_1037
+       (fun x_1266 ->
+          v2_1036 i_1037
+            (fun x_1267 ->
+               dotprod_1033 n_1034 v1_1035 v2_1036 (i_1037 + 1) (sum_1038 + (x_1266 * x_1267)) k_dotprod_1240)) 
+ in
+ let main_1039 (z_1040:int) (n_1041:int) (k_main_1315:(unit -> X)) =
+   if z_1040 = 0 then
+     dotprod_1033 n_1041 (make_array_1030 n_1041) (make_array_1030 n_1041) z_1040 z_1040 (fun x_1350 -> k_main_1315 ())
+   else
+     k_main_1315 () 
+ in
+   rand_int_cps () (fun x_1386 -> rand_int_cps () (fun x_1399 -> main_1039 x_1386 x_1399 (fun x_1383 -> end)))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1428
+  main_1428 -> (rand_int f_1432)
+  dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 k_dotprod_1240 when (
+      i_1037 >= n_1034) -> (k_dotprod_1240 sum_1038)
+  dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 k_dotprod_1240 when (
+      not (i_1037 >= n_1034)) ->
+      (v1_1035 i_1037 (f_dotprod_1429 i_1037 n_1034 sum_1038 k_dotprod_1240 v1_1035 v2_1036))
+  f_1432 x_1386 -> (rand_int (f_1433 x_1386))
+  f_1433 x_1386 x_1399 -> (main_1039 x_1386 x_1399 (f_1434 x_1386 x_1399))
+  f_1434 x_1386 x_1399 x_1383 -> end
+  f_dotprod_1429 i_1037 n_1034 sum_1038 k_dotprod_1240 v1_1035 v2_1036 x_1266 ->
+      (v2_1036 i_1037 (f_dotprod_1430 i_1037 n_1034 sum_1038 x_1266 k_dotprod_1240 v1_1035 v2_1036))
+  f_dotprod_1430 i_1037 n_1034 sum_1038 x_1266 k_dotprod_1240 v1_1035 v2_1036 x_1267 ->
+      (dotprod_1033 n_1034 v1_1035 v2_1036 (i_1037 + 1) (sum_1038 + (x_1266 * x_1267)) k_dotprod_1240)
+  f_main_1431 n_1041 z_1040 k_main_1315 x_1350 -> (k_main_1315 ())
+  fail_1435 b k -> {fail} => (k ())
+  k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 b_1190 when b_1190 ->
+      (k_make_array_u_1189 i_1032 n_1031 k_make_array_1172 ())
+  k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 b_1190 when (not b_1190) ->
+      (fail_1435 true (k_make_array_u_1189 i_1032 n_1031 k_make_array_1172))
+  k_make_array_u_1189 i_1032 n_1031 k_make_array_1172 x_1175 -> (k_make_array_1172 0)
+  main_1039 z_1040 n_1041 k_main_1315 when (z_1040 = 0) ->
+      (dotprod_1033 n_1041 (make_array_1030 n_1041) (make_array_1030 n_1041) z_1040 z_1040
+        (f_main_1431 n_1041 z_1040 k_main_1315))
+  main_1039 z_1040 n_1041 k_main_1315 when (not (z_1040 = 0)) -> (k_main_1315 ())
+  make_array_1030 n_1031 i_1032 k_make_array_1172 when (0 <= i_1032) ->
+      (k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 (i_1032 < n_1031))
+  make_array_1030 n_1031 i_1032 k_make_array_1172 when (not (0 <= i_1032)) ->
+      (k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 false)
+Types:
+  main_1428 : X
+  dotprod_1033 : (int -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> int -> (int -> X) -> X)
+  fail_1435 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1428 ... --> 
+  f_1432 ... --> 
+  f_1433 ... --> 
+  main_1039 [1/2] ... --> 
+  dotprod_1033 [2/2] ... --> 
+  make_array_1030 [2/2] ... --> 
+  k_make_array_u_1178 [2/2] ... --> 
+  fail_1435 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 1; 1; 1; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(181)[1]
+  program:
+    main_1428  | true = ((Random.int 0) f_1432)
+    dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 k_dotprod_1240 | (
+    i_1037 >= n_1034) = (k_dotprod_1240 sum_1038)
+    dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 k_dotprod_1240 | (
+    not (i_1037 >= n_1034)) = (v1_1035 i_1037
+                                       (f_dotprod_1429 i_1037
+                                                       n_1034
+                                                       sum_1038
+                                                       k_dotprod_1240
+                                                       v1_1035
+                                                       v2_1036))
+    f_1432 x_1386 | true = ((Random.int 0) (f_1433 x_1386))
+    f_1433 x_1386 x_1399 | true = (main_1039 x_1386
+                                             x_1399
+                                             (f_1434 x_1386
+                                                     x_1399))
+    f_1434 x_1386 x_1399 x_1383 | true = end
+    f_dotprod_1429 i_1037 n_1034 sum_1038 k_dotprod_1240 v1_1035 v2_1036 x_1266 | true = (
+    v2_1036 i_1037
+            (f_dotprod_1430 i_1037
+                            n_1034
+                            sum_1038
+                            x_1266
+                            k_dotprod_1240
+                            v1_1035
+                            v2_1036))
+    f_dotprod_1430 i_1037 n_1034 sum_1038 x_1266 k_dotprod_1240 v1_1035 v2_1036 x_1267 | true = (
+    dotprod_1033 n_1034
+                 v1_1035
+                 v2_1036
+                 (i_1037 + 1)
+                 (sum_1038 + (x_1266 * x_1267))
+                 k_dotprod_1240)
+    f_main_1431 n_1041 z_1040 k_main_1315 x_1350 | true = (k_main_1315 ())
+    fail_1435 b k | true = (fail ())
+    k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 b_1190 | b_1190 = (
+    k_make_array_u_1189 i_1032
+                        n_1031
+                        k_make_array_1172
+                        ())
+    k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 b_1190 | (not b_1190) = (
+    fail_1435 true
+              (k_make_array_u_1189 i_1032
+                                   n_1031
+                                   k_make_array_1172))
+    k_make_array_u_1189 i_1032 n_1031 k_make_array_1172 x_1175 | true = (
+    k_make_array_1172 0)
+    main_1039 z_1040 n_1041 k_main_1315 | (z_1040 = 0) = (dotprod_1033
+                                                            n_1041
+                                                            (make_array_1030 n_1041)
+                                                            (make_array_1030 n_1041)
+                                                            z_1040
+                                                            z_1040
+                                                            (f_main_1431 n_1041
+                                                                    z_1040
+                                                                    k_main_1315))
+    main_1039 z_1040 n_1041 k_main_1315 | (not (z_1040 = 0)) = (k_main_1315 ())
+    make_array_1030 n_1031 i_1032 k_make_array_1172 | (0 <= i_1032) = (
+    k_make_array_u_1178 i_1032
+                        n_1031
+                        k_make_array_1172
+                        (i_1032 < n_1031))
+    make_array_1030 n_1031 i_1032 k_make_array_1172 | (not (0 <= i_1032)) = (
+    k_make_array_u_1178 i_1032
+                        n_1031
+                        k_make_array_1172
+                        false)
+    main_1428:X
+    dotprod_1033:int -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> int -> (int -> X) -> X
+    f_1432:int -> X
+    f_1433:int -> int -> X
+    f_1434:int -> int -> unit -> X
+    f_dotprod_1429:int -> int -> int -> (int -> X) -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> X
+    f_dotprod_1430:int ->
+                   int -> int -> int -> (int -> X) -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> X
+    f_main_1431:int -> int -> (unit -> X) -> int -> X
+    fail_1435:bool -> (unit -> X) -> X
+    k_make_array_u_1178:int -> int -> (int -> X) -> bool -> X
+    k_make_array_u_1189:int -> int -> (int -> X) -> unit -> X
+    main_1039:int -> int -> (unit -> X) -> X
+    make_array_1030:int -> int -> (int -> X) -> X
+  inlined functions: f_1432,f_1433,f_1434,f_dotprod_1429,f_dotprod_1430,f_main_1431,k_make_array_u_1178,k_make_array_u_1189,main_1039,make_array_1030
+  counterexample: 0:0:0:0:1:1:1:0
+  error traces:
+    [true.nop(<f_1432@4:0> = var2)
+     [true.nop((<f_1433@7:0> = <f_1432@4:0>) && (<f_1433@7:1> = var3))
+      [true.((<main_1039@9:0> = <f_1433@7:0>) && (<main_1039@9:1> = <f_1433@7:1>))
+       [(<main_1039@9:0> = 0).
+        ((<dotprod_1033@12:0> = <main_1039@9:1>) &&
+         ((<dotprod_1033@12:3> = <main_1039@9:0>) && (<dotprod_1033@12:4> = <main_1039@9:0>)))
+        [(not (<dotprod_1033@12:3> >= <dotprod_1033@12:0>)).(<<dotprod_1033@12:1>@15:0> = <dotprod_1033@12:3>)
+         [true.((<make_array_1030@17:0> = <main_1039@9:1>) && (<make_array_1030@17:1> = <<dotprod_1033@12:1>@15:0>))
+          [(not (0 <= <make_array_1030@17:1>)).
+           ((<k_make_array_u_1178@20:0> = <make_array_1030@17:1>) &&
+            ((<k_make_array_u_1178@20:1> = <make_array_1030@17:0>) && (<k_make_array_u_1178@20:3> = false)))
+           [(not <k_make_array_u_1178@20:3>).(<fail_1435@23:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(182)[2]
+    horn clauses:
+      P[<fail_1435@23:0>](<fail_1435@23:0>:bool)|- bot
+      
+      P[<k_make_array_u_1178@20:3>](<k_make_array_u_1178@20:0>:int,<k_make_array_u_1178@20:1>:int,false:bool),
+      <fail_1435@23:0> |- P[<fail_1435@23:0>](<fail_1435@23:0>:bool)
+      
+      P[<make_array_1030@17:1>](<k_make_array_u_1178@20:1>:int,<k_make_array_u_1178@20:0>:int),
+      ((0 > <k_make_array_u_1178@20:0>) && (not <k_make_array_u_1178@20:3>))
+      |- P[<k_make_array_u_1178@20:3>](<k_make_array_u_1178@20:0>:int,
+                                       <k_make_array_u_1178@20:1>:int,
+                                       <k_make_array_u_1178@20:3>:bool)
+      
+      P[<main_1039@9:1>](0:int,<make_array_1030@17:0>:int),
+      P[<<dotprod_1033@12:1>@15:0>](<make_array_1030@17:0>:int,<make_array_1030@17:1>:int)|- P[<make_array_1030@17:1>](
+      <make_array_1030@17:0>:int,<make_array_1030@17:1>:int)
+      
+      P[<dotprod_1033@12:4>](<dotprod_1033@12:0>:int,<<dotprod_1033@12:1>@15:0>:int,<dotprod_1033@12:4>:int),
+      (<<dotprod_1033@12:1>@15:0> < <dotprod_1033@12:0>)
+      |- P[<<dotprod_1033@12:1>@15:0>](<dotprod_1033@12:0>:int,<<dotprod_1033@12:1>@15:0>:int)
+      
+      P[<main_1039@9:1>](<dotprod_1033@12:4>:int,<dotprod_1033@12:0>:int),
+      ((<dotprod_1033@12:4> = 0) && (<dotprod_1033@12:4> = <dotprod_1033@12:3>))
+      |- P[<dotprod_1033@12:4>](<dotprod_1033@12:0>:int,<dotprod_1033@12:3>:int,
+                                <dotprod_1033@12:4>:int)
+      
+      P[<f_1433@7:1>](<main_1039@9:0>:int,<main_1039@9:1>:int)|- P[<main_1039@9:1>](
+      <main_1039@9:0>:int,<main_1039@9:1>:int)
+      
+      P[<f_1432@4:0>](<f_1433@7:0>:int)|- P[<f_1433@7:1>](<f_1433@7:0>:int,
+                                                          <f_1433@7:1>:int)
+      
+      |- P[<f_1432@4:0>](<f_1432@4:0>:int)
+    call trees:
+      <main_1428@1>
+        <f_1432@4>
+          <f_1433@7>
+            <main_1039@9>
+              <dotprod_1033@12>
+              </<dotprod_1033@12:1>@15>
+              <make_array_1030@17>
+                <k_make_array_u_1178@20>
+                  <fail_1435@23>
+    inlined horn clauses:
+      P[<fail_1435@23:0>](<fail_1435@23:0>:bool)|- bot
+      
+      P[<<dotprod_1033@12:1>@15:0>](<k_make_array_u_1178@20:1>:int,<k_make_array_u_1178@20:0>:int),
+      ((0 > <k_make_array_u_1178@20:0>) && <fail_1435@23:0>) |- P[<fail_1435@23:0>](
+      <fail_1435@23:0>:bool)
+      
+      P[<dotprod_1033@12:4>](<dotprod_1033@12:0>:int,<<dotprod_1033@12:1>@15:0>:int,<dotprod_1033@12:4>:int),
+      (<<dotprod_1033@12:1>@15:0> < <dotprod_1033@12:0>)
+      |- P[<<dotprod_1033@12:1>@15:0>](<dotprod_1033@12:0>:int,<<dotprod_1033@12:1>@15:0>:int)
+      
+       ((<dotprod_1033@12:4> = 0) && (<dotprod_1033@12:4> = <dotprod_1033@12:3>))
+      |- P[<dotprod_1033@12:4>](<dotprod_1033@12:0>:int,<dotprod_1033@12:3>:int,
+                                <dotprod_1033@12:4>:int)
+    begin ParamSubstInfer.infer(1188)[3]
+      
+    end ParamSubstInfer.infer(1188)[3] (0.021997 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(1190)[3]
+      
+    end RefTypeInfer.elim_coeffs(1190)[3] (0.000000 sec.)
+    begin YhornInterface.solve(1349)[3]
+      begin HcSolver.solve_ub(1350)[4]
+        encoded:
+          P[<fail_1435@23:0>](<fail_1435@23:0>:int)|- bot
+          
+          P[<<dotprod_1033@12:1>@15:0>](<k_make_array_u_1178@20:1>:int,<k_make_array_u_1178@20:0>:int),
+          ((0 > <k_make_array_u_1178@20:0>) && (<fail_1435@23:0> = 1)) |- P[<fail_1435@23:0>](
+          <fail_1435@23:0>:int)
+          
+          P[<dotprod_1033@12:4>](<dotprod_1033@12:0>:int,<<dotprod_1033@12:1>@15:0>:int,<dotprod_1033@12:4>:int),
+          (<<dotprod_1033@12:1>@15:0> < <dotprod_1033@12:0>)
+          |- P[<<dotprod_1033@12:1>@15:0>](<dotprod_1033@12:0>:int,<<dotprod_1033@12:1>@15:0>:int)
+          
+           ((<dotprod_1033@12:4> = 0) && (<dotprod_1033@12:4> = <dotprod_1033@12:3>))
+          |- P[<dotprod_1033@12:4>](<dotprod_1033@12:0>:int,<dotprod_1033@12:3>:int,
+                                    <dotprod_1033@12:4>:int)
+        input to Yhorn:
+          P[<fail_1435@23:0>](<fail_1435@23:0>:int)|- bot
+          
+          P[<<dotprod_1033@12:1>@15:0>](<k_make_array_u_1178@20:1>:int,<k_make_array_u_1178@20:0>:int),
+          ((0 > <k_make_array_u_1178@20:0>) && (<fail_1435@23:0> = 1)) |- P[<fail_1435@23:0>](
+          <fail_1435@23:0>:int)
+          
+          P[<dotprod_1033@12:4>](<dotprod_1033@12:0>:int,<<dotprod_1033@12:1>@15:0>:int,<dotprod_1033@12:4>:int),
+          (<<dotprod_1033@12:1>@15:0> < <dotprod_1033@12:0>)
+          |- P[<<dotprod_1033@12:1>@15:0>](<dotprod_1033@12:0>:int,<<dotprod_1033@12:1>@15:0>:int)
+          
+           ((<dotprod_1033@12:4> = <dotprod_1033@12:3>) && (<dotprod_1033@12:4> = 0))
+          |- P[<dotprod_1033@12:4>](<dotprod_1033@12:0>:int,<dotprod_1033@12:3>:int,
+                                    <dotprod_1033@12:4>:int)Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1435_sep_23_sep_0($8)) -> 1=0.
+(($8-1=0) & (-$9>0)) & (v_sep_dotprod_1033_sep_12_sep_1_sep_15_sep_0($10,$9)) -> v_sep_fail_1435_sep_23_sep_0($8).
+($11-$12<0) & (v_sep_dotprod_1033_sep_12_sep_4($12,$11,$13)) -> v_sep_dotprod_1033_sep_12_sep_1_sep_15_sep_0($12,$11).
+($13=0) & ($13-$14=0) -> v_sep_dotprod_1033_sep_12_sep_4($12,$14,$13).
+
+
+v_sep_dotprod_1033_sep_12_sep_1_sep_15_sep_0: X
+v_sep_dotprod_1033_sep_12_sep_4: X
+v_sep_fail_1435_sep_23_sep_0: X
+....
+v_sep_dotprod_1033_sep_12_sep_1_sep_15_sep_0: X
+v_sep_dotprod_1033_sep_12_sep_4: X
+v_sep_fail_1435_sep_23_sep_0: X
+...
+v_sep_dotprod_1033_sep_12_sep_1_sep_15_sep_0: X
+v_sep_dotprod_1033_sep_12_sep_4: X
+v_sep_fail_1435_sep_23_sep_0: X
+....
+v_sep_dotprod_1033_sep_12_sep_1_sep_15_sep_0: X
+v_sep_dotprod_1033_sep_12_sep_4: X
+v_sep_fail_1435_sep_23_sep_0: X
+....(0=0) & (v_sep_fail_1435_sep_23_sep_0($8)) -> 1=0.
+(($8-1=0) & (-$9>0)) & (v_sep_dotprod_1033_sep_12_sep_1_sep_15_sep_0($10,$9)) -> v_sep_fail_1435_sep_23_sep_0($8).
+($11-$12<0) & (v_sep_dotprod_1033_sep_12_sep_4($12,$11,$13)) -> v_sep_dotprod_1033_sep_12_sep_1_sep_15_sep_0($12,$11).
+($13=0) & ($13-$14=0) -> v_sep_dotprod_1033_sep_12_sep_4($12,$14,$13).
+
+        solution:
+          P[<<dotprod_1033@12:1>@15:0>]($18:int,$20:int) = (0 <= $20)
+          P[<dotprod_1033@12:4>]($23:int,$25:int,$27:int) = (0 <= $25)
+          P[<fail_1435@23:0>]($15:bool) = false
+        
+      end HcSolver.solve_ub(1350)[4] (0.013998 sec.)
+      begin HcSolver.check_validity(1460)[4]
+        input:
+          P[<fail_1435@23:0>](<fail_1435@23:0>:bool)|- bot
+          
+          P[<<dotprod_1033@12:1>@15:0>](<k_make_array_u_1178@20:1>:int,<k_make_array_u_1178@20:0>:int),
+          ((0 > <k_make_array_u_1178@20:0>) && <fail_1435@23:0>) |- P[<fail_1435@23:0>](
+          <fail_1435@23:0>:bool)
+          
+          P[<dotprod_1033@12:4>](<dotprod_1033@12:0>:int,<<dotprod_1033@12:1>@15:0>:int,<dotprod_1033@12:4>:int),
+          (<<dotprod_1033@12:1>@15:0> < <dotprod_1033@12:0>)
+          |- P[<<dotprod_1033@12:1>@15:0>](<dotprod_1033@12:0>:int,<<dotprod_1033@12:1>@15:0>:int)
+          
+           ((<dotprod_1033@12:4> = 0) && (<dotprod_1033@12:4> = <dotprod_1033@12:3>))
+          |- P[<dotprod_1033@12:4>](<dotprod_1033@12:0>:int,<dotprod_1033@12:3>:int,
+                                    <dotprod_1033@12:4>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(1460)[4] (0.007999 sec.)
+      solution:
+        P[<<dotprod_1033@12:1>@15:0>]($18:int,$20:int) = (0 <= $20)
+        P[<dotprod_1033@12:4>]($23:int,$25:int,$27:int) = (0 <= $25)
+        P[<fail_1435@23:0>]($15:bool) = false
+    end YhornInterface.solve(1349)[3] (0.021997 sec.)
+    
+  end RefTypeInfer.infer_etrs(182)[2] (0.048993 sec.)
+  refinement types:
+    main_1428: X
+    f_1432: v1:int -> X
+    f_1433: v1:int -> v2:int -> X
+    main_1039: v1:int -> v2:int -> (v3:unit -> X) -> X
+    dotprod_1033: v1:int ->
+                  (v2:{v2:int | (0 <= v2)} -> (v3:int -> X) -> X) ->
+                  (v6:int -> (v7:int -> X) -> X) -> v10:int -> v11:{v11:int | (0 <= v10)} -> (v12:int -> X) -> X
+    make_array_1030: v1:int -> v2:int -> (v3:int -> X) -> X
+    k_make_array_u_1178: v1:int -> v2:int -> (v3:int -> X) -> v5:bool -> X
+    fail_1435: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1434: var23:int -> var22:int -> var21:unit -> X
+    f_dotprod_1429: var38:int ->
+                    var37:int ->
+                    var36:int ->
+                    (var35:int -> X) ->
+                    (var33:int -> (var32:int -> X) -> X) -> (var29:int -> (var28:int -> X) -> X) -> var25:int -> X
+    f_dotprod_1430: var54:int ->
+                    var53:int ->
+                    var52:int ->
+                    var51:int ->
+                    (var50:int -> X) ->
+                    (var48:int -> (var47:int -> X) -> X) -> (var44:int -> (var43:int -> X) -> X) -> var40:int -> X
+    f_main_1431: var60:int -> var59:int -> (var58:unit -> X) -> var56:int -> X
+    k_make_array_u_1189: var66:int -> var65:int -> (var64:int -> X) -> var62:unit -> X
+  abstraction types:
+    main_1428: X
+    f_1432: v1:int -> X
+    f_1433: v1:int -> v2:int -> X
+    main_1039: v1:int -> v2:int -> (v3:unit -> X) -> X
+    dotprod_1033: v1:int ->
+                  (v2:int[v2 -> (0 <= v2)] -> (v3:int -> X) -> X) ->
+                  (v6:int -> (v7:int -> X) -> X) -> v10:int -> v11:int[v11 -> (
+                                                                    0 <= v10)] -> (v12:int -> X) -> X
+    make_array_1030: v1:int -> v2:int -> (v3:int -> X) -> X
+    k_make_array_u_1178: v1:int -> v2:int -> (v3:int -> X) -> v5:bool -> X
+    fail_1435: v1:bool -> (v2:unit -> X) -> X
+    f_1434: var23:int -> var22:int -> var21:unit -> X
+    f_dotprod_1429: var38:int ->
+                    var37:int ->
+                    var36:int ->
+                    (var35:int -> X) ->
+                    (var33:int -> (var32:int -> X) -> X) -> (var29:int -> (var28:int -> X) -> X) -> var25:int -> X
+    f_dotprod_1430: var54:int ->
+                    var53:int ->
+                    var52:int ->
+                    var51:int ->
+                    (var50:int -> X) ->
+                    (var48:int -> (var47:int -> X) -> X) -> (var44:int -> (var43:int -> X) -> X) -> var40:int -> X
+    f_main_1431: var60:int -> var59:int -> (var58:unit -> X) -> var56:int -> X
+    k_make_array_u_1189: var66:int -> var65:int -> (var64:int -> X) -> var62:unit -> X
+  
+end AbsTypeInfer.refine(181)[1] (0.054992 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 1; 1
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1428
+  main_1428 -> (rand_int f_1432)
+  dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 k_dotprod_1240 when (
+      i_1037 >= n_1034) -> (k_dotprod_1240 sum_1038)
+  dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 k_dotprod_1240 when (
+      not (i_1037 >= n_1034)) ->
+      (v1_1035 i_1037 (f_dotprod_1429 i_1037 n_1034 sum_1038 k_dotprod_1240 v1_1035 v2_1036))
+  f_1432 x_1386 -> (rand_int (f_1433 x_1386))
+  f_1433 x_1386 x_1399 -> (main_1039 x_1386 x_1399 (f_1434 x_1386 x_1399))
+  f_1434 x_1386 x_1399 x_1383 -> end
+  f_dotprod_1429 i_1037 n_1034 sum_1038 k_dotprod_1240 v1_1035 v2_1036 x_1266 ->
+      (v2_1036 i_1037 (f_dotprod_1430 i_1037 n_1034 sum_1038 x_1266 k_dotprod_1240 v1_1035 v2_1036))
+  f_dotprod_1430 i_1037 n_1034 sum_1038 x_1266 k_dotprod_1240 v1_1035 v2_1036 x_1267 ->
+      (dotprod_1033 n_1034 v1_1035 v2_1036 (i_1037 + 1) (sum_1038 + (x_1266 * x_1267)) k_dotprod_1240)
+  f_main_1431 n_1041 z_1040 k_main_1315 x_1350 -> (k_main_1315 ())
+  fail_1435 b k -> {fail} => (k ())
+  k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 b_1190 when b_1190 ->
+      (k_make_array_u_1189 i_1032 n_1031 k_make_array_1172 ())
+  k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 b_1190 when (not b_1190) ->
+      (fail_1435 true (k_make_array_u_1189 i_1032 n_1031 k_make_array_1172))
+  k_make_array_u_1189 i_1032 n_1031 k_make_array_1172 x_1175 -> (k_make_array_1172 0)
+  main_1039 z_1040 n_1041 k_main_1315 when (z_1040 = 0) ->
+      (dotprod_1033 n_1041 (make_array_1030 n_1041) (make_array_1030 n_1041) z_1040 z_1040
+        (f_main_1431 n_1041 z_1040 k_main_1315))
+  main_1039 z_1040 n_1041 k_main_1315 when (not (z_1040 = 0)) -> (k_main_1315 ())
+  make_array_1030 n_1031 i_1032 k_make_array_1172 when (0 <= i_1032) ->
+      (k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 (i_1032 < n_1031))
+  make_array_1030 n_1031 i_1032 k_make_array_1172 when (not (0 <= i_1032)) ->
+      (k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 false)
+Types:
+  main_1428 : X
+  dotprod_1033 : (int ->
+                  (x_3:int[x_3 >= 0] -> (int -> X) -> X) ->
+                  (int -> (int -> X) -> X) -> x_14:int -> int[x_14 >= 0] -> (int -> X) -> X)
+  fail_1435 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1428 ... --> 
+  f_1432 ... --> 
+  f_1433 ... --> 
+  main_1039 [1/2] ... --> 
+  dotprod_1033 [2/2] ... --> 
+  make_array_1030 [1/2] ... --> 
+  k_make_array_u_1178 [2/2] ... --> 
+  fail_1435 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 1; 0; 1; 0
+
+(1-3) Checking counter-example ... DONE!
+
+(1-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(2126)[1]
+  program:
+    main_1428  | true = ((Random.int 0) f_1432)
+    dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 k_dotprod_1240 | (
+    i_1037 >= n_1034) = (k_dotprod_1240 sum_1038)
+    dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 k_dotprod_1240 | (
+    not (i_1037 >= n_1034)) = (v1_1035 i_1037
+                                       (f_dotprod_1429 i_1037
+                                                       n_1034
+                                                       sum_1038
+                                                       k_dotprod_1240
+                                                       v1_1035
+                                                       v2_1036))
+    f_1432 x_1386 | true = ((Random.int 0) (f_1433 x_1386))
+    f_1433 x_1386 x_1399 | true = (main_1039 x_1386
+                                             x_1399
+                                             (f_1434 x_1386
+                                                     x_1399))
+    f_1434 x_1386 x_1399 x_1383 | true = end
+    f_dotprod_1429 i_1037 n_1034 sum_1038 k_dotprod_1240 v1_1035 v2_1036 x_1266 | true = (
+    v2_1036 i_1037
+            (f_dotprod_1430 i_1037
+                            n_1034
+                            sum_1038
+                            x_1266
+                            k_dotprod_1240
+                            v1_1035
+                            v2_1036))
+    f_dotprod_1430 i_1037 n_1034 sum_1038 x_1266 k_dotprod_1240 v1_1035 v2_1036 x_1267 | true = (
+    dotprod_1033 n_1034
+                 v1_1035
+                 v2_1036
+                 (i_1037 + 1)
+                 (sum_1038 + (x_1266 * x_1267))
+                 k_dotprod_1240)
+    f_main_1431 n_1041 z_1040 k_main_1315 x_1350 | true = (k_main_1315 ())
+    fail_1435 b k | true = (fail ())
+    k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 b_1190 | b_1190 = (
+    k_make_array_u_1189 i_1032
+                        n_1031
+                        k_make_array_1172
+                        ())
+    k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 b_1190 | (not b_1190) = (
+    fail_1435 true
+              (k_make_array_u_1189 i_1032
+                                   n_1031
+                                   k_make_array_1172))
+    k_make_array_u_1189 i_1032 n_1031 k_make_array_1172 x_1175 | true = (
+    k_make_array_1172 0)
+    main_1039 z_1040 n_1041 k_main_1315 | (z_1040 = 0) = (dotprod_1033
+                                                            n_1041
+                                                            (make_array_1030 n_1041)
+                                                            (make_array_1030 n_1041)
+                                                            z_1040
+                                                            z_1040
+                                                            (f_main_1431 n_1041
+                                                                    z_1040
+                                                                    k_main_1315))
+    main_1039 z_1040 n_1041 k_main_1315 | (not (z_1040 = 0)) = (k_main_1315 ())
+    make_array_1030 n_1031 i_1032 k_make_array_1172 | (0 <= i_1032) = (
+    k_make_array_u_1178 i_1032
+                        n_1031
+                        k_make_array_1172
+                        (i_1032 < n_1031))
+    make_array_1030 n_1031 i_1032 k_make_array_1172 | (not (0 <= i_1032)) = (
+    k_make_array_u_1178 i_1032
+                        n_1031
+                        k_make_array_1172
+                        false)
+    main_1428:X
+    dotprod_1033:int -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> int -> (int -> X) -> X
+    f_1432:int -> X
+    f_1433:int -> int -> X
+    f_1434:int -> int -> unit -> X
+    f_dotprod_1429:int -> int -> int -> (int -> X) -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> X
+    f_dotprod_1430:int ->
+                   int -> int -> int -> (int -> X) -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> X
+    f_main_1431:int -> int -> (unit -> X) -> int -> X
+    fail_1435:bool -> (unit -> X) -> X
+    k_make_array_u_1178:int -> int -> (int -> X) -> bool -> X
+    k_make_array_u_1189:int -> int -> (int -> X) -> unit -> X
+    main_1039:int -> int -> (unit -> X) -> X
+    make_array_1030:int -> int -> (int -> X) -> X
+  inlined functions: f_1432,f_1433,f_1434,f_dotprod_1429,f_dotprod_1430,f_main_1431,k_make_array_u_1178,k_make_array_u_1189,main_1039,make_array_1030
+  counterexample: 0:0:0:0:1:0:1:0
+  error traces:
+    [true.nop(<f_1432@29:0> = var67)
+     [true.nop((<f_1433@32:0> = <f_1432@29:0>) && (<f_1433@32:1> = var68))
+      [true.((<main_1039@34:0> = <f_1433@32:0>) && (<main_1039@34:1> = <f_1433@32:1>))
+       [(<main_1039@34:0> = 0).
+        ((<dotprod_1033@37:0> = <main_1039@34:1>) &&
+         ((<dotprod_1033@37:3> = <main_1039@34:0>) && (<dotprod_1033@37:4> = <main_1039@34:0>)))
+        [(not (<dotprod_1033@37:3> >= <dotprod_1033@37:0>)).(<<dotprod_1033@37:1>@40:0> = <dotprod_1033@37:3>)
+         [true.((<make_array_1030@42:0> = <main_1039@34:1>) && (<make_array_1030@42:1> = <<dotprod_1033@37:1>@40:0>))
+          [(0 <= <make_array_1030@42:1>).
+           ((<k_make_array_u_1178@45:0> = <make_array_1030@42:1>) &&
+            ((<k_make_array_u_1178@45:1> = <make_array_1030@42:0>) &&
+             (<k_make_array_u_1178@45:3> = (<make_array_1030@42:1> < <make_array_1030@42:0>))))
+           [(not <k_make_array_u_1178@45:3>).(<fail_1435@48:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(2127)[2]
+    horn clauses:
+      P[<fail_1435@48:0>](<fail_1435@48:0>:bool)|- bot
+      
+      P[<k_make_array_u_1178@45:3>](<k_make_array_u_1178@45:0>:int,<k_make_array_u_1178@45:1>:int,false:bool),
+      <fail_1435@48:0> |- P[<fail_1435@48:0>](<fail_1435@48:0>:bool)
+      
+      P[<make_array_1030@42:1>](<k_make_array_u_1178@45:1>:int,<k_make_array_u_1178@45:0>:int),
+      ((0 <= <k_make_array_u_1178@45:0>) &&
+       (<k_make_array_u_1178@45:3> = (<k_make_array_u_1178@45:0> < <k_make_array_u_1178@45:1>)))
+      |- P[<k_make_array_u_1178@45:3>](<k_make_array_u_1178@45:0>:int,
+                                       <k_make_array_u_1178@45:1>:int,
+                                       <k_make_array_u_1178@45:3>:bool)
+      
+      P[<main_1039@34:1>](0:int,<make_array_1030@42:0>:int),
+      P[<<dotprod_1033@37:1>@40:0>](<make_array_1030@42:0>:int,<make_array_1030@42:1>:int)|- P[<make_array_1030@42:1>](
+      <make_array_1030@42:0>:int,<make_array_1030@42:1>:int)
+      
+      P[<dotprod_1033@37:4>](<dotprod_1033@37:0>:int,<<dotprod_1033@37:1>@40:0>:int,<dotprod_1033@37:4>:int),
+      (<<dotprod_1033@37:1>@40:0> < <dotprod_1033@37:0>)
+      |- P[<<dotprod_1033@37:1>@40:0>](<dotprod_1033@37:0>:int,<<dotprod_1033@37:1>@40:0>:int)
+      
+      P[<main_1039@34:1>](<dotprod_1033@37:4>:int,<dotprod_1033@37:0>:int),
+      ((<dotprod_1033@37:4> = 0) && (<dotprod_1033@37:4> = <dotprod_1033@37:3>))
+      |- P[<dotprod_1033@37:4>](<dotprod_1033@37:0>:int,<dotprod_1033@37:3>:int,
+                                <dotprod_1033@37:4>:int)
+      
+      P[<f_1433@32:1>](<main_1039@34:0>:int,<main_1039@34:1>:int)|- P[<main_1039@34:1>](
+      <main_1039@34:0>:int,<main_1039@34:1>:int)
+      
+      P[<f_1432@29:0>](<f_1433@32:0>:int)|- P[<f_1433@32:1>](<f_1433@32:0>:int,
+                                                             <f_1433@32:1>:int)
+      
+      |- P[<f_1432@29:0>](<f_1432@29:0>:int)
+    call trees:
+      <main_1428@26>
+        <f_1432@29>
+          <f_1433@32>
+            <main_1039@34>
+              <dotprod_1033@37>
+              </<dotprod_1033@37:1>@40>
+              <make_array_1030@42>
+                <k_make_array_u_1178@45>
+                  <fail_1435@48>
+    inlined horn clauses:
+      P[<fail_1435@48:0>](<fail_1435@48:0>:bool)|- bot
+      
+      P[<<dotprod_1033@37:1>@40:0>](<k_make_array_u_1178@45:1>:int,<k_make_array_u_1178@45:0>:int),
+      ((0 <= <k_make_array_u_1178@45:0>) &&
+       ((<k_make_array_u_1178@45:0> >= <k_make_array_u_1178@45:1>) && <fail_1435@48:0>))
+      |- P[<fail_1435@48:0>](<fail_1435@48:0>:bool)
+      
+      P[<dotprod_1033@37:4>](<dotprod_1033@37:0>:int,<<dotprod_1033@37:1>@40:0>:int,<dotprod_1033@37:4>:int),
+      (<<dotprod_1033@37:1>@40:0> < <dotprod_1033@37:0>)
+      |- P[<<dotprod_1033@37:1>@40:0>](<dotprod_1033@37:0>:int,<<dotprod_1033@37:1>@40:0>:int)
+      
+       ((<dotprod_1033@37:4> = 0) && (<dotprod_1033@37:4> = <dotprod_1033@37:3>))
+      |- P[<dotprod_1033@37:4>](<dotprod_1033@37:0>:int,<dotprod_1033@37:3>:int,
+                                <dotprod_1033@37:4>:int)
+    begin ParamSubstInfer.infer(3351)[3]
+      
+    end ParamSubstInfer.infer(3351)[3] (0.044993 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(3353)[3]
+      
+    end RefTypeInfer.elim_coeffs(3353)[3] (0.001000 sec.)
+    begin YhornInterface.solve(3579)[3]
+      begin HcSolver.solve_ub(3580)[4]
+        encoded:
+          P[<fail_1435@48:0>](<fail_1435@48:0>:int)|- bot
+          
+          P[<<dotprod_1033@37:1>@40:0>](<k_make_array_u_1178@45:1>:int,<k_make_array_u_1178@45:0>:int),
+          ((0 <= <k_make_array_u_1178@45:0>) &&
+           ((<k_make_array_u_1178@45:0> >= <k_make_array_u_1178@45:1>) && (<fail_1435@48:0> = 1)))
+          |- P[<fail_1435@48:0>](<fail_1435@48:0>:int)
+          
+          P[<dotprod_1033@37:4>](<dotprod_1033@37:0>:int,<<dotprod_1033@37:1>@40:0>:int,<dotprod_1033@37:4>:int),
+          (<<dotprod_1033@37:1>@40:0> < <dotprod_1033@37:0>)
+          |- P[<<dotprod_1033@37:1>@40:0>](<dotprod_1033@37:0>:int,<<dotprod_1033@37:1>@40:0>:int)
+          
+           ((<dotprod_1033@37:4> = 0) && (<dotprod_1033@37:4> = <dotprod_1033@37:3>))
+          |- P[<dotprod_1033@37:4>](<dotprod_1033@37:0>:int,<dotprod_1033@37:3>:int,
+                                    <dotprod_1033@37:4>:int)
+        input to Yhorn:
+          P[<fail_1435@48:0>](<fail_1435@48:0>:int)|- bot
+          
+          P[<<dotprod_1033@37:1>@40:0>](<k_make_array_u_1178@45:1>:int,<k_make_array_u_1178@45:0>:int),
+          ((<k_make_array_u_1178@45:0> >= <k_make_array_u_1178@45:1>) &&
+           ((0 <= <k_make_array_u_1178@45:0>) && (<fail_1435@48:0> = 1))) |- P[<fail_1435@48:0>](
+          <fail_1435@48:0>:int)
+          
+          P[<dotprod_1033@37:4>](<dotprod_1033@37:0>:int,<<dotprod_1033@37:1>@40:0>:int,<dotprod_1033@37:4>:int),
+          (<<dotprod_1033@37:1>@40:0> < <dotprod_1033@37:0>)
+          |- P[<<dotprod_1033@37:1>@40:0>](<dotprod_1033@37:0>:int,<<dotprod_1033@37:1>@40:0>:int)
+          
+           ((<dotprod_1033@37:4> = <dotprod_1033@37:3>) && (<dotprod_1033@37:4> = 0))
+          |- P[<dotprod_1033@37:4>](<dotprod_1033@37:0>:int,<dotprod_1033@37:3>:int,
+                                    <dotprod_1033@37:4>:int)Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1435_sep_48_sep_0($71)) -> 1=0.
+(($71-1=0) & (-$72<=0) & ($72-$73>=0)) & (v_sep_dotprod_1033_sep_37_sep_1_sep_40_sep_0($73,$72)) -> v_sep_fail_1435_sep_48_sep_0($71).
+($74-$75<0) & (v_sep_dotprod_1033_sep_37_sep_4($75,$74,$76)) -> v_sep_dotprod_1033_sep_37_sep_1_sep_40_sep_0($75,$74).
+($76=0) & ($76-$77=0) -> v_sep_dotprod_1033_sep_37_sep_4($75,$77,$76).
+
+
+v_sep_dotprod_1033_sep_37_sep_1_sep_40_sep_0: X
+v_sep_dotprod_1033_sep_37_sep_4: X
+v_sep_fail_1435_sep_48_sep_0: X
+....
+v_sep_dotprod_1033_sep_37_sep_1_sep_40_sep_0: X
+v_sep_dotprod_1033_sep_37_sep_4: X
+v_sep_fail_1435_sep_48_sep_0: X
+...
+v_sep_dotprod_1033_sep_37_sep_1_sep_40_sep_0: X
+v_sep_dotprod_1033_sep_37_sep_4: X
+v_sep_fail_1435_sep_48_sep_0: X
+....
+v_sep_dotprod_1033_sep_37_sep_1_sep_40_sep_0: X
+v_sep_dotprod_1033_sep_37_sep_4: X
+v_sep_fail_1435_sep_48_sep_0: X
+....(0=0) & (v_sep_fail_1435_sep_48_sep_0($71)) -> 1=0.
+(($71-1=0) & (-$72<=0) & ($72-$73>=0)) & (v_sep_dotprod_1033_sep_37_sep_1_sep_40_sep_0($73,$72)) -> v_sep_fail_1435_sep_48_sep_0($71).
+($74-$75<0) & (v_sep_dotprod_1033_sep_37_sep_4($75,$74,$76)) -> v_sep_dotprod_1033_sep_37_sep_1_sep_40_sep_0($75,$74).
+($76=0) & ($76-$77=0) -> v_sep_dotprod_1033_sep_37_sep_4($75,$77,$76).
+
+        solution:
+          P[<<dotprod_1033@37:1>@40:0>]($81:int,$83:int) = ((1 + $83) <= $81)
+          P[<dotprod_1033@37:4>]($86:int,$88:int,$90:int) = true
+          P[<fail_1435@48:0>]($78:bool) = false
+        
+      end HcSolver.solve_ub(3580)[4] (0.011998 sec.)
+      begin HcSolver.check_validity(3738)[4]
+        input:
+          P[<fail_1435@48:0>](<fail_1435@48:0>:bool)|- bot
+          
+          P[<<dotprod_1033@37:1>@40:0>](<k_make_array_u_1178@45:1>:int,<k_make_array_u_1178@45:0>:int),
+          ((0 <= <k_make_array_u_1178@45:0>) &&
+           ((<k_make_array_u_1178@45:0> >= <k_make_array_u_1178@45:1>) && <fail_1435@48:0>))
+          |- P[<fail_1435@48:0>](<fail_1435@48:0>:bool)
+          
+          P[<dotprod_1033@37:4>](<dotprod_1033@37:0>:int,<<dotprod_1033@37:1>@40:0>:int,<dotprod_1033@37:4>:int),
+          (<<dotprod_1033@37:1>@40:0> < <dotprod_1033@37:0>)
+          |- P[<<dotprod_1033@37:1>@40:0>](<dotprod_1033@37:0>:int,<<dotprod_1033@37:1>@40:0>:int)
+          
+           ((<dotprod_1033@37:4> = 0) && (<dotprod_1033@37:4> = <dotprod_1033@37:3>))
+          |- P[<dotprod_1033@37:4>](<dotprod_1033@37:0>:int,<dotprod_1033@37:3>:int,
+                                    <dotprod_1033@37:4>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(3738)[4] (0.001000 sec.)
+      solution:
+        P[<<dotprod_1033@37:1>@40:0>]($81:int,$83:int) = ((1 + $83) <= $81)
+        P[<dotprod_1033@37:4>]($86:int,$88:int,$90:int) = true
+        P[<fail_1435@48:0>]($78:bool) = false
+    end YhornInterface.solve(3579)[3] (0.012998 sec.)
+    
+  end RefTypeInfer.infer_etrs(2127)[2] (0.062990 sec.)
+  refinement types:
+    main_1428: X
+    f_1432: v1:int -> X
+    f_1433: v1:int -> v2:int -> X
+    main_1039: v1:int -> v2:int -> (v3:unit -> X) -> X
+    dotprod_1033: v1:int ->
+                  (v2:{v2:int | ((1 + v2) <= v1)} -> (v3:int -> X) -> X) ->
+                  (v6:int -> (v7:int -> X) -> X) -> v10:int -> v11:int -> (v12:int -> X) -> X
+    make_array_1030: v1:int -> v2:int -> (v3:int -> X) -> X
+    k_make_array_u_1178: v1:int -> v2:int -> (v3:int -> X) -> v5:bool -> X
+    fail_1435: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1434: var88:int -> var87:int -> var86:unit -> X
+    f_dotprod_1429: var103:int ->
+                    var102:int ->
+                    var101:int ->
+                    (var100:int -> X) ->
+                    (var98:int -> (var97:int -> X) -> X) -> (var94:int -> (var93:int -> X) -> X) -> var90:int -> X
+    f_dotprod_1430: var119:int ->
+                    var118:int ->
+                    var117:int ->
+                    var116:int ->
+                    (var115:int -> X) ->
+                    (var113:int -> (var112:int -> X) -> X) -> (var109:int -> (var108:int -> X) -> X) -> var105:int -> X
+    f_main_1431: var125:int -> var124:int -> (var123:unit -> X) -> var121:int -> X
+    k_make_array_u_1189: var131:int -> var130:int -> (var129:int -> X) -> var127:unit -> X
+  abstraction types:
+    main_1428: X
+    f_1432: v1:int -> X
+    f_1433: v1:int -> v2:int -> X
+    main_1039: v1:int -> v2:int -> (v3:unit -> X) -> X
+    dotprod_1033: v1:int ->
+                  (v2:int[v2 -> ((1 + v2) <= v1)] -> (v3:int -> X) -> X) ->
+                  (v6:int -> (v7:int -> X) -> X) -> v10:int -> v11:int -> (v12:int -> X) -> X
+    make_array_1030: v1:int -> v2:int -> (v3:int -> X) -> X
+    k_make_array_u_1178: v1:int -> v2:int -> (v3:int -> X) -> v5:bool -> X
+    fail_1435: v1:bool -> (v2:unit -> X) -> X
+    f_1434: var88:int -> var87:int -> var86:unit -> X
+    f_dotprod_1429: var103:int ->
+                    var102:int ->
+                    var101:int ->
+                    (var100:int -> X) ->
+                    (var98:int -> (var97:int -> X) -> X) -> (var94:int -> (var93:int -> X) -> X) -> var90:int -> X
+    f_dotprod_1430: var119:int ->
+                    var118:int ->
+                    var117:int ->
+                    var116:int ->
+                    (var115:int -> X) ->
+                    (var113:int -> (var112:int -> X) -> X) -> (var109:int -> (var108:int -> X) -> X) -> var105:int -> X
+    f_main_1431: var125:int -> var124:int -> (var123:unit -> X) -> var121:int -> X
+    k_make_array_u_1189: var131:int -> var130:int -> (var129:int -> X) -> var127:unit -> X
+  
+end AbsTypeInfer.refine(2126)[1] (0.065990 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 1; 0; 1
+
+Program with abstraction types (CEGAR-cycle 2)::
+Main: main_1428
+  main_1428 -> (rand_int f_1432)
+  dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 k_dotprod_1240 when (
+      i_1037 >= n_1034) -> (k_dotprod_1240 sum_1038)
+  dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 k_dotprod_1240 when (
+      not (i_1037 >= n_1034)) ->
+      (v1_1035 i_1037 (f_dotprod_1429 i_1037 n_1034 sum_1038 k_dotprod_1240 v1_1035 v2_1036))
+  f_1432 x_1386 -> (rand_int (f_1433 x_1386))
+  f_1433 x_1386 x_1399 -> (main_1039 x_1386 x_1399 (f_1434 x_1386 x_1399))
+  f_1434 x_1386 x_1399 x_1383 -> end
+  f_dotprod_1429 i_1037 n_1034 sum_1038 k_dotprod_1240 v1_1035 v2_1036 x_1266 ->
+      (v2_1036 i_1037 (f_dotprod_1430 i_1037 n_1034 sum_1038 x_1266 k_dotprod_1240 v1_1035 v2_1036))
+  f_dotprod_1430 i_1037 n_1034 sum_1038 x_1266 k_dotprod_1240 v1_1035 v2_1036 x_1267 ->
+      (dotprod_1033 n_1034 v1_1035 v2_1036 (i_1037 + 1) (sum_1038 + (x_1266 * x_1267)) k_dotprod_1240)
+  f_main_1431 n_1041 z_1040 k_main_1315 x_1350 -> (k_main_1315 ())
+  fail_1435 b k -> {fail} => (k ())
+  k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 b_1190 when b_1190 ->
+      (k_make_array_u_1189 i_1032 n_1031 k_make_array_1172 ())
+  k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 b_1190 when (not b_1190) ->
+      (fail_1435 true (k_make_array_u_1189 i_1032 n_1031 k_make_array_1172))
+  k_make_array_u_1189 i_1032 n_1031 k_make_array_1172 x_1175 -> (k_make_array_1172 0)
+  main_1039 z_1040 n_1041 k_main_1315 when (z_1040 = 0) ->
+      (dotprod_1033 n_1041 (make_array_1030 n_1041) (make_array_1030 n_1041) z_1040 z_1040
+        (f_main_1431 n_1041 z_1040 k_main_1315))
+  main_1039 z_1040 n_1041 k_main_1315 when (not (z_1040 = 0)) -> (k_main_1315 ())
+  make_array_1030 n_1031 i_1032 k_make_array_1172 when (0 <= i_1032) ->
+      (k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 (i_1032 < n_1031))
+  make_array_1030 n_1031 i_1032 k_make_array_1172 when (not (0 <= i_1032)) ->
+      (k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 false)
+Types:
+  main_1428 : X
+  dotprod_1033 : (x_1:int ->
+                  (x_3:int[x_1 >= x_3 + 1; x_3 >= 0] -> (int -> X) -> X) ->
+                  (int -> (int -> X) -> X) -> x_14:int -> int[x_14 >= 0] -> (int -> X) -> X)
+  fail_1435 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  
+(2-1) Abstracting ... DONE!
+
+(2-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1428 ... --> 
+  f_1432 ... --> 
+  f_1433 ... --> 
+  main_1039 [1/2] ... --> 
+  dotprod_1033 [2/2] ... --> 
+  make_array_1030 [1/2] ... --> 
+  k_make_array_u_1178 [1/2] ... --> 
+  k_make_array_u_1189 ... --> 
+  f_dotprod_1429 ... --> 
+  make_array_1030 [2/2] ... --> 
+  k_make_array_u_1178 [2/2] ... --> 
+  fail_1435 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 1; 0; 0; 0; 0; 1; 1; 0
+
+(2-3) Checking counter-example ... DONE!
+
+(2-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(4619)[1]
+  program:
+    main_1428  | true = ((Random.int 0) f_1432)
+    dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 k_dotprod_1240 | (
+    i_1037 >= n_1034) = (k_dotprod_1240 sum_1038)
+    dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 k_dotprod_1240 | (
+    not (i_1037 >= n_1034)) = (v1_1035 i_1037
+                                       (f_dotprod_1429 i_1037
+                                                       n_1034
+                                                       sum_1038
+                                                       k_dotprod_1240
+                                                       v1_1035
+                                                       v2_1036))
+    f_1432 x_1386 | true = ((Random.int 0) (f_1433 x_1386))
+    f_1433 x_1386 x_1399 | true = (main_1039 x_1386
+                                             x_1399
+                                             (f_1434 x_1386
+                                                     x_1399))
+    f_1434 x_1386 x_1399 x_1383 | true = end
+    f_dotprod_1429 i_1037 n_1034 sum_1038 k_dotprod_1240 v1_1035 v2_1036 x_1266 | true = (
+    v2_1036 i_1037
+            (f_dotprod_1430 i_1037
+                            n_1034
+                            sum_1038
+                            x_1266
+                            k_dotprod_1240
+                            v1_1035
+                            v2_1036))
+    f_dotprod_1430 i_1037 n_1034 sum_1038 x_1266 k_dotprod_1240 v1_1035 v2_1036 x_1267 | true = (
+    dotprod_1033 n_1034
+                 v1_1035
+                 v2_1036
+                 (i_1037 + 1)
+                 (sum_1038 + (x_1266 * x_1267))
+                 k_dotprod_1240)
+    f_main_1431 n_1041 z_1040 k_main_1315 x_1350 | true = (k_main_1315 ())
+    fail_1435 b k | true = (fail ())
+    k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 b_1190 | b_1190 = (
+    k_make_array_u_1189 i_1032
+                        n_1031
+                        k_make_array_1172
+                        ())
+    k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 b_1190 | (not b_1190) = (
+    fail_1435 true
+              (k_make_array_u_1189 i_1032
+                                   n_1031
+                                   k_make_array_1172))
+    k_make_array_u_1189 i_1032 n_1031 k_make_array_1172 x_1175 | true = (
+    k_make_array_1172 0)
+    main_1039 z_1040 n_1041 k_main_1315 | (z_1040 = 0) = (dotprod_1033
+                                                            n_1041
+                                                            (make_array_1030 n_1041)
+                                                            (make_array_1030 n_1041)
+                                                            z_1040
+                                                            z_1040
+                                                            (f_main_1431 n_1041
+                                                                    z_1040
+                                                                    k_main_1315))
+    main_1039 z_1040 n_1041 k_main_1315 | (not (z_1040 = 0)) = (k_main_1315 ())
+    make_array_1030 n_1031 i_1032 k_make_array_1172 | (0 <= i_1032) = (
+    k_make_array_u_1178 i_1032
+                        n_1031
+                        k_make_array_1172
+                        (i_1032 < n_1031))
+    make_array_1030 n_1031 i_1032 k_make_array_1172 | (not (0 <= i_1032)) = (
+    k_make_array_u_1178 i_1032
+                        n_1031
+                        k_make_array_1172
+                        false)
+    main_1428:X
+    dotprod_1033:int -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> int -> (int -> X) -> X
+    f_1432:int -> X
+    f_1433:int -> int -> X
+    f_1434:int -> int -> unit -> X
+    f_dotprod_1429:int -> int -> int -> (int -> X) -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> X
+    f_dotprod_1430:int ->
+                   int -> int -> int -> (int -> X) -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> X
+    f_main_1431:int -> int -> (unit -> X) -> int -> X
+    fail_1435:bool -> (unit -> X) -> X
+    k_make_array_u_1178:int -> int -> (int -> X) -> bool -> X
+    k_make_array_u_1189:int -> int -> (int -> X) -> unit -> X
+    main_1039:int -> int -> (unit -> X) -> X
+    make_array_1030:int -> int -> (int -> X) -> X
+  inlined functions: f_1432,f_1433,f_1434,f_dotprod_1429,f_dotprod_1430,f_main_1431,k_make_array_u_1178,k_make_array_u_1189,main_1039,make_array_1030
+  counterexample: 0:0:0:0:1:0:0:0:0:1:1:0
+  error traces:
+    [true.nop(<f_1432@54:0> = var132)
+     [true.nop((<f_1433@57:0> = <f_1432@54:0>) && (<f_1433@57:1> = var133))
+      [true.((<main_1039@59:0> = <f_1433@57:0>) && (<main_1039@59:1> = <f_1433@57:1>))
+       [(<main_1039@59:0> = 0).
+        ((<dotprod_1033@62:0> = <main_1039@59:1>) &&
+         ((<dotprod_1033@62:3> = <main_1039@59:0>) && (<dotprod_1033@62:4> = <main_1039@59:0>)))
+        [(not (<dotprod_1033@62:3> >= <dotprod_1033@62:0>)).(<<dotprod_1033@62:1>@65:0> = <dotprod_1033@62:3>)
+         [true.((<make_array_1030@67:0> = <main_1039@59:1>) && (<make_array_1030@67:1> = <<dotprod_1033@62:1>@65:0>))
+          [(0 <= <make_array_1030@67:1>).
+           ((<k_make_array_u_1178@70:0> = <make_array_1030@67:1>) &&
+            ((<k_make_array_u_1178@70:1> = <make_array_1030@67:0>) &&
+             (<k_make_array_u_1178@70:3> = (<make_array_1030@67:1> < <make_array_1030@67:0>))))
+           [<k_make_array_u_1178@70:3>.
+            ((<k_make_array_u_1189@73:0> = <k_make_array_u_1178@70:0>) &&
+             ((<k_make_array_u_1189@73:1> = <k_make_array_u_1178@70:1>) && (<k_make_array_u_1189@73:3> = ())))
+            [true.(<<k_make_array_u_1189@73:2>@75:0> = 0)
+             [true.(<<k_make_array_u_1178@70:2>@77:0> = <<k_make_array_u_1189@73:2>@75:0>)
+              [true.(<<make_array_1030@67:2>@79:0> = <<k_make_array_u_1178@70:2>@77:0>)
+               [true.(<<<dotprod_1033@62:1>@65:1>@81:0> = <<make_array_1030@67:2>@79:0>)
+                [true.
+                 ((<f_dotprod_1429@83:0> = <dotprod_1033@62:3>) &&
+                  ((<f_dotprod_1429@83:1> = <dotprod_1033@62:0>) &&
+                   ((<f_dotprod_1429@83:2> = <dotprod_1033@62:4>) &&
+                    (<f_dotprod_1429@83:6> = <<<dotprod_1033@62:1>@65:1>@81:0>))))
+                 [true.(<<f_dotprod_1429@83:5>@85:0> = <f_dotprod_1429@83:0>)
+                  [true.(<<dotprod_1033@62:2>@87:0> = <<f_dotprod_1429@83:5>@85:0>)
+                   [true.
+                    ((<make_array_1030@89:0> = <main_1039@59:1>) &&
+                     (<make_array_1030@89:1> = <<dotprod_1033@62:2>@87:0>))
+                    [(not (0 <= <make_array_1030@89:1>)).
+                     ((<k_make_array_u_1178@92:0> = <make_array_1030@89:1>) &&
+                      ((<k_make_array_u_1178@92:1> = <make_array_1030@89:0>) && (<k_make_array_u_1178@92:3> = false)))
+                     [(not <k_make_array_u_1178@92:3>).(<fail_1435@95:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(4620)[2]
+    horn clauses:
+      P[<fail_1435@95:0>](<fail_1435@95:0>:bool)|- bot
+      
+      P[<k_make_array_u_1178@92:3>](<k_make_array_u_1178@92:0>:int,<k_make_array_u_1178@92:1>:int,false:bool),
+      <fail_1435@95:0> |- P[<fail_1435@95:0>](<fail_1435@95:0>:bool)
+      
+      P[<make_array_1030@89:1>](<k_make_array_u_1178@92:1>:int,<k_make_array_u_1178@92:0>:int),
+      ((0 > <k_make_array_u_1178@92:0>) && (not <k_make_array_u_1178@92:3>))
+      |- P[<k_make_array_u_1178@92:3>](<k_make_array_u_1178@92:0>:int,
+                                       <k_make_array_u_1178@92:1>:int,
+                                       <k_make_array_u_1178@92:3>:bool)
+      
+      P[<main_1039@59:1>](0:int,<make_array_1030@89:0>:int),
+      P[<<dotprod_1033@62:2>@87:0>](<make_array_1030@89:0>:int,<make_array_1030@89:1>:int)|- P[<make_array_1030@89:1>](
+      <make_array_1030@89:0>:int,<make_array_1030@89:1>:int)
+      
+      P[<dotprod_1033@62:4>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:1>@65:0>:int,<f_dotprod_1429@83:2>:int),
+      P[<<f_dotprod_1429@83:5>@85:0>](<<dotprod_1033@62:1>@65:0>:int,<dotprod_1033@62:0>:int,<f_dotprod_1429@83:2>:int,<<dotprod_1033@62:2>@87:0>:int),
+      (<<dotprod_1033@62:1>@65:0> < <dotprod_1033@62:0>)
+      |- P[<<dotprod_1033@62:2>@87:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:2>@87:0>:int)
+      
+      P[<f_dotprod_1429@83:6>](<f_dotprod_1429@83:0>:int,<f_dotprod_1429@83:1>:int,<f_dotprod_1429@83:2>:int,<f_dotprod_1429@83:6>:int),
+      (<<f_dotprod_1429@83:5>@85:0> = <f_dotprod_1429@83:0>)
+      |- P[<<f_dotprod_1429@83:5>@85:0>](<f_dotprod_1429@83:0>:int,<f_dotprod_1429@83:1>:int,
+                                         <f_dotprod_1429@83:2>:int,<<f_dotprod_1429@83:5>@85:0>:int)
+      
+      P[<dotprod_1033@62:4>](<f_dotprod_1429@83:1>:int,<f_dotprod_1429@83:0>:int,<f_dotprod_1429@83:2>:int),
+      P[<<<dotprod_1033@62:1>@65:1>@81:0>](<f_dotprod_1429@83:1>:int,<f_dotprod_1429@83:0>:int,<f_dotprod_1429@83:6>:int),
+      (<f_dotprod_1429@83:0> < <f_dotprod_1429@83:1>)
+      |- P[<f_dotprod_1429@83:6>](<f_dotprod_1429@83:0>:int,<f_dotprod_1429@83:1>:int,
+                                  <f_dotprod_1429@83:2>:int,<f_dotprod_1429@83:6>:int)
+      
+      P[<main_1039@59:1>](0:int,<dotprod_1033@62:0>:int),
+      P[<<make_array_1030@67:2>@79:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:1>@65:0>:int,<<<dotprod_1033@62:1>@65:1>@81:0>:int)|- P[<<<dotprod_1033@62:1>@65:1>@81:0>](
+      <dotprod_1033@62:0>:int,<<dotprod_1033@62:1>@65:0>:int,<<<dotprod_1033@62:1>@65:1>@81:0>:int)
+      
+      P[<make_array_1030@67:1>](<make_array_1030@67:0>:int,<make_array_1030@67:1>:int),
+      P[<<k_make_array_u_1178@70:2>@77:0>](<make_array_1030@67:1>:int,<make_array_1030@67:0>:int,<<make_array_1030@67:2>@79:0>:int),
+      (0 <= <make_array_1030@67:1>)
+      |- P[<<make_array_1030@67:2>@79:0>](<make_array_1030@67:0>:int,
+                                          <make_array_1030@67:1>:int,
+                                          <<make_array_1030@67:2>@79:0>:int)
+      
+      P[<k_make_array_u_1178@70:3>](<k_make_array_u_1178@70:0>:int,<k_make_array_u_1178@70:1>:int,true:bool),
+      P[<<k_make_array_u_1189@73:2>@75:0>](<k_make_array_u_1178@70:0>:int,<k_make_array_u_1178@70:1>:int,<<k_make_array_u_1178@70:2>@77:0>:int)|- P[<<k_make_array_u_1178@70:2>@77:0>](
+      <k_make_array_u_1178@70:0>:int,<k_make_array_u_1178@70:1>:int,<<k_make_array_u_1178@70:2>@77:0>:int)
+      
+      P[<k_make_array_u_1189@73:3>](<k_make_array_u_1189@73:0>:int,<k_make_array_u_1189@73:1>:int,<k_make_array_u_1189@73:3>:unit),
+      (<<k_make_array_u_1189@73:2>@75:0> = 0)
+      |- P[<<k_make_array_u_1189@73:2>@75:0>](<k_make_array_u_1189@73:0>:int,
+                                              <k_make_array_u_1189@73:1>:int,
+                                              <<k_make_array_u_1189@73:2>@75:0>:int)
+      
+      P[<k_make_array_u_1178@70:3>](<k_make_array_u_1189@73:0>:int,<k_make_array_u_1189@73:1>:int,true:bool)|- P[<k_make_array_u_1189@73:3>](
+      <k_make_array_u_1189@73:0>:int,<k_make_array_u_1189@73:1>:int,<k_make_array_u_1189@73:3>:unit)
+      
+      P[<make_array_1030@67:1>](<k_make_array_u_1178@70:1>:int,<k_make_array_u_1178@70:0>:int),
+      ((0 <= <k_make_array_u_1178@70:0>) &&
+       (<k_make_array_u_1178@70:3> = (<k_make_array_u_1178@70:0> < <k_make_array_u_1178@70:1>)))
+      |- P[<k_make_array_u_1178@70:3>](<k_make_array_u_1178@70:0>:int,
+                                       <k_make_array_u_1178@70:1>:int,
+                                       <k_make_array_u_1178@70:3>:bool)
+      
+      P[<main_1039@59:1>](0:int,<make_array_1030@67:0>:int),
+      P[<<dotprod_1033@62:1>@65:0>](<make_array_1030@67:0>:int,<make_array_1030@67:1>:int)|- P[<make_array_1030@67:1>](
+      <make_array_1030@67:0>:int,<make_array_1030@67:1>:int)
+      
+      P[<dotprod_1033@62:4>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:1>@65:0>:int,<dotprod_1033@62:4>:int),
+      (<<dotprod_1033@62:1>@65:0> < <dotprod_1033@62:0>)
+      |- P[<<dotprod_1033@62:1>@65:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:1>@65:0>:int)
+      
+      P[<main_1039@59:1>](<dotprod_1033@62:4>:int,<dotprod_1033@62:0>:int),
+      ((<dotprod_1033@62:4> = 0) && (<dotprod_1033@62:4> = <dotprod_1033@62:3>))
+      |- P[<dotprod_1033@62:4>](<dotprod_1033@62:0>:int,<dotprod_1033@62:3>:int,
+                                <dotprod_1033@62:4>:int)
+      
+      P[<f_1433@57:1>](<main_1039@59:0>:int,<main_1039@59:1>:int)|- P[<main_1039@59:1>](
+      <main_1039@59:0>:int,<main_1039@59:1>:int)
+      
+      P[<f_1432@54:0>](<f_1433@57:0>:int)|- P[<f_1433@57:1>](<f_1433@57:0>:int,
+                                                             <f_1433@57:1>:int)
+      
+      |- P[<f_1432@54:0>](<f_1432@54:0>:int)
+    call trees:
+      <main_1428@51>
+        <f_1432@54>
+          <f_1433@57>
+            <main_1039@59>
+              <dotprod_1033@62>
+              </<dotprod_1033@62:1>@65>
+              <make_array_1030@67>
+                <k_make_array_u_1178@70>
+                  <k_make_array_u_1189@73>
+                  </<k_make_array_u_1189@73:2>@75>
+                </<k_make_array_u_1178@70:2>@77>
+              </<make_array_1030@67:2>@79>
+              <<<dotprod_1033@62:1>@65:1>@81>
+                <f_dotprod_1429@83>
+                </<f_dotprod_1429@83:5>@85>
+              </<dotprod_1033@62:2>@87>
+              <make_array_1030@89>
+                <k_make_array_u_1178@92>
+                  <fail_1435@95>
+    inlined horn clauses:
+      P[<fail_1435@95:0>](<fail_1435@95:0>:bool)|- bot
+      
+      P[<<dotprod_1033@62:2>@87:0>](<k_make_array_u_1178@92:1>:int,<k_make_array_u_1178@92:0>:int),
+      ((0 > <k_make_array_u_1178@92:0>) && <fail_1435@95:0>) |- P[<fail_1435@95:0>](
+      <fail_1435@95:0>:bool)
+      
+      P[<dotprod_1033@62:4>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:2>@87:0>:int,<f_dotprod_1429@83:2>:int),
+      P[<<<dotprod_1033@62:1>@65:1>@81:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:2>@87:0>:int,var134:int),
+      (<<dotprod_1033@62:2>@87:0> < <dotprod_1033@62:0>)
+      |- P[<<dotprod_1033@62:2>@87:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:2>@87:0>:int)
+      
+      P[<<dotprod_1033@62:1>@65:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:1>@65:0>:int),
+      ((<<<dotprod_1033@62:1>@65:1>@81:0> = 0) &&
+       ((0 <= <<dotprod_1033@62:1>@65:0>) && (<<dotprod_1033@62:1>@65:0> < <dotprod_1033@62:0>)))
+      |- P[<<<dotprod_1033@62:1>@65:1>@81:0>](<dotprod_1033@62:0>:int,
+                                              <<dotprod_1033@62:1>@65:0>:int,
+                                              <<<dotprod_1033@62:1>@65:1>@81:0>:int)
+      
+      P[<dotprod_1033@62:4>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:1>@65:0>:int,<dotprod_1033@62:4>:int),
+      (<<dotprod_1033@62:1>@65:0> < <dotprod_1033@62:0>)
+      |- P[<<dotprod_1033@62:1>@65:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:1>@65:0>:int)
+      
+       ((<dotprod_1033@62:4> = 0) && (<dotprod_1033@62:4> = <dotprod_1033@62:3>))
+      |- P[<dotprod_1033@62:4>](<dotprod_1033@62:0>:int,<dotprod_1033@62:3>:int,
+                                <dotprod_1033@62:4>:int)
+    begin ParamSubstInfer.infer(7228)[3]
+      
+    end ParamSubstInfer.infer(7228)[3] (0.090986 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(7230)[3]
+      
+    end RefTypeInfer.elim_coeffs(7230)[3] (0.000999 sec.)
+    begin YhornInterface.solve(7529)[3]
+      begin HcSolver.solve_ub(7530)[4]
+        encoded:
+          P[<fail_1435@95:0>](<fail_1435@95:0>:int)|- bot
+          
+          P[<<dotprod_1033@62:2>@87:0>](<k_make_array_u_1178@92:1>:int,<k_make_array_u_1178@92:0>:int),
+          ((0 > <k_make_array_u_1178@92:0>) && (<fail_1435@95:0> = 1)) |- P[<fail_1435@95:0>](
+          <fail_1435@95:0>:int)
+          
+          P[<dotprod_1033@62:4>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:2>@87:0>:int,<f_dotprod_1429@83:2>:int),
+          P[<<<dotprod_1033@62:1>@65:1>@81:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:2>@87:0>:int,var134:int),
+          (<<dotprod_1033@62:2>@87:0> < <dotprod_1033@62:0>)
+          |- P[<<dotprod_1033@62:2>@87:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:2>@87:0>:int)
+          
+          P[<<dotprod_1033@62:1>@65:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:1>@65:0>:int),
+          ((<<<dotprod_1033@62:1>@65:1>@81:0> = 0) &&
+           ((0 <= <<dotprod_1033@62:1>@65:0>) && (<<dotprod_1033@62:1>@65:0> < <dotprod_1033@62:0>)))
+          |- P[<<<dotprod_1033@62:1>@65:1>@81:0>](<dotprod_1033@62:0>:int,
+                                                  <<dotprod_1033@62:1>@65:0>:int,
+                                                  <<<dotprod_1033@62:1>@65:1>@81:0>:int)
+          
+          P[<dotprod_1033@62:4>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:1>@65:0>:int,<dotprod_1033@62:4>:int),
+          (<<dotprod_1033@62:1>@65:0> < <dotprod_1033@62:0>)
+          |- P[<<dotprod_1033@62:1>@65:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:1>@65:0>:int)
+          
+           ((<dotprod_1033@62:4> = 0) && (<dotprod_1033@62:4> = <dotprod_1033@62:3>))
+          |- P[<dotprod_1033@62:4>](<dotprod_1033@62:0>:int,<dotprod_1033@62:3>:int,
+                                    <dotprod_1033@62:4>:int)
+        input to Yhorn:
+          P[<fail_1435@95:0>](<fail_1435@95:0>:int)|- bot
+          
+          P[<<dotprod_1033@62:2>@87:0>](<k_make_array_u_1178@92:1>:int,<k_make_array_u_1178@92:0>:int),
+          ((0 > <k_make_array_u_1178@92:0>) && (<fail_1435@95:0> = 1)) |- P[<fail_1435@95:0>](
+          <fail_1435@95:0>:int)
+          
+          P[<dotprod_1033@62:4>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:2>@87:0>:int,<f_dotprod_1429@83:2>:int),
+          P[<<<dotprod_1033@62:1>@65:1>@81:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:2>@87:0>:int,var134:int),
+          (<<dotprod_1033@62:2>@87:0> < <dotprod_1033@62:0>)
+          |- P[<<dotprod_1033@62:2>@87:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:2>@87:0>:int)
+          
+          P[<<dotprod_1033@62:1>@65:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:1>@65:0>:int),
+          ((<<dotprod_1033@62:1>@65:0> < <dotprod_1033@62:0>) &&
+           ((0 <= <<dotprod_1033@62:1>@65:0>) && (<<<dotprod_1033@62:1>@65:1>@81:0> = 0)))
+          |- P[<<<dotprod_1033@62:1>@65:1>@81:0>](<dotprod_1033@62:0>:int,
+                                                  <<dotprod_1033@62:1>@65:0>:int,
+                                                  <<<dotprod_1033@62:1>@65:1>@81:0>:int)
+          
+          P[<dotprod_1033@62:4>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:1>@65:0>:int,<dotprod_1033@62:4>:int),
+          (<<dotprod_1033@62:1>@65:0> < <dotprod_1033@62:0>)
+          |- P[<<dotprod_1033@62:1>@65:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:1>@65:0>:int)
+          
+           ((<dotprod_1033@62:4> = <dotprod_1033@62:3>) && (<dotprod_1033@62:4> = 0))
+          |- P[<dotprod_1033@62:4>](<dotprod_1033@62:0>:int,<dotprod_1033@62:3>:int,
+                                    <dotprod_1033@62:4>:int)Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1435_sep_95_sep_0($142)) -> 1=0.
+(($142-1=0) & (-$143>0)) & (v_sep_dotprod_1033_sep_62_sep_2_sep_87_sep_0($144,$143)) -> v_sep_fail_1435_sep_95_sep_0($142).
+($145-$146<0) & (v_sep_dotprod_1033_sep_62_sep_1_sep_65_sep_1_sep_81_sep_0($146,$145,$147)) & (v_sep_dotprod_1033_sep_62_sep_4($146,$145,$148)) -> v_sep_dotprod_1033_sep_62_sep_2_sep_87_sep_0($146,$145).
+(($149=0) & (-$150<=0) & (-$146+$150<0)) & (v_sep_dotprod_1033_sep_62_sep_1_sep_65_sep_0($146,$150)) -> v_sep_dotprod_1033_sep_62_sep_1_sep_65_sep_1_sep_81_sep_0($146,$150,$149).
+(-$146+$150<0) & (v_sep_dotprod_1033_sep_62_sep_4($146,$150,$151)) -> v_sep_dotprod_1033_sep_62_sep_1_sep_65_sep_0($146,$150).
+($151=0) & ($151-$152=0) -> v_sep_dotprod_1033_sep_62_sep_4($146,$152,$151).
+
+
+v_sep_dotprod_1033_sep_62_sep_1_sep_65_sep_0: X
+v_sep_dotprod_1033_sep_62_sep_1_sep_65_sep_1_sep_81_sep_0: X
+v_sep_dotprod_1033_sep_62_sep_2_sep_87_sep_0: X
+v_sep_dotprod_1033_sep_62_sep_4: X
+v_sep_fail_1435_sep_95_sep_0: X
+.......
+v_sep_dotprod_1033_sep_62_sep_1_sep_65_sep_0: X
+v_sep_dotprod_1033_sep_62_sep_1_sep_65_sep_1_sep_81_sep_0: X
+v_sep_dotprod_1033_sep_62_sep_2_sep_87_sep_0: X
+v_sep_dotprod_1033_sep_62_sep_4: X
+v_sep_fail_1435_sep_95_sep_0: X
+...
+v_sep_dotprod_1033_sep_62_sep_1_sep_65_sep_0: X
+v_sep_dotprod_1033_sep_62_sep_1_sep_65_sep_1_sep_81_sep_0: X
+v_sep_dotprod_1033_sep_62_sep_2_sep_87_sep_0: X
+v_sep_dotprod_1033_sep_62_sep_4: X
+v_sep_fail_1435_sep_95_sep_0: X
+.....
+v_sep_dotprod_1033_sep_62_sep_1_sep_65_sep_0: X
+v_sep_dotprod_1033_sep_62_sep_1_sep_65_sep_1_sep_81_sep_0: X
+v_sep_dotprod_1033_sep_62_sep_2_sep_87_sep_0: X
+v_sep_dotprod_1033_sep_62_sep_4: X
+v_sep_fail_1435_sep_95_sep_0: X
+......
+v_sep_dotprod_1033_sep_62_sep_1_sep_65_sep_0: X
+v_sep_dotprod_1033_sep_62_sep_1_sep_65_sep_1_sep_81_sep_0: X
+v_sep_dotprod_1033_sep_62_sep_2_sep_87_sep_0: X
+v_sep_dotprod_1033_sep_62_sep_4: X
+v_sep_fail_1435_sep_95_sep_0: X
+.......(0=0) & (v_sep_fail_1435_sep_95_sep_0($142)) -> 1=0.
+(($142-1=0) & (-$143>0)) & (v_sep_dotprod_1033_sep_62_sep_2_sep_87_sep_0($144,$143)) -> v_sep_fail_1435_sep_95_sep_0($142).
+($145-$146<0) & (v_sep_dotprod_1033_sep_62_sep_1_sep_65_sep_1_sep_81_sep_0($146,$145,$147)) & (v_sep_dotprod_1033_sep_62_sep_4($146,$145,$148)) -> v_sep_dotprod_1033_sep_62_sep_2_sep_87_sep_0($146,$145).
+(($149=0) & (-$150<=0) & (-$146+$150<0)) & (v_sep_dotprod_1033_sep_62_sep_1_sep_65_sep_0($146,$150)) -> v_sep_dotprod_1033_sep_62_sep_1_sep_65_sep_1_sep_81_sep_0($146,$150,$149).
+(-$146+$150<0) & (v_sep_dotprod_1033_sep_62_sep_4($146,$150,$151)) -> v_sep_dotprod_1033_sep_62_sep_1_sep_65_sep_0($146,$150).
+($151=0) & ($151-$152=0) -> v_sep_dotprod_1033_sep_62_sep_4($146,$152,$151).
+
+        solution:
+          P[<<dotprod_1033@62:1>@65:0>]($175:int,$177:int) = true
+          P[<<<dotprod_1033@62:1>@65:1>@81:0>]($161:int,$163:int,$165:int) = (0 <= $163)
+          P[<<dotprod_1033@62:2>@87:0>]($156:int,$158:int) = (0 <= $158)
+          P[<dotprod_1033@62:4>]($168:int,$170:int,$172:int) = true
+          P[<fail_1435@95:0>]($153:bool) = false
+        
+      end HcSolver.solve_ub(7530)[4] (0.021997 sec.)
+      begin HcSolver.check_validity(7741)[4]
+        input:
+          P[<fail_1435@95:0>](<fail_1435@95:0>:bool)|- bot
+          
+          P[<<dotprod_1033@62:2>@87:0>](<k_make_array_u_1178@92:1>:int,<k_make_array_u_1178@92:0>:int),
+          ((0 > <k_make_array_u_1178@92:0>) && <fail_1435@95:0>) |- P[<fail_1435@95:0>](
+          <fail_1435@95:0>:bool)
+          
+          P[<dotprod_1033@62:4>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:2>@87:0>:int,<f_dotprod_1429@83:2>:int),
+          P[<<<dotprod_1033@62:1>@65:1>@81:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:2>@87:0>:int,var134:int),
+          (<<dotprod_1033@62:2>@87:0> < <dotprod_1033@62:0>)
+          |- P[<<dotprod_1033@62:2>@87:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:2>@87:0>:int)
+          
+          P[<<dotprod_1033@62:1>@65:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:1>@65:0>:int),
+          ((<<<dotprod_1033@62:1>@65:1>@81:0> = 0) &&
+           ((0 <= <<dotprod_1033@62:1>@65:0>) && (<<dotprod_1033@62:1>@65:0> < <dotprod_1033@62:0>)))
+          |- P[<<<dotprod_1033@62:1>@65:1>@81:0>](<dotprod_1033@62:0>:int,
+                                                  <<dotprod_1033@62:1>@65:0>:int,
+                                                  <<<dotprod_1033@62:1>@65:1>@81:0>:int)
+          
+          P[<dotprod_1033@62:4>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:1>@65:0>:int,<dotprod_1033@62:4>:int),
+          (<<dotprod_1033@62:1>@65:0> < <dotprod_1033@62:0>)
+          |- P[<<dotprod_1033@62:1>@65:0>](<dotprod_1033@62:0>:int,<<dotprod_1033@62:1>@65:0>:int)
+          
+           ((<dotprod_1033@62:4> = 0) && (<dotprod_1033@62:4> = <dotprod_1033@62:3>))
+          |- P[<dotprod_1033@62:4>](<dotprod_1033@62:0>:int,<dotprod_1033@62:3>:int,
+                                    <dotprod_1033@62:4>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(7741)[4] (0.003000 sec.)
+      solution:
+        P[<<dotprod_1033@62:1>@65:0>]($175:int,$177:int) = true
+        P[<<<dotprod_1033@62:1>@65:1>@81:0>]($161:int,$163:int,$165:int) = (0 <= $163)
+        P[<<dotprod_1033@62:2>@87:0>]($156:int,$158:int) = (0 <= $158)
+        P[<dotprod_1033@62:4>]($168:int,$170:int,$172:int) = true
+        P[<fail_1435@95:0>]($153:bool) = false
+    end YhornInterface.solve(7529)[3] (0.024997 sec.)
+    
+  end RefTypeInfer.infer_etrs(4620)[2] (0.132979 sec.)
+  refinement types:
+    main_1428: X
+    f_1432: v1:int -> X
+    f_1433: v1:int -> v2:int -> X
+    main_1039: v1:int -> v2:int -> (v3:unit -> X) -> X
+    dotprod_1033: v1:int ->
+                  (v2:int -> (v3:{v3:int | (0 <= v2)} -> X) -> X) ->
+                  (v6:{v6:int | (0 <= v6)} -> (v7:int -> X) -> X) -> v10:int -> v11:int -> (v12:int -> X) -> X
+    make_array_1030: v1:int -> v2:int -> (v3:int -> X) -> X
+    k_make_array_u_1178: v1:int -> v2:int -> (v3:int -> X) -> v5:bool -> X
+    k_make_array_u_1189: v1:int -> v2:int -> (v3:int -> X) -> v5:unit -> X
+    f_dotprod_1429: v1:int ->
+                    v2:int ->
+                    v3:int ->
+                    (v4:int -> X) -> (v6:int -> (v7:int -> X) -> X) -> (v10:int -> (v11:int -> X) -> X) -> v14:int -> X
+    make_array_1030: v1:int -> v2:int -> (v3:int -> X) -> X
+    k_make_array_u_1178: v1:int -> v2:int -> (v3:int -> X) -> v5:bool -> X
+    fail_1435: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1434: var158:int -> var157:int -> var156:unit -> X
+    f_dotprod_1430: var174:int ->
+                    var173:int ->
+                    var172:int ->
+                    var171:int ->
+                    (var170:int -> X) ->
+                    (var168:int -> (var167:int -> X) -> X) -> (var164:int -> (var163:int -> X) -> X) -> var160:int -> X
+    f_main_1431: var180:int -> var179:int -> (var178:unit -> X) -> var176:int -> X
+  abstraction types:
+    main_1428: X
+    f_1432: v1:int -> X
+    f_1433: v1:int -> v2:int -> X
+    main_1039: v1:int -> v2:int -> (v3:unit -> X) -> X
+    dotprod_1033: v1:int ->
+                  (v2:int -> (v3:int[v3 -> (0 <= v2)] -> X) -> X) ->
+                  (v6:int[v6 -> (0 <= v6)] -> (v7:int -> X) -> X) -> v10:int -> v11:int -> (v12:int -> X) -> X
+    make_array_1030: var181:int -> var182:int -> (var183:int -> X) -> X
+    k_make_array_u_1178: var186:int -> var187:int -> (var188:int -> X) -> var190:bool -> X
+    k_make_array_u_1189: v1:int -> v2:int -> (v3:int -> X) -> v5:unit -> X
+    f_dotprod_1429: v1:int ->
+                    v2:int ->
+                    v3:int ->
+                    (v4:int -> X) -> (v6:int -> (v7:int -> X) -> X) -> (v10:int -> (v11:int -> X) -> X) -> v14:int -> X
+    fail_1435: v1:bool -> (v2:unit -> X) -> X
+    f_1434: var158:int -> var157:int -> var156:unit -> X
+    f_dotprod_1430: var174:int ->
+                    var173:int ->
+                    var172:int ->
+                    var171:int ->
+                    (var170:int -> X) ->
+                    (var168:int -> (var167:int -> X) -> X) -> (var164:int -> (var163:int -> X) -> X) -> var160:int -> X
+    f_main_1431: var180:int -> var179:int -> (var178:unit -> X) -> var176:int -> X
+  
+end AbsTypeInfer.refine(4619)[1] (0.138979 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 1; 0; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 3)::
+Main: main_1428
+  main_1428 -> (rand_int f_1432)
+  dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 k_dotprod_1240 when (
+      i_1037 >= n_1034) -> (k_dotprod_1240 sum_1038)
+  dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 k_dotprod_1240 when (
+      not (i_1037 >= n_1034)) ->
+      (v1_1035 i_1037 (f_dotprod_1429 i_1037 n_1034 sum_1038 k_dotprod_1240 v1_1035 v2_1036))
+  f_1432 x_1386 -> (rand_int (f_1433 x_1386))
+  f_1433 x_1386 x_1399 -> (main_1039 x_1386 x_1399 (f_1434 x_1386 x_1399))
+  f_1434 x_1386 x_1399 x_1383 -> end
+  f_dotprod_1429 i_1037 n_1034 sum_1038 k_dotprod_1240 v1_1035 v2_1036 x_1266 ->
+      (v2_1036 i_1037 (f_dotprod_1430 i_1037 n_1034 sum_1038 x_1266 k_dotprod_1240 v1_1035 v2_1036))
+  f_dotprod_1430 i_1037 n_1034 sum_1038 x_1266 k_dotprod_1240 v1_1035 v2_1036 x_1267 ->
+      (dotprod_1033 n_1034 v1_1035 v2_1036 (i_1037 + 1) (sum_1038 + (x_1266 * x_1267)) k_dotprod_1240)
+  f_main_1431 n_1041 z_1040 k_main_1315 x_1350 -> (k_main_1315 ())
+  fail_1435 b k -> {fail} => (k ())
+  k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 b_1190 when b_1190 ->
+      (k_make_array_u_1189 i_1032 n_1031 k_make_array_1172 ())
+  k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 b_1190 when (not b_1190) ->
+      (fail_1435 true (k_make_array_u_1189 i_1032 n_1031 k_make_array_1172))
+  k_make_array_u_1189 i_1032 n_1031 k_make_array_1172 x_1175 -> (k_make_array_1172 0)
+  main_1039 z_1040 n_1041 k_main_1315 when (z_1040 = 0) ->
+      (dotprod_1033 n_1041 (make_array_1030 n_1041) (make_array_1030 n_1041) z_1040 z_1040
+        (f_main_1431 n_1041 z_1040 k_main_1315))
+  main_1039 z_1040 n_1041 k_main_1315 when (not (z_1040 = 0)) -> (k_main_1315 ())
+  make_array_1030 n_1031 i_1032 k_make_array_1172 when (0 <= i_1032) ->
+      (k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 (i_1032 < n_1031))
+  make_array_1030 n_1031 i_1032 k_make_array_1172 when (not (0 <= i_1032)) ->
+      (k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 false)
+Types:
+  main_1428 : X
+  dotprod_1033 : (x_1:int ->
+                  (x_3:int[x_1 >= x_3 + 1; x_3 >= 0] -> (int[x_3 >= 0] -> X) -> X) ->
+                  (x_9:int[x_9 >= 0] -> (int -> X) -> X) -> x_14:int -> int[x_14 >= 0] -> (int -> X) -> X)
+  fail_1435 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  
+(3-1) Abstracting ... DONE!
+
+(3-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1428 ... --> 
+  f_1432 ... --> 
+  f_1433 ... --> 
+  main_1039 [1/2] ... --> 
+  dotprod_1033 [2/2] ... --> 
+  make_array_1030 [1/2] ... --> 
+  k_make_array_u_1178 [1/2] ... --> 
+  k_make_array_u_1189 ... --> 
+  f_dotprod_1429 ... --> 
+  make_array_1030 [1/2] ... --> 
+  k_make_array_u_1178 [2/2] ... --> 
+  fail_1435 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 1; 0; 0; 0; 0; 0; 1; 0
+
+(3-3) Checking counter-example ... DONE!
+
+(3-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(9383)[1]
+  program:
+    main_1428  | true = ((Random.int 0) f_1432)
+    dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 k_dotprod_1240 | (
+    i_1037 >= n_1034) = (k_dotprod_1240 sum_1038)
+    dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 k_dotprod_1240 | (
+    not (i_1037 >= n_1034)) = (v1_1035 i_1037
+                                       (f_dotprod_1429 i_1037
+                                                       n_1034
+                                                       sum_1038
+                                                       k_dotprod_1240
+                                                       v1_1035
+                                                       v2_1036))
+    f_1432 x_1386 | true = ((Random.int 0) (f_1433 x_1386))
+    f_1433 x_1386 x_1399 | true = (main_1039 x_1386
+                                             x_1399
+                                             (f_1434 x_1386
+                                                     x_1399))
+    f_1434 x_1386 x_1399 x_1383 | true = end
+    f_dotprod_1429 i_1037 n_1034 sum_1038 k_dotprod_1240 v1_1035 v2_1036 x_1266 | true = (
+    v2_1036 i_1037
+            (f_dotprod_1430 i_1037
+                            n_1034
+                            sum_1038
+                            x_1266
+                            k_dotprod_1240
+                            v1_1035
+                            v2_1036))
+    f_dotprod_1430 i_1037 n_1034 sum_1038 x_1266 k_dotprod_1240 v1_1035 v2_1036 x_1267 | true = (
+    dotprod_1033 n_1034
+                 v1_1035
+                 v2_1036
+                 (i_1037 + 1)
+                 (sum_1038 + (x_1266 * x_1267))
+                 k_dotprod_1240)
+    f_main_1431 n_1041 z_1040 k_main_1315 x_1350 | true = (k_main_1315 ())
+    fail_1435 b k | true = (fail ())
+    k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 b_1190 | b_1190 = (
+    k_make_array_u_1189 i_1032
+                        n_1031
+                        k_make_array_1172
+                        ())
+    k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 b_1190 | (not b_1190) = (
+    fail_1435 true
+              (k_make_array_u_1189 i_1032
+                                   n_1031
+                                   k_make_array_1172))
+    k_make_array_u_1189 i_1032 n_1031 k_make_array_1172 x_1175 | true = (
+    k_make_array_1172 0)
+    main_1039 z_1040 n_1041 k_main_1315 | (z_1040 = 0) = (dotprod_1033
+                                                            n_1041
+                                                            (make_array_1030 n_1041)
+                                                            (make_array_1030 n_1041)
+                                                            z_1040
+                                                            z_1040
+                                                            (f_main_1431 n_1041
+                                                                    z_1040
+                                                                    k_main_1315))
+    main_1039 z_1040 n_1041 k_main_1315 | (not (z_1040 = 0)) = (k_main_1315 ())
+    make_array_1030 n_1031 i_1032 k_make_array_1172 | (0 <= i_1032) = (
+    k_make_array_u_1178 i_1032
+                        n_1031
+                        k_make_array_1172
+                        (i_1032 < n_1031))
+    make_array_1030 n_1031 i_1032 k_make_array_1172 | (not (0 <= i_1032)) = (
+    k_make_array_u_1178 i_1032
+                        n_1031
+                        k_make_array_1172
+                        false)
+    main_1428:X
+    dotprod_1033:int -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> int -> (int -> X) -> X
+    f_1432:int -> X
+    f_1433:int -> int -> X
+    f_1434:int -> int -> unit -> X
+    f_dotprod_1429:int -> int -> int -> (int -> X) -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> X
+    f_dotprod_1430:int ->
+                   int -> int -> int -> (int -> X) -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> X
+    f_main_1431:int -> int -> (unit -> X) -> int -> X
+    fail_1435:bool -> (unit -> X) -> X
+    k_make_array_u_1178:int -> int -> (int -> X) -> bool -> X
+    k_make_array_u_1189:int -> int -> (int -> X) -> unit -> X
+    main_1039:int -> int -> (unit -> X) -> X
+    make_array_1030:int -> int -> (int -> X) -> X
+  inlined functions: f_1432,f_1433,f_1434,f_dotprod_1429,f_dotprod_1430,f_main_1431,k_make_array_u_1178,k_make_array_u_1189,main_1039,make_array_1030
+  counterexample: 0:0:0:0:1:0:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1432@101:0> = var192)
+     [true.nop((<f_1433@104:0> = <f_1432@101:0>) && (<f_1433@104:1> = var193))
+      [true.((<main_1039@106:0> = <f_1433@104:0>) && (<main_1039@106:1> = <f_1433@104:1>))
+       [(<main_1039@106:0> = 0).
+        ((<dotprod_1033@109:0> = <main_1039@106:1>) &&
+         ((<dotprod_1033@109:3> = <main_1039@106:0>) && (<dotprod_1033@109:4> = <main_1039@106:0>)))
+        [(not (<dotprod_1033@109:3> >= <dotprod_1033@109:0>)).(<<dotprod_1033@109:1>@112:0> = <dotprod_1033@109:3>)
+         [true.
+          ((<make_array_1030@114:0> = <main_1039@106:1>) && (<make_array_1030@114:1> = <<dotprod_1033@109:1>@112:0>))
+          [(0 <= <make_array_1030@114:1>).
+           ((<k_make_array_u_1178@117:0> = <make_array_1030@114:1>) &&
+            ((<k_make_array_u_1178@117:1> = <make_array_1030@114:0>) &&
+             (<k_make_array_u_1178@117:3> = (<make_array_1030@114:1> < <make_array_1030@114:0>))))
+           [<k_make_array_u_1178@117:3>.
+            ((<k_make_array_u_1189@120:0> = <k_make_array_u_1178@117:0>) &&
+             ((<k_make_array_u_1189@120:1> = <k_make_array_u_1178@117:1>) && (<k_make_array_u_1189@120:3> = ())))
+            [true.(<<k_make_array_u_1189@120:2>@122:0> = 0)
+             [true.(<<k_make_array_u_1178@117:2>@124:0> = <<k_make_array_u_1189@120:2>@122:0>)
+              [true.(<<make_array_1030@114:2>@126:0> = <<k_make_array_u_1178@117:2>@124:0>)
+               [true.(<<<dotprod_1033@109:1>@112:1>@128:0> = <<make_array_1030@114:2>@126:0>)
+                [true.
+                 ((<f_dotprod_1429@130:0> = <dotprod_1033@109:3>) &&
+                  ((<f_dotprod_1429@130:1> = <dotprod_1033@109:0>) &&
+                   ((<f_dotprod_1429@130:2> = <dotprod_1033@109:4>) &&
+                    (<f_dotprod_1429@130:6> = <<<dotprod_1033@109:1>@112:1>@128:0>))))
+                 [true.(<<f_dotprod_1429@130:5>@132:0> = <f_dotprod_1429@130:0>)
+                  [true.(<<dotprod_1033@109:2>@134:0> = <<f_dotprod_1429@130:5>@132:0>)
+                   [true.
+                    ((<make_array_1030@136:0> = <main_1039@106:1>) &&
+                     (<make_array_1030@136:1> = <<dotprod_1033@109:2>@134:0>))
+                    [(0 <= <make_array_1030@136:1>).
+                     ((<k_make_array_u_1178@139:0> = <make_array_1030@136:1>) &&
+                      ((<k_make_array_u_1178@139:1> = <make_array_1030@136:0>) &&
+                       (<k_make_array_u_1178@139:3> = (<make_array_1030@136:1> < <make_array_1030@136:0>))))
+                     [(not <k_make_array_u_1178@139:3>).(<fail_1435@142:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(9384)[2]
+    horn clauses:
+      P[<fail_1435@142:0>](<fail_1435@142:0>:bool)|- bot
+      
+      P[<k_make_array_u_1178@139:3>](<k_make_array_u_1178@139:0>:int,<k_make_array_u_1178@139:1>:int,false:bool),
+      <fail_1435@142:0> |- P[<fail_1435@142:0>](<fail_1435@142:0>:bool)
+      
+      P[<make_array_1030@136:1>](<k_make_array_u_1178@139:1>:int,<k_make_array_u_1178@139:0>:int),
+      ((0 <= <k_make_array_u_1178@139:0>) &&
+       (<k_make_array_u_1178@139:3> = (<k_make_array_u_1178@139:0> < <k_make_array_u_1178@139:1>)))
+      |- P[<k_make_array_u_1178@139:3>](<k_make_array_u_1178@139:0>:int,
+                                        <k_make_array_u_1178@139:1>:int,
+                                        <k_make_array_u_1178@139:3>:bool)
+      
+      P[<main_1039@106:1>](0:int,<make_array_1030@136:0>:int),
+      P[<<dotprod_1033@109:2>@134:0>](<make_array_1030@136:0>:int,<make_array_1030@136:1>:int)|- P[<make_array_1030@136:1>](
+      <make_array_1030@136:0>:int,<make_array_1030@136:1>:int)
+      
+      P[<dotprod_1033@109:4>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:1>@112:0>:int,<f_dotprod_1429@130:2>:int),
+      P[<<f_dotprod_1429@130:5>@132:0>](<<dotprod_1033@109:1>@112:0>:int,<dotprod_1033@109:0>:int,<f_dotprod_1429@130:2>:int,<<dotprod_1033@109:2>@134:0>:int),
+      (<<dotprod_1033@109:1>@112:0> < <dotprod_1033@109:0>)
+      |- P[<<dotprod_1033@109:2>@134:0>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:2>@134:0>:int)
+      
+      P[<f_dotprod_1429@130:6>](<f_dotprod_1429@130:0>:int,<f_dotprod_1429@130:1>:int,<f_dotprod_1429@130:2>:int,<f_dotprod_1429@130:6>:int),
+      (<<f_dotprod_1429@130:5>@132:0> = <f_dotprod_1429@130:0>)
+      |- P[<<f_dotprod_1429@130:5>@132:0>](<f_dotprod_1429@130:0>:int,
+                                           <f_dotprod_1429@130:1>:int,
+                                           <f_dotprod_1429@130:2>:int,
+                                           <<f_dotprod_1429@130:5>@132:0>:int)
+      
+      P[<dotprod_1033@109:4>](<f_dotprod_1429@130:1>:int,<f_dotprod_1429@130:0>:int,<f_dotprod_1429@130:2>:int),
+      P[<<<dotprod_1033@109:1>@112:1>@128:0>](<f_dotprod_1429@130:1>:int,<f_dotprod_1429@130:0>:int,<f_dotprod_1429@130:6>:int),
+      (<f_dotprod_1429@130:0> < <f_dotprod_1429@130:1>)
+      |- P[<f_dotprod_1429@130:6>](<f_dotprod_1429@130:0>:int,<f_dotprod_1429@130:1>:int,
+                                   <f_dotprod_1429@130:2>:int,<f_dotprod_1429@130:6>:int)
+      
+      P[<main_1039@106:1>](0:int,<dotprod_1033@109:0>:int),
+      P[<<make_array_1030@114:2>@126:0>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:1>@112:0>:int,<<<dotprod_1033@109:1>@112:1>@128:0>:int)|- P[<<<dotprod_1033@109:1>@112:1>@128:0>](
+      <dotprod_1033@109:0>:int,<<dotprod_1033@109:1>@112:0>:int,<<<dotprod_1033@109:1>@112:1>@128:0>:int)
+      
+      P[<make_array_1030@114:1>](<make_array_1030@114:0>:int,<make_array_1030@114:1>:int),
+      P[<<k_make_array_u_1178@117:2>@124:0>](<make_array_1030@114:1>:int,<make_array_1030@114:0>:int,<<make_array_1030@114:2>@126:0>:int),
+      (0 <= <make_array_1030@114:1>)
+      |- P[<<make_array_1030@114:2>@126:0>](<make_array_1030@114:0>:int,
+                                            <make_array_1030@114:1>:int,
+                                            <<make_array_1030@114:2>@126:0>:int)
+      
+      P[<k_make_array_u_1178@117:3>](<k_make_array_u_1178@117:0>:int,<k_make_array_u_1178@117:1>:int,true:bool),
+      P[<<k_make_array_u_1189@120:2>@122:0>](<k_make_array_u_1178@117:0>:int,<k_make_array_u_1178@117:1>:int,<<k_make_array_u_1178@117:2>@124:0>:int)|- P[<<k_make_array_u_1178@117:2>@124:0>](
+      <k_make_array_u_1178@117:0>:int,<k_make_array_u_1178@117:1>:int,
+      <<k_make_array_u_1178@117:2>@124:0>:int)
+      
+      P[<k_make_array_u_1189@120:3>](<k_make_array_u_1189@120:0>:int,<k_make_array_u_1189@120:1>:int,<k_make_array_u_1189@120:3>:unit),
+      (<<k_make_array_u_1189@120:2>@122:0> = 0)
+      |- P[<<k_make_array_u_1189@120:2>@122:0>](<k_make_array_u_1189@120:0>:int,
+                                                <k_make_array_u_1189@120:1>:int,
+                                                <<k_make_array_u_1189@120:2>@122:0>:int)
+      
+      P[<k_make_array_u_1178@117:3>](<k_make_array_u_1189@120:0>:int,<k_make_array_u_1189@120:1>:int,true:bool)|- P[<k_make_array_u_1189@120:3>](
+      <k_make_array_u_1189@120:0>:int,<k_make_array_u_1189@120:1>:int,
+      <k_make_array_u_1189@120:3>:unit)
+      
+      P[<make_array_1030@114:1>](<k_make_array_u_1178@117:1>:int,<k_make_array_u_1178@117:0>:int),
+      ((0 <= <k_make_array_u_1178@117:0>) &&
+       (<k_make_array_u_1178@117:3> = (<k_make_array_u_1178@117:0> < <k_make_array_u_1178@117:1>)))
+      |- P[<k_make_array_u_1178@117:3>](<k_make_array_u_1178@117:0>:int,
+                                        <k_make_array_u_1178@117:1>:int,
+                                        <k_make_array_u_1178@117:3>:bool)
+      
+      P[<main_1039@106:1>](0:int,<make_array_1030@114:0>:int),
+      P[<<dotprod_1033@109:1>@112:0>](<make_array_1030@114:0>:int,<make_array_1030@114:1>:int)|- P[<make_array_1030@114:1>](
+      <make_array_1030@114:0>:int,<make_array_1030@114:1>:int)
+      
+      P[<dotprod_1033@109:4>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:1>@112:0>:int,<dotprod_1033@109:4>:int),
+      (<<dotprod_1033@109:1>@112:0> < <dotprod_1033@109:0>)
+      |- P[<<dotprod_1033@109:1>@112:0>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:1>@112:0>:int)
+      
+      P[<main_1039@106:1>](<dotprod_1033@109:4>:int,<dotprod_1033@109:0>:int),
+      ((<dotprod_1033@109:4> = 0) && (<dotprod_1033@109:4> = <dotprod_1033@109:3>))
+      |- P[<dotprod_1033@109:4>](<dotprod_1033@109:0>:int,<dotprod_1033@109:3>:int,
+                                 <dotprod_1033@109:4>:int)
+      
+      P[<f_1433@104:1>](<main_1039@106:0>:int,<main_1039@106:1>:int)|- P[<main_1039@106:1>](
+      <main_1039@106:0>:int,<main_1039@106:1>:int)
+      
+      P[<f_1432@101:0>](<f_1433@104:0>:int)|- P[<f_1433@104:1>](<f_1433@104:0>:int,
+                                                                <f_1433@104:1>:int)
+      
+      |- P[<f_1432@101:0>](<f_1432@101:0>:int)
+    call trees:
+      <main_1428@98>
+        <f_1432@101>
+          <f_1433@104>
+            <main_1039@106>
+              <dotprod_1033@109>
+              </<dotprod_1033@109:1>@112>
+              <make_array_1030@114>
+                <k_make_array_u_1178@117>
+                  <k_make_array_u_1189@120>
+                  </<k_make_array_u_1189@120:2>@122>
+                </<k_make_array_u_1178@117:2>@124>
+              </<make_array_1030@114:2>@126>
+              <<<dotprod_1033@109:1>@112:1>@128>
+                <f_dotprod_1429@130>
+                </<f_dotprod_1429@130:5>@132>
+              </<dotprod_1033@109:2>@134>
+              <make_array_1030@136>
+                <k_make_array_u_1178@139>
+                  <fail_1435@142>
+    inlined horn clauses:
+      P[<fail_1435@142:0>](<fail_1435@142:0>:bool)|- bot
+      
+      P[<<dotprod_1033@109:2>@134:0>](<k_make_array_u_1178@139:1>:int,<k_make_array_u_1178@139:0>:int),
+      ((0 <= <k_make_array_u_1178@139:0>) &&
+       ((<k_make_array_u_1178@139:0> >= <k_make_array_u_1178@139:1>) && <fail_1435@142:0>))
+      |- P[<fail_1435@142:0>](<fail_1435@142:0>:bool)
+      
+      P[<dotprod_1033@109:4>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:2>@134:0>:int,<f_dotprod_1429@130:2>:int),
+      P[<<<dotprod_1033@109:1>@112:1>@128:0>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:2>@134:0>:int,var194:int),
+      (<<dotprod_1033@109:2>@134:0> < <dotprod_1033@109:0>)
+      |- P[<<dotprod_1033@109:2>@134:0>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:2>@134:0>:int)
+      
+      P[<<dotprod_1033@109:1>@112:0>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:1>@112:0>:int),
+      ((<<<dotprod_1033@109:1>@112:1>@128:0> = 0) &&
+       ((0 <= <<dotprod_1033@109:1>@112:0>) && (<<dotprod_1033@109:1>@112:0> < <dotprod_1033@109:0>)))
+      |- P[<<<dotprod_1033@109:1>@112:1>@128:0>](<dotprod_1033@109:0>:int,
+                                                 <<dotprod_1033@109:1>@112:0>:int,
+                                                 <<<dotprod_1033@109:1>@112:1>@128:0>:int)
+      
+      P[<dotprod_1033@109:4>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:1>@112:0>:int,<dotprod_1033@109:4>:int),
+      (<<dotprod_1033@109:1>@112:0> < <dotprod_1033@109:0>)
+      |- P[<<dotprod_1033@109:1>@112:0>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:1>@112:0>:int)
+      
+       ((<dotprod_1033@109:4> = 0) && (<dotprod_1033@109:4> = <dotprod_1033@109:3>))
+      |- P[<dotprod_1033@109:4>](<dotprod_1033@109:0>:int,<dotprod_1033@109:3>:int,
+                                 <dotprod_1033@109:4>:int)
+    begin ParamSubstInfer.infer(12210)[3]
+      
+    end ParamSubstInfer.infer(12210)[3] (0.201969 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(12212)[3]
+      
+    end RefTypeInfer.elim_coeffs(12212)[3] (0.001000 sec.)
+    begin YhornInterface.solve(12578)[3]
+      begin HcSolver.solve_ub(12579)[4]
+        encoded:
+          P[<fail_1435@142:0>](<fail_1435@142:0>:int)|- bot
+          
+          P[<<dotprod_1033@109:2>@134:0>](<k_make_array_u_1178@139:1>:int,<k_make_array_u_1178@139:0>:int),
+          ((0 <= <k_make_array_u_1178@139:0>) &&
+           ((<k_make_array_u_1178@139:0> >= <k_make_array_u_1178@139:1>) && (<fail_1435@142:0> = 1)))
+          |- P[<fail_1435@142:0>](<fail_1435@142:0>:int)
+          
+          P[<dotprod_1033@109:4>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:2>@134:0>:int,<f_dotprod_1429@130:2>:int),
+          P[<<<dotprod_1033@109:1>@112:1>@128:0>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:2>@134:0>:int,var194:int),
+          (<<dotprod_1033@109:2>@134:0> < <dotprod_1033@109:0>)
+          |- P[<<dotprod_1033@109:2>@134:0>](<dotprod_1033@109:0>:int,
+                                             <<dotprod_1033@109:2>@134:0>:int)
+          
+          P[<<dotprod_1033@109:1>@112:0>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:1>@112:0>:int),
+          ((<<<dotprod_1033@109:1>@112:1>@128:0> = 0) &&
+           ((0 <= <<dotprod_1033@109:1>@112:0>) && (<<dotprod_1033@109:1>@112:0> < <dotprod_1033@109:0>)))
+          |- P[<<<dotprod_1033@109:1>@112:1>@128:0>](<dotprod_1033@109:0>:int,
+                                                     <<dotprod_1033@109:1>@112:0>:int,
+                                                     <<<dotprod_1033@109:1>@112:1>@128:0>:int)
+          
+          P[<dotprod_1033@109:4>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:1>@112:0>:int,<dotprod_1033@109:4>:int),
+          (<<dotprod_1033@109:1>@112:0> < <dotprod_1033@109:0>)
+          |- P[<<dotprod_1033@109:1>@112:0>](<dotprod_1033@109:0>:int,
+                                             <<dotprod_1033@109:1>@112:0>:int)
+          
+           ((<dotprod_1033@109:4> = 0) && (<dotprod_1033@109:4> = <dotprod_1033@109:3>))
+          |- P[<dotprod_1033@109:4>](<dotprod_1033@109:0>:int,<dotprod_1033@109:3>:int,
+                                     <dotprod_1033@109:4>:int)
+        input to Yhorn:
+          P[<fail_1435@142:0>](<fail_1435@142:0>:int)|- bot
+          
+          P[<<dotprod_1033@109:2>@134:0>](<k_make_array_u_1178@139:1>:int,<k_make_array_u_1178@139:0>:int),
+          ((<k_make_array_u_1178@139:0> >= <k_make_array_u_1178@139:1>) &&
+           ((0 <= <k_make_array_u_1178@139:0>) && (<fail_1435@142:0> = 1)))
+          |- P[<fail_1435@142:0>](<fail_1435@142:0>:int)
+          
+          P[<dotprod_1033@109:4>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:2>@134:0>:int,<f_dotprod_1429@130:2>:int),
+          P[<<<dotprod_1033@109:1>@112:1>@128:0>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:2>@134:0>:int,var194:int),
+          (<<dotprod_1033@109:2>@134:0> < <dotprod_1033@109:0>)
+          |- P[<<dotprod_1033@109:2>@134:0>](<dotprod_1033@109:0>:int,
+                                             <<dotprod_1033@109:2>@134:0>:int)
+          
+          P[<<dotprod_1033@109:1>@112:0>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:1>@112:0>:int),
+          ((<<dotprod_1033@109:1>@112:0> < <dotprod_1033@109:0>) &&
+           ((0 <= <<dotprod_1033@109:1>@112:0>) && (<<<dotprod_1033@109:1>@112:1>@128:0> = 0)))
+          |- P[<<<dotprod_1033@109:1>@112:1>@128:0>](<dotprod_1033@109:0>:int,
+                                                     <<dotprod_1033@109:1>@112:0>:int,
+                                                     <<<dotprod_1033@109:1>@112:1>@128:0>:int)
+          
+          P[<dotprod_1033@109:4>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:1>@112:0>:int,<dotprod_1033@109:4>:int),
+          (<<dotprod_1033@109:1>@112:0> < <dotprod_1033@109:0>)
+          |- P[<<dotprod_1033@109:1>@112:0>](<dotprod_1033@109:0>:int,
+                                             <<dotprod_1033@109:1>@112:0>:int)
+          
+           ((<dotprod_1033@109:4> = <dotprod_1033@109:3>) && (<dotprod_1033@109:4> = 0))
+          |- P[<dotprod_1033@109:4>](<dotprod_1033@109:0>:int,<dotprod_1033@109:3>:int,
+                                     <dotprod_1033@109:4>:int)Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1435_sep_142_sep_0($251)) -> 1=0.
+(($251-1=0) & (-$252<=0) & ($252-$253>=0)) & (v_sep_dotprod_1033_sep_109_sep_2_sep_134_sep_0($253,$252)) -> v_sep_fail_1435_sep_142_sep_0($251).
+($254-$255<0) & (v_sep_dotprod_1033_sep_109_sep_1_sep_112_sep_1_sep_128_sep_0($255,$254,$256)) & (v_sep_dotprod_1033_sep_109_sep_4($255,$254,$257)) -> v_sep_dotprod_1033_sep_109_sep_2_sep_134_sep_0($255,$254).
+(($258=0) & (-$259<=0) & (-$255+$259<0)) & (v_sep_dotprod_1033_sep_109_sep_1_sep_112_sep_0($255,$259)) -> v_sep_dotprod_1033_sep_109_sep_1_sep_112_sep_1_sep_128_sep_0($255,$259,$258).
+(-$255+$259<0) & (v_sep_dotprod_1033_sep_109_sep_4($255,$259,$260)) -> v_sep_dotprod_1033_sep_109_sep_1_sep_112_sep_0($255,$259).
+($260=0) & ($260-$261=0) -> v_sep_dotprod_1033_sep_109_sep_4($255,$261,$260).
+
+
+v_sep_dotprod_1033_sep_109_sep_1_sep_112_sep_0: X
+v_sep_dotprod_1033_sep_109_sep_1_sep_112_sep_1_sep_128_sep_0: X
+v_sep_dotprod_1033_sep_109_sep_2_sep_134_sep_0: X
+v_sep_dotprod_1033_sep_109_sep_4: X
+v_sep_fail_1435_sep_142_sep_0: X
+.......
+v_sep_dotprod_1033_sep_109_sep_1_sep_112_sep_0: X
+v_sep_dotprod_1033_sep_109_sep_1_sep_112_sep_1_sep_128_sep_0: X
+v_sep_dotprod_1033_sep_109_sep_2_sep_134_sep_0: X
+v_sep_dotprod_1033_sep_109_sep_4: X
+v_sep_fail_1435_sep_142_sep_0: X
+...
+v_sep_dotprod_1033_sep_109_sep_1_sep_112_sep_0: X
+v_sep_dotprod_1033_sep_109_sep_1_sep_112_sep_1_sep_128_sep_0: X
+v_sep_dotprod_1033_sep_109_sep_2_sep_134_sep_0: X
+v_sep_dotprod_1033_sep_109_sep_4: X
+v_sep_fail_1435_sep_142_sep_0: X
+.....
+v_sep_dotprod_1033_sep_109_sep_1_sep_112_sep_0: X
+v_sep_dotprod_1033_sep_109_sep_1_sep_112_sep_1_sep_128_sep_0: X
+v_sep_dotprod_1033_sep_109_sep_2_sep_134_sep_0: X
+v_sep_dotprod_1033_sep_109_sep_4: X
+v_sep_fail_1435_sep_142_sep_0: X
+......
+v_sep_dotprod_1033_sep_109_sep_1_sep_112_sep_0: X
+v_sep_dotprod_1033_sep_109_sep_1_sep_112_sep_1_sep_128_sep_0: X
+v_sep_dotprod_1033_sep_109_sep_2_sep_134_sep_0: X
+v_sep_dotprod_1033_sep_109_sep_4: X
+v_sep_fail_1435_sep_142_sep_0: X
+.......(0=0) & (v_sep_fail_1435_sep_142_sep_0($251)) -> 1=0.
+(($251-1=0) & (-$252<=0) & ($252-$253>=0)) & (v_sep_dotprod_1033_sep_109_sep_2_sep_134_sep_0($253,$252)) -> v_sep_fail_1435_sep_142_sep_0($251).
+($254-$255<0) & (v_sep_dotprod_1033_sep_109_sep_1_sep_112_sep_1_sep_128_sep_0($255,$254,$256)) & (v_sep_dotprod_1033_sep_109_sep_4($255,$254,$257)) -> v_sep_dotprod_1033_sep_109_sep_2_sep_134_sep_0($255,$254).
+(($258=0) & (-$259<=0) & (-$255+$259<0)) & (v_sep_dotprod_1033_sep_109_sep_1_sep_112_sep_0($255,$259)) -> v_sep_dotprod_1033_sep_109_sep_1_sep_112_sep_1_sep_128_sep_0($255,$259,$258).
+(-$255+$259<0) & (v_sep_dotprod_1033_sep_109_sep_4($255,$259,$260)) -> v_sep_dotprod_1033_sep_109_sep_1_sep_112_sep_0($255,$259).
+($260=0) & ($260-$261=0) -> v_sep_dotprod_1033_sep_109_sep_4($255,$261,$260).
+
+        solution:
+          P[<<dotprod_1033@109:1>@112:0>]($284:int,$286:int) = true
+          P[<<<dotprod_1033@109:1>@112:1>@128:0>]($270:int,$272:int,$274:int) = true
+          P[<<dotprod_1033@109:2>@134:0>]($265:int,$267:int) = ((1 + $267) <= $265)
+          P[<dotprod_1033@109:4>]($277:int,$279:int,$281:int) = true
+          P[<fail_1435@142:0>]($262:bool) = false
+        
+      end HcSolver.solve_ub(12579)[4] (0.014998 sec.)
+      begin HcSolver.check_validity(12838)[4]
+        input:
+          P[<fail_1435@142:0>](<fail_1435@142:0>:bool)|- bot
+          
+          P[<<dotprod_1033@109:2>@134:0>](<k_make_array_u_1178@139:1>:int,<k_make_array_u_1178@139:0>:int),
+          ((0 <= <k_make_array_u_1178@139:0>) &&
+           ((<k_make_array_u_1178@139:0> >= <k_make_array_u_1178@139:1>) && <fail_1435@142:0>))
+          |- P[<fail_1435@142:0>](<fail_1435@142:0>:bool)
+          
+          P[<dotprod_1033@109:4>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:2>@134:0>:int,<f_dotprod_1429@130:2>:int),
+          P[<<<dotprod_1033@109:1>@112:1>@128:0>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:2>@134:0>:int,var194:int),
+          (<<dotprod_1033@109:2>@134:0> < <dotprod_1033@109:0>)
+          |- P[<<dotprod_1033@109:2>@134:0>](<dotprod_1033@109:0>:int,
+                                             <<dotprod_1033@109:2>@134:0>:int)
+          
+          P[<<dotprod_1033@109:1>@112:0>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:1>@112:0>:int),
+          ((<<<dotprod_1033@109:1>@112:1>@128:0> = 0) &&
+           ((0 <= <<dotprod_1033@109:1>@112:0>) && (<<dotprod_1033@109:1>@112:0> < <dotprod_1033@109:0>)))
+          |- P[<<<dotprod_1033@109:1>@112:1>@128:0>](<dotprod_1033@109:0>:int,
+                                                     <<dotprod_1033@109:1>@112:0>:int,
+                                                     <<<dotprod_1033@109:1>@112:1>@128:0>:int)
+          
+          P[<dotprod_1033@109:4>](<dotprod_1033@109:0>:int,<<dotprod_1033@109:1>@112:0>:int,<dotprod_1033@109:4>:int),
+          (<<dotprod_1033@109:1>@112:0> < <dotprod_1033@109:0>)
+          |- P[<<dotprod_1033@109:1>@112:0>](<dotprod_1033@109:0>:int,
+                                             <<dotprod_1033@109:1>@112:0>:int)
+          
+           ((<dotprod_1033@109:4> = 0) && (<dotprod_1033@109:4> = <dotprod_1033@109:3>))
+          |- P[<dotprod_1033@109:4>](<dotprod_1033@109:0>:int,<dotprod_1033@109:3>:int,
+                                     <dotprod_1033@109:4>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(12838)[4] (0.002999 sec.)
+      solution:
+        P[<<dotprod_1033@109:1>@112:0>]($284:int,$286:int) = true
+        P[<<<dotprod_1033@109:1>@112:1>@128:0>]($270:int,$272:int,$274:int) = true
+        P[<<dotprod_1033@109:2>@134:0>]($265:int,$267:int) = ((1 + $267) <= $265)
+        P[<dotprod_1033@109:4>]($277:int,$279:int,$281:int) = true
+        P[<fail_1435@142:0>]($262:bool) = false
+    end YhornInterface.solve(12578)[3] (0.018997 sec.)
+    
+  end RefTypeInfer.infer_etrs(9384)[2] (0.240963 sec.)
+  refinement types:
+    main_1428: X
+    f_1432: v1:int -> X
+    f_1433: v1:int -> v2:int -> X
+    main_1039: v1:int -> v2:int -> (v3:unit -> X) -> X
+    dotprod_1033: v1:int ->
+                  (v2:int -> (v3:int -> X) -> X) ->
+                  (v6:{v6:int | ((1 + v6) <= v1)} -> (v7:int -> X) -> X) -> v10:int -> v11:int -> (v12:int -> X) -> X
+    make_array_1030: v1:int -> v2:int -> (v3:int -> X) -> X
+    k_make_array_u_1178: v1:int -> v2:int -> (v3:int -> X) -> v5:bool -> X
+    k_make_array_u_1189: v1:int -> v2:int -> (v3:int -> X) -> v5:unit -> X
+    f_dotprod_1429: v1:int ->
+                    v2:int ->
+                    v3:int ->
+                    (v4:int -> X) -> (v6:int -> (v7:int -> X) -> X) -> (v10:int -> (v11:int -> X) -> X) -> v14:int -> X
+    make_array_1030: v1:int -> v2:int -> (v3:int -> X) -> X
+    k_make_array_u_1178: v1:int -> v2:int -> (v3:int -> X) -> v5:bool -> X
+    fail_1435: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1434: var218:int -> var217:int -> var216:unit -> X
+    f_dotprod_1430: var234:int ->
+                    var233:int ->
+                    var232:int ->
+                    var231:int ->
+                    (var230:int -> X) ->
+                    (var228:int -> (var227:int -> X) -> X) -> (var224:int -> (var223:int -> X) -> X) -> var220:int -> X
+    f_main_1431: var240:int -> var239:int -> (var238:unit -> X) -> var236:int -> X
+  abstraction types:
+    main_1428: X
+    f_1432: v1:int -> X
+    f_1433: v1:int -> v2:int -> X
+    main_1039: v1:int -> v2:int -> (v3:unit -> X) -> X
+    dotprod_1033: v1:int ->
+                  (v2:int -> (v3:int -> X) -> X) ->
+                  (v6:int[v6 -> ((1 + v6) <= v1)] -> (v7:int -> X) -> X) -> v10:int -> v11:int -> (v12:int -> X) -> X
+    make_array_1030: var241:int -> var242:int -> (var243:int -> X) -> X
+    k_make_array_u_1178: var246:int -> var247:int -> (var248:int -> X) -> var250:bool -> X
+    k_make_array_u_1189: v1:int -> v2:int -> (v3:int -> X) -> v5:unit -> X
+    f_dotprod_1429: v1:int ->
+                    v2:int ->
+                    v3:int ->
+                    (v4:int -> X) -> (v6:int -> (v7:int -> X) -> X) -> (v10:int -> (v11:int -> X) -> X) -> v14:int -> X
+    fail_1435: v1:bool -> (v2:unit -> X) -> X
+    f_1434: var218:int -> var217:int -> var216:unit -> X
+    f_dotprod_1430: var234:int ->
+                    var233:int ->
+                    var232:int ->
+                    var231:int ->
+                    (var230:int -> X) ->
+                    (var228:int -> (var227:int -> X) -> X) -> (var224:int -> (var223:int -> X) -> X) -> var220:int -> X
+    f_main_1431: var240:int -> var239:int -> (var238:unit -> X) -> var236:int -> X
+  
+end AbsTypeInfer.refine(9383)[1] (0.245963 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 1; 0; 0; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 4)::
+Main: main_1428
+  main_1428 -> (rand_int f_1432)
+  dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 k_dotprod_1240 when (
+      i_1037 >= n_1034) -> (k_dotprod_1240 sum_1038)
+  dotprod_1033 n_1034 v1_1035 v2_1036 i_1037 sum_1038 k_dotprod_1240 when (
+      not (i_1037 >= n_1034)) ->
+      (v1_1035 i_1037 (f_dotprod_1429 i_1037 n_1034 sum_1038 k_dotprod_1240 v1_1035 v2_1036))
+  f_1432 x_1386 -> (rand_int (f_1433 x_1386))
+  f_1433 x_1386 x_1399 -> (main_1039 x_1386 x_1399 (f_1434 x_1386 x_1399))
+  f_1434 x_1386 x_1399 x_1383 -> end
+  f_dotprod_1429 i_1037 n_1034 sum_1038 k_dotprod_1240 v1_1035 v2_1036 x_1266 ->
+      (v2_1036 i_1037 (f_dotprod_1430 i_1037 n_1034 sum_1038 x_1266 k_dotprod_1240 v1_1035 v2_1036))
+  f_dotprod_1430 i_1037 n_1034 sum_1038 x_1266 k_dotprod_1240 v1_1035 v2_1036 x_1267 ->
+      (dotprod_1033 n_1034 v1_1035 v2_1036 (i_1037 + 1) (sum_1038 + (x_1266 * x_1267)) k_dotprod_1240)
+  f_main_1431 n_1041 z_1040 k_main_1315 x_1350 -> (k_main_1315 ())
+  fail_1435 b k -> {fail} => (k ())
+  k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 b_1190 when b_1190 ->
+      (k_make_array_u_1189 i_1032 n_1031 k_make_array_1172 ())
+  k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 b_1190 when (not b_1190) ->
+      (fail_1435 true (k_make_array_u_1189 i_1032 n_1031 k_make_array_1172))
+  k_make_array_u_1189 i_1032 n_1031 k_make_array_1172 x_1175 -> (k_make_array_1172 0)
+  main_1039 z_1040 n_1041 k_main_1315 when (z_1040 = 0) ->
+      (dotprod_1033 n_1041 (make_array_1030 n_1041) (make_array_1030 n_1041) z_1040 z_1040
+        (f_main_1431 n_1041 z_1040 k_main_1315))
+  main_1039 z_1040 n_1041 k_main_1315 when (not (z_1040 = 0)) -> (k_main_1315 ())
+  make_array_1030 n_1031 i_1032 k_make_array_1172 when (0 <= i_1032) ->
+      (k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 (i_1032 < n_1031))
+  make_array_1030 n_1031 i_1032 k_make_array_1172 when (not (0 <= i_1032)) ->
+      (k_make_array_u_1178 i_1032 n_1031 k_make_array_1172 false)
+Types:
+  main_1428 : X
+  dotprod_1033 : (x_1:int ->
+                  (x_3:int[x_1 >= x_3 + 1; x_3 >= 0] -> (int[x_3 >= 0] -> X) -> X) ->
+                  (x_9:int[x_1 >= x_9 + 1; x_9 >= 0] -> (int -> X) -> X) ->
+                  x_14:int -> int[x_14 >= 0] -> (int -> X) -> X)
+  fail_1435 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  
+(4-1) Abstracting ... DONE!
+
+(4-2) Checking HORS ... DONE!
+
+Safe!
+
+Refinement Types:
+  dotprod: (x_1:int ->
+                (({x_9:int | x_9 >= 0 && x_1 >= x_9 + 1} -> int) ->
+                     (({x_7:int | x_7 >= 0 && x_1 >= x_7 + 1} -> int) -> (x_4:int -> ({x_5:int | x_4 >= 0} -> int)))))
+
+cycles: 4
+total: 1.062 sec
+  abst: 0.046 sec
+  mc: 0.046 sec
+  refine: 0.529 sec
+    exparam: 0.360 sec

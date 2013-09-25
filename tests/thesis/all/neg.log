@@ -1,0 +1,128 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -gchi neg.ml
+
+parsed::
+ let g_1030 x_1031 y_1032 = x_1031 
+ in
+ let twice_1033 f_1034 x_1035 y_1036 = f_1034 (f_1034 x_1035) y_1036 
+ in
+ let neg_1037 x_1038 y_1039 = 0 - x_1038 () 
+ in
+ let main_1040 n_1041 =
+   if n_1041 >= 0 then
+     let z_1042 = twice_1033 neg_1037 (g_1030 n_1041) () 
+     in
+       if z_1042 >= 0 then
+         ()
+       else
+         {fail} ()
+   else
+     () 
+ in
+   ()
+
+set_target::
+ let g_1030 x_1031 y_1032 = x_1031 
+ in
+ let twice_1033 f_1034 x_1035 y_1036 = f_1034 (f_1034 x_1035) y_1036 
+ in
+ let neg_1037 x_1038 y_1039 = 0 - x_1038 () 
+ in
+ let main_1040 n_1041 =
+   if n_1041 >= 0 then
+     let z_1042 = twice_1033 neg_1037 (g_1030 n_1041) () 
+     in
+       if z_1042 >= 0 then
+         ()
+       else
+         {fail} ()
+   else
+     () 
+ in
+ let main_1110 = let arg1_1109 = rand_int () 
+                 in
+                   main_1040 arg1_1109 
+ in
+   ()
+
+copy_poly::
+ let g_1113 (x_1031:int) (y_1032:unit) = x_1031 
+ in
+ let twice_1112 (f_1034:((unit -> int) -> (unit -> int))) (x_1035:(unit -> int)) (y_1036:unit) =
+   f_1034 (f_1034 x_1035) y_1036 
+ in
+ let neg_1111 (x_1038:(unit -> int)) (y_1039:unit) = 0 - x_1038 () 
+ in
+ let main_1040 (n_1041:int) =
+   if n_1041 >= 0 then
+     let z_1042 = twice_1112 neg_1111 (g_1113 n_1041) () 
+     in
+       if z_1042 >= 0 then
+         ()
+       else
+         {fail} ()
+   else
+     () 
+ in
+ let main_1110 = let arg1_1109 = rand_int () 
+                 in
+                   main_1040 arg1_1109 
+ in
+   ()
+
+CPS::
+ let g_1113 (x_1031:int) (y_1032:unit) (k_g_1141:(int -> X)) = k_g_1141 x_1031 
+ in
+ let twice_1112
+   (f_1034:((unit -> ((int -> X) -> X)) -> (unit -> ((int -> X) -> X)))) (x_1035:(
+   unit -> ((int -> X) -> X))) (y_1036:unit) (k_twice_1201:(int -> X)) = 
+   f_1034 (f_1034 x_1035) y_1036 k_twice_1201 
+ in
+ let neg_1111 (x_1038:(unit -> ((int -> X) -> X))) (y_1039:unit) (k_neg_1254:(
+   int -> X)) = x_1038 () (fun x_1258 -> k_neg_1254 (0 - x_1258)) 
+ in
+ let main_1040 (n_1041:int) (k_main_1282:(unit -> X)) =
+   if n_1041 >= 0 then
+     twice_1112 neg_1111 (g_1113 n_1041) ()
+       (fun x_1285 -> (if x_1285 >= 0 then
+                         k_main_1282 ()
+                       else
+                         {|fail|} () k_main_1282))
+   else
+     k_main_1282 () 
+ in
+   rand_int_cps () (fun x_1339 -> main_1040 x_1339 (fun x_1336 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1364
+  main_1364 -> (rand_int f_1367)
+  f_1367 x_1339 -> (main_1040 x_1339 (f_1368 x_1339))
+  f_1368 x_1339 x_1336 -> end
+  f_main_1366 n_1041 k_main_1282 x_1285 when (x_1285 >= 0) -> (k_main_1282 ())
+  f_main_1366 n_1041 k_main_1282 x_1285 when (not (x_1285 >= 0)) -> (fail_1369 true k_main_1282)
+  f_neg_1365 y_1039 k_neg_1254 x_1258 -> (k_neg_1254 (0 - x_1258))
+  fail_1369 b k -> {fail} => (k ())
+  g_1113 x_1031 y_1032 k_g_1141 -> (k_g_1141 x_1031)
+  main_1040 n_1041 k_main_1282 when (n_1041 >= 0) ->
+      (twice_1112 neg_1111 (g_1113 n_1041) () (f_main_1366 n_1041 k_main_1282))
+  main_1040 n_1041 k_main_1282 when (not (n_1041 >= 0)) -> (k_main_1282 ())
+  neg_1111 x_1038 y_1039 k_neg_1254 -> (x_1038 () (f_neg_1365 y_1039 k_neg_1254))
+  twice_1112 f_1034 x_1035 y_1036 k_twice_1201 -> (f_1034 (f_1034 x_1035) y_1036 k_twice_1201)
+Types:
+  main_1364 : X
+  fail_1369 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Safe!
+
+cycles: 0
+total: 0.174 sec
+  abst: 0.003 sec
+  mc: 0.003 sec
+  refine: 0.000 sec
+    exparam: 0.000 sec

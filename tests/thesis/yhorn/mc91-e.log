@@ -1,0 +1,122 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn mc91-e.ml
+
+parsed::
+ let rec mc91_1030 x_1031 = if x_1031 > 100 then
+                              x_1031 - 10
+                            else
+                              mc91_1030 (mc91_1030 (x_1031 + 11)) 
+ in
+ let main_1032 n_1033 = if n_1033 <= 102 then
+                          if mc91_1030 n_1033 = 91 then
+                            ()
+                          else
+                            {fail} ()
+                        else
+                          () 
+ in
+   ()
+
+set_target::
+ let rec mc91_1030 x_1031 = if x_1031 > 100 then
+                              x_1031 - 10
+                            else
+                              mc91_1030 (mc91_1030 (x_1031 + 11)) 
+ in
+ let main_1032 n_1033 = if n_1033 <= 102 then
+                          if mc91_1030 n_1033 = 91 then
+                            ()
+                          else
+                            {fail} ()
+                        else
+                          () 
+ in
+ let main_1051 = let arg1_1050 = rand_int () 
+                 in
+                   main_1032 arg1_1050 
+ in
+   ()
+
+CPS::
+ let rec mc91_1030 (x_1031:int) (k_mc91_1076:(int -> X)) =
+   if x_1031 > 100 then
+     k_mc91_1076 (x_1031 - 10)
+   else
+     mc91_1030 (x_1031 + 11) (fun x_1096 -> mc91_1030 x_1096 k_mc91_1076) 
+ in
+ let main_1032 (n_1033:int) (k_main_1114:(unit -> X)) =
+   if n_1033 <= 102 then
+     mc91_1030 n_1033 (fun x_1117 -> (if x_1117 = 91 then
+                                        k_main_1114 ()
+                                      else
+                                        {|fail|} () k_main_1114))
+   else
+     k_main_1114 () 
+ in
+   rand_int_cps () (fun x_1149 -> main_1032 x_1149 (fun x_1146 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1174
+  main_1174 -> (rand_int f_1177)
+  f_1177 x_1149 -> (main_1032 x_1149 (f_1178 x_1149))
+  f_1178 x_1149 x_1146 -> end
+  f_main_1176 n_1033 k_main_1114 x_1117 when (x_1117 = 91) -> (k_main_1114 ())
+  f_main_1176 n_1033 k_main_1114 x_1117 when (not (x_1117 = 91)) -> (fail_1179 true k_main_1114)
+  f_mc91_1175 x_1031 k_mc91_1076 x_1096 -> (mc91_1030 x_1096 k_mc91_1076)
+  fail_1179 b k -> {fail} => (k ())
+  main_1032 n_1033 k_main_1114 when (n_1033 <= 102) -> (mc91_1030 n_1033 (f_main_1176 n_1033 k_main_1114))
+  main_1032 n_1033 k_main_1114 when (not (n_1033 <= 102)) -> (k_main_1114 ())
+  mc91_1030 x_1031 k_mc91_1076 when (x_1031 > 100) -> (k_mc91_1076 (x_1031 - 10))
+  mc91_1030 x_1031 k_mc91_1076 when (not (x_1031 > 100)) -> (mc91_1030 (x_1031 + 11) (f_mc91_1175 x_1031 k_mc91_1076))
+Types:
+  main_1174 : X
+  fail_1179 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  mc91_1030 : (int -> (int -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1174 ... --> 
+  f_1177 ... --> 
+  main_1032 [1/2] ... --> 
+  mc91_1030 [1/2] ... --> 
+  f_main_1176 [2/2] ... --> 
+  fail_1179 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... begin Cvc3Interface.solve(123)[1]
+  CVC3 input: PUSH;cnt20_v_sep_r_1223:INT;CHECKSAT (TRUE AND ((NOT ((cnt20_v_sep_r_1223 - 10) = 91)) AND ((cnt20_v_sep_r_1223 > 100) AND ((cnt20_v_sep_r_1223 <= 102) AND (TRUE AND TRUE)))));COUNTERMODEL;POP;
+  CVC3 output: CVC> Satisfiable.
+  CVC3 output: Current scope level is 9.
+  CVC3 output: %Satisfiable  Variable Assignment: % 
+  CVC3 output: ASSERT (cnt20_v_sep_r_1223 = 102);
+  CVC3 output: CVC> 
+  v_sep_r_1223 = 102
+  end Cvc3Interface.solve(123)[1] (0.006999 sec.)
+DONE!
+
+Unsafe!
+
+Input for main:
+  102
+Error trace:
+  main 102 ->
+    if true then ... ->
+    mc91 102 ->
+      if true then ... ->
+    if false then ... ->
+    FAIL!
+
+cycles: 0
+total: 0.171 sec
+  abst: 0.001 sec
+  mc: 0.005 sec
+  refine: 0.007 sec
+    exparam: 0.000 sec

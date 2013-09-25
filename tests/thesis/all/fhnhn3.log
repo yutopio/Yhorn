@@ -1,0 +1,152 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -gchi fhnhn3.ml
+
+parsed::
+ let g_1030 y_1031 = if y_1031 () <= 0 then
+                       ()
+                     else
+                       {fail} () 
+ in
+ let f_1032 x_1033 y_1034 = if x_1033 () > 0 then
+                              g_1030 y_1034
+                            else
+                              () 
+ in
+ let h_1035 x_1036 y_1037 = x_1036 
+ in
+ let rec g_1038 n_1039 = f_1032 (h_1035 n_1039) (h_1035 n_1039) 
+ in
+   ()
+
+set_target::
+ let g_1030 y_1031 = if y_1031 () <= 0 then
+                       ()
+                     else
+                       {fail} () 
+ in
+ let f_1032 x_1033 y_1034 = if x_1033 () > 0 then
+                              g_1030 y_1034
+                            else
+                              () 
+ in
+ let h_1035 x_1036 y_1037 = x_1036 
+ in
+ let rec g_1038 n_1039 = f_1032 (h_1035 n_1039) (h_1035 n_1039) 
+ in
+ let main_1084 = let arg1_1083 = rand_int () 
+                 in
+                   g_1038 arg1_1083 
+ in
+   ()
+
+copy_poly::
+ let g_1030 (y_1031:(unit -> int)) = if y_1031 () <= 0 then
+                                       ()
+                                     else
+                                       {fail} () 
+ in
+ let f_1032 (x_1033:(unit -> int)) (y_1034:(unit -> int)) = if x_1033 () > 0 then
+                                                              g_1030 y_1034
+                                                            else
+                                                              () 
+ in
+ let h_1085 (x_1036:int) (y_1037:unit) = x_1036 
+ in
+ let rec g_1038 (n_1039:int) = f_1032 (h_1085 n_1039) (h_1085 n_1039) 
+ in
+ let main_1084 = let arg1_1083 = rand_int () 
+                 in
+                   g_1038 arg1_1083 
+ in
+   ()
+
+CPS::
+ let g_1030 (y_1031:(unit -> ((int -> X) -> X))) (k_g_1123:(unit -> X)) =
+   y_1031 () (fun x_1126 -> (if x_1126 <= 0 then
+                               k_g_1123 ()
+                             else
+                               {|fail|} () k_g_1123)) 
+ in
+ let f_1032 (x_1033:(unit -> ((int -> X) -> X))) (y_1034:(unit -> ((int -> X) -> X))) (k_f_1189:(
+   unit -> X)) = x_1033 () (fun x_1192 -> (if x_1192 > 0 then
+                                             g_1030 y_1034 k_f_1189
+                                           else
+                                             k_f_1189 ())) 
+ in
+ let h_1085 (x_1036:int) (y_1037:unit) (k_h_1246:(int -> X)) = k_h_1246 x_1036 
+ in
+ let rec g_1038 (n_1039:int) (k_g_1260:(unit -> X)) = f_1032 (h_1085 n_1039) (h_1085 n_1039) k_g_1260 
+ in
+   rand_int_cps () (fun x_1297 -> g_1038 x_1297 (fun x_1294 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1322
+  main_1322 -> (rand_int f_1325)
+  f_1032 x_1033 y_1034 k_f_1189 -> (x_1033 () (f_f_1324 k_f_1189 y_1034))
+  f_1325 x_1297 -> (g_1038 x_1297 (f_1326 x_1297))
+  f_1326 x_1297 x_1294 -> end
+  f_f_1324 k_f_1189 y_1034 x_1192 when (x_1192 > 0) -> (g_1030 y_1034 k_f_1189)
+  f_f_1324 k_f_1189 y_1034 x_1192 when (not (x_1192 > 0)) -> (k_f_1189 ())
+  f_g_1323 k_g_1123 x_1126 when (x_1126 <= 0) -> (k_g_1123 ())
+  f_g_1323 k_g_1123 x_1126 when (not (x_1126 <= 0)) -> (fail_1327 true k_g_1123)
+  fail_1327 b k -> {fail} => (k ())
+  g_1030 y_1031 k_g_1123 -> (y_1031 () (f_g_1323 k_g_1123))
+  g_1038 n_1039 k_g_1260 -> (f_1032 (h_1085 n_1039) (h_1085 n_1039) k_g_1260)
+  h_1085 x_1036 y_1037 k_h_1246 -> (k_h_1246 x_1036)
+Types:
+  main_1322 : X
+  fail_1327 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1322 ... --> 
+  f_1325 ... --> 
+  g_1038 ... --> 
+  f_1032 ... --> 
+  h_1085 ... --> 
+  f_f_1324 [1/2] ... --> 
+  g_1030 ... --> 
+  h_1085 ... --> 
+  f_g_1323 [2/2] ... --> 
+  fail_1327 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... begin Cvc3Interface.solve(114)[1]
+  CVC3 input: PUSH;cnt24_v_sep_r_1379:INT;CHECKSAT (TRUE AND ((NOT (cnt24_v_sep_r_1379 <= 0)) AND (TRUE AND (TRUE AND ((cnt24_v_sep_r_1379 > 0) AND (TRUE AND (TRUE AND (TRUE AND (TRUE AND TRUE)))))))));COUNTERMODEL;POP;
+  CVC3 output: CVC> Satisfiable.
+  CVC3 output: Current scope level is 9.
+  CVC3 output: %Satisfiable  Variable Assignment: % 
+  CVC3 output: ASSERT (cnt24_v_sep_r_1379 = 1);
+  CVC3 output: CVC> 
+  v_sep_r_1379 = 1
+  end Cvc3Interface.solve(114)[1] (0.005999 sec.)
+DONE!
+
+Unsafe!
+
+Input for g:
+  1
+Error trace:
+  g 1 ->
+    f <fun> <fun> ->
+      h 1 () ->
+      if true then ... ->
+      g <fun> ->
+        h 1 () ->
+        if false then ... ->
+        FAIL!
+
+cycles: 0
+total: 0.198 sec
+  abst: 0.001 sec
+  mc: 0.005 sec
+  refine: 0.007 sec
+    exparam: 0.000 sec

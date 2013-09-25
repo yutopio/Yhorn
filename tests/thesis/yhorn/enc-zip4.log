@@ -1,0 +1,1120 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn enc-zip4.ml
+
+parsed::
+ let rec zip_1030 x_1031 y_1032 =
+   if x_1031 = 0 then
+     if y_1032 = 0 then
+       0
+     else
+       let u_1043 = {fail} () 
+       in
+         _|_
+   else
+     if y_1032 = 0 then
+       let u_1046 = {fail} () 
+       in
+         _|_
+     else
+       1 + zip_1030 (x_1031 - 1) (y_1032 - 1) 
+ in
+ let main_1033 n_1034 =
+   let m_1035 = zip_1030 n_1034 n_1034 
+   in
+     if m_1035 >= n_1034 && m_1035 <= n_1034 then
+       ()
+     else
+       {fail} () 
+ in
+   ()
+
+set_target::
+ let rec zip_1030 x_1031 y_1032 =
+   if x_1031 = 0 then
+     if y_1032 = 0 then
+       0
+     else
+       let u_1043 = {fail} () 
+       in
+         _|_
+   else
+     if y_1032 = 0 then
+       let u_1046 = {fail} () 
+       in
+         _|_
+     else
+       1 + zip_1030 (x_1031 - 1) (y_1032 - 1) 
+ in
+ let main_1033 n_1034 =
+   let m_1035 = zip_1030 n_1034 n_1034 
+   in
+     if m_1035 >= n_1034 && m_1035 <= n_1034 then
+       ()
+     else
+       {fail} () 
+ in
+ let main_1067 = let arg1_1066 = rand_int () 
+                 in
+                   main_1033 arg1_1066 
+ in
+   ()
+
+CPS::
+ let rec zip_1030 (x_1031:int) (y_1032:int) (k_zip_1095:(int -> X)) =
+   if x_1031 = 0 then
+     if y_1032 = 0 then
+       k_zip_1095 0
+     else
+       {|fail|} () (fun x_1098 -> _|_)
+   else
+     if y_1032 = 0 then
+       {|fail|} () (fun x_1114 -> _|_)
+     else
+       zip_1030 (x_1031 - 1) (y_1032 - 1) (fun x_1127 -> k_zip_1095 (1 + x_1127)) 
+ in
+ let main_1033 (n_1034:int) (k_main_1160:(unit -> X)) =
+   zip_1030 n_1034 n_1034
+     (fun x_1163 ->
+        (let k_main_1177 (b_1189:bool) = if b_1189 then
+                                           k_main_1160 ()
+                                         else
+                                           {|fail|} () k_main_1160 
+         in
+           if x_1163 >= n_1034 then
+             k_main_1177 (x_1163 <= n_1034)
+           else
+             k_main_1177 false)) 
+ in
+   rand_int_cps () (fun x_1195 -> main_1033 x_1195 (fun x_1192 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1220
+  main_1220 -> (rand_int f_1225)
+  br_zip_1227 b_1228 x_1031 y_1032 k_zip_1095 when b_1228 -> (k_zip_1095 0)
+  br_zip_1227 b_1228 x_1031 y_1032 k_zip_1095 when (not b_1228) -> (fail_1231 true (f_zip_1221 x_1031 y_1032))
+  br_zip_1229 b_1230 x_1031 y_1032 k_zip_1095 when b_1230 -> (fail_1232 true (f_zip_1222 x_1031 y_1032))
+  br_zip_1229 b_1230 x_1031 y_1032 k_zip_1095 when (not b_1230) ->
+      (zip_1030 (x_1031 - 1) (y_1032 - 1) (f_zip_1223 x_1031 y_1032 k_zip_1095))
+  f_1225 x_1195 -> (main_1033 x_1195 (f_1226 x_1195))
+  f_1226 x_1195 x_1192 -> end
+  f_main_1224 n_1034 k_main_1160 x_1163 when (x_1163 >= n_1034) ->
+      (k_main_1177 n_1034 x_1163 k_main_1160 (x_1163 <= n_1034))
+  f_main_1224 n_1034 k_main_1160 x_1163 when (not (x_1163 >= n_1034)) -> (k_main_1177 n_1034 x_1163 k_main_1160 false)
+  f_zip_1221 x_1031 y_1032 x_1098 -> _|_
+  f_zip_1222 x_1031 y_1032 x_1114 -> _|_
+  f_zip_1223 x_1031 y_1032 k_zip_1095 x_1127 -> (k_zip_1095 (1 + x_1127))
+  fail_1231 b k -> {fail} => (k ())
+  fail_1232 b k -> {fail} => (k ())
+  fail_1233 b k -> {fail} => (k ())
+  k_main_1177 n_1034 x_1163 k_main_1160 b_1189 when b_1189 -> (k_main_1160 ())
+  k_main_1177 n_1034 x_1163 k_main_1160 b_1189 when (not b_1189) -> (fail_1233 true k_main_1160)
+  main_1033 n_1034 k_main_1160 -> (zip_1030 n_1034 n_1034 (f_main_1224 n_1034 k_main_1160))
+  zip_1030 x_1031 y_1032 k_zip_1095 when (x_1031 = 0) -> (br_zip_1227 (y_1032 = 0) x_1031 y_1032 k_zip_1095)
+  zip_1030 x_1031 y_1032 k_zip_1095 when (not (x_1031 = 0)) -> (br_zip_1229 (y_1032 = 0) x_1031 y_1032 k_zip_1095)
+Types:
+  main_1220 : X
+  fail_1231 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  fail_1232 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  fail_1233 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  zip_1030 : (int -> int -> (int -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1220 ... --> 
+  f_1225 ... --> 
+  main_1033 ... --> 
+  zip_1030 [2/2] ... --> 
+  br_zip_1229 [1/2] ... --> 
+  fail_1232 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 0; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(147)[1]
+  program:
+    main_1220  | true = ((Random.int 0) f_1225)
+    br_zip_1227 b_1228 x_1031 y_1032 k_zip_1095 | b_1228 = (k_zip_1095 0)
+    br_zip_1227 b_1228 x_1031 y_1032 k_zip_1095 | (not b_1228) = (fail_1231 true
+                                                                    (f_zip_1221 x_1031
+                                                                    y_1032))
+    br_zip_1229 b_1230 x_1031 y_1032 k_zip_1095 | b_1230 = (fail_1232 true
+                                                                    (f_zip_1222 x_1031
+                                                                    y_1032))
+    br_zip_1229 b_1230 x_1031 y_1032 k_zip_1095 | (not b_1230) = (zip_1030
+                                                                    (
+                                                                    x_1031 - 1)
+                                                                    (
+                                                                    y_1032 - 1)
+                                                                    (
+                                                                    f_zip_1223 x_1031
+                                                                    y_1032
+                                                                    k_zip_1095))
+    f_1225 x_1195 | true = (main_1033 x_1195
+                                      (f_1226 x_1195))
+    f_1226 x_1195 x_1192 | true = end
+    f_main_1224 n_1034 k_main_1160 x_1163 | (x_1163 >= n_1034) = (k_main_1177
+                                                                    n_1034
+                                                                    x_1163
+                                                                    k_main_1160
+                                                                    (
+                                                                    x_1163 <= n_1034))
+    f_main_1224 n_1034 k_main_1160 x_1163 | (not (x_1163 >= n_1034)) = (
+    k_main_1177 n_1034
+                x_1163
+                k_main_1160
+                false)
+    f_zip_1221 x_1031 y_1032 x_1098 | true = bot
+    f_zip_1222 x_1031 y_1032 x_1114 | true = bot
+    f_zip_1223 x_1031 y_1032 k_zip_1095 x_1127 | true = (k_zip_1095 (
+                                                                    1 + x_1127))
+    fail_1231 b k | true = (fail ())
+    fail_1232 b k | true = (fail ())
+    fail_1233 b k | true = (fail ())
+    k_main_1177 n_1034 x_1163 k_main_1160 b_1189 | b_1189 = (k_main_1160 ())
+    k_main_1177 n_1034 x_1163 k_main_1160 b_1189 | (not b_1189) = (fail_1233 true
+                                                                    k_main_1160)
+    main_1033 n_1034 k_main_1160 | true = (zip_1030 n_1034
+                                                    n_1034
+                                                    (f_main_1224 n_1034
+                                                                 k_main_1160))
+    zip_1030 x_1031 y_1032 k_zip_1095 | (x_1031 = 0) = (br_zip_1227 (
+                                                                    y_1032 = 0)
+                                                                    x_1031
+                                                                    y_1032
+                                                                    k_zip_1095)
+    zip_1030 x_1031 y_1032 k_zip_1095 | (not (x_1031 = 0)) = (br_zip_1229 (
+                                                                    y_1032 = 0)
+                                                                    x_1031
+                                                                    y_1032
+                                                                    k_zip_1095)
+    main_1220:X
+    br_zip_1227:bool -> int -> int -> (int -> X) -> X
+    br_zip_1229:bool -> int -> int -> (int -> X) -> X
+    f_1225:int -> X
+    f_1226:int -> unit -> X
+    f_main_1224:int -> (unit -> X) -> int -> X
+    f_zip_1221:int -> int -> unit -> X
+    f_zip_1222:int -> int -> unit -> X
+    f_zip_1223:int -> int -> (int -> X) -> int -> X
+    fail_1231:bool -> (unit -> X) -> X
+    fail_1232:bool -> (unit -> X) -> X
+    fail_1233:bool -> (unit -> X) -> X
+    k_main_1177:int -> int -> (unit -> X) -> bool -> X
+    main_1033:int -> (unit -> X) -> X
+    zip_1030:int -> int -> (int -> X) -> X
+  inlined functions: br_zip_1227,br_zip_1229,f_1225,f_1226,f_main_1224,f_zip_1221,f_zip_1222,f_zip_1223,k_main_1177,main_1033
+  counterexample: 0:0:0:1:0:0
+  error traces:
+    [true.nop(<f_1225@4:0> = var2)
+     [true.(<main_1033@6:0> = <f_1225@4:0>)
+      [true.((<zip_1030@8:0> = <main_1033@6:0>) && (<zip_1030@8:1> = <main_1033@6:0>))
+       [(not (<zip_1030@8:0> = 0)).
+        ((<br_zip_1229@11:0> = (<zip_1030@8:1> = 0)) &&
+         ((<br_zip_1229@11:1> = <zip_1030@8:0>) && (<br_zip_1229@11:2> = <zip_1030@8:1>)))
+        [<br_zip_1229@11:0>.(<fail_1232@14:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(148)[2]
+    horn clauses:
+      P[<fail_1232@14:0>](<fail_1232@14:0>:bool)|- bot
+      
+      P[<br_zip_1229@11:2>](true:bool,<br_zip_1229@11:1>:int,<br_zip_1229@11:2>:int), <fail_1232@14:0>
+      |- P[<fail_1232@14:0>](<fail_1232@14:0>:bool)
+      
+      P[<zip_1030@8:1>](<br_zip_1229@11:1>:int,<br_zip_1229@11:2>:int),
+      ((<br_zip_1229@11:1> <> 0) && (<br_zip_1229@11:0> = (<br_zip_1229@11:2> = 0)))
+      |- P[<br_zip_1229@11:2>](<br_zip_1229@11:0>:bool,<br_zip_1229@11:1>:int,
+                               <br_zip_1229@11:2>:int)
+      
+      P[<main_1033@6:0>](<zip_1030@8:1>:int), (<zip_1030@8:1> = <zip_1030@8:0>)
+      |- P[<zip_1030@8:1>](<zip_1030@8:0>:int,<zip_1030@8:1>:int)
+      
+      P[<f_1225@4:0>](<main_1033@6:0>:int)|- P[<main_1033@6:0>](<main_1033@6:0>:int)
+      
+      |- P[<f_1225@4:0>](<f_1225@4:0>:int)
+    call trees:
+      <main_1220@1>
+        <f_1225@4>
+          <main_1033@6>
+            <zip_1030@8>
+              <br_zip_1229@11>
+                <fail_1232@14>
+    inlined horn clauses:
+      P[<fail_1232@14:0>](<fail_1232@14:0>:bool)|- bot
+      
+      P[<zip_1030@8:1>](<br_zip_1229@11:1>:int,0:int), ((<br_zip_1229@11:1> <> 0) && <fail_1232@14:0>)
+      |- P[<fail_1232@14:0>](<fail_1232@14:0>:bool)
+      
+       (<zip_1030@8:1> = <zip_1030@8:0>) |- P[<zip_1030@8:1>](<zip_1030@8:0>:int,
+                                                              <zip_1030@8:1>:int)
+    begin ParamSubstInfer.infer(887)[3]
+      
+    end ParamSubstInfer.infer(887)[3] (0.009999 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(889)[3]
+      
+    end RefTypeInfer.elim_coeffs(889)[3] (0.000000 sec.)
+    begin YhornInterface.solve(989)[3]
+      begin HcSolver.solve_ub(990)[4]
+        encoded:
+          P[<fail_1232@14:0>](<fail_1232@14:0>:int)|- bot
+          
+          P[<zip_1030@8:1>](<br_zip_1229@11:1>:int,0:int), ((<br_zip_1229@11:1> <> 0) && (<fail_1232@14:0> = 1))
+          |- P[<fail_1232@14:0>](<fail_1232@14:0>:int)
+          
+           (<zip_1030@8:1> = <zip_1030@8:0>) |- P[<zip_1030@8:1>](<zip_1030@8:0>:int,
+                                                                  <zip_1030@8:1>:int)
+        input to Yhorn:
+          P[<fail_1232@14:0>](<fail_1232@14:0>:int)|- bot
+          
+          P[<zip_1030@8:1>](<br_zip_1229@11:1>:int,var3:int),
+          ((<br_zip_1229@11:1> <> 0) && ((var3 = 0) && (<fail_1232@14:0> = 1)))
+          |- P[<fail_1232@14:0>](<fail_1232@14:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1232_sep_14_sep_0($6)) -> 1=0.
+(($6-1=0) & ($7=0) & ($8<>0)) & (v_sep_zip_1030_sep_8_sep_1($8,$7)) -> v_sep_fail_1232_sep_14_sep_0($6).
+$9-$10=0 -> v_sep_zip_1030_sep_8_sep_1($10,$9).
+
+
+v_sep_fail_1232_sep_14_sep_0: X
+v_sep_zip_1030_sep_8_sep_1: X
+....Split disj [11] 0.125979
+Reconstrcut: 3 **)
+
+v_sep_fail_1232_sep_14_sep_0: (X) | (X)
+v_sep_zip_1030_sep_8_sep_1: X
+.....
+v_sep_fail_1232_sep_14_sep_0: (X) | (X)
+v_sep_zip_1030_sep_8_sep_1: X
+.....Split conj [13] 0.128979
+(Reconstrcut: 8 **)
+v_sep_fail_1232_sep_14_sep_0: (X) | (X)
+v_sep_zip_1030_sep_8_sep_1: (X) & (X)
+.....
+v_sep_fail_1232_sep_14_sep_0: (X) | (X)
+v_sep_zip_1030_sep_8_sep_1: (X) & (X)
+.....
+v_sep_fail_1232_sep_14_sep_0: (X) | (X)
+v_sep_zip_1030_sep_8_sep_1: (X) & (X)
+.....(0=0) & (v_sep_fail_1232_sep_14_sep_0($6)) -> 1=0.
+(($6-1=0) & ($7=0) & ($8<>0)) & (v_sep_zip_1030_sep_8_sep_1($8,$7)) -> v_sep_fail_1232_sep_14_sep_0($6).
+$9-$10=0 -> v_sep_zip_1030_sep_8_sep_1($10,$9).
+
+           (<zip_1030@8:1> = <zip_1030@8:0>) |- P[<zip_1030@8:1>](<zip_1030@8:0>:int,
+                                                                  <zip_1030@8:1>:int)
+        solution:
+          P[<fail_1232@14:0>]($11:bool) = false
+          P[<zip_1030@8:1>]($14:int,$16:int) = ($16 = $14)
+        
+      end HcSolver.solve_ub(990)[4] (0.013998 sec.)
+      begin HcSolver.check_validity(1087)[4]
+        input:
+          P[<fail_1232@14:0>](<fail_1232@14:0>:bool)|- bot
+          
+          P[<zip_1030@8:1>](<br_zip_1229@11:1>:int,0:int), ((<br_zip_1229@11:1> <> 0) && <fail_1232@14:0>)
+          |- P[<fail_1232@14:0>](<fail_1232@14:0>:bool)
+          
+           (<zip_1030@8:1> = <zip_1030@8:0>) |- P[<zip_1030@8:1>](<zip_1030@8:0>:int,
+                                                                  <zip_1030@8:1>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(1087)[4] (0.000000 sec.)
+      solution:
+        P[<fail_1232@14:0>]($11:bool) = false
+        P[<zip_1030@8:1>]($14:int,$16:int) = ($16 = $14)
+    end YhornInterface.solve(989)[3] (0.013998 sec.)
+    
+  end RefTypeInfer.infer_etrs(148)[2] (0.025997 sec.)
+  refinement types:
+    main_1220: X
+    f_1225: v1:int -> X
+    main_1033: v1:int -> (v2:unit -> X) -> X
+    zip_1030: v1:int -> v2:{v2:int | (v2 = v1)} -> (v3:int -> X) -> X
+    br_zip_1229: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    fail_1232: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    br_zip_1227: var17:bool -> var16:int -> var15:int -> (var14:int -> X) -> X
+    f_1226: var20:int -> var19:unit -> X
+    f_main_1224: var25:int -> (var24:unit -> X) -> var22:int -> X
+    f_zip_1221: var29:int -> var28:int -> var27:unit -> X
+    f_zip_1222: var33:int -> var32:int -> var31:unit -> X
+    f_zip_1223: var39:int -> var38:int -> (var37:int -> X) -> var35:int -> X
+    fail_1231: var43:bool -> (var42:unit -> X) -> X
+    fail_1233: var47:bool -> (var46:unit -> X) -> X
+    k_main_1177: var53:int -> var52:int -> (var51:unit -> X) -> var49:bool -> X
+  abstraction types:
+    main_1220: X
+    f_1225: v1:int -> X
+    main_1033: v1:int -> (v2:unit -> X) -> X
+    zip_1030: v1:int -> v2:int[v2 -> (v2 = v1)] -> (v3:int -> X) -> X
+    br_zip_1229: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    fail_1232: v1:bool -> (v2:unit -> X) -> X
+    br_zip_1227: var17:bool -> var16:int -> var15:int -> (var14:int -> X) -> X
+    f_1226: var20:int -> var19:unit -> X
+    f_main_1224: var25:int -> (var24:unit -> X) -> var22:int -> X
+    f_zip_1221: var29:int -> var28:int -> var27:unit -> X
+    f_zip_1222: var33:int -> var32:int -> var31:unit -> X
+    f_zip_1223: var39:int -> var38:int -> (var37:int -> X) -> var35:int -> X
+    fail_1231: var43:bool -> (var42:unit -> X) -> X
+    fail_1233: var47:bool -> (var46:unit -> X) -> X
+    k_main_1177: var53:int -> var52:int -> (var51:unit -> X) -> var49:bool -> X
+  
+end AbsTypeInfer.refine(147)[1] (0.028996 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 0
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1220
+  main_1220 -> (rand_int f_1225)
+  br_zip_1227 b_1228 x_1031 y_1032 k_zip_1095 when b_1228 -> (k_zip_1095 0)
+  br_zip_1227 b_1228 x_1031 y_1032 k_zip_1095 when (not b_1228) -> (fail_1231 true (f_zip_1221 x_1031 y_1032))
+  br_zip_1229 b_1230 x_1031 y_1032 k_zip_1095 when b_1230 -> (fail_1232 true (f_zip_1222 x_1031 y_1032))
+  br_zip_1229 b_1230 x_1031 y_1032 k_zip_1095 when (not b_1230) ->
+      (zip_1030 (x_1031 - 1) (y_1032 - 1) (f_zip_1223 x_1031 y_1032 k_zip_1095))
+  f_1225 x_1195 -> (main_1033 x_1195 (f_1226 x_1195))
+  f_1226 x_1195 x_1192 -> end
+  f_main_1224 n_1034 k_main_1160 x_1163 when (x_1163 >= n_1034) ->
+      (k_main_1177 n_1034 x_1163 k_main_1160 (x_1163 <= n_1034))
+  f_main_1224 n_1034 k_main_1160 x_1163 when (not (x_1163 >= n_1034)) -> (k_main_1177 n_1034 x_1163 k_main_1160 false)
+  f_zip_1221 x_1031 y_1032 x_1098 -> _|_
+  f_zip_1222 x_1031 y_1032 x_1114 -> _|_
+  f_zip_1223 x_1031 y_1032 k_zip_1095 x_1127 -> (k_zip_1095 (1 + x_1127))
+  fail_1231 b k -> {fail} => (k ())
+  fail_1232 b k -> {fail} => (k ())
+  fail_1233 b k -> {fail} => (k ())
+  k_main_1177 n_1034 x_1163 k_main_1160 b_1189 when b_1189 -> (k_main_1160 ())
+  k_main_1177 n_1034 x_1163 k_main_1160 b_1189 when (not b_1189) -> (fail_1233 true k_main_1160)
+  main_1033 n_1034 k_main_1160 -> (zip_1030 n_1034 n_1034 (f_main_1224 n_1034 k_main_1160))
+  zip_1030 x_1031 y_1032 k_zip_1095 when (x_1031 = 0) -> (br_zip_1227 (y_1032 = 0) x_1031 y_1032 k_zip_1095)
+  zip_1030 x_1031 y_1032 k_zip_1095 when (not (x_1031 = 0)) -> (br_zip_1229 (y_1032 = 0) x_1031 y_1032 k_zip_1095)
+Types:
+  main_1220 : X
+  fail_1231 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  fail_1232 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  fail_1233 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  zip_1030 : (x_1:int -> x_2:int[x_1 = x_2] -> (int -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1220 ... --> 
+  f_1225 ... --> 
+  main_1033 ... --> 
+  zip_1030 [1/2] ... --> 
+  br_zip_1227 [1/2] ... --> 
+  f_main_1224 [2/2] ... --> 
+  k_main_1177 [2/2] ... --> 
+  fail_1233 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 1; 1; 0
+
+(1-3) Checking counter-example ... DONE!
+
+(1-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(1494)[1]
+  program:
+    main_1220  | true = ((Random.int 0) f_1225)
+    br_zip_1227 b_1228 x_1031 y_1032 k_zip_1095 | b_1228 = (k_zip_1095 0)
+    br_zip_1227 b_1228 x_1031 y_1032 k_zip_1095 | (not b_1228) = (fail_1231 true
+                                                                    (f_zip_1221 x_1031
+                                                                    y_1032))
+    br_zip_1229 b_1230 x_1031 y_1032 k_zip_1095 | b_1230 = (fail_1232 true
+                                                                    (f_zip_1222 x_1031
+                                                                    y_1032))
+    br_zip_1229 b_1230 x_1031 y_1032 k_zip_1095 | (not b_1230) = (zip_1030
+                                                                    (
+                                                                    x_1031 - 1)
+                                                                    (
+                                                                    y_1032 - 1)
+                                                                    (
+                                                                    f_zip_1223 x_1031
+                                                                    y_1032
+                                                                    k_zip_1095))
+    f_1225 x_1195 | true = (main_1033 x_1195
+                                      (f_1226 x_1195))
+    f_1226 x_1195 x_1192 | true = end
+    f_main_1224 n_1034 k_main_1160 x_1163 | (x_1163 >= n_1034) = (k_main_1177
+                                                                    n_1034
+                                                                    x_1163
+                                                                    k_main_1160
+                                                                    (
+                                                                    x_1163 <= n_1034))
+    f_main_1224 n_1034 k_main_1160 x_1163 | (not (x_1163 >= n_1034)) = (
+    k_main_1177 n_1034
+                x_1163
+                k_main_1160
+                false)
+    f_zip_1221 x_1031 y_1032 x_1098 | true = bot
+    f_zip_1222 x_1031 y_1032 x_1114 | true = bot
+    f_zip_1223 x_1031 y_1032 k_zip_1095 x_1127 | true = (k_zip_1095 (
+                                                                    1 + x_1127))
+    fail_1231 b k | true = (fail ())
+    fail_1232 b k | true = (fail ())
+    fail_1233 b k | true = (fail ())
+    k_main_1177 n_1034 x_1163 k_main_1160 b_1189 | b_1189 = (k_main_1160 ())
+    k_main_1177 n_1034 x_1163 k_main_1160 b_1189 | (not b_1189) = (fail_1233 true
+                                                                    k_main_1160)
+    main_1033 n_1034 k_main_1160 | true = (zip_1030 n_1034
+                                                    n_1034
+                                                    (f_main_1224 n_1034
+                                                                 k_main_1160))
+    zip_1030 x_1031 y_1032 k_zip_1095 | (x_1031 = 0) = (br_zip_1227 (
+                                                                    y_1032 = 0)
+                                                                    x_1031
+                                                                    y_1032
+                                                                    k_zip_1095)
+    zip_1030 x_1031 y_1032 k_zip_1095 | (not (x_1031 = 0)) = (br_zip_1229 (
+                                                                    y_1032 = 0)
+                                                                    x_1031
+                                                                    y_1032
+                                                                    k_zip_1095)
+    main_1220:X
+    br_zip_1227:bool -> int -> int -> (int -> X) -> X
+    br_zip_1229:bool -> int -> int -> (int -> X) -> X
+    f_1225:int -> X
+    f_1226:int -> unit -> X
+    f_main_1224:int -> (unit -> X) -> int -> X
+    f_zip_1221:int -> int -> unit -> X
+    f_zip_1222:int -> int -> unit -> X
+    f_zip_1223:int -> int -> (int -> X) -> int -> X
+    fail_1231:bool -> (unit -> X) -> X
+    fail_1232:bool -> (unit -> X) -> X
+    fail_1233:bool -> (unit -> X) -> X
+    k_main_1177:int -> int -> (unit -> X) -> bool -> X
+    main_1033:int -> (unit -> X) -> X
+    zip_1030:int -> int -> (int -> X) -> X
+  inlined functions: br_zip_1227,br_zip_1229,f_1225,f_1226,f_main_1224,f_zip_1221,f_zip_1222,f_zip_1223,k_main_1177,main_1033
+  counterexample: 0:0:0:0:0:1:1:0
+  error traces:
+    [true.nop(<f_1225@20:0> = var54)
+     [true.(<main_1033@22:0> = <f_1225@20:0>)
+      [true.((<zip_1030@24:0> = <main_1033@22:0>) && (<zip_1030@24:1> = <main_1033@22:0>))
+       [(<zip_1030@24:0> = 0).
+        ((<br_zip_1227@27:0> = (<zip_1030@24:1> = 0)) &&
+         ((<br_zip_1227@27:1> = <zip_1030@24:0>) && (<br_zip_1227@27:2> = <zip_1030@24:1>)))
+        [<br_zip_1227@27:0>.(<<br_zip_1227@27:3>@30:0> = 0)
+         [true.(<<zip_1030@24:2>@32:0> = <<br_zip_1227@27:3>@30:0>)
+          [true.((<f_main_1224@34:0> = <main_1033@22:0>) && (<f_main_1224@34:2> = <<zip_1030@24:2>@32:0>))
+           [(not (<f_main_1224@34:2> >= <f_main_1224@34:0>)).
+            ((<k_main_1177@37:0> = <f_main_1224@34:0>) &&
+             ((<k_main_1177@37:1> = <f_main_1224@34:2>) && (<k_main_1177@37:3> = false)))
+            [(not <k_main_1177@37:3>).(<fail_1233@40:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(1495)[2]
+    horn clauses:
+      P[<fail_1233@40:0>](<fail_1233@40:0>:bool)|- bot
+      
+      P[<k_main_1177@37:3>](<k_main_1177@37:0>:int,<k_main_1177@37:1>:int,false:bool), <fail_1233@40:0>
+      |- P[<fail_1233@40:0>](<fail_1233@40:0>:bool)
+      
+      P[<f_main_1224@34:2>](<k_main_1177@37:0>:int,<k_main_1177@37:1>:int),
+      ((<k_main_1177@37:1> < <k_main_1177@37:0>) && (not <k_main_1177@37:3>))
+      |- P[<k_main_1177@37:3>](<k_main_1177@37:0>:int,<k_main_1177@37:1>:int,
+                               <k_main_1177@37:3>:bool)
+      
+      P[<main_1033@22:0>](<f_main_1224@34:0>:int),
+      P[<<zip_1030@24:2>@32:0>](<f_main_1224@34:0>:int,<f_main_1224@34:0>:int,<f_main_1224@34:2>:int)|- P[<f_main_1224@34:2>](
+      <f_main_1224@34:0>:int,<f_main_1224@34:2>:int)
+      
+      P[<zip_1030@24:1>](<zip_1030@24:0>:int,<zip_1030@24:1>:int),
+      P[<<br_zip_1227@27:3>@30:0>]((<zip_1030@24:1> = 0):bool,<zip_1030@24:0>:int,<zip_1030@24:1>:int,<<zip_1030@24:2>@32:0>:int),
+      (<zip_1030@24:0> = 0)
+      |- P[<<zip_1030@24:2>@32:0>](<zip_1030@24:0>:int,<zip_1030@24:1>:int,
+                                   <<zip_1030@24:2>@32:0>:int)
+      
+      P[<br_zip_1227@27:2>](<br_zip_1227@27:0>:bool,<br_zip_1227@27:1>:int,<br_zip_1227@27:2>:int),
+      ((<<br_zip_1227@27:3>@30:0> = 0) && <br_zip_1227@27:0>)
+      |- P[<<br_zip_1227@27:3>@30:0>](<br_zip_1227@27:0>:bool,<br_zip_1227@27:1>:int,
+                                      <br_zip_1227@27:2>:int,<<br_zip_1227@27:3>@30:0>:int)
+      
+      P[<zip_1030@24:1>](<br_zip_1227@27:1>:int,<br_zip_1227@27:2>:int),
+      ((<br_zip_1227@27:1> = 0) && (<br_zip_1227@27:0> = (<br_zip_1227@27:2> = 0)))
+      |- P[<br_zip_1227@27:2>](<br_zip_1227@27:0>:bool,<br_zip_1227@27:1>:int,
+                               <br_zip_1227@27:2>:int)
+      
+      P[<main_1033@22:0>](<zip_1030@24:1>:int), (<zip_1030@24:1> = <zip_1030@24:0>)
+      |- P[<zip_1030@24:1>](<zip_1030@24:0>:int,<zip_1030@24:1>:int)
+      
+      P[<f_1225@20:0>](<main_1033@22:0>:int)|- P[<main_1033@22:0>](<main_1033@22:0>:int)
+      
+      |- P[<f_1225@20:0>](<f_1225@20:0>:int)
+    call trees:
+      <main_1220@17>
+        <f_1225@20>
+          <main_1033@22>
+            <zip_1030@24>
+              <br_zip_1227@27>
+              </<br_zip_1227@27:3>@30>
+            </<zip_1030@24:2>@32>
+            <f_main_1224@34>
+              <k_main_1177@37>
+                <fail_1233@40>
+    inlined horn clauses:
+      P[<fail_1233@40:0>](<fail_1233@40:0>:bool)|- bot
+      
+      P[<<zip_1030@24:2>@32:0>](<k_main_1177@37:0>:int,<k_main_1177@37:0>:int,<k_main_1177@37:1>:int),
+      ((<k_main_1177@37:1> < <k_main_1177@37:0>) && <fail_1233@40:0>) |- P[<fail_1233@40:0>](
+      <fail_1233@40:0>:bool)
+      
+      P[<zip_1030@24:1>](<zip_1030@24:0>:int,<zip_1030@24:1>:int),
+      ((<<zip_1030@24:2>@32:0> = 0) && ((<zip_1030@24:0> = 0) && (<zip_1030@24:1> = 0)))
+      |- P[<<zip_1030@24:2>@32:0>](<zip_1030@24:0>:int,<zip_1030@24:1>:int,
+                                   <<zip_1030@24:2>@32:0>:int)
+      
+       (<zip_1030@24:1> = <zip_1030@24:0>) |- P[<zip_1030@24:1>](<zip_1030@24:0>:int,
+                                                                 <zip_1030@24:1>:int)
+    begin ParamSubstInfer.infer(2872)[3]
+      
+    end ParamSubstInfer.infer(2872)[3] (0.014998 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(2874)[3]
+      
+    end RefTypeInfer.elim_coeffs(2874)[3] (0.000000 sec.)
+    begin YhornInterface.solve(3053)[3]
+      begin HcSolver.solve_ub(3054)[4]
+        encoded:
+          P[<fail_1233@40:0>](<fail_1233@40:0>:int)|- bot
+          
+          P[<<zip_1030@24:2>@32:0>](<k_main_1177@37:0>:int,<k_main_1177@37:0>:int,<k_main_1177@37:1>:int),
+          ((<k_main_1177@37:1> < <k_main_1177@37:0>) && (<fail_1233@40:0> = 1))
+          |- P[<fail_1233@40:0>](<fail_1233@40:0>:int)
+          
+          P[<zip_1030@24:1>](<zip_1030@24:0>:int,<zip_1030@24:1>:int),
+          ((<<zip_1030@24:2>@32:0> = 0) && ((<zip_1030@24:0> = 0) && (<zip_1030@24:1> = 0)))
+          |- P[<<zip_1030@24:2>@32:0>](<zip_1030@24:0>:int,<zip_1030@24:1>:int,
+                                       <<zip_1030@24:2>@32:0>:int)
+          
+           (<zip_1030@24:1> = <zip_1030@24:0>) |- P[<zip_1030@24:1>](<zip_1030@24:0>:int,
+                                                                    <zip_1030@24:1>:int)
+        input to Yhorn:
+          P[<fail_1233@40:0>](<fail_1233@40:0>:int)|- bot
+          
+          P[<<zip_1030@24:2>@32:0>](<k_main_1177@37:0>:int,<k_main_1177@37:0>:int,<k_main_1177@37:1>:int),
+          ((<k_main_1177@37:1> < <k_main_1177@37:0>) && (<fail_1233@40:0> = 1))
+          |- P[<fail_1233@40:0>](<fail_1233@40:0>:int)
+          
+          P[<zip_1030@24:1>](<zip_1030@24:0>:int,<zip_1030@24:1>:int),
+          ((<zip_1030@24:1> = 0) && ((<zip_1030@24:0> = 0) && (<<zip_1030@24:2>@32:0> = 0)))
+          |- P[<<zip_1030@24:2>@32:0>](<zip_1030@24:0>:int,<zip_1030@24:1>:int,
+                                       <<zip_1030@24:2>@32:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1233_sep_40_sep_0($126)) -> 1=0.
+(($126-1=0) & ($127-$128<0)) & (v_sep_zip_1030_sep_24_sep_2_sep_32_sep_0($128,$128,$127)) -> v_sep_fail_1233_sep_40_sep_0($126).
+(($129=0) & ($130=0) & ($131=0)) & (v_sep_zip_1030_sep_24_sep_1($130,$131)) -> v_sep_zip_1030_sep_24_sep_2_sep_32_sep_0($130,$131,$129).
+-$130+$131=0 -> v_sep_zip_1030_sep_24_sep_1($130,$131).
+
+
+v_sep_fail_1233_sep_40_sep_0: X
+v_sep_zip_1030_sep_24_sep_1: X
+v_sep_zip_1030_sep_24_sep_2_sep_32_sep_0: X
+....
+v_sep_fail_1233_sep_40_sep_0: X
+v_sep_zip_1030_sep_24_sep_1: X
+v_sep_zip_1030_sep_24_sep_2_sep_32_sep_0: X
+...
+v_sep_fail_1233_sep_40_sep_0: X
+v_sep_zip_1030_sep_24_sep_1: X
+v_sep_zip_1030_sep_24_sep_2_sep_32_sep_0: X
+....
+v_sep_fail_1233_sep_40_sep_0: X
+v_sep_zip_1030_sep_24_sep_1: X
+v_sep_zip_1030_sep_24_sep_2_sep_32_sep_0: X
+....(0=0) & (v_sep_fail_1233_sep_40_sep_0($126)) -> 1=0.
+(($126-1=0) & ($127-$128<0)) & (v_sep_zip_1030_sep_24_sep_2_sep_32_sep_0($128,$128,$127)) -> v_sep_fail_1233_sep_40_sep_0($126).
+(($129=0) & ($130=0) & ($131=0)) & (v_sep_zip_1030_sep_24_sep_1($130,$131)) -> v_sep_zip_1030_sep_24_sep_2_sep_32_sep_0($130,$131,$129).
+-$130+$131=0 -> v_sep_zip_1030_sep_24_sep_1($130,$131).
+
+           (<zip_1030@24:1> = <zip_1030@24:0>) |- P[<zip_1030@24:1>](<zip_1030@24:0>:int,
+                                                                    <zip_1030@24:1>:int)
+        solution:
+          P[<fail_1233@40:0>]($132:bool) = false
+          P[<zip_1030@24:1>]($142:int,$144:int) = true
+          P[<<zip_1030@24:2>@32:0>]($135:int,$137:int,$139:int) = ($137 <= $139)
+        
+      end HcSolver.solve_ub(3054)[4] (0.004999 sec.)
+      begin HcSolver.check_validity(3177)[4]
+        input:
+          P[<fail_1233@40:0>](<fail_1233@40:0>:bool)|- bot
+          
+          P[<<zip_1030@24:2>@32:0>](<k_main_1177@37:0>:int,<k_main_1177@37:0>:int,<k_main_1177@37:1>:int),
+          ((<k_main_1177@37:1> < <k_main_1177@37:0>) && <fail_1233@40:0>) |- P[<fail_1233@40:0>](
+          <fail_1233@40:0>:bool)
+          
+          P[<zip_1030@24:1>](<zip_1030@24:0>:int,<zip_1030@24:1>:int),
+          ((<<zip_1030@24:2>@32:0> = 0) && ((<zip_1030@24:0> = 0) && (<zip_1030@24:1> = 0)))
+          |- P[<<zip_1030@24:2>@32:0>](<zip_1030@24:0>:int,<zip_1030@24:1>:int,
+                                       <<zip_1030@24:2>@32:0>:int)
+          
+           (<zip_1030@24:1> = <zip_1030@24:0>) |- P[<zip_1030@24:1>](<zip_1030@24:0>:int,
+                                                                    <zip_1030@24:1>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(3177)[4] (0.003000 sec.)
+      solution:
+        P[<fail_1233@40:0>]($132:bool) = false
+        P[<zip_1030@24:1>]($142:int,$144:int) = true
+        P[<<zip_1030@24:2>@32:0>]($135:int,$137:int,$139:int) = ($137 <= $139)
+    end YhornInterface.solve(3053)[3] (0.007999 sec.)
+    
+  end RefTypeInfer.infer_etrs(1495)[2] (0.027996 sec.)
+  refinement types:
+    main_1220: X
+    f_1225: v1:int -> X
+    main_1033: v1:int -> (v2:unit -> X) -> X
+    zip_1030: v1:int -> v2:int -> (v3:{v3:int | (v2 <= v3)} -> X) -> X
+    br_zip_1227: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    f_main_1224: v1:int -> (v2:unit -> X) -> v4:int -> X
+    k_main_1177: v1:int -> v2:int -> (v3:unit -> X) -> v5:bool -> X
+    fail_1233: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    br_zip_1229: var68:bool -> var67:int -> var66:int -> (var65:int -> X) -> X
+    f_1226: var71:int -> var70:unit -> X
+    f_zip_1221: var75:int -> var74:int -> var73:unit -> X
+    f_zip_1222: var79:int -> var78:int -> var77:unit -> X
+    f_zip_1223: var85:int -> var84:int -> (var83:int -> X) -> var81:int -> X
+    fail_1231: var89:bool -> (var88:unit -> X) -> X
+    fail_1232: var93:bool -> (var92:unit -> X) -> X
+  abstraction types:
+    main_1220: X
+    f_1225: v1:int -> X
+    main_1033: v1:int -> (v2:unit -> X) -> X
+    zip_1030: v1:int -> v2:int -> (v3:int[v3 -> (v2 <= v3)] -> X) -> X
+    br_zip_1227: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    f_main_1224: v1:int -> (v2:unit -> X) -> v4:int -> X
+    k_main_1177: v1:int -> v2:int -> (v3:unit -> X) -> v5:bool -> X
+    fail_1233: v1:bool -> (v2:unit -> X) -> X
+    br_zip_1229: var68:bool -> var67:int -> var66:int -> (var65:int -> X) -> X
+    f_1226: var71:int -> var70:unit -> X
+    f_zip_1221: var75:int -> var74:int -> var73:unit -> X
+    f_zip_1222: var79:int -> var78:int -> var77:unit -> X
+    f_zip_1223: var85:int -> var84:int -> (var83:int -> X) -> var81:int -> X
+    fail_1231: var89:bool -> (var88:unit -> X) -> X
+    fail_1232: var93:bool -> (var92:unit -> X) -> X
+  
+end AbsTypeInfer.refine(1494)[1] (0.028996 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 2)::
+Main: main_1220
+  main_1220 -> (rand_int f_1225)
+  br_zip_1227 b_1228 x_1031 y_1032 k_zip_1095 when b_1228 -> (k_zip_1095 0)
+  br_zip_1227 b_1228 x_1031 y_1032 k_zip_1095 when (not b_1228) -> (fail_1231 true (f_zip_1221 x_1031 y_1032))
+  br_zip_1229 b_1230 x_1031 y_1032 k_zip_1095 when b_1230 -> (fail_1232 true (f_zip_1222 x_1031 y_1032))
+  br_zip_1229 b_1230 x_1031 y_1032 k_zip_1095 when (not b_1230) ->
+      (zip_1030 (x_1031 - 1) (y_1032 - 1) (f_zip_1223 x_1031 y_1032 k_zip_1095))
+  f_1225 x_1195 -> (main_1033 x_1195 (f_1226 x_1195))
+  f_1226 x_1195 x_1192 -> end
+  f_main_1224 n_1034 k_main_1160 x_1163 when (x_1163 >= n_1034) ->
+      (k_main_1177 n_1034 x_1163 k_main_1160 (x_1163 <= n_1034))
+  f_main_1224 n_1034 k_main_1160 x_1163 when (not (x_1163 >= n_1034)) -> (k_main_1177 n_1034 x_1163 k_main_1160 false)
+  f_zip_1221 x_1031 y_1032 x_1098 -> _|_
+  f_zip_1222 x_1031 y_1032 x_1114 -> _|_
+  f_zip_1223 x_1031 y_1032 k_zip_1095 x_1127 -> (k_zip_1095 (1 + x_1127))
+  fail_1231 b k -> {fail} => (k ())
+  fail_1232 b k -> {fail} => (k ())
+  fail_1233 b k -> {fail} => (k ())
+  k_main_1177 n_1034 x_1163 k_main_1160 b_1189 when b_1189 -> (k_main_1160 ())
+  k_main_1177 n_1034 x_1163 k_main_1160 b_1189 when (not b_1189) -> (fail_1233 true k_main_1160)
+  main_1033 n_1034 k_main_1160 -> (zip_1030 n_1034 n_1034 (f_main_1224 n_1034 k_main_1160))
+  zip_1030 x_1031 y_1032 k_zip_1095 when (x_1031 = 0) -> (br_zip_1227 (y_1032 = 0) x_1031 y_1032 k_zip_1095)
+  zip_1030 x_1031 y_1032 k_zip_1095 when (not (x_1031 = 0)) -> (br_zip_1229 (y_1032 = 0) x_1031 y_1032 k_zip_1095)
+Types:
+  main_1220 : X
+  fail_1231 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  fail_1232 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  fail_1233 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  zip_1030 : (x_1:int -> x_2:int[x_1 = x_2] -> (x_4:int[x_2 <= x_4] -> X) -> X)
+  
+(2-1) Abstracting ... DONE!
+
+(2-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1220 ... --> 
+  f_1225 ... --> 
+  main_1033 ... --> 
+  zip_1030 [1/2] ... --> 
+  br_zip_1227 [1/2] ... --> 
+  f_main_1224 [1/2] ... --> 
+  k_main_1177 [2/2] ... --> 
+  fail_1233 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 1; 0
+
+(2-3) Checking counter-example ... DONE!
+
+(2-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(3842)[1]
+  program:
+    main_1220  | true = ((Random.int 0) f_1225)
+    br_zip_1227 b_1228 x_1031 y_1032 k_zip_1095 | b_1228 = (k_zip_1095 0)
+    br_zip_1227 b_1228 x_1031 y_1032 k_zip_1095 | (not b_1228) = (fail_1231 true
+                                                                    (f_zip_1221 x_1031
+                                                                    y_1032))
+    br_zip_1229 b_1230 x_1031 y_1032 k_zip_1095 | b_1230 = (fail_1232 true
+                                                                    (f_zip_1222 x_1031
+                                                                    y_1032))
+    br_zip_1229 b_1230 x_1031 y_1032 k_zip_1095 | (not b_1230) = (zip_1030
+                                                                    (
+                                                                    x_1031 - 1)
+                                                                    (
+                                                                    y_1032 - 1)
+                                                                    (
+                                                                    f_zip_1223 x_1031
+                                                                    y_1032
+                                                                    k_zip_1095))
+    f_1225 x_1195 | true = (main_1033 x_1195
+                                      (f_1226 x_1195))
+    f_1226 x_1195 x_1192 | true = end
+    f_main_1224 n_1034 k_main_1160 x_1163 | (x_1163 >= n_1034) = (k_main_1177
+                                                                    n_1034
+                                                                    x_1163
+                                                                    k_main_1160
+                                                                    (
+                                                                    x_1163 <= n_1034))
+    f_main_1224 n_1034 k_main_1160 x_1163 | (not (x_1163 >= n_1034)) = (
+    k_main_1177 n_1034
+                x_1163
+                k_main_1160
+                false)
+    f_zip_1221 x_1031 y_1032 x_1098 | true = bot
+    f_zip_1222 x_1031 y_1032 x_1114 | true = bot
+    f_zip_1223 x_1031 y_1032 k_zip_1095 x_1127 | true = (k_zip_1095 (
+                                                                    1 + x_1127))
+    fail_1231 b k | true = (fail ())
+    fail_1232 b k | true = (fail ())
+    fail_1233 b k | true = (fail ())
+    k_main_1177 n_1034 x_1163 k_main_1160 b_1189 | b_1189 = (k_main_1160 ())
+    k_main_1177 n_1034 x_1163 k_main_1160 b_1189 | (not b_1189) = (fail_1233 true
+                                                                    k_main_1160)
+    main_1033 n_1034 k_main_1160 | true = (zip_1030 n_1034
+                                                    n_1034
+                                                    (f_main_1224 n_1034
+                                                                 k_main_1160))
+    zip_1030 x_1031 y_1032 k_zip_1095 | (x_1031 = 0) = (br_zip_1227 (
+                                                                    y_1032 = 0)
+                                                                    x_1031
+                                                                    y_1032
+                                                                    k_zip_1095)
+    zip_1030 x_1031 y_1032 k_zip_1095 | (not (x_1031 = 0)) = (br_zip_1229 (
+                                                                    y_1032 = 0)
+                                                                    x_1031
+                                                                    y_1032
+                                                                    k_zip_1095)
+    main_1220:X
+    br_zip_1227:bool -> int -> int -> (int -> X) -> X
+    br_zip_1229:bool -> int -> int -> (int -> X) -> X
+    f_1225:int -> X
+    f_1226:int -> unit -> X
+    f_main_1224:int -> (unit -> X) -> int -> X
+    f_zip_1221:int -> int -> unit -> X
+    f_zip_1222:int -> int -> unit -> X
+    f_zip_1223:int -> int -> (int -> X) -> int -> X
+    fail_1231:bool -> (unit -> X) -> X
+    fail_1232:bool -> (unit -> X) -> X
+    fail_1233:bool -> (unit -> X) -> X
+    k_main_1177:int -> int -> (unit -> X) -> bool -> X
+    main_1033:int -> (unit -> X) -> X
+    zip_1030:int -> int -> (int -> X) -> X
+  inlined functions: br_zip_1227,br_zip_1229,f_1225,f_1226,f_main_1224,f_zip_1221,f_zip_1222,f_zip_1223,k_main_1177,main_1033
+  counterexample: 0:0:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1225@46:0> = var94)
+     [true.(<main_1033@48:0> = <f_1225@46:0>)
+      [true.((<zip_1030@50:0> = <main_1033@48:0>) && (<zip_1030@50:1> = <main_1033@48:0>))
+       [(<zip_1030@50:0> = 0).
+        ((<br_zip_1227@53:0> = (<zip_1030@50:1> = 0)) &&
+         ((<br_zip_1227@53:1> = <zip_1030@50:0>) && (<br_zip_1227@53:2> = <zip_1030@50:1>)))
+        [<br_zip_1227@53:0>.(<<br_zip_1227@53:3>@56:0> = 0)
+         [true.(<<zip_1030@50:2>@58:0> = <<br_zip_1227@53:3>@56:0>)
+          [true.((<f_main_1224@60:0> = <main_1033@48:0>) && (<f_main_1224@60:2> = <<zip_1030@50:2>@58:0>))
+           [(<f_main_1224@60:2> >= <f_main_1224@60:0>).
+            ((<k_main_1177@63:0> = <f_main_1224@60:0>) &&
+             ((<k_main_1177@63:1> = <f_main_1224@60:2>) &&
+              (<k_main_1177@63:3> = (<f_main_1224@60:2> <= <f_main_1224@60:0>))))
+            [(not <k_main_1177@63:3>).(<fail_1233@66:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(3843)[2]
+    horn clauses:
+      P[<fail_1233@66:0>](<fail_1233@66:0>:bool)|- bot
+      
+      P[<k_main_1177@63:3>](<k_main_1177@63:0>:int,<k_main_1177@63:1>:int,false:bool), <fail_1233@66:0>
+      |- P[<fail_1233@66:0>](<fail_1233@66:0>:bool)
+      
+      P[<f_main_1224@60:2>](<k_main_1177@63:0>:int,<k_main_1177@63:1>:int),
+      ((<k_main_1177@63:1> >= <k_main_1177@63:0>) && (<k_main_1177@63:3> = (<k_main_1177@63:1> <= <k_main_1177@63:0>)))
+      |- P[<k_main_1177@63:3>](<k_main_1177@63:0>:int,<k_main_1177@63:1>:int,
+                               <k_main_1177@63:3>:bool)
+      
+      P[<main_1033@48:0>](<f_main_1224@60:0>:int),
+      P[<<zip_1030@50:2>@58:0>](<f_main_1224@60:0>:int,<f_main_1224@60:0>:int,<f_main_1224@60:2>:int)|- P[<f_main_1224@60:2>](
+      <f_main_1224@60:0>:int,<f_main_1224@60:2>:int)
+      
+      P[<zip_1030@50:1>](<zip_1030@50:0>:int,<zip_1030@50:1>:int),
+      P[<<br_zip_1227@53:3>@56:0>]((<zip_1030@50:1> = 0):bool,<zip_1030@50:0>:int,<zip_1030@50:1>:int,<<zip_1030@50:2>@58:0>:int),
+      (<zip_1030@50:0> = 0)
+      |- P[<<zip_1030@50:2>@58:0>](<zip_1030@50:0>:int,<zip_1030@50:1>:int,
+                                   <<zip_1030@50:2>@58:0>:int)
+      
+      P[<br_zip_1227@53:2>](<br_zip_1227@53:0>:bool,<br_zip_1227@53:1>:int,<br_zip_1227@53:2>:int),
+      ((<<br_zip_1227@53:3>@56:0> = 0) && <br_zip_1227@53:0>)
+      |- P[<<br_zip_1227@53:3>@56:0>](<br_zip_1227@53:0>:bool,<br_zip_1227@53:1>:int,
+                                      <br_zip_1227@53:2>:int,<<br_zip_1227@53:3>@56:0>:int)
+      
+      P[<zip_1030@50:1>](<br_zip_1227@53:1>:int,<br_zip_1227@53:2>:int),
+      ((<br_zip_1227@53:1> = 0) && (<br_zip_1227@53:0> = (<br_zip_1227@53:2> = 0)))
+      |- P[<br_zip_1227@53:2>](<br_zip_1227@53:0>:bool,<br_zip_1227@53:1>:int,
+                               <br_zip_1227@53:2>:int)
+      
+      P[<main_1033@48:0>](<zip_1030@50:1>:int), (<zip_1030@50:1> = <zip_1030@50:0>)
+      |- P[<zip_1030@50:1>](<zip_1030@50:0>:int,<zip_1030@50:1>:int)
+      
+      P[<f_1225@46:0>](<main_1033@48:0>:int)|- P[<main_1033@48:0>](<main_1033@48:0>:int)
+      
+      |- P[<f_1225@46:0>](<f_1225@46:0>:int)
+    call trees:
+      <main_1220@43>
+        <f_1225@46>
+          <main_1033@48>
+            <zip_1030@50>
+              <br_zip_1227@53>
+              </<br_zip_1227@53:3>@56>
+            </<zip_1030@50:2>@58>
+            <f_main_1224@60>
+              <k_main_1177@63>
+                <fail_1233@66>
+    inlined horn clauses:
+      P[<fail_1233@66:0>](<fail_1233@66:0>:bool)|- bot
+      
+      P[<<zip_1030@50:2>@58:0>](<k_main_1177@63:0>:int,<k_main_1177@63:0>:int,<k_main_1177@63:1>:int),
+      ((<k_main_1177@63:1> > <k_main_1177@63:0>) && <fail_1233@66:0>) |- P[<fail_1233@66:0>](
+      <fail_1233@66:0>:bool)
+      
+      P[<zip_1030@50:1>](<zip_1030@50:0>:int,<zip_1030@50:1>:int),
+      ((<<zip_1030@50:2>@58:0> = 0) && ((<zip_1030@50:0> = 0) && (<zip_1030@50:1> = 0)))
+      |- P[<<zip_1030@50:2>@58:0>](<zip_1030@50:0>:int,<zip_1030@50:1>:int,
+                                   <<zip_1030@50:2>@58:0>:int)
+      
+       (<zip_1030@50:1> = <zip_1030@50:0>) |- P[<zip_1030@50:1>](<zip_1030@50:0>:int,
+                                                                 <zip_1030@50:1>:int)
+    begin ParamSubstInfer.infer(5304)[3]
+      
+    end ParamSubstInfer.infer(5304)[3] (0.031996 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(5306)[3]
+      
+    end RefTypeInfer.elim_coeffs(5306)[3] (0.000000 sec.)
+    begin YhornInterface.solve(5485)[3]
+      begin HcSolver.solve_ub(5486)[4]
+        encoded:
+          P[<fail_1233@66:0>](<fail_1233@66:0>:int)|- bot
+          
+          P[<<zip_1030@50:2>@58:0>](<k_main_1177@63:0>:int,<k_main_1177@63:0>:int,<k_main_1177@63:1>:int),
+          ((<k_main_1177@63:1> > <k_main_1177@63:0>) && (<fail_1233@66:0> = 1))
+          |- P[<fail_1233@66:0>](<fail_1233@66:0>:int)
+          
+          P[<zip_1030@50:1>](<zip_1030@50:0>:int,<zip_1030@50:1>:int),
+          ((<<zip_1030@50:2>@58:0> = 0) && ((<zip_1030@50:0> = 0) && (<zip_1030@50:1> = 0)))
+          |- P[<<zip_1030@50:2>@58:0>](<zip_1030@50:0>:int,<zip_1030@50:1>:int,
+                                       <<zip_1030@50:2>@58:0>:int)
+          
+           (<zip_1030@50:1> = <zip_1030@50:0>) |- P[<zip_1030@50:1>](<zip_1030@50:0>:int,
+                                                                    <zip_1030@50:1>:int)
+        input to Yhorn:
+          P[<fail_1233@66:0>](<fail_1233@66:0>:int)|- bot
+          
+          P[<<zip_1030@50:2>@58:0>](<k_main_1177@63:0>:int,<k_main_1177@63:0>:int,<k_main_1177@63:1>:int),
+          ((<k_main_1177@63:1> > <k_main_1177@63:0>) && (<fail_1233@66:0> = 1))
+          |- P[<fail_1233@66:0>](<fail_1233@66:0>:int)
+          
+          P[<zip_1030@50:1>](<zip_1030@50:0>:int,<zip_1030@50:1>:int),
+          ((<zip_1030@50:1> = 0) && ((<zip_1030@50:0> = 0) && (<<zip_1030@50:2>@58:0> = 0)))
+          |- P[<<zip_1030@50:2>@58:0>](<zip_1030@50:0>:int,<zip_1030@50:1>:int,
+                                       <<zip_1030@50:2>@58:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1233_sep_66_sep_0($197)) -> 1=0.
+(($197-1=0) & ($198-$199>0)) & (v_sep_zip_1030_sep_50_sep_2_sep_58_sep_0($199,$199,$198)) -> v_sep_fail_1233_sep_66_sep_0($197).
+(($200=0) & ($201=0) & ($202=0)) & (v_sep_zip_1030_sep_50_sep_1($201,$202)) -> v_sep_zip_1030_sep_50_sep_2_sep_58_sep_0($201,$202,$200).
+-$201+$202=0 -> v_sep_zip_1030_sep_50_sep_1($201,$202).
+
+
+v_sep_fail_1233_sep_66_sep_0: X
+v_sep_zip_1030_sep_50_sep_1: X
+v_sep_zip_1030_sep_50_sep_2_sep_58_sep_0: X
+....
+v_sep_fail_1233_sep_66_sep_0: X
+v_sep_zip_1030_sep_50_sep_1: X
+v_sep_zip_1030_sep_50_sep_2_sep_58_sep_0: X
+...
+v_sep_fail_1233_sep_66_sep_0: X
+v_sep_zip_1030_sep_50_sep_1: X
+v_sep_zip_1030_sep_50_sep_2_sep_58_sep_0: X
+....
+v_sep_fail_1233_sep_66_sep_0: X
+v_sep_zip_1030_sep_50_sep_1: X
+v_sep_zip_1030_sep_50_sep_2_sep_58_sep_0: X
+....(0=0) & (v_sep_fail_1233_sep_66_sep_0($197)) -> 1=0.
+(($197-1=0) & ($198-$199>0)) & (v_sep_zip_1030_sep_50_sep_2_sep_58_sep_0($199,$199,$198)) -> v_sep_fail_1233_sep_66_sep_0($197).
+(($200=0) & ($201=0) & ($202=0)) & (v_sep_zip_1030_sep_50_sep_1($201,$202)) -> v_sep_zip_1030_sep_50_sep_2_sep_58_sep_0($201,$202,$200).
+-$201+$202=0 -> v_sep_zip_1030_sep_50_sep_1($201,$202).
+
+           (<zip_1030@50:1> = <zip_1030@50:0>) |- P[<zip_1030@50:1>](<zip_1030@50:0>:int,
+                                                                    <zip_1030@50:1>:int)
+        solution:
+          P[<fail_1233@66:0>]($203:bool) = false
+          P[<zip_1030@50:1>]($213:int,$215:int) = true
+          P[<<zip_1030@50:2>@58:0>]($206:int,$208:int,$210:int) = ($210 <= $208)
+        
+      end HcSolver.solve_ub(5486)[4] (0.006999 sec.)
+      begin HcSolver.check_validity(5609)[4]
+        input:
+          P[<fail_1233@66:0>](<fail_1233@66:0>:bool)|- bot
+          
+          P[<<zip_1030@50:2>@58:0>](<k_main_1177@63:0>:int,<k_main_1177@63:0>:int,<k_main_1177@63:1>:int),
+          ((<k_main_1177@63:1> > <k_main_1177@63:0>) && <fail_1233@66:0>) |- P[<fail_1233@66:0>](
+          <fail_1233@66:0>:bool)
+          
+          P[<zip_1030@50:1>](<zip_1030@50:0>:int,<zip_1030@50:1>:int),
+          ((<<zip_1030@50:2>@58:0> = 0) && ((<zip_1030@50:0> = 0) && (<zip_1030@50:1> = 0)))
+          |- P[<<zip_1030@50:2>@58:0>](<zip_1030@50:0>:int,<zip_1030@50:1>:int,
+                                       <<zip_1030@50:2>@58:0>:int)
+          
+           (<zip_1030@50:1> = <zip_1030@50:0>) |- P[<zip_1030@50:1>](<zip_1030@50:0>:int,
+                                                                    <zip_1030@50:1>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(5609)[4] (0.003999 sec.)
+      solution:
+        P[<fail_1233@66:0>]($203:bool) = false
+        P[<zip_1030@50:1>]($213:int,$215:int) = true
+        P[<<zip_1030@50:2>@58:0>]($206:int,$208:int,$210:int) = ($210 <= $208)
+    end YhornInterface.solve(5485)[3] (0.010998 sec.)
+    
+  end RefTypeInfer.infer_etrs(3843)[2] (0.046994 sec.)
+  refinement types:
+    main_1220: X
+    f_1225: v1:int -> X
+    main_1033: v1:int -> (v2:unit -> X) -> X
+    zip_1030: v1:int -> v2:int -> (v3:{v3:int | (v3 <= v2)} -> X) -> X
+    br_zip_1227: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    f_main_1224: v1:int -> (v2:unit -> X) -> v4:int -> X
+    k_main_1177: v1:int -> v2:int -> (v3:unit -> X) -> v5:bool -> X
+    fail_1233: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    br_zip_1229: var108:bool -> var107:int -> var106:int -> (var105:int -> X) -> X
+    f_1226: var111:int -> var110:unit -> X
+    f_zip_1221: var115:int -> var114:int -> var113:unit -> X
+    f_zip_1222: var119:int -> var118:int -> var117:unit -> X
+    f_zip_1223: var125:int -> var124:int -> (var123:int -> X) -> var121:int -> X
+    fail_1231: var129:bool -> (var128:unit -> X) -> X
+    fail_1232: var133:bool -> (var132:unit -> X) -> X
+  abstraction types:
+    main_1220: X
+    f_1225: v1:int -> X
+    main_1033: v1:int -> (v2:unit -> X) -> X
+    zip_1030: v1:int -> v2:int -> (v3:int[v3 -> (v3 <= v2)] -> X) -> X
+    br_zip_1227: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    f_main_1224: v1:int -> (v2:unit -> X) -> v4:int -> X
+    k_main_1177: v1:int -> v2:int -> (v3:unit -> X) -> v5:bool -> X
+    fail_1233: v1:bool -> (v2:unit -> X) -> X
+    br_zip_1229: var108:bool -> var107:int -> var106:int -> (var105:int -> X) -> X
+    f_1226: var111:int -> var110:unit -> X
+    f_zip_1221: var115:int -> var114:int -> var113:unit -> X
+    f_zip_1222: var119:int -> var118:int -> var117:unit -> X
+    f_zip_1223: var125:int -> var124:int -> (var123:int -> X) -> var121:int -> X
+    fail_1231: var129:bool -> (var128:unit -> X) -> X
+    fail_1232: var133:bool -> (var132:unit -> X) -> X
+  
+end AbsTypeInfer.refine(3842)[1] (0.048994 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 3)::
+Main: main_1220
+  main_1220 -> (rand_int f_1225)
+  br_zip_1227 b_1228 x_1031 y_1032 k_zip_1095 when b_1228 -> (k_zip_1095 0)
+  br_zip_1227 b_1228 x_1031 y_1032 k_zip_1095 when (not b_1228) -> (fail_1231 true (f_zip_1221 x_1031 y_1032))
+  br_zip_1229 b_1230 x_1031 y_1032 k_zip_1095 when b_1230 -> (fail_1232 true (f_zip_1222 x_1031 y_1032))
+  br_zip_1229 b_1230 x_1031 y_1032 k_zip_1095 when (not b_1230) ->
+      (zip_1030 (x_1031 - 1) (y_1032 - 1) (f_zip_1223 x_1031 y_1032 k_zip_1095))
+  f_1225 x_1195 -> (main_1033 x_1195 (f_1226 x_1195))
+  f_1226 x_1195 x_1192 -> end
+  f_main_1224 n_1034 k_main_1160 x_1163 when (x_1163 >= n_1034) ->
+      (k_main_1177 n_1034 x_1163 k_main_1160 (x_1163 <= n_1034))
+  f_main_1224 n_1034 k_main_1160 x_1163 when (not (x_1163 >= n_1034)) -> (k_main_1177 n_1034 x_1163 k_main_1160 false)
+  f_zip_1221 x_1031 y_1032 x_1098 -> _|_
+  f_zip_1222 x_1031 y_1032 x_1114 -> _|_
+  f_zip_1223 x_1031 y_1032 k_zip_1095 x_1127 -> (k_zip_1095 (1 + x_1127))
+  fail_1231 b k -> {fail} => (k ())
+  fail_1232 b k -> {fail} => (k ())
+  fail_1233 b k -> {fail} => (k ())
+  k_main_1177 n_1034 x_1163 k_main_1160 b_1189 when b_1189 -> (k_main_1160 ())
+  k_main_1177 n_1034 x_1163 k_main_1160 b_1189 when (not b_1189) -> (fail_1233 true k_main_1160)
+  main_1033 n_1034 k_main_1160 -> (zip_1030 n_1034 n_1034 (f_main_1224 n_1034 k_main_1160))
+  zip_1030 x_1031 y_1032 k_zip_1095 when (x_1031 = 0) -> (br_zip_1227 (y_1032 = 0) x_1031 y_1032 k_zip_1095)
+  zip_1030 x_1031 y_1032 k_zip_1095 when (not (x_1031 = 0)) -> (br_zip_1229 (y_1032 = 0) x_1031 y_1032 k_zip_1095)
+Types:
+  main_1220 : X
+  fail_1231 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  fail_1232 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  fail_1233 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  zip_1030 : (x_1:int -> x_2:int[x_1 = x_2] -> (x_4:int[x_2 >= x_4; x_2 <= x_4] -> X) -> X)
+  
+(3-1) Abstracting ... DONE!
+
+(3-2) Checking HORS ... DONE!
+
+Safe!
+
+Refinement Types:
+  zip: (x_1:int -> (x_2:{x_2:int | x_1 = x_2} -> {x_3:int | x_2 <= x_3 && x_2 >= x_3}))
+
+cycles: 3
+total: 0.318 sec
+  abst: 0.016 sec
+  mc: 0.020 sec
+  refine: 0.119 sec
+    exparam: 0.057 sec

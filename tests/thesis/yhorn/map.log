@@ -1,0 +1,328 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn map.ml
+
+parsed::
+ let rec map_1030 x_1031 = if x_1031 = 0 then
+                             0
+                           else
+                             1 + map_1030 (x_1031 - 1) 
+ in
+ let main_1032 n_1033 = if map_1030 n_1033 = n_1033 then
+                          ()
+                        else
+                          {fail} () 
+ in
+   ()
+
+set_target::
+ let rec map_1030 x_1031 = if x_1031 = 0 then
+                             0
+                           else
+                             1 + map_1030 (x_1031 - 1) 
+ in
+ let main_1032 n_1033 = if map_1030 n_1033 = n_1033 then
+                          ()
+                        else
+                          {fail} () 
+ in
+ let main_1048 = let arg1_1047 = rand_int () 
+                 in
+                   main_1032 arg1_1047 
+ in
+   ()
+
+CPS::
+ let rec map_1030 (x_1031:int) (k_map_1073:(int -> X)) =
+   if x_1031 = 0 then
+     k_map_1073 0
+   else
+     map_1030 (x_1031 - 1) (fun x_1077 -> k_map_1073 (1 + x_1077)) 
+ in
+ let main_1032 (n_1033:int) (k_main_1105:(unit -> X)) =
+   map_1030 n_1033 (fun x_1108 -> (if x_1108 = n_1033 then
+                                     k_main_1105 ()
+                                   else
+                                     {|fail|} () k_main_1105)) 
+ in
+   rand_int_cps () (fun x_1136 -> main_1032 x_1136 (fun x_1133 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1161
+  main_1161 -> (rand_int f_1164)
+  f_1164 x_1136 -> (main_1032 x_1136 (f_1165 x_1136))
+  f_1165 x_1136 x_1133 -> end
+  f_main_1163 n_1033 k_main_1105 x_1108 when (x_1108 = n_1033) -> (k_main_1105 ())
+  f_main_1163 n_1033 k_main_1105 x_1108 when (not (x_1108 = n_1033)) -> (fail_1166 true k_main_1105)
+  f_map_1162 x_1031 k_map_1073 x_1077 -> (k_map_1073 (1 + x_1077))
+  fail_1166 b k -> {fail} => (k ())
+  main_1032 n_1033 k_main_1105 -> (map_1030 n_1033 (f_main_1163 n_1033 k_main_1105))
+  map_1030 x_1031 k_map_1073 when (x_1031 = 0) -> (k_map_1073 0)
+  map_1030 x_1031 k_map_1073 when (not (x_1031 = 0)) -> (map_1030 (x_1031 - 1) (f_map_1162 x_1031 k_map_1073))
+Types:
+  main_1161 : X
+  fail_1166 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  map_1030 : (int -> (int -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1161 ... --> 
+  f_1164 ... --> 
+  main_1032 ... --> 
+  map_1030 [1/2] ... --> 
+  f_main_1163 [2/2] ... --> 
+  fail_1166 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(91)[1]
+  program:
+    main_1161  | true = ((Random.int 0) f_1164)
+    f_1164 x_1136 | true = (main_1032 x_1136
+                                      (f_1165 x_1136))
+    f_1165 x_1136 x_1133 | true = end
+    f_main_1163 n_1033 k_main_1105 x_1108 | (x_1108 = n_1033) = (k_main_1105 ())
+    f_main_1163 n_1033 k_main_1105 x_1108 | (not (x_1108 = n_1033)) = (
+    fail_1166 true
+              k_main_1105)
+    f_map_1162 x_1031 k_map_1073 x_1077 | true = (k_map_1073 (1 + x_1077))
+    fail_1166 b k | true = (fail ())
+    main_1032 n_1033 k_main_1105 | true = (map_1030 n_1033
+                                                    (f_main_1163 n_1033
+                                                                 k_main_1105))
+    map_1030 x_1031 k_map_1073 | (x_1031 = 0) = (k_map_1073 0)
+    map_1030 x_1031 k_map_1073 | (not (x_1031 = 0)) = (map_1030 (x_1031 - 1)
+                                                                (f_map_1162 x_1031
+                                                                    k_map_1073))
+    main_1161:X
+    f_1164:int -> X
+    f_1165:int -> unit -> X
+    f_main_1163:int -> (unit -> X) -> int -> X
+    f_map_1162:int -> (int -> X) -> int -> X
+    fail_1166:bool -> (unit -> X) -> X
+    main_1032:int -> (unit -> X) -> X
+    map_1030:int -> (int -> X) -> X
+  inlined functions: f_1164,f_1165,f_main_1163,f_map_1162,main_1032
+  counterexample: 0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1164@4:0> = var2)
+     [true.(<main_1032@6:0> = <f_1164@4:0>)
+      [true.(<map_1030@8:0> = <main_1032@6:0>)
+       [(<map_1030@8:0> = 0).(<<map_1030@8:1>@11:0> = 0)
+        [true.((<f_main_1163@13:0> = <main_1032@6:0>) && (<f_main_1163@13:2> = <<map_1030@8:1>@11:0>))
+         [(not (<f_main_1163@13:2> = <f_main_1163@13:0>)).(<fail_1166@16:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(92)[2]
+    horn clauses:
+      P[<fail_1166@16:0>](<fail_1166@16:0>:bool)|- bot
+      
+      P[<f_main_1163@13:2>](<f_main_1163@13:0>:int,<f_main_1163@13:2>:int),
+      ((<f_main_1163@13:2> <> <f_main_1163@13:0>) && <fail_1166@16:0>) |- P[<fail_1166@16:0>](
+      <fail_1166@16:0>:bool)
+      
+      P[<main_1032@6:0>](<f_main_1163@13:0>:int),
+      P[<<map_1030@8:1>@11:0>](<f_main_1163@13:0>:int,<f_main_1163@13:2>:int)|- P[<f_main_1163@13:2>](
+      <f_main_1163@13:0>:int,<f_main_1163@13:2>:int)
+      
+      P[<map_1030@8:0>](<map_1030@8:0>:int), ((<map_1030@8:0> = 0) && (<<map_1030@8:1>@11:0> = 0))
+      |- P[<<map_1030@8:1>@11:0>](<map_1030@8:0>:int,<<map_1030@8:1>@11:0>:int)
+      
+      P[<main_1032@6:0>](<map_1030@8:0>:int)|- P[<map_1030@8:0>](<map_1030@8:0>:int)
+      
+      P[<f_1164@4:0>](<main_1032@6:0>:int)|- P[<main_1032@6:0>](<main_1032@6:0>:int)
+      
+      |- P[<f_1164@4:0>](<f_1164@4:0>:int)
+    call trees:
+      <main_1161@1>
+        <f_1164@4>
+          <main_1032@6>
+            <map_1030@8>
+            </<map_1030@8:1>@11>
+            <f_main_1163@13>
+              <fail_1166@16>
+    inlined horn clauses:
+      P[<fail_1166@16:0>](<fail_1166@16:0>:bool)|- bot
+      
+      P[<<map_1030@8:1>@11:0>](<f_main_1163@13:0>:int,<f_main_1163@13:2>:int),
+      ((<f_main_1163@13:2> <> <f_main_1163@13:0>) && <fail_1166@16:0>) |- P[<fail_1166@16:0>](
+      <fail_1166@16:0>:bool)
+      
+      P[<map_1030@8:0>](<map_1030@8:0>:int), ((<map_1030@8:0> = 0) && (<<map_1030@8:1>@11:0> = 0))
+      |- P[<<map_1030@8:1>@11:0>](<map_1030@8:0>:int,<<map_1030@8:1>@11:0>:int)
+      
+      |- P[<map_1030@8:0>](<map_1030@8:0>:int)
+    begin ParamSubstInfer.infer(859)[3]
+      
+    end ParamSubstInfer.infer(859)[3] (0.005999 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(861)[3]
+      
+    end RefTypeInfer.elim_coeffs(861)[3] (0.000000 sec.)
+    begin YhornInterface.solve(1008)[3]
+      begin HcSolver.solve_ub(1009)[4]
+        encoded:
+          P[<fail_1166@16:0>](<fail_1166@16:0>:int)|- bot
+          
+          P[<<map_1030@8:1>@11:0>](<f_main_1163@13:0>:int,<f_main_1163@13:2>:int),
+          ((<f_main_1163@13:2> <> <f_main_1163@13:0>) && (<fail_1166@16:0> = 1))
+          |- P[<fail_1166@16:0>](<fail_1166@16:0>:int)
+          
+          P[<map_1030@8:0>](<map_1030@8:0>:int), ((<map_1030@8:0> = 0) && (<<map_1030@8:1>@11:0> = 0))
+          |- P[<<map_1030@8:1>@11:0>](<map_1030@8:0>:int,<<map_1030@8:1>@11:0>:int)
+          
+          |- P[<map_1030@8:0>](<map_1030@8:0>:int)
+        input to Yhorn:
+          P[<fail_1166@16:0>](<fail_1166@16:0>:int)|- bot
+          
+          P[<<map_1030@8:1>@11:0>](<f_main_1163@13:0>:int,<f_main_1163@13:2>:int),
+          ((<f_main_1163@13:2> <> <f_main_1163@13:0>) && (<fail_1166@16:0> = 1))
+          |- P[<fail_1166@16:0>](<fail_1166@16:0>:int)
+          
+          P[<map_1030@8:0>](<map_1030@8:0>:int), ((<<map_1030@8:1>@11:0> = 0) && (<map_1030@8:0> = 0))
+          |- P[<<map_1030@8:1>@11:0>](<map_1030@8:0>:int,<<map_1030@8:1>@11:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1166_sep_16_sep_0($6)) -> 1=0.
+(($6-1=0) & ($7-$8<>0)) & (v_sep_map_1030_sep_8_sep_1_sep_11_sep_0($8,$7)) -> v_sep_fail_1166_sep_16_sep_0($6).
+(($9=0) & ($10=0)) & (v_sep_map_1030_sep_8_sep_0($9)) -> v_sep_map_1030_sep_8_sep_1_sep_11_sep_0($9,$10).
+0=0 -> v_sep_map_1030_sep_8_sep_0($9).
+
+
+v_sep_fail_1166_sep_16_sep_0: X
+v_sep_map_1030_sep_8_sep_0: X
+v_sep_map_1030_sep_8_sep_1_sep_11_sep_0: X
+.....Split disj [14] 0.192969
+Reconstrcut: 3 **)
+
+v_sep_fail_1166_sep_16_sep_0: (X) | (X)
+v_sep_map_1030_sep_8_sep_0: X
+v_sep_map_1030_sep_8_sep_1_sep_11_sep_0: X
+.....
+v_sep_fail_1166_sep_16_sep_0: (X) | (X)
+v_sep_map_1030_sep_8_sep_0: X
+v_sep_map_1030_sep_8_sep_1_sep_11_sep_0: X
+.....Split conj [16] 0.196969
+(Reconstrcut: 8 **)
+v_sep_fail_1166_sep_16_sep_0: (X) | (X)
+v_sep_map_1030_sep_8_sep_0: X
+v_sep_map_1030_sep_8_sep_1_sep_11_sep_0: (X) & (X)
+.......
+v_sep_fail_1166_sep_16_sep_0: (X) | (X)
+v_sep_map_1030_sep_8_sep_0: X
+v_sep_map_1030_sep_8_sep_1_sep_11_sep_0: (X) & (X)
+.....
+v_sep_fail_1166_sep_16_sep_0: (X) | (X)
+v_sep_map_1030_sep_8_sep_0: X
+v_sep_map_1030_sep_8_sep_1_sep_11_sep_0: (X) & (X)
+.......
+v_sep_fail_1166_sep_16_sep_0: (X) | (X)
+v_sep_map_1030_sep_8_sep_0: X
+v_sep_map_1030_sep_8_sep_1_sep_11_sep_0: (X) & (X)
+.......(0=0) & (v_sep_fail_1166_sep_16_sep_0($6)) -> 1=0.
+(($6-1=0) & ($7-$8<>0)) & (v_sep_map_1030_sep_8_sep_1_sep_11_sep_0($8,$7)) -> v_sep_fail_1166_sep_16_sep_0($6).
+(($9=0) & ($10=0)) & (v_sep_map_1030_sep_8_sep_0($9)) -> v_sep_map_1030_sep_8_sep_1_sep_11_sep_0($9,$10).
+0=0 -> v_sep_map_1030_sep_8_sep_0($9).
+
+          |- P[<map_1030@8:0>](<map_1030@8:0>:int)
+        solution:
+          P[<fail_1166@16:0>]($11:bool) = false
+          P[<map_1030@8:0>]($19:int) = true
+          P[<<map_1030@8:1>@11:0>]($14:int,$16:int) = ($14 = $16)
+        
+      end HcSolver.solve_ub(1009)[4] (0.016997 sec.)
+      begin HcSolver.check_validity(1120)[4]
+        input:
+          P[<fail_1166@16:0>](<fail_1166@16:0>:bool)|- bot
+          
+          P[<<map_1030@8:1>@11:0>](<f_main_1163@13:0>:int,<f_main_1163@13:2>:int),
+          ((<f_main_1163@13:2> <> <f_main_1163@13:0>) && <fail_1166@16:0>)
+          |- P[<fail_1166@16:0>](<fail_1166@16:0>:bool)
+          
+          P[<map_1030@8:0>](<map_1030@8:0>:int), ((<map_1030@8:0> = 0) && (<<map_1030@8:1>@11:0> = 0))
+          |- P[<<map_1030@8:1>@11:0>](<map_1030@8:0>:int,<<map_1030@8:1>@11:0>:int)
+          
+          |- P[<map_1030@8:0>](<map_1030@8:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(1120)[4] (0.002000 sec.)
+      solution:
+        P[<fail_1166@16:0>]($11:bool) = false
+        P[<map_1030@8:0>]($19:int) = true
+        P[<<map_1030@8:1>@11:0>]($14:int,$16:int) = ($14 = $16)
+    end YhornInterface.solve(1008)[3] (0.018997 sec.)
+    
+  end RefTypeInfer.infer_etrs(92)[2] (0.025996 sec.)
+  refinement types:
+    main_1161: X
+    f_1164: v1:int -> X
+    main_1032: v1:int -> (v2:unit -> X) -> X
+    map_1030: v1:int -> (v2:{v2:int | (v1 = v2)} -> X) -> X
+    f_main_1163: v1:int -> (v2:unit -> X) -> v4:int -> X
+    fail_1166: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1165: var11:int -> var10:unit -> X
+    f_map_1162: var16:int -> (var15:int -> X) -> var13:int -> X
+  abstraction types:
+    main_1161: X
+    f_1164: v1:int -> X
+    main_1032: v1:int -> (v2:unit -> X) -> X
+    map_1030: v1:int -> (v2:int[v2 -> (v1 = v2)] -> X) -> X
+    f_main_1163: v1:int -> (v2:unit -> X) -> v4:int -> X
+    fail_1166: v1:bool -> (v2:unit -> X) -> X
+    f_1165: var11:int -> var10:unit -> X
+    f_map_1162: var16:int -> (var15:int -> X) -> var13:int -> X
+  
+end AbsTypeInfer.refine(91)[1] (0.031995 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1161
+  main_1161 -> (rand_int f_1164)
+  f_1164 x_1136 -> (main_1032 x_1136 (f_1165 x_1136))
+  f_1165 x_1136 x_1133 -> end
+  f_main_1163 n_1033 k_main_1105 x_1108 when (x_1108 = n_1033) -> (k_main_1105 ())
+  f_main_1163 n_1033 k_main_1105 x_1108 when (not (x_1108 = n_1033)) -> (fail_1166 true k_main_1105)
+  f_map_1162 x_1031 k_map_1073 x_1077 -> (k_map_1073 (1 + x_1077))
+  fail_1166 b k -> {fail} => (k ())
+  main_1032 n_1033 k_main_1105 -> (map_1030 n_1033 (f_main_1163 n_1033 k_main_1105))
+  map_1030 x_1031 k_map_1073 when (x_1031 = 0) -> (k_map_1073 0)
+  map_1030 x_1031 k_map_1073 when (not (x_1031 = 0)) -> (map_1030 (x_1031 - 1) (f_map_1162 x_1031 k_map_1073))
+Types:
+  main_1161 : X
+  fail_1166 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  map_1030 : (x_1:int -> (x_3:int[x_1 = x_3] -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Safe!
+
+Refinement Types:
+  map: (x_1:int -> {x_2:int | x_1 = x_2})
+
+cycles: 1
+total: 0.232 sec
+  abst: 0.002 sec
+  mc: 0.014 sec
+  refine: 0.034 sec
+    exparam: 0.006 sec

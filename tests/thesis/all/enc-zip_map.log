@@ -1,0 +1,2738 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -gchi enc-zip_map.ml
+
+parsed::
+ let rec loop_1030 x_1031 = loop_1030 x_1031 
+ in
+ let rec zip_1032 x_1033 y_1034 =
+   if x_1033 = 0 then
+     if y_1034 = 0 then
+       0
+     else
+       loop_1030 ()
+   else
+     if y_1034 = 0 then
+       loop_1030 ()
+     else
+       1 + zip_1032 (x_1033 - 1) (y_1034 - 1) 
+ in
+ let rec map_1035 x_1036 = if x_1036 = 0 then
+                             0
+                           else
+                             1 + map_1035 (x_1036 - 1) 
+ in
+ let main_1037 n_1038 = if map_1035 (zip_1032 n_1038 n_1038) >= n_1038 then
+                          ()
+                        else
+                          {fail} () 
+ in
+   ()
+
+set_target::
+ let rec loop_1030 x_1031 = loop_1030 x_1031 
+ in
+ let rec zip_1032 x_1033 y_1034 =
+   if x_1033 = 0 then
+     if y_1034 = 0 then
+       0
+     else
+       loop_1030 ()
+   else
+     if y_1034 = 0 then
+       loop_1030 ()
+     else
+       1 + zip_1032 (x_1033 - 1) (y_1034 - 1) 
+ in
+ let rec map_1035 x_1036 = if x_1036 = 0 then
+                             0
+                           else
+                             1 + map_1035 (x_1036 - 1) 
+ in
+ let main_1037 n_1038 = if map_1035 (zip_1032 n_1038 n_1038) >= n_1038 then
+                          ()
+                        else
+                          {fail} () 
+ in
+ let main_1078 = let arg1_1077 = rand_int () 
+                 in
+                   main_1037 arg1_1077 
+ in
+   ()
+
+copy_poly::
+ let rec loop_1079 (x_1031:unit) = loop_1079 x_1031 
+ in
+ let rec zip_1032 (x_1033:int) (y_1034:int) =
+   if x_1033 = 0 then
+     if y_1034 = 0 then
+       0
+     else
+       loop_1079 ()
+   else
+     if y_1034 = 0 then
+       loop_1079 ()
+     else
+       1 + zip_1032 (x_1033 - 1) (y_1034 - 1) 
+ in
+ let rec map_1035 (x_1036:int) = if x_1036 = 0 then
+                                   0
+                                 else
+                                   1 + map_1035 (x_1036 - 1) 
+ in
+ let main_1037 (n_1038:int) = if map_1035 (zip_1032 n_1038 n_1038) >= n_1038 then
+                                ()
+                              else
+                                {fail} () 
+ in
+ let main_1078 = let arg1_1077 = rand_int () 
+                 in
+                   main_1037 arg1_1077 
+ in
+   ()
+
+CPS::
+ let rec loop_1079 (x_1031:unit) (k_loop_1105:(int -> X)) = loop_1079 x_1031 k_loop_1105 
+ in
+ let rec zip_1032 (x_1033:int) (y_1034:int) (k_zip_1132:(int -> X)) =
+   if x_1033 = 0 then
+     if y_1034 = 0 then
+       k_zip_1132 0
+     else
+       loop_1079 () k_zip_1132
+   else
+     if y_1034 = 0 then
+       loop_1079 () k_zip_1132
+     else
+       zip_1032 (x_1033 - 1) (y_1034 - 1) (fun x_1160 -> k_zip_1132 (1 + x_1160)) 
+ in
+ let rec map_1035 (x_1036:int) (k_map_1193:(int -> X)) =
+   if x_1036 = 0 then
+     k_map_1193 0
+   else
+     map_1035 (x_1036 - 1) (fun x_1197 -> k_map_1193 (1 + x_1197)) 
+ in
+ let main_1037 (n_1038:int) (k_main_1225:(unit -> X)) =
+   zip_1032 n_1038 n_1038
+     (fun x_1250 ->
+        map_1035 x_1250 (fun x_1228 -> (if x_1228 >= n_1038 then
+                                          k_main_1225 ()
+                                        else
+                                          {|fail|} () k_main_1225))) 
+ in
+   rand_int_cps () (fun x_1267 -> main_1037 x_1267 (fun x_1264 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1292
+  main_1292 -> (rand_int f_1297)
+  br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 when b_1300 -> (k_zip_1132 0)
+  br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 when (not b_1300) -> (loop_1079 () k_zip_1132)
+  br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 when b_1302 -> (loop_1079 () k_zip_1132)
+  br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 when (not b_1302) ->
+      (zip_1032 (x_1033 - 1) (y_1034 - 1) (f_zip_1293 x_1033 y_1034 k_zip_1132))
+  f_1297 x_1267 -> (main_1037 x_1267 (f_1298 x_1267))
+  f_1298 x_1267 x_1264 -> end
+  f_main_1295 n_1038 k_main_1225 x_1250 -> (map_1035 x_1250 (f_main_1296 n_1038 x_1250 k_main_1225))
+  f_main_1296 n_1038 x_1250 k_main_1225 x_1228 when (x_1228 >= n_1038) -> (k_main_1225 ())
+  f_main_1296 n_1038 x_1250 k_main_1225 x_1228 when (not (x_1228 >= n_1038)) -> (fail_1303 true k_main_1225)
+  f_map_1294 x_1036 k_map_1193 x_1197 -> (k_map_1193 (1 + x_1197))
+  f_zip_1293 x_1033 y_1034 k_zip_1132 x_1160 -> (k_zip_1132 (1 + x_1160))
+  fail_1303 b k -> {fail} => (k ())
+  loop_1079 x_1031 k_loop_1105 -> (loop_1079 x_1031 k_loop_1105)
+  main_1037 n_1038 k_main_1225 -> (zip_1032 n_1038 n_1038 (f_main_1295 n_1038 k_main_1225))
+  map_1035 x_1036 k_map_1193 when (x_1036 = 0) -> (k_map_1193 0)
+  map_1035 x_1036 k_map_1193 when (not (x_1036 = 0)) -> (map_1035 (x_1036 - 1) (f_map_1294 x_1036 k_map_1193))
+  zip_1032 x_1033 y_1034 k_zip_1132 when (x_1033 = 0) -> (br_zip_1299 (y_1034 = 0) x_1033 y_1034 k_zip_1132)
+  zip_1032 x_1033 y_1034 k_zip_1132 when (not (x_1033 = 0)) -> (br_zip_1301 (y_1034 = 0) x_1033 y_1034 k_zip_1132)
+Types:
+  main_1292 : X
+  fail_1303 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  loop_1079 : (unit -> (int -> X) -> X)
+  map_1035 : (int -> (int -> X) -> X)
+  zip_1032 : (int -> int -> (int -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1292 ... --> 
+  f_1297 ... --> 
+  main_1037 ... --> 
+  zip_1032 [1/2] ... --> 
+  br_zip_1299 [1/2] ... --> 
+  f_main_1295 ... --> 
+  map_1035 [1/2] ... --> 
+  f_main_1296 [2/2] ... --> 
+  fail_1303 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(176)[1]
+  program:
+    main_1292  | true = ((Random.int 0) f_1297)
+    br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 | b_1300 = (k_zip_1132 0)
+    br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 | (not b_1300) = (loop_1079 ()
+                                                                    k_zip_1132)
+    br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 | b_1302 = (loop_1079 ()
+                                                                    k_zip_1132)
+    br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 | (not b_1302) = (zip_1032
+                                                                    (
+                                                                    x_1033 - 1)
+                                                                    (
+                                                                    y_1034 - 1)
+                                                                    (
+                                                                    f_zip_1293 x_1033
+                                                                    y_1034
+                                                                    k_zip_1132))
+    f_1297 x_1267 | true = (main_1037 x_1267
+                                      (f_1298 x_1267))
+    f_1298 x_1267 x_1264 | true = end
+    f_main_1295 n_1038 k_main_1225 x_1250 | true = (map_1035 x_1250
+                                                             (f_main_1296 n_1038
+                                                                    x_1250
+                                                                    k_main_1225))
+    f_main_1296 n_1038 x_1250 k_main_1225 x_1228 | (x_1228 >= n_1038) = (
+    k_main_1225 ())
+    f_main_1296 n_1038 x_1250 k_main_1225 x_1228 | (not (x_1228 >= n_1038)) = (
+    fail_1303 true
+              k_main_1225)
+    f_map_1294 x_1036 k_map_1193 x_1197 | true = (k_map_1193 (1 + x_1197))
+    f_zip_1293 x_1033 y_1034 k_zip_1132 x_1160 | true = (k_zip_1132 (
+                                                                    1 + x_1160))
+    fail_1303 b k | true = (fail ())
+    loop_1079 x_1031 k_loop_1105 | true = (loop_1079 x_1031
+                                                     k_loop_1105)
+    main_1037 n_1038 k_main_1225 | true = (zip_1032 n_1038
+                                                    n_1038
+                                                    (f_main_1295 n_1038
+                                                                 k_main_1225))
+    map_1035 x_1036 k_map_1193 | (x_1036 = 0) = (k_map_1193 0)
+    map_1035 x_1036 k_map_1193 | (not (x_1036 = 0)) = (map_1035 (x_1036 - 1)
+                                                                (f_map_1294 x_1036
+                                                                    k_map_1193))
+    zip_1032 x_1033 y_1034 k_zip_1132 | (x_1033 = 0) = (br_zip_1299 (
+                                                                    y_1034 = 0)
+                                                                    x_1033
+                                                                    y_1034
+                                                                    k_zip_1132)
+    zip_1032 x_1033 y_1034 k_zip_1132 | (not (x_1033 = 0)) = (br_zip_1301 (
+                                                                    y_1034 = 0)
+                                                                    x_1033
+                                                                    y_1034
+                                                                    k_zip_1132)
+    main_1292:X
+    br_zip_1299:bool -> int -> int -> (int -> X) -> X
+    br_zip_1301:bool -> int -> int -> (int -> X) -> X
+    f_1297:int -> X
+    f_1298:int -> unit -> X
+    f_main_1295:int -> (unit -> X) -> int -> X
+    f_main_1296:int -> int -> (unit -> X) -> int -> X
+    f_map_1294:int -> (int -> X) -> int -> X
+    f_zip_1293:int -> int -> (int -> X) -> int -> X
+    fail_1303:bool -> (unit -> X) -> X
+    loop_1079:unit -> (int -> X) -> X
+    main_1037:int -> (unit -> X) -> X
+    map_1035:int -> (int -> X) -> X
+    zip_1032:int -> int -> (int -> X) -> X
+  inlined functions: br_zip_1299,br_zip_1301,f_1297,f_1298,f_main_1295,f_main_1296,f_map_1294,f_zip_1293,main_1037
+  counterexample: 0:0:0:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1297@4:0> = var2)
+     [true.(<main_1037@6:0> = <f_1297@4:0>)
+      [true.((<zip_1032@8:0> = <main_1037@6:0>) && (<zip_1032@8:1> = <main_1037@6:0>))
+       [(<zip_1032@8:0> = 0).
+        ((<br_zip_1299@11:0> = (<zip_1032@8:1> = 0)) &&
+         ((<br_zip_1299@11:1> = <zip_1032@8:0>) && (<br_zip_1299@11:2> = <zip_1032@8:1>)))
+        [<br_zip_1299@11:0>.(<<br_zip_1299@11:3>@14:0> = 0)
+         [true.(<<zip_1032@8:2>@16:0> = <<br_zip_1299@11:3>@14:0>)
+          [true.((<f_main_1295@18:0> = <main_1037@6:0>) && (<f_main_1295@18:2> = <<zip_1032@8:2>@16:0>))
+           [true.(<map_1035@20:0> = <f_main_1295@18:2>)
+            [(<map_1035@20:0> = 0).(<<map_1035@20:1>@23:0> = 0)
+             [true.
+              ((<f_main_1296@25:0> = <f_main_1295@18:0>) &&
+               ((<f_main_1296@25:1> = <f_main_1295@18:2>) && (<f_main_1296@25:3> = <<map_1035@20:1>@23:0>)))
+              [(not (<f_main_1296@25:3> >= <f_main_1296@25:0>)).(<fail_1303@28:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(177)[2]
+    horn clauses:
+      P[<fail_1303@28:0>](<fail_1303@28:0>:bool)|- bot
+      
+      P[<f_main_1296@25:3>](<f_main_1296@25:0>:int,<f_main_1296@25:1>:int,<f_main_1296@25:3>:int),
+      ((<f_main_1296@25:3> < <f_main_1296@25:0>) && <fail_1303@28:0>) |- P[<fail_1303@28:0>](
+      <fail_1303@28:0>:bool)
+      
+      P[<f_main_1295@18:2>](<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+      P[<<map_1035@20:1>@23:0>](<f_main_1296@25:1>:int,<f_main_1296@25:3>:int)|- P[<f_main_1296@25:3>](
+      <f_main_1296@25:0>:int,<f_main_1296@25:1>:int,<f_main_1296@25:3>:int)
+      
+      P[<map_1035@20:0>](<map_1035@20:0>:int), ((<map_1035@20:0> = 0) && (<<map_1035@20:1>@23:0> = 0))
+      |- P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int)
+      
+      P[<f_main_1295@18:2>](<f_main_1295@18:0>:int,<map_1035@20:0>:int)|- P[<map_1035@20:0>](<map_1035@20:0>:int)
+      
+      P[<main_1037@6:0>](<f_main_1295@18:0>:int),
+      P[<<zip_1032@8:2>@16:0>](<f_main_1295@18:0>:int,<f_main_1295@18:0>:int,<f_main_1295@18:2>:int)|- P[<f_main_1295@18:2>](
+      <f_main_1295@18:0>:int,<f_main_1295@18:2>:int)
+      
+      P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+      P[<<br_zip_1299@11:3>@14:0>]((<zip_1032@8:1> = 0):bool,<zip_1032@8:0>:int,<zip_1032@8:1>:int,<<zip_1032@8:2>@16:0>:int),
+      (<zip_1032@8:0> = 0) |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,
+                                                       <zip_1032@8:1>:int,
+                                                       <<zip_1032@8:2>@16:0>:int)
+      
+      P[<br_zip_1299@11:2>](<br_zip_1299@11:0>:bool,<br_zip_1299@11:1>:int,<br_zip_1299@11:2>:int),
+      ((<<br_zip_1299@11:3>@14:0> = 0) && <br_zip_1299@11:0>)
+      |- P[<<br_zip_1299@11:3>@14:0>](<br_zip_1299@11:0>:bool,<br_zip_1299@11:1>:int,
+                                      <br_zip_1299@11:2>:int,<<br_zip_1299@11:3>@14:0>:int)
+      
+      P[<zip_1032@8:1>](<br_zip_1299@11:1>:int,<br_zip_1299@11:2>:int),
+      ((<br_zip_1299@11:1> = 0) && (<br_zip_1299@11:0> = (<br_zip_1299@11:2> = 0)))
+      |- P[<br_zip_1299@11:2>](<br_zip_1299@11:0>:bool,<br_zip_1299@11:1>:int,
+                               <br_zip_1299@11:2>:int)
+      
+      P[<main_1037@6:0>](<zip_1032@8:1>:int), (<zip_1032@8:1> = <zip_1032@8:0>)
+      |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int)
+      
+      P[<f_1297@4:0>](<main_1037@6:0>:int)|- P[<main_1037@6:0>](<main_1037@6:0>:int)
+      
+      |- P[<f_1297@4:0>](<f_1297@4:0>:int)
+    call trees:
+      <main_1292@1>
+        <f_1297@4>
+          <main_1037@6>
+            <zip_1032@8>
+              <br_zip_1299@11>
+              </<br_zip_1299@11:3>@14>
+            </<zip_1032@8:2>@16>
+            <f_main_1295@18>
+              <map_1035@20>
+              </<map_1035@20:1>@23>
+              <f_main_1296@25>
+                <fail_1303@28>
+    inlined horn clauses:
+      P[<fail_1303@28:0>](<fail_1303@28:0>:bool)|- bot
+      
+      P[<<zip_1032@8:2>@16:0>](<f_main_1296@25:0>:int,<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+      P[<<map_1035@20:1>@23:0>](<f_main_1296@25:1>:int,<f_main_1296@25:3>:int),
+      ((<f_main_1296@25:3> < <f_main_1296@25:0>) && <fail_1303@28:0>) |- P[<fail_1303@28:0>](
+      <fail_1303@28:0>:bool)
+      
+      P[<map_1035@20:0>](<map_1035@20:0>:int), ((<map_1035@20:0> = 0) && (<<map_1035@20:1>@23:0> = 0))
+      |- P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int)
+      
+      P[<<zip_1032@8:2>@16:0>](<f_main_1295@18:0>:int,<f_main_1295@18:0>:int,<map_1035@20:0>:int)|- P[<map_1035@20:0>](
+      <map_1035@20:0>:int)
+      
+      P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+      ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+      |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,
+                                  <<zip_1032@8:2>@16:0>:int)
+      
+       (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                              <zip_1032@8:1>:int)
+    begin ParamSubstInfer.infer(1727)[3]
+      
+    end ParamSubstInfer.infer(1727)[3] (0.012998 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(1729)[3]
+      
+    end RefTypeInfer.elim_coeffs(1729)[3] (0.001000 sec.)
+    begin GenHcSolver.solve(1970)[3]
+      Horn clauses:
+        P[<fail_1303@28:0>](<fail_1303@28:0>:bool)|- bot
+        
+        P[<<zip_1032@8:2>@16:0>](<f_main_1296@25:0>:int,<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+        P[<<map_1035@20:1>@23:0>](<f_main_1296@25:1>:int,<f_main_1296@25:3>:int),
+        ((<f_main_1296@25:3> < <f_main_1296@25:0>) && <fail_1303@28:0>) |- P[<fail_1303@28:0>](
+        <fail_1303@28:0>:bool)
+        
+        P[<map_1035@20:0>](<map_1035@20:0>:int), ((<map_1035@20:0> = 0) && (<<map_1035@20:1>@23:0> = 0))
+        |- P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int)
+        
+        P[<<zip_1032@8:2>@16:0>](<f_main_1295@18:0>:int,<f_main_1295@18:0>:int,<map_1035@20:0>:int)|- P[<map_1035@20:0>](
+        <map_1035@20:0>:int)
+        
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+        ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+        |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,
+                                    <<zip_1032@8:2>@16:0>:int)
+        
+         (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                                <zip_1032@8:1>:int)
+      lower bounds:
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int) = (<zip_1032@8:1> = <zip_1032@8:0>)
+        P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,<<zip_1032@8:2>@16:0>:int) =
+        ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+        P[<map_1035@20:0>](<map_1035@20:0>:int) = (<map_1035@20:0> = 0)
+        P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int) =
+        ((<<map_1035@20:1>@23:0> = 0) && (<map_1035@20:0> = 0))
+        P[<fail_1303@28:0>](<fail_1303@28:0>:bool) = false
+      upper bounds:
+        P[<fail_1303@28:0>](var4:bool) = true
+      begin GenHcSolver.classify_pids(3264)[4]
+        output:
+          [<fail_1303@28:0>]
+      end GenHcSolver.classify_pids(3264)[4] (0.000000 sec.)
+      lb:false
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(3267)[4]
+        lb:false
+        nub:false
+        lb':false
+        nub':false
+        begin InterpProver.interpolate(3268)[5]
+          begin InterpProver.interpolate_fresh(3269)[6]
+            begin InterpProver.interpolate_log(3270)[7]
+              input1: false
+              input2: false
+              begin InterpProver.interpolate_check(3271)[8]
+                begin InterpProver.interpolate_simplify(3272)[9]
+                  begin InterpProver.interpolate_quick(3285)[10]
+                    
+                  end InterpProver.interpolate_quick(3285)[10] (0.000000 sec.)
+                  begin minimizing # of disjunctions(3289)[10]
+                    input: false
+                    output: false
+                  end minimizing # of disjunctions(3289)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(3272)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(3271)[8] (0.000000 sec.)
+              output: false
+            end InterpProver.interpolate_log(3270)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(3269)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(3268)[5] (0.000000 sec.)
+        output:
+          P[<fail_1303@28:0>](<fail_1303@28:0>:bool) = false
+      end ApronInterface.convex_hull_interpolate(3267)[4] (0.000000 sec.)
+      Horn clauses:
+        P[<<zip_1032@8:2>@16:0>](<f_main_1296@25:0>:int,<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+        P[<<map_1035@20:1>@23:0>](<f_main_1296@25:1>:int,<f_main_1296@25:3>:int),
+        (<f_main_1296@25:3> < <f_main_1296@25:0>) |- bot
+        
+        P[<map_1035@20:0>](<map_1035@20:0>:int), ((<map_1035@20:0> = 0) && (<<map_1035@20:1>@23:0> = 0))
+        |- P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int)
+        
+        P[<<zip_1032@8:2>@16:0>](<f_main_1295@18:0>:int,<f_main_1295@18:0>:int,<map_1035@20:0>:int)|- P[<map_1035@20:0>](
+        <map_1035@20:0>:int)
+        
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+        ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+        |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,
+                                    <<zip_1032@8:2>@16:0>:int)
+        
+         (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                                <zip_1032@8:1>:int)
+      lower bounds:
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int) = (<zip_1032@8:1> = <zip_1032@8:0>)
+        P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,<<zip_1032@8:2>@16:0>:int) =
+        ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+        P[<map_1035@20:0>](<map_1035@20:0>:int) = (<map_1035@20:0> = 0)
+        P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int) =
+        ((<<map_1035@20:1>@23:0> = 0) && (<map_1035@20:0> = 0))
+      upper bounds:
+        P[<<map_1035@20:1>@23:0>](var5:int,var6:int) = ((var5 <> 0) || (var6 >= 0))
+      begin GenHcSolver.classify_pids(4894)[4]
+        output:
+          [<<map_1035@20:1>@23:0>]
+      end GenHcSolver.classify_pids(4894)[4] (0.000000 sec.)
+      lb:((<<map_1035@20:1>@23:0> = 0) && (<map_1035@20:0> = 0))
+      nub:(not ((<map_1035@20:0> <> 0) || (<<map_1035@20:1>@23:0> >= 0)))
+      begin ApronInterface.convex_hull_interpolate(4897)[4]
+        lb:((<<map_1035@20:1>@23:0> = 0) && (<map_1035@20:0> = 0))
+        nub:(not ((<map_1035@20:0> <> 0) || (<<map_1035@20:1>@23:0> >= 0)))
+        lb':((<<map_1035@20:1>@23:0> = 0) && (<map_1035@20:0> = 0))
+        nub':(not ((<map_1035@20:0> <> 0) || (<<map_1035@20:1>@23:0> >= 0)))
+        begin InterpProver.interpolate(4898)[5]
+          begin InterpProver.interpolate_fresh(4899)[6]
+            begin InterpProver.interpolate_log(4900)[7]
+              input1: ((<<map_1035@20:1>@23:0> = 0) && (<map_1035@20:0> = 0))
+              input2: (not ((<map_1035@20:0> <> 0) || (<<map_1035@20:1>@23:0> >= 0)))
+              begin InterpProver.interpolate_check(4901)[8]
+                begin InterpProver.interpolate_simplify(4902)[9]
+                  begin InterpProver.interpolate_quick(4939)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(4948)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(4949)[12]
+                        begin CsisatInterface.interpolate_csisat_log(4950)[13]
+                          input1: (0 = v_sep_map_1035_sep_20_sep_0 & 0 = v_sep_map_1035_sep_20_sep_1_sep_23_sep_0)
+                          input2: (0 = v_sep_map_1035_sep_20_sep_0 & (1 + v_sep_map_1035_sep_20_sep_1_sep_23_sep_0) <= 0)
+                          begin CsisatInterface.interpolate_csisat_raw(4951)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(4951)[14] (0.000000 sec.)
+                          output: -2*v_sep_map_1035_sep_20_sep_1_sep_23_sep_0 <= 0
+                          
+                        end CsisatInterface.interpolate_csisat_log(4950)[13] (0.000000 sec.)
+                        after simplification: -2*v_sep_map_1035_sep_20_sep_1_sep_23_sep_0 <= 0
+                        after dnf conversion: ((-2*v_sep_map_1035_sep_20_sep_1_sep_23_sep_0 <= 0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(4949)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(4948)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(4939)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(4902)[9] (0.001000 sec.)
+                
+              end InterpProver.interpolate_check(4901)[8] (0.002000 sec.)
+              output: (0 <= <<map_1035@20:1>@23:0>)
+            end InterpProver.interpolate_log(4900)[7] (0.002000 sec.)
+            
+          end InterpProver.interpolate_fresh(4899)[6] (0.002000 sec.)
+          
+        end InterpProver.interpolate(4898)[5] (0.002000 sec.)
+        output:
+          P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int) = (0 <= <<map_1035@20:1>@23:0>)
+      end ApronInterface.convex_hull_interpolate(4897)[4] (0.002000 sec.)
+      Horn clauses:
+        P[<<zip_1032@8:2>@16:0>](<f_main_1296@25:0>:int,<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+        (0 < <f_main_1296@25:0>) |- bot
+        
+        P[<<zip_1032@8:2>@16:0>](<f_main_1295@18:0>:int,<f_main_1295@18:0>:int,<map_1035@20:0>:int)|- P[<map_1035@20:0>](
+        <map_1035@20:0>:int)
+        
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+        ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+        |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,
+                                    <<zip_1032@8:2>@16:0>:int)
+        
+         (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                                <zip_1032@8:1>:int)
+      lower bounds:
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int) = (<zip_1032@8:1> = <zip_1032@8:0>)
+        P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,<<zip_1032@8:2>@16:0>:int) =
+        ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+        P[<map_1035@20:0>](<map_1035@20:0>:int) = (<map_1035@20:0> = 0)
+      upper bounds:
+        P[<map_1035@20:0>](var7:int) = true
+      begin GenHcSolver.classify_pids(6099)[4]
+        output:
+          [<map_1035@20:0>]
+      end GenHcSolver.classify_pids(6099)[4] (0.000000 sec.)
+      lb:(<map_1035@20:0> = 0)
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(6102)[4]
+        lb:(<map_1035@20:0> = 0)
+        nub:false
+        lb':(<map_1035@20:0> = 0)
+        nub':false
+        begin InterpProver.interpolate(6103)[5]
+          begin InterpProver.interpolate_fresh(6104)[6]
+            begin InterpProver.interpolate_log(6105)[7]
+              input1: (<map_1035@20:0> = 0)
+              input2: false
+              begin InterpProver.interpolate_check(6106)[8]
+                begin InterpProver.interpolate_simplify(6107)[9]
+                  begin InterpProver.interpolate_quick(6126)[10]
+                    
+                  end InterpProver.interpolate_quick(6126)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(6107)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(6106)[8] (0.000000 sec.)
+              output: true
+            end InterpProver.interpolate_log(6105)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(6104)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(6103)[5] (0.000000 sec.)
+        output:
+          P[<map_1035@20:0>](<map_1035@20:0>:int) = true
+      end ApronInterface.convex_hull_interpolate(6102)[4] (0.000000 sec.)
+      Horn clauses:
+        P[<<zip_1032@8:2>@16:0>](<f_main_1296@25:0>:int,<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+        (0 < <f_main_1296@25:0>) |- bot
+        
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+        ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+        |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,
+                                    <<zip_1032@8:2>@16:0>:int)
+        
+         (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                                <zip_1032@8:1>:int)
+      lower bounds:
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int) = (<zip_1032@8:1> = <zip_1032@8:0>)
+        P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,<<zip_1032@8:2>@16:0>:int) =
+        ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+      upper bounds:
+        P[<<zip_1032@8:2>@16:0>](var8:int,var9:int,var10:int) = ((0 >= var8) || (var8 <> var9))
+      begin GenHcSolver.classify_pids(7145)[4]
+        output:
+          [<<zip_1032@8:2>@16:0>]
+      end GenHcSolver.classify_pids(7145)[4] (0.000000 sec.)
+      lb:((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+      nub:(not ((0 >= <zip_1032@8:0>) || (<zip_1032@8:0> <> <zip_1032@8:1>)))
+      begin ApronInterface.convex_hull_interpolate(7148)[4]
+        lb:((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+        nub:(not ((0 >= <zip_1032@8:0>) || (<zip_1032@8:0> <> <zip_1032@8:1>)))
+        lb':((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+        nub':(not ((0 >= <zip_1032@8:0>) || (<zip_1032@8:0> <> <zip_1032@8:1>)))
+        begin InterpProver.interpolate(7149)[5]
+          begin InterpProver.interpolate_fresh(7150)[6]
+            begin InterpProver.interpolate_log(7151)[7]
+              input1: ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+              input2: (not ((0 >= <zip_1032@8:0>) || (<zip_1032@8:0> <> <zip_1032@8:1>)))
+              begin InterpProver.interpolate_check(7152)[8]
+                begin InterpProver.interpolate_simplify(7153)[9]
+                  begin InterpProver.interpolate_quick(7219)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(7228)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(7229)[12]
+                        begin CsisatInterface.interpolate_csisat_log(7230)[13]
+                          input1: (0 = v_sep_zip_1032_sep_8_sep_0 & 0 = v_sep_zip_1032_sep_8_sep_1)
+                          input2: (v_sep_zip_1032_sep_8_sep_0 = v_sep_zip_1032_sep_8_sep_1 & 1 <= v_sep_zip_1032_sep_8_sep_0)
+                          begin CsisatInterface.interpolate_csisat_raw(7231)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(7231)[14] (0.000000 sec.)
+                          output: 2*v_sep_zip_1032_sep_8_sep_0 <= 0
+                          
+                        end CsisatInterface.interpolate_csisat_log(7230)[13] (0.000000 sec.)
+                        after simplification: 2*v_sep_zip_1032_sep_8_sep_0 <= 0
+                        after dnf conversion: ((2*v_sep_zip_1032_sep_8_sep_0 <= 0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(7229)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(7228)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(7219)[10] (0.001000 sec.)
+                  
+                end InterpProver.interpolate_simplify(7153)[9] (0.001000 sec.)
+                
+              end InterpProver.interpolate_check(7152)[8] (0.001000 sec.)
+              output: (<zip_1032@8:0> <= 0)
+            end InterpProver.interpolate_log(7151)[7] (0.001000 sec.)
+            
+          end InterpProver.interpolate_fresh(7150)[6] (0.001000 sec.)
+          
+        end InterpProver.interpolate(7149)[5] (0.001000 sec.)
+        output:
+          P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,<<zip_1032@8:2>@16:0>:int) =
+          (<zip_1032@8:0> <= 0)
+      end ApronInterface.convex_hull_interpolate(7148)[4] (0.001000 sec.)
+      Horn clauses:
+         (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                                <zip_1032@8:1>:int)
+      lower bounds:
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int) = (<zip_1032@8:1> = <zip_1032@8:0>)
+      upper bounds:
+        P[<zip_1032@8:1>](var11:int,var12:int) = true
+      begin GenHcSolver.classify_pids(7618)[4]
+        output:
+          [<zip_1032@8:1>]
+      end GenHcSolver.classify_pids(7618)[4] (0.000000 sec.)
+      lb:(<zip_1032@8:1> = <zip_1032@8:0>)
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(7621)[4]
+        lb:(<zip_1032@8:1> = <zip_1032@8:0>)
+        nub:false
+        lb':(<zip_1032@8:1> = <zip_1032@8:0>)
+        nub':false
+        begin InterpProver.interpolate(7622)[5]
+          begin InterpProver.interpolate_fresh(7623)[6]
+            begin InterpProver.interpolate_log(7624)[7]
+              input1: (<zip_1032@8:1> = <zip_1032@8:0>)
+              input2: false
+              begin InterpProver.interpolate_check(7625)[8]
+                begin InterpProver.interpolate_simplify(7626)[9]
+                  begin InterpProver.interpolate_quick(7641)[10]
+                    
+                  end InterpProver.interpolate_quick(7641)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(7626)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(7625)[8] (0.000000 sec.)
+              output: true
+            end InterpProver.interpolate_log(7624)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(7623)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(7622)[5] (0.000000 sec.)
+        output:
+          P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int) = true
+      end ApronInterface.convex_hull_interpolate(7621)[4] (0.000000 sec.)
+      begin HcSolver.check_validity(7706)[4]
+        input:
+          P[<fail_1303@28:0>](<fail_1303@28:0>:bool)|- bot
+          
+          P[<<zip_1032@8:2>@16:0>](<f_main_1296@25:0>:int,<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+          P[<<map_1035@20:1>@23:0>](<f_main_1296@25:1>:int,<f_main_1296@25:3>:int),
+          ((<f_main_1296@25:3> < <f_main_1296@25:0>) && <fail_1303@28:0>) |- P[<fail_1303@28:0>](
+          <fail_1303@28:0>:bool)
+          
+          P[<map_1035@20:0>](<map_1035@20:0>:int), ((<map_1035@20:0> = 0) && (<<map_1035@20:1>@23:0> = 0))
+          |- P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int)
+          
+          P[<<zip_1032@8:2>@16:0>](<f_main_1295@18:0>:int,<f_main_1295@18:0>:int,<map_1035@20:0>:int)|- P[<map_1035@20:0>](
+          <map_1035@20:0>:int)
+          
+          P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+          ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+          |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,
+                                      <<zip_1032@8:2>@16:0>:int)
+          
+           (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                                  <zip_1032@8:1>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(7706)[4] (0.004000 sec.)
+      solution:
+        P[<fail_1303@28:0>](<fail_1303@28:0>:bool) = false
+        P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int) = (0 <= <<map_1035@20:1>@23:0>)
+        P[<map_1035@20:0>](<map_1035@20:0>:int) = true
+        P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,<<zip_1032@8:2>@16:0>:int) =
+        (<zip_1032@8:0> <= 0)
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int) = true
+    end GenHcSolver.solve(1970)[3] (0.039994 sec.)
+    begin GenHcSolver.solve(8126)[3]
+      Horn clauses:
+        P[<fail_1303@28:0>](<fail_1303@28:0>:bool)|- bot
+        
+        P[<<zip_1032@8:2>@16:0>](<f_main_1296@25:0>:int,<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+        P[<<map_1035@20:1>@23:0>](<f_main_1296@25:1>:int,<f_main_1296@25:3>:int),
+        ((<f_main_1296@25:3> < <f_main_1296@25:0>) && <fail_1303@28:0>) |- P[<fail_1303@28:0>](
+        <fail_1303@28:0>:bool)
+        
+        P[<map_1035@20:0>](<map_1035@20:0>:int), ((<map_1035@20:0> = 0) && (<<map_1035@20:1>@23:0> = 0))
+        |- P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int)
+        
+        P[<<zip_1032@8:2>@16:0>](<f_main_1295@18:0>:int,<f_main_1295@18:0>:int,<map_1035@20:0>:int)|- P[<map_1035@20:0>](
+        <map_1035@20:0>:int)
+        
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+        ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+        |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,
+                                    <<zip_1032@8:2>@16:0>:int)
+        
+         (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                                <zip_1032@8:1>:int)
+      lower bounds:
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int) = (<zip_1032@8:1> = <zip_1032@8:0>)
+        P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,<<zip_1032@8:2>@16:0>:int) =
+        ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+        P[<map_1035@20:0>](<map_1035@20:0>:int) = (<map_1035@20:0> = 0)
+        P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int) =
+        ((<<map_1035@20:1>@23:0> = 0) && (<map_1035@20:0> = 0))
+        P[<fail_1303@28:0>](<fail_1303@28:0>:bool) = false
+      upper bounds:
+        P[<fail_1303@28:0>](var14:bool) = true
+      begin GenHcSolver.classify_pids(9420)[4]
+        output:
+          [<fail_1303@28:0>]
+      end GenHcSolver.classify_pids(9420)[4] (0.000000 sec.)
+      lb:false
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(9423)[4]
+        lb:false
+        nub:false
+        begin ExtFormula.Formula.case_analysis_boolean(9426)[5]
+          ts: false
+          
+        end ExtFormula.Formula.case_analysis_boolean(9426)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(9431)[5]
+          ts: false
+          
+        end ExtFormula.Formula.case_analysis_boolean(9431)[5] (0.000000 sec.)
+        lb':(-1 >= 0)
+        nub':(-1 >= 0)
+        begin InterpProver.interpolate(9434)[5]
+          begin InterpProver.interpolate_fresh(9435)[6]
+            begin InterpProver.interpolate_log(9436)[7]
+              input1: (-1 >= 0)
+              input2: (-1 >= 0)
+              begin InterpProver.interpolate_check(9437)[8]
+                begin InterpProver.interpolate_simplify(9438)[9]
+                  begin InterpProver.interpolate_quick(9453)[10]
+                    
+                  end InterpProver.interpolate_quick(9453)[10] (0.000000 sec.)
+                  begin minimizing # of disjunctions(9457)[10]
+                    input: false
+                    output: false
+                  end minimizing # of disjunctions(9457)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(9438)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(9437)[8] (0.000000 sec.)
+              output: false
+            end InterpProver.interpolate_log(9436)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(9435)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(9434)[5] (0.000000 sec.)
+        output:
+          P[<fail_1303@28:0>](<fail_1303@28:0>:bool) = false
+      end ApronInterface.convex_hull_interpolate(9423)[4] (0.000000 sec.)
+      Horn clauses:
+        P[<<zip_1032@8:2>@16:0>](<f_main_1296@25:0>:int,<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+        P[<<map_1035@20:1>@23:0>](<f_main_1296@25:1>:int,<f_main_1296@25:3>:int),
+        (<f_main_1296@25:3> < <f_main_1296@25:0>) |- bot
+        
+        P[<map_1035@20:0>](<map_1035@20:0>:int), ((<map_1035@20:0> = 0) && (<<map_1035@20:1>@23:0> = 0))
+        |- P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int)
+        
+        P[<<zip_1032@8:2>@16:0>](<f_main_1295@18:0>:int,<f_main_1295@18:0>:int,<map_1035@20:0>:int)|- P[<map_1035@20:0>](
+        <map_1035@20:0>:int)
+        
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+        ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+        |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,
+                                    <<zip_1032@8:2>@16:0>:int)
+        
+         (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                                <zip_1032@8:1>:int)
+      lower bounds:
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int) = (<zip_1032@8:1> = <zip_1032@8:0>)
+        P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,<<zip_1032@8:2>@16:0>:int) =
+        ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+        P[<map_1035@20:0>](<map_1035@20:0>:int) = (<map_1035@20:0> = 0)
+        P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int) =
+        ((<<map_1035@20:1>@23:0> = 0) && (<map_1035@20:0> = 0))
+      upper bounds:
+        P[<<map_1035@20:1>@23:0>](var15:int,var16:int) = ((var15 <> 0) || (var16 >= 0))
+      begin GenHcSolver.classify_pids(11069)[4]
+        output:
+          [<<map_1035@20:1>@23:0>]
+      end GenHcSolver.classify_pids(11069)[4] (0.000000 sec.)
+      lb:((<<map_1035@20:1>@23:0> = 0) && (<map_1035@20:0> = 0))
+      nub:(not ((<map_1035@20:0> <> 0) || (<<map_1035@20:1>@23:0> >= 0)))
+      begin ApronInterface.convex_hull_interpolate(11072)[4]
+        lb:((<<map_1035@20:1>@23:0> = 0) && (<map_1035@20:0> = 0))
+        nub:(not ((<map_1035@20:0> <> 0) || (<<map_1035@20:1>@23:0> >= 0)))
+        begin ExtFormula.Formula.case_analysis_boolean(11080)[5]
+          ts: ((<<map_1035@20:1>@23:0> = 0) && (<map_1035@20:0> = 0))
+          
+        end ExtFormula.Formula.case_analysis_boolean(11080)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(11094)[5]
+          ts: ((<map_1035@20:0> = 0) && (<<map_1035@20:1>@23:0> < 0))
+          
+        end ExtFormula.Formula.case_analysis_boolean(11094)[5] (0.000000 sec.)
+        lb':((<<map_1035@20:1>@23:0> = 0) && (<map_1035@20:0> = 0))
+        nub':((<map_1035@20:0> = 0) && ((-1 + (-1 * <<map_1035@20:1>@23:0>)) >= 0))
+        begin InterpProver.interpolate(11099)[5]
+          begin InterpProver.interpolate_fresh(11100)[6]
+            begin InterpProver.interpolate_log(11101)[7]
+              input1: ((<<map_1035@20:1>@23:0> = 0) && (<map_1035@20:0> = 0))
+              input2: ((<map_1035@20:0> = 0) && ((-1 + (-1 * <<map_1035@20:1>@23:0>)) >= 0))
+              begin InterpProver.interpolate_check(11102)[8]
+                begin InterpProver.interpolate_simplify(11103)[9]
+                  begin InterpProver.interpolate_quick(11146)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(11155)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(11156)[12]
+                        begin CsisatInterface.interpolate_csisat_log(11157)[13]
+                          input1: (0 = v_sep_map_1035_sep_20_sep_0 & 0 = v_sep_map_1035_sep_20_sep_1_sep_23_sep_0)
+                          input2: (0 = v_sep_map_1035_sep_20_sep_0 & (1 + v_sep_map_1035_sep_20_sep_1_sep_23_sep_0) <= 0)
+                          begin CsisatInterface.interpolate_csisat_raw(11158)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(11158)[14] (0.000000 sec.)
+                          output: -2*v_sep_map_1035_sep_20_sep_1_sep_23_sep_0 <= 0
+                          
+                        end CsisatInterface.interpolate_csisat_log(11157)[13] (0.000000 sec.)
+                        after simplification: -2*v_sep_map_1035_sep_20_sep_1_sep_23_sep_0 <= 0
+                        after dnf conversion: ((-2*v_sep_map_1035_sep_20_sep_1_sep_23_sep_0 <= 0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(11156)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(11155)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(11146)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(11103)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(11102)[8] (0.001000 sec.)
+              output: (0 <= <<map_1035@20:1>@23:0>)
+            end InterpProver.interpolate_log(11101)[7] (0.001000 sec.)
+            
+          end InterpProver.interpolate_fresh(11100)[6] (0.001000 sec.)
+          
+        end InterpProver.interpolate(11099)[5] (0.001000 sec.)
+        output:
+          P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int) = (0 <= <<map_1035@20:1>@23:0>)
+      end ApronInterface.convex_hull_interpolate(11072)[4] (0.001000 sec.)
+      Horn clauses:
+        P[<<zip_1032@8:2>@16:0>](<f_main_1296@25:0>:int,<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+        (0 < <f_main_1296@25:0>) |- bot
+        
+        P[<<zip_1032@8:2>@16:0>](<f_main_1295@18:0>:int,<f_main_1295@18:0>:int,<map_1035@20:0>:int)|- P[<map_1035@20:0>](
+        <map_1035@20:0>:int)
+        
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+        ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+        |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,
+                                    <<zip_1032@8:2>@16:0>:int)
+        
+         (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                                <zip_1032@8:1>:int)
+      lower bounds:
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int) = (<zip_1032@8:1> = <zip_1032@8:0>)
+        P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,<<zip_1032@8:2>@16:0>:int) =
+        ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+        P[<map_1035@20:0>](<map_1035@20:0>:int) = (<map_1035@20:0> = 0)
+      upper bounds:
+        P[<map_1035@20:0>](var17:int) = true
+      begin GenHcSolver.classify_pids(12308)[4]
+        output:
+          [<map_1035@20:0>]
+      end GenHcSolver.classify_pids(12308)[4] (0.000000 sec.)
+      lb:(<map_1035@20:0> = 0)
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(12311)[4]
+        lb:(<map_1035@20:0> = 0)
+        nub:false
+        begin ExtFormula.Formula.case_analysis_boolean(12315)[5]
+          ts: (<map_1035@20:0> = 0)
+          
+        end ExtFormula.Formula.case_analysis_boolean(12315)[5] (0.001000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(12321)[5]
+          ts: false
+          
+        end ExtFormula.Formula.case_analysis_boolean(12321)[5] (0.000000 sec.)
+        lb':(<map_1035@20:0> = 0)
+        nub':(-1 >= 0)
+        begin InterpProver.interpolate(12324)[5]
+          begin InterpProver.interpolate_fresh(12325)[6]
+            begin InterpProver.interpolate_log(12326)[7]
+              input1: (<map_1035@20:0> = 0)
+              input2: (-1 >= 0)
+              begin InterpProver.interpolate_check(12327)[8]
+                begin InterpProver.interpolate_simplify(12328)[9]
+                  begin InterpProver.interpolate_quick(12348)[10]
+                    
+                  end InterpProver.interpolate_quick(12348)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(12328)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(12327)[8] (0.000000 sec.)
+              output: true
+            end InterpProver.interpolate_log(12326)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(12325)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(12324)[5] (0.000000 sec.)
+        output:
+          P[<map_1035@20:0>](<map_1035@20:0>:int) = true
+      end ApronInterface.convex_hull_interpolate(12311)[4] (0.001000 sec.)
+      Horn clauses:
+        P[<<zip_1032@8:2>@16:0>](<f_main_1296@25:0>:int,<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+        (0 < <f_main_1296@25:0>) |- bot
+        
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+        ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+        |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,
+                                    <<zip_1032@8:2>@16:0>:int)
+        
+         (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                                <zip_1032@8:1>:int)
+      lower bounds:
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int) = (<zip_1032@8:1> = <zip_1032@8:0>)
+        P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,<<zip_1032@8:2>@16:0>:int) =
+        ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+      upper bounds:
+        P[<<zip_1032@8:2>@16:0>](var18:int,var19:int,var20:int) = ((0 >= var18) || (var18 <> var19))
+      begin GenHcSolver.classify_pids(13369)[4]
+        output:
+          [<<zip_1032@8:2>@16:0>]
+      end GenHcSolver.classify_pids(13369)[4] (0.000000 sec.)
+      lb:((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+      nub:(not ((0 >= <zip_1032@8:0>) || (<zip_1032@8:0> <> <zip_1032@8:1>)))
+      begin ApronInterface.convex_hull_interpolate(13372)[4]
+        lb:((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+        nub:(not ((0 >= <zip_1032@8:0>) || (<zip_1032@8:0> <> <zip_1032@8:1>)))
+        begin ExtFormula.Formula.case_analysis_boolean(13385)[5]
+          ts: ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+          
+        end ExtFormula.Formula.case_analysis_boolean(13385)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(13405)[5]
+          ts: ((0 < <zip_1032@8:0>) && (<zip_1032@8:0> = <zip_1032@8:1>))
+          
+        end ExtFormula.Formula.case_analysis_boolean(13405)[5] (0.000000 sec.)
+        lb':((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:1> = 0) && (<zip_1032@8:0> = 0)))
+        nub':(((<zip_1032@8:1> + (-1 * <zip_1032@8:0>)) = 0) && ((-1 + <zip_1032@8:0>) >= 0))
+        begin InterpProver.interpolate(13411)[5]
+          begin InterpProver.interpolate_fresh(13412)[6]
+            begin InterpProver.interpolate_log(13413)[7]
+              input1: ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:1> = 0) && (<zip_1032@8:0> = 0)))
+              input2: (((<zip_1032@8:1> + (-1 * <zip_1032@8:0>)) = 0) && ((-1 + <zip_1032@8:0>) >= 0))
+              begin InterpProver.interpolate_check(13414)[8]
+                begin InterpProver.interpolate_simplify(13415)[9]
+                  begin InterpProver.interpolate_quick(13487)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(13496)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(13497)[12]
+                        begin CsisatInterface.interpolate_csisat_log(13498)[13]
+                          input1: (0 = v_sep_zip_1032_sep_8_sep_0 & 0 = v_sep_zip_1032_sep_8_sep_1)
+                          input2: (v_sep_zip_1032_sep_8_sep_0 = v_sep_zip_1032_sep_8_sep_1 & 1 <= v_sep_zip_1032_sep_8_sep_0)
+                          begin CsisatInterface.interpolate_csisat_raw(13499)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(13499)[14] (0.000000 sec.)
+                          output: 2*v_sep_zip_1032_sep_8_sep_0 <= 0
+                          
+                        end CsisatInterface.interpolate_csisat_log(13498)[13] (0.001000 sec.)
+                        after simplification: 2*v_sep_zip_1032_sep_8_sep_0 <= 0
+                        after dnf conversion: ((2*v_sep_zip_1032_sep_8_sep_0 <= 0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(13497)[12] (0.001000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(13496)[11] (0.001000 sec.)
+                    
+                  end InterpProver.interpolate_quick(13487)[10] (0.001000 sec.)
+                  
+                end InterpProver.interpolate_simplify(13415)[9] (0.002000 sec.)
+                
+              end InterpProver.interpolate_check(13414)[8] (0.002000 sec.)
+              output: (<zip_1032@8:0> <= 0)
+            end InterpProver.interpolate_log(13413)[7] (0.002000 sec.)
+            
+          end InterpProver.interpolate_fresh(13412)[6] (0.002000 sec.)
+          
+        end InterpProver.interpolate(13411)[5] (0.002000 sec.)
+        output:
+          P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,<<zip_1032@8:2>@16:0>:int) =
+          (<zip_1032@8:0> <= 0)
+      end ApronInterface.convex_hull_interpolate(13372)[4] (0.003000 sec.)
+      Horn clauses:
+         (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                                <zip_1032@8:1>:int)
+      lower bounds:
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int) = (<zip_1032@8:1> = <zip_1032@8:0>)
+      upper bounds:
+        P[<zip_1032@8:1>](var21:int,var22:int) = true
+      begin GenHcSolver.classify_pids(13888)[4]
+        output:
+          [<zip_1032@8:1>]
+      end GenHcSolver.classify_pids(13888)[4] (0.000000 sec.)
+      lb:(<zip_1032@8:1> = <zip_1032@8:0>)
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(13891)[4]
+        lb:(<zip_1032@8:1> = <zip_1032@8:0>)
+        nub:false
+        begin ExtFormula.Formula.case_analysis_boolean(13896)[5]
+          ts: (<zip_1032@8:1> = <zip_1032@8:0>)
+          
+        end ExtFormula.Formula.case_analysis_boolean(13896)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(13903)[5]
+          ts: false
+          
+        end ExtFormula.Formula.case_analysis_boolean(13903)[5] (0.000000 sec.)
+        lb':((<zip_1032@8:1> + (-1 * <zip_1032@8:0>)) = 0)
+        nub':(-1 >= 0)
+        begin InterpProver.interpolate(13906)[5]
+          begin InterpProver.interpolate_fresh(13907)[6]
+            begin InterpProver.interpolate_log(13908)[7]
+              input1: ((<zip_1032@8:1> + (-1 * <zip_1032@8:0>)) = 0)
+              input2: (-1 >= 0)
+              begin InterpProver.interpolate_check(13909)[8]
+                begin InterpProver.interpolate_simplify(13910)[9]
+                  begin InterpProver.interpolate_quick(13926)[10]
+                    
+                  end InterpProver.interpolate_quick(13926)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(13910)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(13909)[8] (0.000000 sec.)
+              output: true
+            end InterpProver.interpolate_log(13908)[7] (0.000999 sec.)
+            
+          end InterpProver.interpolate_fresh(13907)[6] (0.000999 sec.)
+          
+        end InterpProver.interpolate(13906)[5] (0.000999 sec.)
+        output:
+          P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int) = true
+      end ApronInterface.convex_hull_interpolate(13891)[4] (0.000999 sec.)
+      begin HcSolver.check_validity(13993)[4]
+        input:
+          P[<fail_1303@28:0>](<fail_1303@28:0>:bool)|- bot
+          
+          P[<<zip_1032@8:2>@16:0>](<f_main_1296@25:0>:int,<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+          P[<<map_1035@20:1>@23:0>](<f_main_1296@25:1>:int,<f_main_1296@25:3>:int),
+          ((<f_main_1296@25:3> < <f_main_1296@25:0>) && <fail_1303@28:0>) |- P[<fail_1303@28:0>](
+          <fail_1303@28:0>:bool)
+          
+          P[<map_1035@20:0>](<map_1035@20:0>:int), ((<map_1035@20:0> = 0) && (<<map_1035@20:1>@23:0> = 0))
+          |- P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int)
+          
+          P[<<zip_1032@8:2>@16:0>](<f_main_1295@18:0>:int,<f_main_1295@18:0>:int,<map_1035@20:0>:int)|- P[<map_1035@20:0>](
+          <map_1035@20:0>:int)
+          
+          P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+          ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+          |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,
+                                      <<zip_1032@8:2>@16:0>:int)
+          
+           (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                                  <zip_1032@8:1>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(13993)[4] (0.003000 sec.)
+      solution:
+        P[<fail_1303@28:0>](<fail_1303@28:0>:bool) = false
+        P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int) = (0 <= <<map_1035@20:1>@23:0>)
+        P[<map_1035@20:0>](<map_1035@20:0>:int) = true
+        P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,<<zip_1032@8:2>@16:0>:int) =
+        (<zip_1032@8:0> <= 0)
+        P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int) = true
+    end GenHcSolver.solve(8126)[3] (0.038994 sec.)
+    begin YhornInterface.solve(14413)[3]
+      begin HcSolver.solve_ub(14414)[4]
+        encoded:
+          P[<fail_1303@28:0>](<fail_1303@28:0>:int)|- bot
+          
+          P[<<zip_1032@8:2>@16:0>](<f_main_1296@25:0>:int,<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+          P[<<map_1035@20:1>@23:0>](<f_main_1296@25:1>:int,<f_main_1296@25:3>:int),
+          ((<f_main_1296@25:3> < <f_main_1296@25:0>) && (<fail_1303@28:0> = 1))
+          |- P[<fail_1303@28:0>](<fail_1303@28:0>:int)
+          
+          P[<map_1035@20:0>](<map_1035@20:0>:int), ((<map_1035@20:0> = 0) && (<<map_1035@20:1>@23:0> = 0))
+          |- P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int)
+          
+          P[<<zip_1032@8:2>@16:0>](<f_main_1295@18:0>:int,<f_main_1295@18:0>:int,<map_1035@20:0>:int)|- P[<map_1035@20:0>](
+          <map_1035@20:0>:int)
+          
+          P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+          ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+          |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,
+                                      <<zip_1032@8:2>@16:0>:int)
+          
+           (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                                  <zip_1032@8:1>:int)
+        input to Yhorn:
+          P[<fail_1303@28:0>](<fail_1303@28:0>:int)|- bot
+          
+          P[<<zip_1032@8:2>@16:0>](<f_main_1296@25:0>:int,<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+          P[<<map_1035@20:1>@23:0>](<f_main_1296@25:1>:int,<f_main_1296@25:3>:int),
+          ((<f_main_1296@25:3> < <f_main_1296@25:0>) && (<fail_1303@28:0> = 1))
+          |- P[<fail_1303@28:0>](<fail_1303@28:0>:int)
+          
+          P[<map_1035@20:0>](<map_1035@20:0>:int), ((<<map_1035@20:1>@23:0> = 0) && (<map_1035@20:0> = 0))
+          |- P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int)
+          
+          P[<<zip_1032@8:2>@16:0>](<f_main_1295@18:0>:int,<f_main_1295@18:0>:int,<map_1035@20:0>:int)|- P[<map_1035@20:0>](
+          <map_1035@20:0>:int)
+          
+          P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+          ((<zip_1032@8:1> = 0) && ((<zip_1032@8:0> = 0) && (<<zip_1032@8:2>@16:0> = 0)))
+          |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,
+                                      <<zip_1032@8:2>@16:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1303_sep_28_sep_0($11)) -> 1=0.
+(($11-1=0) & ($12-$13<0)) & (v_sep_map_1035_sep_20_sep_1_sep_23_sep_0($14,$12)) & (v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0($13,$13,$14)) -> v_sep_fail_1303_sep_28_sep_0($11).
+(($15=0) & ($16=0)) & (v_sep_map_1035_sep_20_sep_0($15)) -> v_sep_map_1035_sep_20_sep_1_sep_23_sep_0($15,$16).
+(0=0) & (v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0($17,$17,$15)) -> v_sep_map_1035_sep_20_sep_0($15).
+(($18=0) & ($19=0) & ($20=0)) & (v_sep_zip_1032_sep_8_sep_1($19,$20)) -> v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0($19,$20,$18).
+-$19+$20=0 -> v_sep_zip_1032_sep_8_sep_1($19,$20).
+
+
+v_sep_fail_1303_sep_28_sep_0: X
+v_sep_map_1035_sep_20_sep_0: X
+v_sep_map_1035_sep_20_sep_1_sep_23_sep_0: X
+v_sep_zip_1032_sep_8_sep_1: X
+v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0: X
+.......
+v_sep_fail_1303_sep_28_sep_0: X
+v_sep_map_1035_sep_20_sep_0: X
+v_sep_map_1035_sep_20_sep_1_sep_23_sep_0: X
+v_sep_zip_1032_sep_8_sep_1: X
+v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0: X
+....
+v_sep_fail_1303_sep_28_sep_0: X
+v_sep_map_1035_sep_20_sep_0: X
+v_sep_map_1035_sep_20_sep_1_sep_23_sep_0: X
+v_sep_zip_1032_sep_8_sep_1: X
+v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0: X
+......
+v_sep_fail_1303_sep_28_sep_0: X
+v_sep_map_1035_sep_20_sep_0: X
+v_sep_map_1035_sep_20_sep_1_sep_23_sep_0: X
+v_sep_zip_1032_sep_8_sep_1: X
+v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0: X
+.......Split conj [18] 0.305953
+(Reconstrcut: 9 **)
+v_sep_fail_1303_sep_28_sep_0: X
+v_sep_map_1035_sep_20_sep_0: X
+v_sep_map_1035_sep_20_sep_1_sep_23_sep_0: X
+v_sep_zip_1032_sep_8_sep_1: X
+v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0: (X) & (X)
+........
+v_sep_fail_1303_sep_28_sep_0: X
+v_sep_map_1035_sep_20_sep_0: X
+v_sep_map_1035_sep_20_sep_1_sep_23_sep_0: X
+v_sep_zip_1032_sep_8_sep_1: X
+v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0: (X) & (X)
+....
+v_sep_fail_1303_sep_28_sep_0: X
+v_sep_map_1035_sep_20_sep_0: X
+v_sep_map_1035_sep_20_sep_1_sep_23_sep_0: X
+v_sep_zip_1032_sep_8_sep_1: X
+v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0: (X) & (X)
+......
+v_sep_fail_1303_sep_28_sep_0: X
+v_sep_map_1035_sep_20_sep_0: X
+v_sep_map_1035_sep_20_sep_1_sep_23_sep_0: X
+v_sep_zip_1032_sep_8_sep_1: X
+v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0: (X) & (X)
+.......
+v_sep_fail_1303_sep_28_sep_0: X
+v_sep_map_1035_sep_20_sep_0: X
+v_sep_map_1035_sep_20_sep_1_sep_23_sep_0: X
+v_sep_zip_1032_sep_8_sep_1: X
+v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0: (X) & (X)
+........(0=0) & (v_sep_fail_1303_sep_28_sep_0($11)) -> 1=0.
+(($11-1=0) & ($12-$13<0)) & (v_sep_map_1035_sep_20_sep_1_sep_23_sep_0($14,$12)) & (v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0($13,$13,$14)) -> v_sep_fail_1303_sep_28_sep_0($11).
+(($15=0) & ($16=0)) & (v_sep_map_1035_sep_20_sep_0($15)) -> v_sep_map_1035_sep_20_sep_1_sep_23_sep_0($15,$16).
+(0=0) & (v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0($17,$17,$15)) -> v_sep_map_1035_sep_20_sep_0($15).
+(($18=0) & ($19=0) & ($20=0)) & (v_sep_zip_1032_sep_8_sep_1($19,$20)) -> v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0($19,$20,$18).
+-$19+$20=0 -> v_sep_zip_1032_sep_8_sep_1($19,$20).
+
+           (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                                  <zip_1032@8:1>:int)
+        solution:
+          P[<fail_1303@28:0>]($21:bool) = false
+          P[<map_1035@20:0>]($36:int) = true
+          P[<<map_1035@20:1>@23:0>]($24:int,$26:int) = (0 <= $26)
+          P[<zip_1032@8:1>]($39:int,$41:int) = true
+          P[<<zip_1032@8:2>@16:0>]($29:int,$31:int,$33:int) = ($29 <= 0)
+        
+      end HcSolver.solve_ub(14414)[4] (0.028995 sec.)
+      begin HcSolver.check_validity(14579)[4]
+        input:
+          P[<fail_1303@28:0>](<fail_1303@28:0>:bool)|- bot
+          
+          P[<<zip_1032@8:2>@16:0>](<f_main_1296@25:0>:int,<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+          P[<<map_1035@20:1>@23:0>](<f_main_1296@25:1>:int,<f_main_1296@25:3>:int),
+          ((<f_main_1296@25:3> < <f_main_1296@25:0>) && <fail_1303@28:0>) |- P[<fail_1303@28:0>](
+          <fail_1303@28:0>:bool)
+          
+          P[<map_1035@20:0>](<map_1035@20:0>:int), ((<map_1035@20:0> = 0) && (<<map_1035@20:1>@23:0> = 0))
+          |- P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int)
+          
+          P[<<zip_1032@8:2>@16:0>](<f_main_1295@18:0>:int,<f_main_1295@18:0>:int,<map_1035@20:0>:int)|- P[<map_1035@20:0>](
+          <map_1035@20:0>:int)
+          
+          P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+          ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+          |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,
+                                      <<zip_1032@8:2>@16:0>:int)
+          
+           (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                                  <zip_1032@8:1>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(14579)[4] (0.010999 sec.)
+      solution:
+        P[<fail_1303@28:0>]($21:bool) = false
+        P[<map_1035@20:0>]($36:int) = true
+        P[<<map_1035@20:1>@23:0>]($24:int,$26:int) = (0 <= $26)
+        P[<zip_1032@8:1>]($39:int,$41:int) = true
+        P[<<zip_1032@8:2>@16:0>]($29:int,$31:int,$33:int) = ($29 <= 0)
+    end YhornInterface.solve(14413)[3] (0.039994 sec.)
+    
+  end RefTypeInfer.infer_etrs(177)[2] (0.140979 sec.)
+  refinement types:
+    main_1292: X
+    f_1297: v1:int -> X
+    main_1037: v1:int -> (v2:unit -> X) -> X
+    zip_1032: v1:int -> v2:int -> (v3:{v3:int | (v1 <= 0)} -> X) -> X
+    br_zip_1299: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    f_main_1295: v1:int -> (v2:unit -> X) -> v4:int -> X
+    map_1035: v1:int -> (v2:{v2:int | (0 <= v2)} -> X) -> X
+    f_main_1296: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1303: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    br_zip_1301: var36:bool -> var35:int -> var34:int -> (var33:int -> X) -> X
+    f_1298: var39:int -> var38:unit -> X
+    f_map_1294: var44:int -> (var43:int -> X) -> var41:int -> X
+    f_zip_1293: var50:int -> var49:int -> (var48:int -> X) -> var46:int -> X
+    loop_1079: var54:unit -> (var53:int -> X) -> X
+  abstraction types:
+    main_1292: X
+    f_1297: v1:int -> X
+    main_1037: v1:int -> (v2:unit -> X) -> X
+    zip_1032: v1:int -> v2:int -> (v3:int[v3 -> (v1 <= 0)] -> X) -> X
+    br_zip_1299: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    f_main_1295: v1:int -> (v2:unit -> X) -> v4:int -> X
+    map_1035: v1:int -> (v2:int[v2 -> (0 <= v2)] -> X) -> X
+    f_main_1296: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1303: v1:bool -> (v2:unit -> X) -> X
+    br_zip_1301: var36:bool -> var35:int -> var34:int -> (var33:int -> X) -> X
+    f_1298: var39:int -> var38:unit -> X
+    f_map_1294: var44:int -> (var43:int -> X) -> var41:int -> X
+    f_zip_1293: var50:int -> var49:int -> (var48:int -> X) -> var46:int -> X
+    loop_1079: var54:unit -> (var53:int -> X) -> X
+  
+end AbsTypeInfer.refine(176)[1] (0.143978 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1292
+  main_1292 -> (rand_int f_1297)
+  br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 when b_1300 -> (k_zip_1132 0)
+  br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 when (not b_1300) -> (loop_1079 () k_zip_1132)
+  br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 when b_1302 -> (loop_1079 () k_zip_1132)
+  br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 when (not b_1302) ->
+      (zip_1032 (x_1033 - 1) (y_1034 - 1) (f_zip_1293 x_1033 y_1034 k_zip_1132))
+  f_1297 x_1267 -> (main_1037 x_1267 (f_1298 x_1267))
+  f_1298 x_1267 x_1264 -> end
+  f_main_1295 n_1038 k_main_1225 x_1250 -> (map_1035 x_1250 (f_main_1296 n_1038 x_1250 k_main_1225))
+  f_main_1296 n_1038 x_1250 k_main_1225 x_1228 when (x_1228 >= n_1038) -> (k_main_1225 ())
+  f_main_1296 n_1038 x_1250 k_main_1225 x_1228 when (not (x_1228 >= n_1038)) -> (fail_1303 true k_main_1225)
+  f_map_1294 x_1036 k_map_1193 x_1197 -> (k_map_1193 (1 + x_1197))
+  f_zip_1293 x_1033 y_1034 k_zip_1132 x_1160 -> (k_zip_1132 (1 + x_1160))
+  fail_1303 b k -> {fail} => (k ())
+  loop_1079 x_1031 k_loop_1105 -> (loop_1079 x_1031 k_loop_1105)
+  main_1037 n_1038 k_main_1225 -> (zip_1032 n_1038 n_1038 (f_main_1295 n_1038 k_main_1225))
+  map_1035 x_1036 k_map_1193 when (x_1036 = 0) -> (k_map_1193 0)
+  map_1035 x_1036 k_map_1193 when (not (x_1036 = 0)) -> (map_1035 (x_1036 - 1) (f_map_1294 x_1036 k_map_1193))
+  zip_1032 x_1033 y_1034 k_zip_1132 when (x_1033 = 0) -> (br_zip_1299 (y_1034 = 0) x_1033 y_1034 k_zip_1132)
+  zip_1032 x_1033 y_1034 k_zip_1132 when (not (x_1033 = 0)) -> (br_zip_1301 (y_1034 = 0) x_1033 y_1034 k_zip_1132)
+Types:
+  main_1292 : X
+  fail_1303 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  loop_1079 : (unit -> (int -> X) -> X)
+  map_1035 : (int -> (x_3:int[x_3 >= 0] -> X) -> X)
+  zip_1032 : (x_1:int -> int -> (int[x_1 <= 0] -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1292 ... --> 
+  f_1297 ... --> 
+  main_1037 ... --> 
+  zip_1032 [2/2] ... --> 
+  br_zip_1301 [2/2] ... --> 
+  zip_1032 [1/2] ... --> 
+  br_zip_1299 [1/2] ... --> 
+  f_zip_1293 ... --> 
+  f_main_1295 ... --> 
+  map_1035 [1/2] ... --> 
+  f_main_1296 [2/2] ... --> 
+  fail_1303 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 1; 0; 0; 0; 0; 0; 1; 0
+
+(1-3) Checking counter-example ... DONE!
+
+(1-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(15377)[1]
+  program:
+    main_1292  | true = ((Random.int 0) f_1297)
+    br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 | b_1300 = (k_zip_1132 0)
+    br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 | (not b_1300) = (loop_1079 ()
+                                                                    k_zip_1132)
+    br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 | b_1302 = (loop_1079 ()
+                                                                    k_zip_1132)
+    br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 | (not b_1302) = (zip_1032
+                                                                    (
+                                                                    x_1033 - 1)
+                                                                    (
+                                                                    y_1034 - 1)
+                                                                    (
+                                                                    f_zip_1293 x_1033
+                                                                    y_1034
+                                                                    k_zip_1132))
+    f_1297 x_1267 | true = (main_1037 x_1267
+                                      (f_1298 x_1267))
+    f_1298 x_1267 x_1264 | true = end
+    f_main_1295 n_1038 k_main_1225 x_1250 | true = (map_1035 x_1250
+                                                             (f_main_1296 n_1038
+                                                                    x_1250
+                                                                    k_main_1225))
+    f_main_1296 n_1038 x_1250 k_main_1225 x_1228 | (x_1228 >= n_1038) = (
+    k_main_1225 ())
+    f_main_1296 n_1038 x_1250 k_main_1225 x_1228 | (not (x_1228 >= n_1038)) = (
+    fail_1303 true
+              k_main_1225)
+    f_map_1294 x_1036 k_map_1193 x_1197 | true = (k_map_1193 (1 + x_1197))
+    f_zip_1293 x_1033 y_1034 k_zip_1132 x_1160 | true = (k_zip_1132 (
+                                                                    1 + x_1160))
+    fail_1303 b k | true = (fail ())
+    loop_1079 x_1031 k_loop_1105 | true = (loop_1079 x_1031
+                                                     k_loop_1105)
+    main_1037 n_1038 k_main_1225 | true = (zip_1032 n_1038
+                                                    n_1038
+                                                    (f_main_1295 n_1038
+                                                                 k_main_1225))
+    map_1035 x_1036 k_map_1193 | (x_1036 = 0) = (k_map_1193 0)
+    map_1035 x_1036 k_map_1193 | (not (x_1036 = 0)) = (map_1035 (x_1036 - 1)
+                                                                (f_map_1294 x_1036
+                                                                    k_map_1193))
+    zip_1032 x_1033 y_1034 k_zip_1132 | (x_1033 = 0) = (br_zip_1299 (
+                                                                    y_1034 = 0)
+                                                                    x_1033
+                                                                    y_1034
+                                                                    k_zip_1132)
+    zip_1032 x_1033 y_1034 k_zip_1132 | (not (x_1033 = 0)) = (br_zip_1301 (
+                                                                    y_1034 = 0)
+                                                                    x_1033
+                                                                    y_1034
+                                                                    k_zip_1132)
+    main_1292:X
+    br_zip_1299:bool -> int -> int -> (int -> X) -> X
+    br_zip_1301:bool -> int -> int -> (int -> X) -> X
+    f_1297:int -> X
+    f_1298:int -> unit -> X
+    f_main_1295:int -> (unit -> X) -> int -> X
+    f_main_1296:int -> int -> (unit -> X) -> int -> X
+    f_map_1294:int -> (int -> X) -> int -> X
+    f_zip_1293:int -> int -> (int -> X) -> int -> X
+    fail_1303:bool -> (unit -> X) -> X
+    loop_1079:unit -> (int -> X) -> X
+    main_1037:int -> (unit -> X) -> X
+    map_1035:int -> (int -> X) -> X
+    zip_1032:int -> int -> (int -> X) -> X
+  inlined functions: br_zip_1299,br_zip_1301,f_1297,f_1298,f_main_1295,f_main_1296,f_map_1294,f_zip_1293,main_1037
+  counterexample: 0:0:0:1:1:0:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1297@34:0> = var55)
+     [true.(<main_1037@36:0> = <f_1297@34:0>)
+      [true.((<zip_1032@38:0> = <main_1037@36:0>) && (<zip_1032@38:1> = <main_1037@36:0>))
+       [(not (<zip_1032@38:0> = 0)).
+        ((<br_zip_1301@41:0> = (<zip_1032@38:1> = 0)) &&
+         ((<br_zip_1301@41:1> = <zip_1032@38:0>) && (<br_zip_1301@41:2> = <zip_1032@38:1>)))
+        [(not <br_zip_1301@41:0>).
+         ((<zip_1032@44:0> = (<br_zip_1301@41:1> - 1)) && (<zip_1032@44:1> = (<br_zip_1301@41:2> - 1)))
+         [(<zip_1032@44:0> = 0).
+          ((<br_zip_1299@47:0> = (<zip_1032@44:1> = 0)) &&
+           ((<br_zip_1299@47:1> = <zip_1032@44:0>) && (<br_zip_1299@47:2> = <zip_1032@44:1>)))
+          [<br_zip_1299@47:0>.(<<br_zip_1299@47:3>@50:0> = 0)
+           [true.(<<zip_1032@44:2>@52:0> = <<br_zip_1299@47:3>@50:0>)
+            [true.
+             ((<f_zip_1293@54:0> = <br_zip_1301@41:1>) &&
+              ((<f_zip_1293@54:1> = <br_zip_1301@41:2>) && (<f_zip_1293@54:3> = <<zip_1032@44:2>@52:0>)))
+             [true.(<<f_zip_1293@54:2>@56:0> = (1 + <f_zip_1293@54:3>))
+              [true.(<<br_zip_1301@41:3>@58:0> = <<f_zip_1293@54:2>@56:0>)
+               [true.(<<zip_1032@38:2>@60:0> = <<br_zip_1301@41:3>@58:0>)
+                [true.((<f_main_1295@62:0> = <main_1037@36:0>) && (<f_main_1295@62:2> = <<zip_1032@38:2>@60:0>))
+                 [true.(<map_1035@64:0> = <f_main_1295@62:2>)
+                  [(<map_1035@64:0> = 0).(<<map_1035@64:1>@67:0> = 0)
+                   [true.
+                    ((<f_main_1296@69:0> = <f_main_1295@62:0>) &&
+                     ((<f_main_1296@69:1> = <f_main_1295@62:2>) && (<f_main_1296@69:3> = <<map_1035@64:1>@67:0>)))
+                    [(not (<f_main_1296@69:3> >= <f_main_1296@69:0>)).(<fail_1303@72:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(15378)[2]
+    horn clauses:
+      P[<fail_1303@72:0>](<fail_1303@72:0>:bool)|- bot
+      
+      P[<f_main_1296@69:3>](<f_main_1296@69:0>:int,<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+      ((<f_main_1296@69:3> < <f_main_1296@69:0>) && <fail_1303@72:0>) |- P[<fail_1303@72:0>](
+      <fail_1303@72:0>:bool)
+      
+      P[<f_main_1295@62:2>](<f_main_1296@69:0>:int,<f_main_1296@69:1>:int),
+      P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int)|- P[<f_main_1296@69:3>](
+      <f_main_1296@69:0>:int,<f_main_1296@69:1>:int,<f_main_1296@69:3>:int)
+      
+      P[<map_1035@64:0>](<map_1035@64:0>:int), ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+      |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+      
+      P[<f_main_1295@62:2>](<f_main_1295@62:0>:int,<map_1035@64:0>:int)|- P[<map_1035@64:0>](<map_1035@64:0>:int)
+      
+      P[<main_1037@36:0>](<f_main_1295@62:0>:int),
+      P[<<zip_1032@38:2>@60:0>](<f_main_1295@62:0>:int,<f_main_1295@62:0>:int,<f_main_1295@62:2>:int)|- P[<f_main_1295@62:2>](
+      <f_main_1295@62:0>:int,<f_main_1295@62:2>:int)
+      
+      P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int),
+      P[<<br_zip_1301@41:3>@58:0>]((<zip_1032@38:1> = 0):bool,<zip_1032@38:0>:int,<zip_1032@38:1>:int,<<zip_1032@38:2>@60:0>:int),
+      (<zip_1032@38:0> <> 0)
+      |- P[<<zip_1032@38:2>@60:0>](<zip_1032@38:0>:int,<zip_1032@38:1>:int,
+                                   <<zip_1032@38:2>@60:0>:int)
+      
+      P[<br_zip_1301@41:2>](<br_zip_1301@41:0>:bool,<br_zip_1301@41:1>:int,<br_zip_1301@41:2>:int),
+      P[<<f_zip_1293@54:2>@56:0>](<br_zip_1301@41:1>:int,<br_zip_1301@41:2>:int,<<br_zip_1301@41:3>@58:0>:int),
+      (not <br_zip_1301@41:0>)
+      |- P[<<br_zip_1301@41:3>@58:0>](<br_zip_1301@41:0>:bool,<br_zip_1301@41:1>:int,
+                                      <br_zip_1301@41:2>:int,<<br_zip_1301@41:3>@58:0>:int)
+      
+      P[<f_zip_1293@54:3>](<f_zip_1293@54:0>:int,<f_zip_1293@54:1>:int,(
+                           -1 + <<f_zip_1293@54:2>@56:0>):int)|- P[<<f_zip_1293@54:2>@56:0>](
+      <f_zip_1293@54:0>:int,<f_zip_1293@54:1>:int,<<f_zip_1293@54:2>@56:0>:int)
+      
+      P[<br_zip_1301@41:2>](false:bool,<f_zip_1293@54:0>:int,<f_zip_1293@54:1>:int),
+      P[<<zip_1032@44:2>@52:0>]((-1 + <f_zip_1293@54:0>):int,(-1 + <f_zip_1293@54:1>):int,<f_zip_1293@54:3>:int)|- P[<f_zip_1293@54:3>](
+      <f_zip_1293@54:0>:int,<f_zip_1293@54:1>:int,<f_zip_1293@54:3>:int)
+      
+      P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int),
+      P[<<br_zip_1299@47:3>@50:0>]((<zip_1032@44:1> = 0):bool,<zip_1032@44:0>:int,<zip_1032@44:1>:int,<<zip_1032@44:2>@52:0>:int),
+      (<zip_1032@44:0> = 0)
+      |- P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,
+                                   <<zip_1032@44:2>@52:0>:int)
+      
+      P[<br_zip_1299@47:2>](<br_zip_1299@47:0>:bool,<br_zip_1299@47:1>:int,<br_zip_1299@47:2>:int),
+      ((<<br_zip_1299@47:3>@50:0> = 0) && <br_zip_1299@47:0>)
+      |- P[<<br_zip_1299@47:3>@50:0>](<br_zip_1299@47:0>:bool,<br_zip_1299@47:1>:int,
+                                      <br_zip_1299@47:2>:int,<<br_zip_1299@47:3>@50:0>:int)
+      
+      P[<zip_1032@44:1>](<br_zip_1299@47:1>:int,<br_zip_1299@47:2>:int),
+      ((<br_zip_1299@47:1> = 0) && (<br_zip_1299@47:0> = (<br_zip_1299@47:2> = 0)))
+      |- P[<br_zip_1299@47:2>](<br_zip_1299@47:0>:bool,<br_zip_1299@47:1>:int,
+                               <br_zip_1299@47:2>:int)
+      
+      P[<br_zip_1301@41:2>](false:bool,(1 + <zip_1032@44:0>):int,(1 + <zip_1032@44:1>):int)|- P[<zip_1032@44:1>](
+      <zip_1032@44:0>:int,<zip_1032@44:1>:int)
+      
+      P[<zip_1032@38:1>](<br_zip_1301@41:1>:int,<br_zip_1301@41:2>:int),
+      ((<br_zip_1301@41:1> <> 0) && (<br_zip_1301@41:0> = (<br_zip_1301@41:2> = 0)))
+      |- P[<br_zip_1301@41:2>](<br_zip_1301@41:0>:bool,<br_zip_1301@41:1>:int,
+                               <br_zip_1301@41:2>:int)
+      
+      P[<main_1037@36:0>](<zip_1032@38:1>:int), (<zip_1032@38:1> = <zip_1032@38:0>)
+      |- P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int)
+      
+      P[<f_1297@34:0>](<main_1037@36:0>:int)|- P[<main_1037@36:0>](<main_1037@36:0>:int)
+      
+      |- P[<f_1297@34:0>](<f_1297@34:0>:int)
+    call trees:
+      <main_1292@31>
+        <f_1297@34>
+          <main_1037@36>
+            <zip_1032@38>
+              <br_zip_1301@41>
+                <zip_1032@44>
+                  <br_zip_1299@47>
+                  </<br_zip_1299@47:3>@50>
+                </<zip_1032@44:2>@52>
+                <f_zip_1293@54>
+                </<f_zip_1293@54:2>@56>
+              </<br_zip_1301@41:3>@58>
+            </<zip_1032@38:2>@60>
+            <f_main_1295@62>
+              <map_1035@64>
+              </<map_1035@64:1>@67>
+              <f_main_1296@69>
+                <fail_1303@72>
+    inlined horn clauses:
+      P[<fail_1303@72:0>](<fail_1303@72:0>:bool)|- bot
+      
+      P[<<zip_1032@38:2>@60:0>](<f_main_1296@69:0>:int,<f_main_1296@69:0>:int,<f_main_1296@69:1>:int),
+      P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+      ((<f_main_1296@69:3> < <f_main_1296@69:0>) && <fail_1303@72:0>) |- P[<fail_1303@72:0>](
+      <fail_1303@72:0>:bool)
+      
+      P[<map_1035@64:0>](<map_1035@64:0>:int), ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+      |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+      
+      P[<<zip_1032@38:2>@60:0>](<f_main_1295@62:0>:int,<f_main_1295@62:0>:int,<map_1035@64:0>:int)|- P[<map_1035@64:0>](
+      <map_1035@64:0>:int)
+      
+      P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int),
+      P[<<zip_1032@44:2>@52:0>]((-1 + <zip_1032@38:0>):int,(-1 + <zip_1032@38:1>):int,(
+                                -1 + <<zip_1032@38:2>@60:0>):int), ((<zip_1032@38:0> <> 0) && (<zip_1032@38:1> <> 0))
+      |- P[<<zip_1032@38:2>@60:0>](<zip_1032@38:0>:int,<zip_1032@38:1>:int,
+                                   <<zip_1032@38:2>@60:0>:int)
+      
+      P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int),
+      ((<<zip_1032@44:2>@52:0> = 0) && ((<zip_1032@44:0> = 0) && (<zip_1032@44:1> = 0)))
+      |- P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,
+                                   <<zip_1032@44:2>@52:0>:int)
+      
+      P[<zip_1032@38:1>]((1 + <zip_1032@44:0>):int,(1 + <zip_1032@44:1>):int),
+      (((1 + <zip_1032@44:0>) <> 0) && ((1 + <zip_1032@44:1>) <> 0))
+      |- P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int)
+      
+       (<zip_1032@38:1> = <zip_1032@38:0>) |- P[<zip_1032@38:1>](<zip_1032@38:0>:int,
+                                                                 <zip_1032@38:1>:int)
+    begin ParamSubstInfer.infer(18295)[3]
+      
+    end ParamSubstInfer.infer(18295)[3] (0.034995 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(18297)[3]
+      
+    end RefTypeInfer.elim_coeffs(18297)[3] (0.001000 sec.)
+    begin GenHcSolver.solve(18680)[3]
+      Horn clauses:
+        P[<fail_1303@72:0>](<fail_1303@72:0>:bool)|- bot
+        
+        P[<<zip_1032@38:2>@60:0>](<f_main_1296@69:0>:int,<f_main_1296@69:0>:int,<f_main_1296@69:1>:int),
+        P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+        ((<f_main_1296@69:3> < <f_main_1296@69:0>) && <fail_1303@72:0>) |- P[<fail_1303@72:0>](
+        <fail_1303@72:0>:bool)
+        
+        P[<map_1035@64:0>](<map_1035@64:0>:int), ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+        |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+        
+        P[<<zip_1032@38:2>@60:0>](<f_main_1295@62:0>:int,<f_main_1295@62:0>:int,<map_1035@64:0>:int)|- P[<map_1035@64:0>](
+        <map_1035@64:0>:int)
+        
+        P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int),
+        P[<<zip_1032@44:2>@52:0>]((-1 + <zip_1032@38:0>):int,(-1 + <zip_1032@38:1>):int,(
+                                  -1 + <<zip_1032@38:2>@60:0>):int), (
+        (<zip_1032@38:0> <> 0) && (<zip_1032@38:1> <> 0))
+        |- P[<<zip_1032@38:2>@60:0>](<zip_1032@38:0>:int,<zip_1032@38:1>:int,
+                                     <<zip_1032@38:2>@60:0>:int)
+        
+        P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int),
+        ((<<zip_1032@44:2>@52:0> = 0) && ((<zip_1032@44:0> = 0) && (<zip_1032@44:1> = 0)))
+        |- P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,
+                                     <<zip_1032@44:2>@52:0>:int)
+        
+        P[<zip_1032@38:1>]((1 + <zip_1032@44:0>):int,(1 + <zip_1032@44:1>):int),
+        (((1 + <zip_1032@44:0>) <> 0) && ((1 + <zip_1032@44:1>) <> 0))
+        |- P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int)
+        
+         (<zip_1032@38:1> = <zip_1032@38:0>) |- P[<zip_1032@38:1>](<zip_1032@38:0>:int,
+                                                                   <zip_1032@38:1>:int)
+      lower bounds:
+        P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int) = (<zip_1032@38:1> = <zip_1032@38:0>)
+        P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int) =
+        (((1 + <zip_1032@44:0>) <> 0) && (((1 + <zip_1032@44:1>) <> 0) && (<zip_1032@44:1> = <zip_1032@44:0>)))
+        P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,<<zip_1032@44:2>@52:0>:int) =
+        ((<<zip_1032@44:2>@52:0> = 0) && ((<zip_1032@44:0> = 0) && (<zip_1032@44:1> = 0)))
+        P[<<zip_1032@38:2>@60:0>](<zip_1032@38:0>:int,<zip_1032@38:1>:int,<<zip_1032@38:2>@60:0>:int) =
+        ((<zip_1032@38:0> = 1) && ((<zip_1032@38:1> = 1) && (<<zip_1032@38:2>@60:0> = 1)))
+        P[<map_1035@64:0>](<map_1035@64:0>:int) = (<map_1035@64:0> = 1)
+        P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int) = false
+        P[<fail_1303@72:0>](<fail_1303@72:0>:bool) = false
+      upper bounds:
+        P[<<zip_1032@38:2>@60:0>](var65:int,var66:int,var67:int) = ((var67 <> 0) || ((0 >= var65) || (var65 <> var66)))
+        P[<<zip_1032@44:2>@52:0>](var59:int,var60:int,var61:int) =
+        (((1 + var61) <> 0) || (((1 + var60) <= 0) || (var60 <> var59)))
+      begin GenHcSolver.classify_pids(24037)[4]
+        output:
+          [<<zip_1032@44:2>@52:0>;<<zip_1032@38:2>@60:0>]
+      end GenHcSolver.classify_pids(24037)[4] (0.000000 sec.)
+      begin ApronInterface.convex_hull_interpolate(24118)[4]
+        lb:(((<<zip_1032@44:2>@52:0> = 0) && ((<zip_1032@44:0> = 0) && (<zip_1032@44:1> = 0))) ||
+            ((<zip_1032@44:0> = 1) && ((<zip_1032@44:1> = 1) && (<<zip_1032@44:2>@52:0> = 1))))
+        nub:((not
+                (((1 + <<zip_1032@44:2>@52:0>) <> 0) ||
+                 (((1 + <zip_1032@44:1>) <= 0) || (<zip_1032@44:1> <> <zip_1032@44:0>)))) ||
+             (not ((<<zip_1032@44:2>@52:0> <> 0) || ((0 >= <zip_1032@44:0>) || (<zip_1032@44:0> <> <zip_1032@44:1>)))))
+        lb':(((<<zip_1032@44:2>@52:0> = 0) && ((<zip_1032@44:0> = 0) && (<zip_1032@44:1> = 0))) ||
+             ((<zip_1032@44:0> = 1) && ((<zip_1032@44:1> = 1) && (<<zip_1032@44:2>@52:0> = 1))))
+        nub':((not
+                 (((1 + <<zip_1032@44:2>@52:0>) <> 0) ||
+                  (((1 + <zip_1032@44:1>) <= 0) || (<zip_1032@44:1> <> <zip_1032@44:0>)))) ||
+              (not ((<<zip_1032@44:2>@52:0> <> 0) || ((0 >= <zip_1032@44:0>) || (<zip_1032@44:0> <> <zip_1032@44:1>)))))
+        begin InterpProver.interpolate(24119)[5]
+          begin InterpProver.interpolate_fresh(24120)[6]
+            begin InterpProver.interpolate_log(24121)[7]
+              input1: (((<<zip_1032@44:2>@52:0> = 0) && ((<zip_1032@44:0> = 0) && (<zip_1032@44:1> = 0))) ||
+                       ((<zip_1032@44:0> = 1) && ((<zip_1032@44:1> = 1) && (<<zip_1032@44:2>@52:0> = 1))))
+              input2: ((not
+                          (((1 + <<zip_1032@44:2>@52:0>) <> 0) ||
+                           (((1 + <zip_1032@44:1>) <= 0) || (<zip_1032@44:1> <> <zip_1032@44:0>)))) ||
+                       (not
+                          ((<<zip_1032@44:2>@52:0> <> 0) ||
+                           ((0 >= <zip_1032@44:0>) || (<zip_1032@44:0> <> <zip_1032@44:1>)))))
+              begin InterpProver.interpolate_check(24122)[8]
+                begin InterpProver.interpolate_simplify(24123)[9]
+                  begin InterpProver.interpolate_quick(24302)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(24311)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(24312)[12]
+                        begin CsisatInterface.interpolate_csisat_log(24313)[13]
+                          input1: ((0 = v_sep_zip_1032_sep_44_sep_0 & 0 = v_sep_zip_1032_sep_44_sep_1 & 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0) | (1 = v_sep_zip_1032_sep_44_sep_0 & 1 = v_sep_zip_1032_sep_44_sep_1 & 1 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0))
+                          input2: ((-1 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & v_sep_zip_1032_sep_44_sep_0 = v_sep_zip_1032_sep_44_sep_1 & 1 <= (1 + v_sep_zip_1032_sep_44_sep_1)) | (0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & v_sep_zip_1032_sep_44_sep_0 = v_sep_zip_1032_sep_44_sep_1 & 1 <= v_sep_zip_1032_sep_44_sep_0))
+                          begin CsisatInterface.interpolate_csisat_raw(24314)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(24314)[14] (0.005000 sec.)
+                          output: ((((not 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 | -2*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= 0) & 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0) | -1*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= -1) & (not 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 | 2*v_sep_zip_1032_sep_44_sep_0 <= 0) & (0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 | -1*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= -1))
+                          
+                        end CsisatInterface.interpolate_csisat_log(24313)[13] (0.005000 sec.)
+                        after simplification: ((((not 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 | -2*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= 0) & 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0) | -1*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= -1) & (not 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 | 2*v_sep_zip_1032_sep_44_sep_0 <= 0) & (0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 | -1*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= -1))
+                        after dnf conversion: ((-2*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= 0 & 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & not 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0) | (-2*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= 0 & 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & not 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & -1*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= -1) | (-2*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= 0 & 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & 2*v_sep_zip_1032_sep_44_sep_0 <= 0 & 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0) | (-2*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= 0 & 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & 2*v_sep_zip_1032_sep_44_sep_0 <= 0 & -1*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= -1) | (not 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & not 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0) | (not 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & not 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & -1*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= -1) | (not 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & 2*v_sep_zip_1032_sep_44_sep_0 <= 0 & 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0) | (not 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & 2*v_sep_zip_1032_sep_44_sep_0 <= 0 & -1*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= -1) | (-1*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= -1 & not 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0) | (-1*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= -1 & not 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & -1*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= -1) | (-1*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= -1 & 2*v_sep_zip_1032_sep_44_sep_0 <= 0 & 0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0) | (-1*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= -1 & 2*v_sep_zip_1032_sep_44_sep_0 <= 0 & -1*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= -1))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(24312)[12] (0.005999 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(24311)[11] (0.005999 sec.)
+                    
+                  end InterpProver.interpolate_quick(24302)[10] (0.005999 sec.)
+                  begin minimizing # of disjunctions(24531)[10]
+                    input: ((1 <= <<zip_1032@44:2>@52:0>) || ((<<zip_1032@44:2>@52:0> = 0) && (<zip_1032@44:0> <= 0)))
+                    output: (((<<zip_1032@44:2>@52:0> = 0) && (<zip_1032@44:0> <= 0)) || (1 <= <<zip_1032@44:2>@52:0>))
+                  end minimizing # of disjunctions(24531)[10] (0.001000 sec.)
+                  begin minimizing # of conjunctions(24557)[10]
+                    input: ((<<zip_1032@44:2>@52:0> = 0) && (<zip_1032@44:0> <= 0))
+                    output: ((<zip_1032@44:0> <= 0) && (<<zip_1032@44:2>@52:0> = 0))
+                  end minimizing # of conjunctions(24557)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(24123)[9] (0.006999 sec.)
+                
+              end InterpProver.interpolate_check(24122)[8] (0.007999 sec.)
+              output: (((<zip_1032@44:0> <= 0) && (<<zip_1032@44:2>@52:0> = 0)) || (1 <= <<zip_1032@44:2>@52:0>))
+            end InterpProver.interpolate_log(24121)[7] (0.007999 sec.)
+            
+          end InterpProver.interpolate_fresh(24120)[6] (0.007999 sec.)
+          
+        end InterpProver.interpolate(24119)[5] (0.007999 sec.)
+        output:
+          P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,<<zip_1032@44:2>@52:0>:int) =
+          (((<zip_1032@44:0> <= 0) && (<<zip_1032@44:2>@52:0> = 0)) || (1 <= <<zip_1032@44:2>@52:0>))
+          P[<<zip_1032@38:2>@60:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,<<zip_1032@44:2>@52:0>:int) =
+          (((<zip_1032@44:0> <= 0) && (<<zip_1032@44:2>@52:0> = 0)) || (1 <= <<zip_1032@44:2>@52:0>))
+      end ApronInterface.convex_hull_interpolate(24118)[4] (0.008999 sec.)
+      Horn clauses:
+        P[<fail_1303@72:0>](<fail_1303@72:0>:bool)|- bot
+        
+        P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+        ((<f_main_1296@69:3> < <f_main_1296@69:0>) &&
+         (<fail_1303@72:0> && ((1 <= <f_main_1296@69:1>) || ((<f_main_1296@69:1> = 0) && (<f_main_1296@69:0> <= 0)))))
+        |- P[<fail_1303@72:0>](<fail_1303@72:0>:bool)
+        
+        P[<map_1035@64:0>](<map_1035@64:0>:int), ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+        |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+        
+         (<map_1035@64:0> >= 0) |- P[<map_1035@64:0>](<map_1035@64:0>:int)
+        
+        P[<zip_1032@38:1>]((1 + <zip_1032@44:0>):int,(1 + <zip_1032@44:1>):int),
+        (((1 + <zip_1032@44:0>) <> 0) && ((1 + <zip_1032@44:1>) <> 0))
+        |- P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int)
+        
+         (<zip_1032@38:1> = <zip_1032@38:0>) |- P[<zip_1032@38:1>](<zip_1032@38:0>:int,
+                                                                   <zip_1032@38:1>:int)
+      lower bounds:
+        P[<map_1035@64:0>](<map_1035@64:0>:int) = (<map_1035@64:0> >= 0)
+        P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int) = (<zip_1032@38:1> = <zip_1032@38:0>)
+        P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int) =
+        ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+        P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int) =
+        (((1 + <zip_1032@44:0>) <> 0) && (((1 + <zip_1032@44:1>) <> 0) && (<zip_1032@44:1> = <zip_1032@44:0>)))
+        P[<fail_1303@72:0>](<fail_1303@72:0>:bool) = false
+      upper bounds:
+        P[<zip_1032@44:1>](var70:int,var71:int) = true
+        P[<zip_1032@38:1>](var68:int,var69:int) = true
+      begin GenHcSolver.classify_pids(31776)[4]
+        output:
+          [<zip_1032@38:1>;<zip_1032@44:1>]
+      end GenHcSolver.classify_pids(31776)[4] (0.000000 sec.)
+      begin ApronInterface.convex_hull_interpolate(31787)[4]
+        lb:((<zip_1032@38:1> = <zip_1032@38:0>) ||
+            (((1 + <zip_1032@38:0>) <> 0) && (((1 + <zip_1032@38:1>) <> 0) && (<zip_1032@38:1> = <zip_1032@38:0>))))
+        nub:false
+        lb':((<zip_1032@38:1> = <zip_1032@38:0>) ||
+             (((1 + <zip_1032@38:0>) <> 0) && (((1 + <zip_1032@38:1>) <> 0) && (<zip_1032@38:1> = <zip_1032@38:0>))))
+        nub':false
+        begin InterpProver.interpolate(31788)[5]
+          begin InterpProver.interpolate_fresh(31789)[6]
+            begin InterpProver.interpolate_log(31790)[7]
+              input1: ((<zip_1032@38:1> = <zip_1032@38:0>) ||
+                       (((1 + <zip_1032@38:0>) <> 0) &&
+                        (((1 + <zip_1032@38:1>) <> 0) && (<zip_1032@38:1> = <zip_1032@38:0>))))
+              input2: false
+              begin InterpProver.interpolate_check(31791)[8]
+                begin InterpProver.interpolate_simplify(31792)[9]
+                  begin InterpProver.interpolate_quick(31864)[10]
+                    
+                  end InterpProver.interpolate_quick(31864)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(31792)[9] (0.001000 sec.)
+                
+              end InterpProver.interpolate_check(31791)[8] (0.001000 sec.)
+              output: true
+            end InterpProver.interpolate_log(31790)[7] (0.001000 sec.)
+            
+          end InterpProver.interpolate_fresh(31789)[6] (0.001000 sec.)
+          
+        end InterpProver.interpolate(31788)[5] (0.001000 sec.)
+        output:
+          P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int) = true
+          P[<zip_1032@44:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int) = true
+      end ApronInterface.convex_hull_interpolate(31787)[4] (0.001000 sec.)
+      Horn clauses:
+        P[<fail_1303@72:0>](<fail_1303@72:0>:bool)|- bot
+        
+        P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+        ((<f_main_1296@69:3> < <f_main_1296@69:0>) &&
+         (<fail_1303@72:0> && ((1 <= <f_main_1296@69:1>) || ((<f_main_1296@69:1> = 0) && (<f_main_1296@69:0> <= 0)))))
+        |- P[<fail_1303@72:0>](<fail_1303@72:0>:bool)
+        
+        P[<map_1035@64:0>](<map_1035@64:0>:int), ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+        |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+        
+         (<map_1035@64:0> >= 0) |- P[<map_1035@64:0>](<map_1035@64:0>:int)
+      lower bounds:
+        P[<map_1035@64:0>](<map_1035@64:0>:int) = (<map_1035@64:0> >= 0)
+        P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int) =
+        ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+        P[<fail_1303@72:0>](<fail_1303@72:0>:bool) = false
+      upper bounds:
+        P[<fail_1303@72:0>](var73:bool) = true
+      begin GenHcSolver.classify_pids(34987)[4]
+        output:
+          [<fail_1303@72:0>]
+      end GenHcSolver.classify_pids(34987)[4] (0.000000 sec.)
+      lb:false
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(34990)[4]
+        lb:false
+        nub:false
+        lb':false
+        nub':false
+        begin InterpProver.interpolate(34991)[5]
+          begin InterpProver.interpolate_fresh(34992)[6]
+            begin InterpProver.interpolate_log(34993)[7]
+              input1: false
+              input2: false
+              begin InterpProver.interpolate_check(34994)[8]
+                begin InterpProver.interpolate_simplify(34995)[9]
+                  begin InterpProver.interpolate_quick(35008)[10]
+                    
+                  end InterpProver.interpolate_quick(35008)[10] (0.000000 sec.)
+                  begin minimizing # of disjunctions(35012)[10]
+                    input: false
+                    output: false
+                  end minimizing # of disjunctions(35012)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(34995)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(34994)[8] (0.000000 sec.)
+              output: false
+            end InterpProver.interpolate_log(34993)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(34992)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(34991)[5] (0.000000 sec.)
+        output:
+          P[<fail_1303@72:0>](<fail_1303@72:0>:bool) = false
+      end ApronInterface.convex_hull_interpolate(34990)[4] (0.000000 sec.)
+      Horn clauses:
+        P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+        ((<f_main_1296@69:3> < <f_main_1296@69:0>) &&
+         ((1 <= <f_main_1296@69:1>) || ((<f_main_1296@69:1> = 0) && (<f_main_1296@69:0> <= 0)))) |- bot
+        
+        P[<map_1035@64:0>](<map_1035@64:0>:int), ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+        |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+        
+         (<map_1035@64:0> >= 0) |- P[<map_1035@64:0>](<map_1035@64:0>:int)
+      lower bounds:
+        P[<map_1035@64:0>](<map_1035@64:0>:int) = (<map_1035@64:0> >= 0)
+        P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int) =
+        ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+      upper bounds:
+        P[<<map_1035@64:1>@67:0>](var74:int,var75:int) =
+        ((var75 >= <f_main_1296@69:0>) || ((1 > var74) && ((var74 <> 0) || (<f_main_1296@69:0> > 0))))
+      begin GenHcSolver.classify_pids(37262)[4]
+        output:
+          [<<map_1035@64:1>@67:0>]
+      end GenHcSolver.classify_pids(37262)[4] (0.000000 sec.)
+      lb:((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+      nub:(not
+             ((<<map_1035@64:1>@67:0> >= var77) || ((1 > <map_1035@64:0>) && ((<map_1035@64:0> <> 0) || (var77 > 0)))))
+      begin ApronInterface.convex_hull_interpolate(37265)[4]
+        lb:((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+        nub:(not
+               ((<<map_1035@64:1>@67:0> >= var77) || ((1 > <map_1035@64:0>) && ((<map_1035@64:0> <> 0) || (var77 > 0)))))
+        lb':((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+        nub':(not
+                ((<<map_1035@64:1>@67:0> >= var77) ||
+                 ((1 > <map_1035@64:0>) && ((<map_1035@64:0> <> 0) || (var77 > 0)))))
+        begin InterpProver.interpolate(37266)[5]
+          begin InterpProver.interpolate_fresh(37267)[6]
+            begin InterpProver.interpolate_log(37268)[7]
+              input1: ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+              input2: (not
+                         ((<<map_1035@64:1>@67:0> >= var78) ||
+                          ((1 > <map_1035@64:0>) && ((<map_1035@64:0> <> 0) || (var78 > 0)))))
+              begin InterpProver.interpolate_check(37269)[8]
+                begin InterpProver.interpolate_simplify(37270)[9]
+                  begin InterpProver.interpolate_quick(37359)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(37368)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(37369)[12]
+                        begin CsisatInterface.interpolate_csisat_log(37370)[13]
+                          input1: (0 = v_sep_map_1035_sep_64_sep_0 & 0 = v_sep_map_1035_sep_64_sep_1_sep_67_sep_0)
+                          input2: (((0 = v_sep_map_1035_sep_64_sep_0 & v_sep_var78 <= 0) | 1 <= v_sep_map_1035_sep_64_sep_0) & (1 + v_sep_map_1035_sep_64_sep_1_sep_67_sep_0) <= v_sep_var78)
+                          begin CsisatInterface.interpolate_csisat_raw(37371)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(37371)[14] (0.001000 sec.)
+                          output: (((-2*v_sep_map_1035_sep_64_sep_1_sep_67_sep_0 <= 0 & 2*v_sep_map_1035_sep_64_sep_0 <= 0) | not 0 = v_sep_map_1035_sep_64_sep_0) & 0 = v_sep_map_1035_sep_64_sep_0)
+                          
+                        end CsisatInterface.interpolate_csisat_log(37370)[13] (0.001000 sec.)
+                        after simplification: (((-2*v_sep_map_1035_sep_64_sep_1_sep_67_sep_0 <= 0 & 2*v_sep_map_1035_sep_64_sep_0 <= 0) | not 0 = v_sep_map_1035_sep_64_sep_0) & 0 = v_sep_map_1035_sep_64_sep_0)
+                        after dnf conversion: ((-2*v_sep_map_1035_sep_64_sep_1_sep_67_sep_0 <= 0 & 2*v_sep_map_1035_sep_64_sep_0 <= 0 & 0 = v_sep_map_1035_sep_64_sep_0) | (not 0 = v_sep_map_1035_sep_64_sep_0 & 0 = v_sep_map_1035_sep_64_sep_0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(37369)[12] (0.001000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(37368)[11] (0.001000 sec.)
+                    
+                  end InterpProver.interpolate_quick(37359)[10] (0.001999 sec.)
+                  begin minimizing # of conjunctions(37392)[10]
+                    input: ((<map_1035@64:0> = 0) && (0 <= <<map_1035@64:1>@67:0>))
+                    output: ((0 <= <<map_1035@64:1>@67:0>) && (<map_1035@64:0> = 0))
+                  end minimizing # of conjunctions(37392)[10] (0.001000 sec.)
+                  
+                end InterpProver.interpolate_simplify(37270)[9] (0.002999 sec.)
+                
+              end InterpProver.interpolate_check(37269)[8] (0.003999 sec.)
+              output: ((0 <= <<map_1035@64:1>@67:0>) && (<map_1035@64:0> = 0))
+            end InterpProver.interpolate_log(37268)[7] (0.003999 sec.)
+            
+          end InterpProver.interpolate_fresh(37267)[6] (0.003999 sec.)
+          
+        end InterpProver.interpolate(37266)[5] (0.003999 sec.)
+        output:
+          P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int) =
+          ((0 <= <<map_1035@64:1>@67:0>) && (<map_1035@64:0> = 0))
+      end ApronInterface.convex_hull_interpolate(37265)[4] (0.003999 sec.)
+      Horn clauses:
+         (<map_1035@64:0> >= 0) |- P[<map_1035@64:0>](<map_1035@64:0>:int)
+      lower bounds:
+        P[<map_1035@64:0>](<map_1035@64:0>:int) = (<map_1035@64:0> >= 0)
+      upper bounds:
+        P[<map_1035@64:0>](var79:int) = true
+      begin GenHcSolver.classify_pids(38007)[4]
+        output:
+          [<map_1035@64:0>]
+      end GenHcSolver.classify_pids(38007)[4] (0.000000 sec.)
+      lb:(<map_1035@64:0> >= 0)
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(38010)[4]
+        lb:(<map_1035@64:0> >= 0)
+        nub:false
+        lb':(<map_1035@64:0> >= 0)
+        nub':false
+        begin InterpProver.interpolate(38011)[5]
+          begin InterpProver.interpolate_fresh(38012)[6]
+            begin InterpProver.interpolate_log(38013)[7]
+              input1: (<map_1035@64:0> >= 0)
+              input2: false
+              begin InterpProver.interpolate_check(38014)[8]
+                begin InterpProver.interpolate_simplify(38015)[9]
+                  begin InterpProver.interpolate_quick(38030)[10]
+                    
+                  end InterpProver.interpolate_quick(38030)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(38015)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(38014)[8] (0.000000 sec.)
+              output: true
+            end InterpProver.interpolate_log(38013)[7] (0.001000 sec.)
+            
+          end InterpProver.interpolate_fresh(38012)[6] (0.001000 sec.)
+          
+        end InterpProver.interpolate(38011)[5] (0.001000 sec.)
+        output:
+          P[<map_1035@64:0>](<map_1035@64:0>:int) = true
+      end ApronInterface.convex_hull_interpolate(38010)[4] (0.001000 sec.)
+      begin HcSolver.check_validity(38097)[4]
+        input:
+          P[<fail_1303@72:0>](<fail_1303@72:0>:bool)|- bot
+          
+          P[<<zip_1032@38:2>@60:0>](<f_main_1296@69:0>:int,<f_main_1296@69:0>:int,<f_main_1296@69:1>:int),
+          P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+          ((<f_main_1296@69:3> < <f_main_1296@69:0>) && <fail_1303@72:0>) |- P[<fail_1303@72:0>](
+          <fail_1303@72:0>:bool)
+          
+          P[<map_1035@64:0>](<map_1035@64:0>:int), ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+          |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+          
+          P[<<zip_1032@38:2>@60:0>](<f_main_1295@62:0>:int,<f_main_1295@62:0>:int,<map_1035@64:0>:int)|- P[<map_1035@64:0>](
+          <map_1035@64:0>:int)
+          
+          P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int),
+          P[<<zip_1032@44:2>@52:0>]((-1 + <zip_1032@38:0>):int,(-1 + <zip_1032@38:1>):int,(
+                                    -1 + <<zip_1032@38:2>@60:0>):int),
+          ((<zip_1032@38:0> <> 0) && (<zip_1032@38:1> <> 0))
+          |- P[<<zip_1032@38:2>@60:0>](<zip_1032@38:0>:int,<zip_1032@38:1>:int,
+                                       <<zip_1032@38:2>@60:0>:int)
+          
+          P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int),
+          ((<<zip_1032@44:2>@52:0> = 0) && ((<zip_1032@44:0> = 0) && (<zip_1032@44:1> = 0)))
+          |- P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,
+                                       <<zip_1032@44:2>@52:0>:int)
+          
+          P[<zip_1032@38:1>]((1 + <zip_1032@44:0>):int,(1 + <zip_1032@44:1>):int),
+          (((1 + <zip_1032@44:0>) <> 0) && ((1 + <zip_1032@44:1>) <> 0))
+          |- P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int)
+          
+           (<zip_1032@38:1> = <zip_1032@38:0>) |- P[<zip_1032@38:1>](<zip_1032@38:0>:int,
+                                                                    <zip_1032@38:1>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(38097)[4] (0.003999 sec.)
+      solution:
+        P[<fail_1303@72:0>](<fail_1303@72:0>:bool) = false
+        P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int) =
+        ((0 <= <<map_1035@64:1>@67:0>) && (<map_1035@64:0> = 0))
+        P[<map_1035@64:0>](<map_1035@64:0>:int) = true
+        P[<<zip_1032@38:2>@60:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,<<zip_1032@44:2>@52:0>:int) =
+        (((<zip_1032@44:0> <= 0) && (<<zip_1032@44:2>@52:0> = 0)) || (1 <= <<zip_1032@44:2>@52:0>))
+        P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,<<zip_1032@44:2>@52:0>:int) =
+        (((<zip_1032@44:0> <= 0) && (<<zip_1032@44:2>@52:0> = 0)) || (1 <= <<zip_1032@44:2>@52:0>))
+        P[<zip_1032@44:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int) = true
+        P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int) = true
+    end GenHcSolver.solve(18680)[3] (0.098985 sec.)
+    begin GenHcSolver.solve(39488)[3]
+      Horn clauses:
+        P[<fail_1303@72:0>](<fail_1303@72:0>:bool)|- bot
+        
+        P[<<zip_1032@38:2>@60:0>](<f_main_1296@69:0>:int,<f_main_1296@69:0>:int,<f_main_1296@69:1>:int),
+        P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+        ((<f_main_1296@69:3> < <f_main_1296@69:0>) && <fail_1303@72:0>) |- P[<fail_1303@72:0>](
+        <fail_1303@72:0>:bool)
+        
+        P[<map_1035@64:0>](<map_1035@64:0>:int), ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+        |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+        
+        P[<<zip_1032@38:2>@60:0>](<f_main_1295@62:0>:int,<f_main_1295@62:0>:int,<map_1035@64:0>:int)|- P[<map_1035@64:0>](
+        <map_1035@64:0>:int)
+        
+        P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int),
+        P[<<zip_1032@44:2>@52:0>]((-1 + <zip_1032@38:0>):int,(-1 + <zip_1032@38:1>):int,(
+                                  -1 + <<zip_1032@38:2>@60:0>):int), (
+        (<zip_1032@38:0> <> 0) && (<zip_1032@38:1> <> 0))
+        |- P[<<zip_1032@38:2>@60:0>](<zip_1032@38:0>:int,<zip_1032@38:1>:int,
+                                     <<zip_1032@38:2>@60:0>:int)
+        
+        P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int),
+        ((<<zip_1032@44:2>@52:0> = 0) && ((<zip_1032@44:0> = 0) && (<zip_1032@44:1> = 0)))
+        |- P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,
+                                     <<zip_1032@44:2>@52:0>:int)
+        
+        P[<zip_1032@38:1>]((1 + <zip_1032@44:0>):int,(1 + <zip_1032@44:1>):int),
+        (((1 + <zip_1032@44:0>) <> 0) && ((1 + <zip_1032@44:1>) <> 0))
+        |- P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int)
+        
+         (<zip_1032@38:1> = <zip_1032@38:0>) |- P[<zip_1032@38:1>](<zip_1032@38:0>:int,
+                                                                   <zip_1032@38:1>:int)
+      lower bounds:
+        P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int) = (<zip_1032@38:1> = <zip_1032@38:0>)
+        P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int) =
+        (((1 + <zip_1032@44:0>) <> 0) && (((1 + <zip_1032@44:1>) <> 0) && (<zip_1032@44:1> = <zip_1032@44:0>)))
+        P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,<<zip_1032@44:2>@52:0>:int) =
+        ((<<zip_1032@44:2>@52:0> = 0) && ((<zip_1032@44:0> = 0) && (<zip_1032@44:1> = 0)))
+        P[<<zip_1032@38:2>@60:0>](<zip_1032@38:0>:int,<zip_1032@38:1>:int,<<zip_1032@38:2>@60:0>:int) =
+        ((<zip_1032@38:0> = 1) && ((<zip_1032@38:1> = 1) && (<<zip_1032@38:2>@60:0> = 1)))
+        P[<map_1035@64:0>](<map_1035@64:0>:int) = (<map_1035@64:0> = 1)
+        P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int) = false
+        P[<fail_1303@72:0>](<fail_1303@72:0>:bool) = false
+      upper bounds:
+        P[<<zip_1032@38:2>@60:0>](var89:int,var90:int,var91:int) = ((var91 <> 0) || ((0 >= var89) || (var89 <> var90)))
+        P[<<zip_1032@44:2>@52:0>](var83:int,var84:int,var85:int) =
+        (((1 + var85) <> 0) || (((1 + var84) <= 0) || (var84 <> var83)))
+      begin GenHcSolver.classify_pids(44845)[4]
+        output:
+          [<<zip_1032@44:2>@52:0>;<<zip_1032@38:2>@60:0>]
+      end GenHcSolver.classify_pids(44845)[4] (0.001000 sec.)
+      begin ApronInterface.convex_hull_interpolate(44926)[4]
+        lb:(((<<zip_1032@44:2>@52:0> = 0) && ((<zip_1032@44:0> = 0) && (<zip_1032@44:1> = 0))) ||
+            ((<zip_1032@44:0> = 1) && ((<zip_1032@44:1> = 1) && (<<zip_1032@44:2>@52:0> = 1))))
+        nub:((not
+                (((1 + <<zip_1032@44:2>@52:0>) <> 0) ||
+                 (((1 + <zip_1032@44:1>) <= 0) || (<zip_1032@44:1> <> <zip_1032@44:0>)))) ||
+             (not ((<<zip_1032@44:2>@52:0> <> 0) || ((0 >= <zip_1032@44:0>) || (<zip_1032@44:0> <> <zip_1032@44:1>)))))
+        begin ExtFormula.Formula.case_analysis_boolean(44958)[5]
+          ts: (((<<zip_1032@44:2>@52:0> = 0) && ((<zip_1032@44:0> = 0) && (<zip_1032@44:1> = 0))) ||
+               ((<zip_1032@44:0> = 1) && ((<zip_1032@44:1> = 1) && (<<zip_1032@44:2>@52:0> = 1))))
+          
+        end ExtFormula.Formula.case_analysis_boolean(44958)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(45026)[5]
+          ts: (((<<zip_1032@44:2>@52:0> = -1) && (((1 + <zip_1032@44:1>) > 0) && (<zip_1032@44:1> = <zip_1032@44:0>))) ||
+               ((<<zip_1032@44:2>@52:0> = 0) && ((0 < <zip_1032@44:0>) && (<zip_1032@44:0> = <zip_1032@44:1>))))
+          
+        end ExtFormula.Formula.case_analysis_boolean(45026)[5] (0.000000 sec.)
+        lb':(((<<zip_1032@44:2>@52:0> + (-1 * <zip_1032@44:0>)) = 0) &&
+             (((<zip_1032@44:1> + (-1 * <zip_1032@44:0>)) = 0) &&
+              (((1 + (-1 * <zip_1032@44:0>)) >= 0) && (<zip_1032@44:0> >= 0))))
+        nub':(((<zip_1032@44:1> + (-1 * <zip_1032@44:0>)) = 0) &&
+              (((-1 * <<zip_1032@44:2>@52:0>) >= 0) &&
+               (((1 + <<zip_1032@44:2>@52:0>) >= 0) && (((-1 + (-1 * <<zip_1032@44:2>@52:0>)) + <zip_1032@44:0>) >= 0))))
+        begin InterpProver.interpolate(45039)[5]
+          begin InterpProver.interpolate_fresh(45040)[6]
+            begin InterpProver.interpolate_log(45041)[7]
+              input1: (((<<zip_1032@44:2>@52:0> + (-1 * <zip_1032@44:0>)) = 0) &&
+                       (((<zip_1032@44:1> + (-1 * <zip_1032@44:0>)) = 0) &&
+                        (((1 + (-1 * <zip_1032@44:0>)) >= 0) && (<zip_1032@44:0> >= 0))))
+              input2: (((<zip_1032@44:1> + (-1 * <zip_1032@44:0>)) = 0) &&
+                       (((-1 * <<zip_1032@44:2>@52:0>) >= 0) &&
+                        (((1 + <<zip_1032@44:2>@52:0>) >= 0) &&
+                         (((-1 + (-1 * <<zip_1032@44:2>@52:0>)) + <zip_1032@44:0>) >= 0))))
+              begin InterpProver.interpolate_check(45042)[8]
+                begin InterpProver.interpolate_simplify(45043)[9]
+                  begin InterpProver.interpolate_quick(45274)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(45283)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(45284)[12]
+                        begin CsisatInterface.interpolate_csisat_log(45285)[13]
+                          input1: (v_sep_zip_1032_sep_44_sep_0 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & v_sep_zip_1032_sep_44_sep_1 = v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 & 0 <= v_sep_zip_1032_sep_44_sep_0 & v_sep_zip_1032_sep_44_sep_0 <= 1)
+                          input2: (v_sep_zip_1032_sep_44_sep_0 = v_sep_zip_1032_sep_44_sep_1 & 0 <= (1 + v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0) & v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 <= 0 & (1 + v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0) <= v_sep_zip_1032_sep_44_sep_0)
+                          begin CsisatInterface.interpolate_csisat_raw(45286)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(45286)[14] (0.000000 sec.)
+                          output: (-2*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 + 2*v_sep_zip_1032_sep_44_sep_0) <= 0
+                          
+                        end CsisatInterface.interpolate_csisat_log(45285)[13] (0.000000 sec.)
+                        after simplification: (-2*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 + 2*v_sep_zip_1032_sep_44_sep_0) <= 0
+                        after dnf conversion: (((-2*v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0 + 2*v_sep_zip_1032_sep_44_sep_0) <= 0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(45284)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(45283)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(45274)[10] (0.001000 sec.)
+                  
+                end InterpProver.interpolate_simplify(45043)[9] (0.002000 sec.)
+                
+              end InterpProver.interpolate_check(45042)[8] (0.002999 sec.)
+              output: (<zip_1032@44:0> <= <<zip_1032@44:2>@52:0>)
+            end InterpProver.interpolate_log(45041)[7] (0.003999 sec.)
+            
+          end InterpProver.interpolate_fresh(45040)[6] (0.003999 sec.)
+          
+        end InterpProver.interpolate(45039)[5] (0.003999 sec.)
+        output:
+          P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,<<zip_1032@44:2>@52:0>:int) =
+          (<zip_1032@44:0> <= <<zip_1032@44:2>@52:0>)
+          P[<<zip_1032@38:2>@60:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,<<zip_1032@44:2>@52:0>:int) =
+          (<zip_1032@44:0> <= <<zip_1032@44:2>@52:0>)
+      end ApronInterface.convex_hull_interpolate(44926)[4] (0.004999 sec.)
+      Horn clauses:
+        P[<fail_1303@72:0>](<fail_1303@72:0>:bool)|- bot
+        
+        P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+        ((<f_main_1296@69:3> < <f_main_1296@69:1>) && <fail_1303@72:0>) |- P[<fail_1303@72:0>](
+        <fail_1303@72:0>:bool)
+        
+        P[<map_1035@64:0>](<map_1035@64:0>:int), ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+        |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+        
+        |- P[<map_1035@64:0>](<map_1035@64:0>:int)
+        
+        P[<zip_1032@38:1>]((1 + <zip_1032@44:0>):int,(1 + <zip_1032@44:1>):int),
+        (((1 + <zip_1032@44:0>) <> 0) && ((1 + <zip_1032@44:1>) <> 0))
+        |- P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int)
+        
+         (<zip_1032@38:1> = <zip_1032@38:0>) |- P[<zip_1032@38:1>](<zip_1032@38:0>:int,
+                                                                   <zip_1032@38:1>:int)
+      lower bounds:
+        P[<map_1035@64:0>](<map_1035@64:0>:int) = true
+        P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int) = (<zip_1032@38:1> = <zip_1032@38:0>)
+        P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int) =
+        ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+        P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int) =
+        (((1 + <zip_1032@44:0>) <> 0) && (((1 + <zip_1032@44:1>) <> 0) && (<zip_1032@44:1> = <zip_1032@44:0>)))
+        P[<fail_1303@72:0>](<fail_1303@72:0>:bool) = false
+      upper bounds:
+        P[<zip_1032@44:1>](var94:int,var95:int) = true
+        P[<zip_1032@38:1>](var92:int,var93:int) = true
+      begin GenHcSolver.classify_pids(49662)[4]
+        output:
+          [<zip_1032@38:1>;<zip_1032@44:1>]
+      end GenHcSolver.classify_pids(49662)[4] (0.000000 sec.)
+      begin ApronInterface.convex_hull_interpolate(49673)[4]
+        lb:((<zip_1032@38:1> = <zip_1032@38:0>) ||
+            (((1 + <zip_1032@38:0>) <> 0) && (((1 + <zip_1032@38:1>) <> 0) && (<zip_1032@38:1> = <zip_1032@38:0>))))
+        nub:false
+        begin ExtFormula.Formula.case_analysis_boolean(49735)[5]
+          ts: (<zip_1032@38:1> = <zip_1032@38:0>)
+          
+        end ExtFormula.Formula.case_analysis_boolean(49735)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(49742)[5]
+          ts: false
+          
+        end ExtFormula.Formula.case_analysis_boolean(49742)[5] (0.000000 sec.)
+        lb':((<zip_1032@38:1> + (-1 * <zip_1032@38:0>)) = 0)
+        nub':(-1 >= 0)
+        begin InterpProver.interpolate(49745)[5]
+          begin InterpProver.interpolate_fresh(49746)[6]
+            begin InterpProver.interpolate_log(49747)[7]
+              input1: ((<zip_1032@38:1> + (-1 * <zip_1032@38:0>)) = 0)
+              input2: (-1 >= 0)
+              begin InterpProver.interpolate_check(49748)[8]
+                begin InterpProver.interpolate_simplify(49749)[9]
+                  begin InterpProver.interpolate_quick(49765)[10]
+                    
+                  end InterpProver.interpolate_quick(49765)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(49749)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(49748)[8] (0.000000 sec.)
+              output: true
+            end InterpProver.interpolate_log(49747)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(49746)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(49745)[5] (0.000000 sec.)
+        output:
+          P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int) = true
+          P[<zip_1032@44:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int) = true
+      end ApronInterface.convex_hull_interpolate(49673)[4] (0.001000 sec.)
+      Horn clauses:
+        P[<fail_1303@72:0>](<fail_1303@72:0>:bool)|- bot
+        
+        P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+        ((<f_main_1296@69:3> < <f_main_1296@69:1>) && <fail_1303@72:0>) |- P[<fail_1303@72:0>](
+        <fail_1303@72:0>:bool)
+        
+        P[<map_1035@64:0>](<map_1035@64:0>:int), ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+        |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+        
+        |- P[<map_1035@64:0>](<map_1035@64:0>:int)
+      lower bounds:
+        P[<map_1035@64:0>](<map_1035@64:0>:int) = true
+        P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int) =
+        ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+        P[<fail_1303@72:0>](<fail_1303@72:0>:bool) = false
+      upper bounds:
+        P[<fail_1303@72:0>](var97:bool) = true
+      begin GenHcSolver.classify_pids(51225)[4]
+        output:
+          [<fail_1303@72:0>]
+      end GenHcSolver.classify_pids(51225)[4] (0.000000 sec.)
+      lb:false
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(51228)[4]
+        lb:false
+        nub:false
+        begin ExtFormula.Formula.case_analysis_boolean(51231)[5]
+          ts: false
+          
+        end ExtFormula.Formula.case_analysis_boolean(51231)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(51236)[5]
+          ts: false
+          
+        end ExtFormula.Formula.case_analysis_boolean(51236)[5] (0.000000 sec.)
+        lb':(-1 >= 0)
+        nub':(-1 >= 0)
+        begin InterpProver.interpolate(51239)[5]
+          begin InterpProver.interpolate_fresh(51240)[6]
+            begin InterpProver.interpolate_log(51241)[7]
+              input1: (-1 >= 0)
+              input2: (-1 >= 0)
+              begin InterpProver.interpolate_check(51242)[8]
+                begin InterpProver.interpolate_simplify(51243)[9]
+                  begin InterpProver.interpolate_quick(51258)[10]
+                    
+                  end InterpProver.interpolate_quick(51258)[10] (0.000000 sec.)
+                  begin minimizing # of disjunctions(51262)[10]
+                    input: false
+                    output: false
+                  end minimizing # of disjunctions(51262)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(51243)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(51242)[8] (0.000000 sec.)
+              output: false
+            end InterpProver.interpolate_log(51241)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(51240)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(51239)[5] (0.000000 sec.)
+        output:
+          P[<fail_1303@72:0>](<fail_1303@72:0>:bool) = false
+      end ApronInterface.convex_hull_interpolate(51228)[4] (0.000000 sec.)
+      Horn clauses:
+        P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+        (<f_main_1296@69:3> < <f_main_1296@69:1>) |- bot
+        
+        P[<map_1035@64:0>](<map_1035@64:0>:int), ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+        |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+        
+        |- P[<map_1035@64:0>](<map_1035@64:0>:int)
+      lower bounds:
+        P[<map_1035@64:0>](<map_1035@64:0>:int) = true
+        P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int) =
+        ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+      upper bounds:
+        P[<<map_1035@64:1>@67:0>](var98:int,var99:int) = (var99 >= var98)
+      begin GenHcSolver.classify_pids(52071)[4]
+        output:
+          [<<map_1035@64:1>@67:0>]
+      end GenHcSolver.classify_pids(52071)[4] (0.000000 sec.)
+      lb:((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+      nub:(not (<<map_1035@64:1>@67:0> >= <map_1035@64:0>))
+      begin ApronInterface.convex_hull_interpolate(52074)[4]
+        lb:((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+        nub:(not (<<map_1035@64:1>@67:0> >= <map_1035@64:0>))
+        begin ExtFormula.Formula.case_analysis_boolean(52082)[5]
+          ts: ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+          
+        end ExtFormula.Formula.case_analysis_boolean(52082)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(52091)[5]
+          ts: (<<map_1035@64:1>@67:0> < <map_1035@64:0>)
+          
+        end ExtFormula.Formula.case_analysis_boolean(52091)[5] (0.000000 sec.)
+        lb':((<<map_1035@64:1>@67:0> = 0) && (<map_1035@64:0> = 0))
+        nub':(((-1 + (-1 * <<map_1035@64:1>@67:0>)) + <map_1035@64:0>) >= 0)
+        begin InterpProver.interpolate(52096)[5]
+          begin InterpProver.interpolate_fresh(52097)[6]
+            begin InterpProver.interpolate_log(52098)[7]
+              input1: ((<<map_1035@64:1>@67:0> = 0) && (<map_1035@64:0> = 0))
+              input2: (((-1 + (-1 * <<map_1035@64:1>@67:0>)) + <map_1035@64:0>) >= 0)
+              begin InterpProver.interpolate_check(52099)[8]
+                begin InterpProver.interpolate_simplify(52100)[9]
+                  begin InterpProver.interpolate_quick(52129)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(52138)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(52139)[12]
+                        begin CsisatInterface.interpolate_csisat_log(52140)[13]
+                          input1: (0 = v_sep_map_1035_sep_64_sep_0 & 0 = v_sep_map_1035_sep_64_sep_1_sep_67_sep_0)
+                          input2: (1 + v_sep_map_1035_sep_64_sep_1_sep_67_sep_0) <= v_sep_map_1035_sep_64_sep_0
+                          begin CsisatInterface.interpolate_csisat_raw(52141)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(52141)[14] (0.000000 sec.)
+                          output: (-2*v_sep_map_1035_sep_64_sep_1_sep_67_sep_0 + 2*v_sep_map_1035_sep_64_sep_0) <= 0
+                          
+                        end CsisatInterface.interpolate_csisat_log(52140)[13] (0.000000 sec.)
+                        after simplification: (-2*v_sep_map_1035_sep_64_sep_1_sep_67_sep_0 + 2*v_sep_map_1035_sep_64_sep_0) <= 0
+                        after dnf conversion: (((-2*v_sep_map_1035_sep_64_sep_1_sep_67_sep_0 + 2*v_sep_map_1035_sep_64_sep_0) <= 0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(52139)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(52138)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(52129)[10] (0.000999 sec.)
+                  
+                end InterpProver.interpolate_simplify(52100)[9] (0.000999 sec.)
+                
+              end InterpProver.interpolate_check(52099)[8] (0.001999 sec.)
+              output: (<map_1035@64:0> <= <<map_1035@64:1>@67:0>)
+            end InterpProver.interpolate_log(52098)[7] (0.001999 sec.)
+            
+          end InterpProver.interpolate_fresh(52097)[6] (0.001999 sec.)
+          
+        end InterpProver.interpolate(52096)[5] (0.001999 sec.)
+        output:
+          P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int) =
+          (<map_1035@64:0> <= <<map_1035@64:1>@67:0>)
+      end ApronInterface.convex_hull_interpolate(52074)[4] (0.001999 sec.)
+      Horn clauses:
+        |- P[<map_1035@64:0>](<map_1035@64:0>:int)
+      lower bounds:
+        P[<map_1035@64:0>](<map_1035@64:0>:int) = true
+      upper bounds:
+        P[<map_1035@64:0>](var100:int) = true
+      begin GenHcSolver.classify_pids(52440)[4]
+        output:
+          [<map_1035@64:0>]
+      end GenHcSolver.classify_pids(52440)[4] (0.000000 sec.)
+      lb:true
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(52443)[4]
+        lb:true
+        nub:false
+        begin ExtFormula.Formula.case_analysis_boolean(52446)[5]
+          ts: true
+          
+        end ExtFormula.Formula.case_analysis_boolean(52446)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(52451)[5]
+          ts: false
+          
+        end ExtFormula.Formula.case_analysis_boolean(52451)[5] (0.000000 sec.)
+        lb':true
+        nub':(-1 >= 0)
+        begin InterpProver.interpolate(52454)[5]
+          begin InterpProver.interpolate_fresh(52455)[6]
+            begin InterpProver.interpolate_log(52456)[7]
+              input1: true
+              input2: (-1 >= 0)
+              begin InterpProver.interpolate_check(52457)[8]
+                begin InterpProver.interpolate_simplify(52458)[9]
+                  begin InterpProver.interpolate_quick(52472)[10]
+                    
+                  end InterpProver.interpolate_quick(52472)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(52458)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(52457)[8] (0.000000 sec.)
+              output: true
+            end InterpProver.interpolate_log(52456)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(52455)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(52454)[5] (0.000000 sec.)
+        output:
+          P[<map_1035@64:0>](<map_1035@64:0>:int) = true
+      end ApronInterface.convex_hull_interpolate(52443)[4] (0.000000 sec.)
+      begin HcSolver.check_validity(52529)[4]
+        input:
+          P[<fail_1303@72:0>](<fail_1303@72:0>:bool)|- bot
+          
+          P[<<zip_1032@38:2>@60:0>](<f_main_1296@69:0>:int,<f_main_1296@69:0>:int,<f_main_1296@69:1>:int),
+          P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+          ((<f_main_1296@69:3> < <f_main_1296@69:0>) && <fail_1303@72:0>) |- P[<fail_1303@72:0>](
+          <fail_1303@72:0>:bool)
+          
+          P[<map_1035@64:0>](<map_1035@64:0>:int), ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+          |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+          
+          P[<<zip_1032@38:2>@60:0>](<f_main_1295@62:0>:int,<f_main_1295@62:0>:int,<map_1035@64:0>:int)|- P[<map_1035@64:0>](
+          <map_1035@64:0>:int)
+          
+          P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int),
+          P[<<zip_1032@44:2>@52:0>]((-1 + <zip_1032@38:0>):int,(-1 + <zip_1032@38:1>):int,(
+                                    -1 + <<zip_1032@38:2>@60:0>):int),
+          ((<zip_1032@38:0> <> 0) && (<zip_1032@38:1> <> 0))
+          |- P[<<zip_1032@38:2>@60:0>](<zip_1032@38:0>:int,<zip_1032@38:1>:int,
+                                       <<zip_1032@38:2>@60:0>:int)
+          
+          P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int),
+          ((<<zip_1032@44:2>@52:0> = 0) && ((<zip_1032@44:0> = 0) && (<zip_1032@44:1> = 0)))
+          |- P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,
+                                       <<zip_1032@44:2>@52:0>:int)
+          
+          P[<zip_1032@38:1>]((1 + <zip_1032@44:0>):int,(1 + <zip_1032@44:1>):int),
+          (((1 + <zip_1032@44:0>) <> 0) && ((1 + <zip_1032@44:1>) <> 0))
+          |- P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int)
+          
+           (<zip_1032@38:1> = <zip_1032@38:0>) |- P[<zip_1032@38:1>](<zip_1032@38:0>:int,
+                                                                    <zip_1032@38:1>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(52529)[4] (0.004999 sec.)
+      solution:
+        P[<fail_1303@72:0>](<fail_1303@72:0>:bool) = false
+        P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int) =
+        (<map_1035@64:0> <= <<map_1035@64:1>@67:0>)
+        P[<map_1035@64:0>](<map_1035@64:0>:int) = true
+        P[<<zip_1032@38:2>@60:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,<<zip_1032@44:2>@52:0>:int) =
+        (<zip_1032@44:0> <= <<zip_1032@44:2>@52:0>)
+        P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,<<zip_1032@44:2>@52:0>:int) =
+        (<zip_1032@44:0> <= <<zip_1032@44:2>@52:0>)
+        P[<zip_1032@44:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int) = true
+        P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int) = true
+    end GenHcSolver.solve(39488)[3] (0.069989 sec.)
+    begin YhornInterface.solve(53282)[3]
+      begin HcSolver.solve_ub(53283)[4]
+        encoded:
+          P[<fail_1303@72:0>](<fail_1303@72:0>:int)|- bot
+          
+          P[<<zip_1032@38:2>@60:0>](<f_main_1296@69:0>:int,<f_main_1296@69:0>:int,<f_main_1296@69:1>:int),
+          P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+          ((<f_main_1296@69:3> < <f_main_1296@69:0>) && (<fail_1303@72:0> = 1))
+          |- P[<fail_1303@72:0>](<fail_1303@72:0>:int)
+          
+          P[<map_1035@64:0>](<map_1035@64:0>:int), ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+          |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+          
+          P[<<zip_1032@38:2>@60:0>](<f_main_1295@62:0>:int,<f_main_1295@62:0>:int,<map_1035@64:0>:int)|- P[<map_1035@64:0>](
+          <map_1035@64:0>:int)
+          
+          P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int),
+          P[<<zip_1032@44:2>@52:0>]((-1 + <zip_1032@38:0>):int,(-1 + <zip_1032@38:1>):int,(
+                                    -1 + <<zip_1032@38:2>@60:0>):int),
+          ((<zip_1032@38:0> <> 0) && (<zip_1032@38:1> <> 0))
+          |- P[<<zip_1032@38:2>@60:0>](<zip_1032@38:0>:int,<zip_1032@38:1>:int,
+                                       <<zip_1032@38:2>@60:0>:int)
+          
+          P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int),
+          ((<<zip_1032@44:2>@52:0> = 0) && ((<zip_1032@44:0> = 0) && (<zip_1032@44:1> = 0)))
+          |- P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,
+                                       <<zip_1032@44:2>@52:0>:int)
+          
+          P[<zip_1032@38:1>]((1 + <zip_1032@44:0>):int,(1 + <zip_1032@44:1>):int),
+          (((1 + <zip_1032@44:0>) <> 0) && ((1 + <zip_1032@44:1>) <> 0))
+          |- P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int)
+          
+           (<zip_1032@38:1> = <zip_1032@38:0>) |- P[<zip_1032@38:1>](<zip_1032@38:0>:int,
+                                                                    <zip_1032@38:1>:int)
+        input to Yhorn:
+          P[<fail_1303@72:0>](<fail_1303@72:0>:int)|- bot
+          
+          P[<<zip_1032@38:2>@60:0>](<f_main_1296@69:0>:int,<f_main_1296@69:0>:int,<f_main_1296@69:1>:int),
+          P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+          ((<f_main_1296@69:3> < <f_main_1296@69:0>) && (<fail_1303@72:0> = 1))
+          |- P[<fail_1303@72:0>](<fail_1303@72:0>:int)
+          
+          P[<map_1035@64:0>](<map_1035@64:0>:int), ((<<map_1035@64:1>@67:0> = 0) && (<map_1035@64:0> = 0))
+          |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+          
+          P[<<zip_1032@38:2>@60:0>](<f_main_1295@62:0>:int,<f_main_1295@62:0>:int,<map_1035@64:0>:int)|- P[<map_1035@64:0>](
+          <map_1035@64:0>:int)
+          
+          P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int),
+          P[<<zip_1032@44:2>@52:0>](var101:int,var102:int,var103:int),
+          (((1 + var103) = <<zip_1032@38:2>@60:0>) &&
+           (((1 + var102) = <zip_1032@38:1>) &&
+            (((1 + var101) = <zip_1032@38:0>) && ((<zip_1032@38:1> <> 0) && (<zip_1032@38:0> <> 0)))))
+          |- P[<<zip_1032@38:2>@60:0>](<zip_1032@38:0>:int,<zip_1032@38:1>:int,
+                                       <<zip_1032@38:2>@60:0>:int)
+          
+          P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int),
+          ((<zip_1032@44:1> = 0) && ((<zip_1032@44:0> = 0) && (<<zip_1032@44:2>@52:0> = 0)))
+          |- P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,
+                                       <<zip_1032@44:2>@52:0>:int)
+          
+          P[<zip_1032@38:1>](var104:int,var105:int),
+          ((var105 = (1 + <zip_1032@44:1>)) &&
+           ((var104 = (1 + <zip_1032@44:0>)) && (((1 + <zip_1032@44:1>) <> 0) && ((1 + <zip_1032@44:0>) <> 0))))
+          |- P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1303_sep_72_sep_0($221)) -> 1=0.
+(($221-1=0) & ($222-$223<0)) & (v_sep_map_1035_sep_64_sep_1_sep_67_sep_0($224,$222)) & (v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0($223,$223,$224)) -> v_sep_fail_1303_sep_72_sep_0($221).
+(($225=0) & ($226=0)) & (v_sep_map_1035_sep_64_sep_0($225)) -> v_sep_map_1035_sep_64_sep_1_sep_67_sep_0($225,$226).
+(0=0) & (v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0($227,$227,$225)) -> v_sep_map_1035_sep_64_sep_0($225).
+(($228<>0) & ($229<>0) & (-$228+$230+1=0) & (-$229+$231+1=0) & ($232-$233+1=0)) & (v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0($230,$231,$232)) & (v_sep_zip_1032_sep_38_sep_1($228,$229)) -> v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0($228,$229,$233).
+(($234=0) & ($235=0) & ($236=0)) & (v_sep_zip_1032_sep_44_sep_1($235,$236)) -> v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0($235,$236,$234).
+(($235+1<>0) & ($236+1<>0) & (-$235+$237-1=0) & (-$236+$238-1=0)) & (v_sep_zip_1032_sep_38_sep_1($237,$238)) -> v_sep_zip_1032_sep_44_sep_1($235,$236).
+-$228+$229=0 -> v_sep_zip_1032_sep_38_sep_1($228,$229).
+
+
+v_sep_fail_1303_sep_72_sep_0: X
+v_sep_map_1035_sep_64_sep_0: X
+v_sep_map_1035_sep_64_sep_1_sep_67_sep_0: X
+v_sep_zip_1032_sep_38_sep_1: X
+v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0: X
+v_sep_zip_1032_sep_44_sep_1: X
+v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0: X
+...................
+v_sep_fail_1303_sep_72_sep_0: X
+v_sep_map_1035_sep_64_sep_0: X
+v_sep_map_1035_sep_64_sep_1_sep_67_sep_0: X
+v_sep_zip_1032_sep_38_sep_1: X
+v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0: X
+v_sep_zip_1032_sep_44_sep_1: X
+v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0: X
+....
+v_sep_fail_1303_sep_72_sep_0: X
+v_sep_map_1035_sep_64_sep_0: X
+v_sep_map_1035_sep_64_sep_1_sep_67_sep_0: X
+v_sep_zip_1032_sep_38_sep_1: X
+v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0: X
+v_sep_zip_1032_sep_44_sep_1: X
+v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0: X
+.............
+v_sep_fail_1303_sep_72_sep_0: X
+v_sep_map_1035_sep_64_sep_0: X
+v_sep_map_1035_sep_64_sep_1_sep_67_sep_0: X
+v_sep_zip_1032_sep_38_sep_1: X
+v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0: X
+v_sep_zip_1032_sep_44_sep_1: X
+v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0: X
+...............
+v_sep_fail_1303_sep_72_sep_0: X
+v_sep_map_1035_sep_64_sep_0: X
+v_sep_map_1035_sep_64_sep_1_sep_67_sep_0: X
+v_sep_zip_1032_sep_38_sep_1: X
+v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0: X
+v_sep_zip_1032_sep_44_sep_1: X
+v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0: X
+...................(0=0) & (v_sep_fail_1303_sep_72_sep_0($221)) -> 1=0.
+(($221-1=0) & ($222-$223<0)) & (v_sep_map_1035_sep_64_sep_1_sep_67_sep_0($224,$222)) & (v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0($223,$223,$224)) -> v_sep_fail_1303_sep_72_sep_0($221).
+(($225=0) & ($226=0)) & (v_sep_map_1035_sep_64_sep_0($225)) -> v_sep_map_1035_sep_64_sep_1_sep_67_sep_0($225,$226).
+(0=0) & (v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0($227,$227,$225)) -> v_sep_map_1035_sep_64_sep_0($225).
+(($228<>0) & ($229<>0) & (-$228+$230+1=0) & (-$229+$231+1=0) & ($232-$233+1=0)) & (v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0($230,$231,$232)) & (v_sep_zip_1032_sep_38_sep_1($228,$229)) -> v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0($228,$229,$233).
+(($234=0) & ($235=0) & ($236=0)) & (v_sep_zip_1032_sep_44_sep_1($235,$236)) -> v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0($235,$236,$234).
+(($235+1<>0) & ($236+1<>0) & (-$235+$237-1=0) & (-$236+$238-1=0)) & (v_sep_zip_1032_sep_38_sep_1($237,$238)) -> v_sep_zip_1032_sep_44_sep_1($235,$236).
+-$228+$229=0 -> v_sep_zip_1032_sep_38_sep_1($228,$229).
+
+           (<zip_1032@38:1> = <zip_1032@38:0>) |- P[<zip_1032@38:1>](<zip_1032@38:0>:int,
+                                                                    <zip_1032@38:1>:int)
+        solution:
+          P[<fail_1303@72:0>]($239:bool) = false
+          P[<map_1035@64:0>]($254:int) = (1 <= $254)
+          P[<<map_1035@64:1>@67:0>]($242:int,$244:int) = ((1 + $242) <= 0)
+          P[<zip_1032@38:1>]($264:int,$266:int) = true
+          P[<<zip_1032@38:2>@60:0>]($247:int,$249:int,$251:int) = (1 <= $251)
+          P[<zip_1032@44:1>]($269:int,$271:int) = true
+          P[<<zip_1032@44:2>@52:0>]($257:int,$259:int,$261:int) = (0 <= $261)
+        
+      end HcSolver.solve_ub(53283)[4] (0.065990 sec.)
+      begin HcSolver.check_validity(53829)[4]
+        input:
+          P[<fail_1303@72:0>](<fail_1303@72:0>:bool)|- bot
+          
+          P[<<zip_1032@38:2>@60:0>](<f_main_1296@69:0>:int,<f_main_1296@69:0>:int,<f_main_1296@69:1>:int),
+          P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+          ((<f_main_1296@69:3> < <f_main_1296@69:0>) && <fail_1303@72:0>) |- P[<fail_1303@72:0>](
+          <fail_1303@72:0>:bool)
+          
+          P[<map_1035@64:0>](<map_1035@64:0>:int), ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+          |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+          
+          P[<<zip_1032@38:2>@60:0>](<f_main_1295@62:0>:int,<f_main_1295@62:0>:int,<map_1035@64:0>:int)|- P[<map_1035@64:0>](
+          <map_1035@64:0>:int)
+          
+          P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int),
+          P[<<zip_1032@44:2>@52:0>]((-1 + <zip_1032@38:0>):int,(-1 + <zip_1032@38:1>):int,(
+                                    -1 + <<zip_1032@38:2>@60:0>):int),
+          ((<zip_1032@38:0> <> 0) && (<zip_1032@38:1> <> 0))
+          |- P[<<zip_1032@38:2>@60:0>](<zip_1032@38:0>:int,<zip_1032@38:1>:int,
+                                       <<zip_1032@38:2>@60:0>:int)
+          
+          P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int),
+          ((<<zip_1032@44:2>@52:0> = 0) && ((<zip_1032@44:0> = 0) && (<zip_1032@44:1> = 0)))
+          |- P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,
+                                       <<zip_1032@44:2>@52:0>:int)
+          
+          P[<zip_1032@38:1>]((1 + <zip_1032@44:0>):int,(1 + <zip_1032@44:1>):int),
+          (((1 + <zip_1032@44:0>) <> 0) && ((1 + <zip_1032@44:1>) <> 0))
+          |- P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int)
+          
+           (<zip_1032@38:1> = <zip_1032@38:0>) |- P[<zip_1032@38:1>](<zip_1032@38:0>:int,
+                                                                    <zip_1032@38:1>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(53829)[4] (0.003000 sec.)
+      solution:
+        P[<fail_1303@72:0>]($239:bool) = false
+        P[<map_1035@64:0>]($254:int) = (1 <= $254)
+        P[<<map_1035@64:1>@67:0>]($242:int,$244:int) = ((1 + $242) <= 0)
+        P[<zip_1032@38:1>]($264:int,$266:int) = true
+        P[<<zip_1032@38:2>@60:0>]($247:int,$249:int,$251:int) = (1 <= $251)
+        P[<zip_1032@44:1>]($269:int,$271:int) = true
+        P[<<zip_1032@44:2>@52:0>]($257:int,$259:int,$261:int) = (0 <= $261)
+    end YhornInterface.solve(53282)[3] (0.068990 sec.)
+    
+  end RefTypeInfer.infer_etrs(15378)[2] (0.292956 sec.)
+  refinement types:
+    main_1292: X
+    f_1297: v1:int -> X
+    main_1037: v1:int -> (v2:unit -> X) -> X
+    zip_1032: v1:int -> v2:int -> (v3:{v3:int | (v1 <= v3)} -> X) -> X
+    br_zip_1301: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    zip_1032: v1:int -> v2:int -> (v3:{v3:int | (v1 <= v3)} -> X) -> X
+    br_zip_1299: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    f_zip_1293: v1:int -> v2:int -> (v3:int -> X) -> v5:int -> X
+    f_main_1295: v1:int -> (v2:unit -> X) -> v4:int -> X
+    map_1035: v1:int -> (v2:{v2:int | (v1 <= v2)} -> X) -> X
+    f_main_1296: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1303: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1298: var116:int -> var115:unit -> X
+    f_map_1294: var121:int -> (var120:int -> X) -> var118:int -> X
+    loop_1079: var125:unit -> (var124:int -> X) -> X
+  abstraction types:
+    main_1292: X
+    f_1297: v1:int -> X
+    main_1037: v1:int -> (v2:unit -> X) -> X
+    zip_1032: var126:int -> var127:int -> (var128:int[var128 -> (var126 <= var128)] -> X) -> X
+    br_zip_1301: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    br_zip_1299: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    f_zip_1293: v1:int -> v2:int -> (v3:int -> X) -> v5:int -> X
+    f_main_1295: v1:int -> (v2:unit -> X) -> v4:int -> X
+    map_1035: v1:int -> (v2:int[v2 -> (v1 <= v2)] -> X) -> X
+    f_main_1296: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1303: v1:bool -> (v2:unit -> X) -> X
+    f_1298: var116:int -> var115:unit -> X
+    f_map_1294: var121:int -> (var120:int -> X) -> var118:int -> X
+    loop_1079: var125:unit -> (var124:int -> X) -> X
+  
+end AbsTypeInfer.refine(15377)[1] (0.297955 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 1; 0; 0; 0; 0; 0
+
+Program with abstraction types (CEGAR-cycle 2)::
+Main: main_1292
+  main_1292 -> (rand_int f_1297)
+  br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 when b_1300 -> (k_zip_1132 0)
+  br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 when (not b_1300) -> (loop_1079 () k_zip_1132)
+  br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 when b_1302 -> (loop_1079 () k_zip_1132)
+  br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 when (not b_1302) ->
+      (zip_1032 (x_1033 - 1) (y_1034 - 1) (f_zip_1293 x_1033 y_1034 k_zip_1132))
+  f_1297 x_1267 -> (main_1037 x_1267 (f_1298 x_1267))
+  f_1298 x_1267 x_1264 -> end
+  f_main_1295 n_1038 k_main_1225 x_1250 -> (map_1035 x_1250 (f_main_1296 n_1038 x_1250 k_main_1225))
+  f_main_1296 n_1038 x_1250 k_main_1225 x_1228 when (x_1228 >= n_1038) -> (k_main_1225 ())
+  f_main_1296 n_1038 x_1250 k_main_1225 x_1228 when (not (x_1228 >= n_1038)) -> (fail_1303 true k_main_1225)
+  f_map_1294 x_1036 k_map_1193 x_1197 -> (k_map_1193 (1 + x_1197))
+  f_zip_1293 x_1033 y_1034 k_zip_1132 x_1160 -> (k_zip_1132 (1 + x_1160))
+  fail_1303 b k -> {fail} => (k ())
+  loop_1079 x_1031 k_loop_1105 -> (loop_1079 x_1031 k_loop_1105)
+  main_1037 n_1038 k_main_1225 -> (zip_1032 n_1038 n_1038 (f_main_1295 n_1038 k_main_1225))
+  map_1035 x_1036 k_map_1193 when (x_1036 = 0) -> (k_map_1193 0)
+  map_1035 x_1036 k_map_1193 when (not (x_1036 = 0)) -> (map_1035 (x_1036 - 1) (f_map_1294 x_1036 k_map_1193))
+  zip_1032 x_1033 y_1034 k_zip_1132 when (x_1033 = 0) -> (br_zip_1299 (y_1034 = 0) x_1033 y_1034 k_zip_1132)
+  zip_1032 x_1033 y_1034 k_zip_1132 when (not (x_1033 = 0)) -> (br_zip_1301 (y_1034 = 0) x_1033 y_1034 k_zip_1132)
+Types:
+  main_1292 : X
+  fail_1303 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  loop_1079 : (unit -> (int -> X) -> X)
+  map_1035 : (x_1:int -> (x_3:int[x_1 <= x_3; x_3 >= 0] -> X) -> X)
+  zip_1032 : (x_1:int -> int -> (x_4:int[x_1 <= x_4; x_1 <= 0] -> X) -> X)
+  
+(2-1) Abstracting ... DONE!
+
+(2-2) Checking HORS ... DONE!
+
+Safe!
+
+Refinement Types:
+  loop: (unit -> Bottom)
+  map: ((x_1:int -> {x_2:int | x_1 <= x_2}) /\ (x_3:int -> {x_4:int | x_4 >= 0 && x_3 <= x_4}))
+  zip: (x_1:int -> (int -> {x_3:int | x_1 <= x_3}))
+
+cycles: 2
+total: 0.845 sec
+  abst: 0.017 sec
+  mc: 0.029 sec
+  refine: 0.533 sec
+    exparam: 0.048 sec

@@ -1,0 +1,82 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn intro2.ml
+
+parsed::
+ let f_1030 x_1031 g_1032 = g_1032 (x_1031 + 1) 
+ in
+ let h_1033 y_1034 = if y_1034 > 0 then
+                       ()
+                     else
+                       {fail} () 
+ in
+ let main_1035 n_1036 = if n_1036 >= 0 then
+                          f_1030 n_1036 h_1033
+                        else
+                          () 
+ in
+   ()
+
+set_target::
+ let f_1030 x_1031 g_1032 = g_1032 (x_1031 + 1) 
+ in
+ let h_1033 y_1034 = if y_1034 > 0 then
+                       ()
+                     else
+                       {fail} () 
+ in
+ let main_1035 n_1036 = if n_1036 >= 0 then
+                          f_1030 n_1036 h_1033
+                        else
+                          () 
+ in
+ let main_1062 = let arg1_1061 = rand_int () 
+                 in
+                   main_1035 arg1_1061 
+ in
+   ()
+
+CPS::
+ let f_1030 (x_1031:int) (g_1032:(int -> ((unit -> X) -> X))) (k_f_1102:(unit -> X)) = g_1032 (x_1031 + 1) k_f_1102 
+ in
+ let h_1033 (y_1034:int) (k_h_1126:(unit -> X)) = if y_1034 > 0 then
+                                                    k_h_1126 ()
+                                                  else
+                                                    {|fail|} () k_h_1126 
+ in
+ let main_1035 (n_1036:int) (k_main_1151:(unit -> X)) =
+   if n_1036 >= 0 then
+     f_1030 n_1036 h_1033 k_main_1151
+   else
+     k_main_1151 () 
+ in
+   rand_int_cps () (fun x_1184 -> main_1035 x_1184 (fun x_1181 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1209
+  main_1209 -> (rand_int f_1210)
+  f_1030 x_1031 g_1032 k_f_1102 -> (g_1032 (x_1031 + 1) k_f_1102)
+  f_1210 x_1184 -> (main_1035 x_1184 (f_1211 x_1184))
+  f_1211 x_1184 x_1181 -> end
+  fail_1212 b k -> {fail} => (k ())
+  h_1033 y_1034 k_h_1126 when (y_1034 > 0) -> (k_h_1126 ())
+  h_1033 y_1034 k_h_1126 when (not (y_1034 > 0)) -> (fail_1212 true k_h_1126)
+  main_1035 n_1036 k_main_1151 when (n_1036 >= 0) -> (f_1030 n_1036 h_1033 k_main_1151)
+  main_1035 n_1036 k_main_1151 when (not (n_1036 >= 0)) -> (k_main_1151 ())
+Types:
+  main_1209 : X
+  fail_1212 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Safe!
+
+cycles: 0
+total: 0.176 sec
+  abst: 0.000 sec
+  mc: 0.002 sec
+  refine: 0.000 sec
+    exparam: 0.000 sec

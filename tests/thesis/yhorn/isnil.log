@@ -1,0 +1,1005 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn isnil.ml
+
+parsed::
+ let is_nil_1030 xs_1031 = (match xs_1031 with
+                              | [] -> true
+                              | _ -> false) 
+ in
+ let rec make_list_1032 n_1033 = if n_1033 = 0 then
+                                   []
+                                 else
+                                   n_1033::make_list_1032 (n_1033 - 1) 
+ in
+ let main_1034 n_1035 =
+   let xs_1036 = make_list_1032 n_1035 
+   in
+     if n_1035 > 0 then
+       if not is_nil_1030 xs_1036 then
+         ()
+       else
+         {fail} ()
+     else
+       () 
+ in
+   ()
+
+set_target::
+ let is_nil_1030 xs_1031 = (match xs_1031 with
+                              | [] -> true
+                              | _ -> false) 
+ in
+ let rec make_list_1032 n_1033 = if n_1033 = 0 then
+                                   []
+                                 else
+                                   n_1033::make_list_1032 (n_1033 - 1) 
+ in
+ let main_1034 n_1035 =
+   let xs_1036 = make_list_1032 n_1035 
+   in
+     if n_1035 > 0 then
+       if not is_nil_1030 xs_1036 then
+         ()
+       else
+         {fail} ()
+     else
+       () 
+ in
+ let main_1051 = let arg1_1050 = rand_int () 
+                 in
+                   main_1034 arg1_1050 
+ in
+   ()
+
+abst_list::
+ let is_nil_1030 (xs_1031:(int * (int -> int))) = if fst xs_1031 = 0 then
+                                                    true
+                                                  else
+                                                    false 
+ in
+ let rec make_list_1032 (n_1033:int) =
+   if n_1033 = 0 then
+     (0, fun x_1077 -> _|_)
+   else
+     let cons_make_list_1073 (x_1071:int) (xs_1072:(int * (int -> int))) =
+       (fst xs_1072 + 1, fun i_1070 -> (if i_1070 = 0 then
+                                          x_1071
+                                        else
+                                          (snd xs_1072) (i_1070 - 1))) 
+     in
+       cons_make_list_1073 n_1033 (make_list_1032 (n_1033 - 1)) 
+ in
+ let main_1034 (n_1035:int) =
+   let xs_1036 = make_list_1032 n_1035 
+   in
+     if n_1035 > 0 then
+       if not is_nil_1030 xs_1036 then
+         ()
+       else
+         {fail} ()
+     else
+       () 
+ in
+ let main_1051 = let arg1_1050 = rand_int () 
+                 in
+                   main_1034 arg1_1050 
+ in
+   ()
+
+CPS::
+ let is_nil_1030 (xs_1031:(int * (int -> ((int -> X) -> X)))) (k_is_nil_1133:(
+   bool -> X)) = if fst xs_1031 = 0 then
+                   k_is_nil_1133 true
+                 else
+                   k_is_nil_1133 false 
+ in
+ let rec make_list_1032 (n_1033:int) (k_make_list_1166:((int * (int -> ((int -> X) -> X))) -> X)) =
+   if n_1033 = 0 then
+     k_make_list_1166 (0, fun x_1077 -> fun k_make_list_1178 -> _|_)
+   else
+     let cons_make_list_1073
+       (x_1071:int) (xs_1072:(int * (int -> ((int -> X) -> X)))) (k_make_list_cons_make_list_1225:(
+       (int * (int -> ((int -> X) -> X))) -> X)) =
+       k_make_list_cons_make_list_1225
+         (fst xs_1072 + 1,
+         fun i_1070 ->
+           fun k_make_list_cons_make_list_1240 ->
+             (if i_1070 = 0 then
+                k_make_list_cons_make_list_1240 x_1071
+              else
+                (snd xs_1072) (i_1070 - 1) k_make_list_cons_make_list_1240)) 
+     in
+       make_list_1032 (n_1033 - 1) (fun x_1303 -> cons_make_list_1073 n_1033 x_1303 k_make_list_1166) 
+ in
+ let main_1034 (n_1035:int) (k_main_1324:(unit -> X)) =
+   make_list_1032 n_1035
+     (fun x_1330 ->
+        (if n_1035 > 0 then
+           is_nil_1030 x_1330 (fun b_1358 -> (if not b_1358 then
+                                                k_main_1324 ()
+                                              else
+                                                {|fail|} () k_main_1324))
+         else
+           k_main_1324 ())) 
+ in
+   rand_int_cps () (fun x_1401 -> main_1034 x_1401 (fun x_1398 -> end))
+
+remove_pair::
+ let is_nil_1030 (xs1_1031:int) (xs2_1031:(int -> ((int -> X) -> X))) (k_is_nil_1133:(
+   bool -> X)) = if xs1_1031 = 0 then
+                   k_is_nil_1133 true
+                 else
+                   k_is_nil_1133 false 
+ in
+ let rec make_list_1032 (n_1033:int) (k_make_list_1166:(int -> ((int -> ((int -> X) -> X)) -> X))) =
+   if n_1033 = 0 then
+     k_make_list_1166 0 (fun x_1077 -> fun k_make_list_1178 -> _|_)
+   else
+     let cons_make_list_1073
+       (x_1071:int) (xs1_1072:int) (xs2_1072:(int -> ((int -> X) -> X))) (k_make_list_cons_make_list_1225:(
+       int -> ((int -> ((int -> X) -> X)) -> X))) =
+       k_make_list_cons_make_list_1225 (xs1_1072 + 1)
+         (fun i_1070 ->
+            fun k_make_list_cons_make_list_1240 ->
+              (if i_1070 = 0 then
+                 k_make_list_cons_make_list_1240 x_1071
+               else
+                 xs2_1072 (i_1070 - 1) k_make_list_cons_make_list_1240)) 
+     in
+       make_list_1032 (n_1033 - 1)
+         (fun x1_1303 -> fun x2_1303 -> cons_make_list_1073 n_1033 x1_1303 x2_1303 k_make_list_1166) 
+ in
+ let main_1034 (n_1035:int) (k_main_1324:(unit -> X)) =
+   make_list_1032 n_1035
+     (fun x1_1330 ->
+        fun x2_1330 ->
+          (if n_1035 > 0 then
+             is_nil_1030 x1_1330 x2_1330
+               (fun b_1358 -> (if not b_1358 then
+                                 k_main_1324 ()
+                               else
+                                 {|fail|} () k_main_1324))
+           else
+             k_main_1324 ())) 
+ in
+   rand_int_cps () (fun x_1401 -> main_1034 x_1401 (fun x_1398 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1447
+  main_1447 -> (rand_int f_1453)
+  cons_make_list_1073 n_1033 x_1071 xs1_1072 xs2_1072 k_make_list_cons_make_list_1225 ->
+      (k_make_list_cons_make_list_1225 (xs1_1072 + 1) (f_cons_make_list_1449 n_1033 x_1071 xs1_1072 xs2_1072))
+  f_1453 x_1401 -> (main_1034 x_1401 (f_1454 x_1401))
+  f_1454 x_1401 x_1398 -> end
+  f_cons_make_list_1449 n_1033 x_1071 xs1_1072 xs2_1072 i_1070 k_make_list_cons_make_list_1240 when (
+      i_1070 = 0) -> (k_make_list_cons_make_list_1240 x_1071)
+  f_cons_make_list_1449 n_1033 x_1071 xs1_1072 xs2_1072 i_1070 k_make_list_cons_make_list_1240 when (
+      not (i_1070 = 0)) -> (xs2_1072 (i_1070 - 1) k_make_list_cons_make_list_1240)
+  f_main_1451 n_1035 k_main_1324 x1_1330 x2_1330 when (n_1035 > 0) ->
+      (is_nil_1030 x1_1330 x2_1330 (f_main_1452 n_1035 x1_1330 k_main_1324))
+  f_main_1451 n_1035 k_main_1324 x1_1330 x2_1330 when (not (n_1035 > 0)) -> (k_main_1324 ())
+  f_main_1452 n_1035 x1_1330 k_main_1324 b_1358 when (not b_1358) -> (k_main_1324 ())
+  f_main_1452 n_1035 x1_1330 k_main_1324 b_1358 when (not (not b_1358)) -> (fail_1455 true k_main_1324)
+  f_make_list_1448 n_1033 x_1077 k_make_list_1178 -> _|_
+  f_make_list_1450 n_1033 k_make_list_1166 x1_1303 x2_1303 ->
+      (cons_make_list_1073 n_1033 n_1033 x1_1303 x2_1303 k_make_list_1166)
+  fail_1455 b k -> {fail} => (k ())
+  is_nil_1030 xs1_1031 xs2_1031 k_is_nil_1133 when (xs1_1031 = 0) -> (k_is_nil_1133 true)
+  is_nil_1030 xs1_1031 xs2_1031 k_is_nil_1133 when (not (xs1_1031 = 0)) -> (k_is_nil_1133 false)
+  main_1034 n_1035 k_main_1324 -> (make_list_1032 n_1035 (f_main_1451 n_1035 k_main_1324))
+  make_list_1032 n_1033 k_make_list_1166 when (n_1033 = 0) -> (k_make_list_1166 0 (f_make_list_1448 n_1033))
+  make_list_1032 n_1033 k_make_list_1166 when (not (n_1033 = 0)) ->
+      (make_list_1032 (n_1033 - 1) (f_make_list_1450 n_1033 k_make_list_1166))
+Types:
+  main_1447 : X
+  fail_1455 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  make_list_1032 : (int -> (int -> (int -> (int -> X) -> X) -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1447 ... --> 
+  f_1453 ... --> 
+  main_1034 ... --> 
+  make_list_1032 [1/2] ... --> 
+  f_main_1451 [1/2] ... --> 
+  is_nil_1030 [1/2] ... --> 
+  f_main_1452 [2/2] ... --> 
+  fail_1455 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(133)[1]
+  program:
+    main_1447  | true = ((Random.int 0) f_1453)
+    cons_make_list_1073 n_1033 x_1071 xs1_1072 xs2_1072 k_make_list_cons_make_list_1225 | true = (
+    k_make_list_cons_make_list_1225 (xs1_1072 + 1)
+                                    (f_cons_make_list_1449 n_1033
+                                                           x_1071
+                                                           xs1_1072
+                                                           xs2_1072))
+    f_1453 x_1401 | true = (main_1034 x_1401
+                                      (f_1454 x_1401))
+    f_1454 x_1401 x_1398 | true = end
+    f_cons_make_list_1449 n_1033 x_1071 xs1_1072 xs2_1072 i_1070 k_make_list_cons_make_list_1240 | (
+    i_1070 = 0) = (k_make_list_cons_make_list_1240 x_1071)
+    f_cons_make_list_1449 n_1033 x_1071 xs1_1072 xs2_1072 i_1070 k_make_list_cons_make_list_1240 | (
+    not (i_1070 = 0)) = (xs2_1072 (i_1070 - 1)
+                                  k_make_list_cons_make_list_1240)
+    f_main_1451 n_1035 k_main_1324 x1_1330 x2_1330 | (n_1035 > 0) = (
+    is_nil_1030 x1_1330
+                x2_1330
+                (f_main_1452 n_1035
+                             x1_1330
+                             k_main_1324))
+    f_main_1451 n_1035 k_main_1324 x1_1330 x2_1330 | (not (n_1035 > 0)) = (
+    k_main_1324 ())
+    f_main_1452 n_1035 x1_1330 k_main_1324 b_1358 | (not b_1358) = (k_main_1324 ())
+    f_main_1452 n_1035 x1_1330 k_main_1324 b_1358 | (not (not b_1358)) = (
+    fail_1455 true
+              k_main_1324)
+    f_make_list_1448 n_1033 x_1077 k_make_list_1178 | true = bot
+    f_make_list_1450 n_1033 k_make_list_1166 x1_1303 x2_1303 | true = (
+    cons_make_list_1073 n_1033
+                        n_1033
+                        x1_1303
+                        x2_1303
+                        k_make_list_1166)
+    fail_1455 b k | true = (fail ())
+    is_nil_1030 xs1_1031 xs2_1031 k_is_nil_1133 | (xs1_1031 = 0) = (k_is_nil_1133 true)
+    is_nil_1030 xs1_1031 xs2_1031 k_is_nil_1133 | (not (xs1_1031 = 0)) = (
+    k_is_nil_1133 false)
+    main_1034 n_1035 k_main_1324 | true = (make_list_1032 n_1035
+                                                          (f_main_1451 n_1035
+                                                                    k_main_1324))
+    make_list_1032 n_1033 k_make_list_1166 | (n_1033 = 0) = (k_make_list_1166 0
+                                                                    (f_make_list_1448 n_1033))
+    make_list_1032 n_1033 k_make_list_1166 | (not (n_1033 = 0)) = (make_list_1032
+                                                                    (
+                                                                    n_1033 - 1)
+                                                                    (
+                                                                    f_make_list_1450 n_1033
+                                                                    k_make_list_1166))
+    main_1447:X
+    cons_make_list_1073:int -> int -> int -> (int -> (int -> X) -> X) -> (int -> (int -> (int -> X) -> X) -> X) -> X
+    f_1453:int -> X
+    f_1454:int -> unit -> X
+    f_cons_make_list_1449:int -> int -> int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    f_main_1451:int -> (unit -> X) -> int -> (int -> (int -> X) -> X) -> X
+    f_main_1452:int -> int -> (unit -> X) -> bool -> X
+    f_make_list_1448:int -> int -> (int -> X) -> X
+    f_make_list_1450:int -> (int -> (int -> (int -> X) -> X) -> X) -> int -> (int -> (int -> X) -> X) -> X
+    fail_1455:bool -> (unit -> X) -> X
+    is_nil_1030:int -> (int -> (int -> X) -> X) -> (bool -> X) -> X
+    main_1034:int -> (unit -> X) -> X
+    make_list_1032:int -> (int -> (int -> (int -> X) -> X) -> X) -> X
+  inlined functions: cons_make_list_1073,f_1453,f_1454,f_cons_make_list_1449,f_main_1451,f_main_1452,f_make_list_1448,f_make_list_1450,is_nil_1030,main_1034
+  counterexample: 0:0:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1453@4:0> = var2)
+     [true.(<main_1034@6:0> = <f_1453@4:0>)
+      [true.(<make_list_1032@8:0> = <main_1034@6:0>)
+       [(<make_list_1032@8:0> = 0).(<<make_list_1032@8:1>@11:0> = 0)
+        [true.((<f_main_1451@13:0> = <main_1034@6:0>) && (<f_main_1451@13:2> = <<make_list_1032@8:1>@11:0>))
+         [(<f_main_1451@13:0> > 0).(<is_nil_1030@16:0> = <f_main_1451@13:2>)
+          [(<is_nil_1030@16:0> = 0).(<<is_nil_1030@16:2>@19:0> = true)
+           [true.
+            ((<f_main_1452@21:0> = <f_main_1451@13:0>) &&
+             ((<f_main_1452@21:1> = <f_main_1451@13:2>) && (<f_main_1452@21:3> = <<is_nil_1030@16:2>@19:0>)))
+            [(not (not <f_main_1452@21:3>)).(<fail_1455@24:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(134)[2]
+    horn clauses:
+      P[<fail_1455@24:0>](<fail_1455@24:0>:bool)|- bot
+      
+      P[<f_main_1452@21:3>](<f_main_1452@21:0>:int,<f_main_1452@21:1>:int,true:bool), <fail_1455@24:0>
+      |- P[<fail_1455@24:0>](<fail_1455@24:0>:bool)
+      
+      P[<f_main_1451@13:2>](<f_main_1452@21:0>:int,<f_main_1452@21:1>:int),
+      P[<<is_nil_1030@16:2>@19:0>](<f_main_1452@21:1>:int,<f_main_1452@21:3>:bool), (
+      <f_main_1452@21:0> > 0)
+      |- P[<f_main_1452@21:3>](<f_main_1452@21:0>:int,<f_main_1452@21:1>:int,
+                               <f_main_1452@21:3>:bool)
+      
+      P[<is_nil_1030@16:0>](<is_nil_1030@16:0>:int), ((<is_nil_1030@16:0> = 0) && <<is_nil_1030@16:2>@19:0>)
+      |- P[<<is_nil_1030@16:2>@19:0>](<is_nil_1030@16:0>:int,<<is_nil_1030@16:2>@19:0>:bool)
+      
+      P[<f_main_1451@13:2>](<f_main_1451@13:0>:int,<is_nil_1030@16:0>:int), (
+      <f_main_1451@13:0> > 0) |- P[<is_nil_1030@16:0>](<is_nil_1030@16:0>:int)
+      
+      P[<main_1034@6:0>](<f_main_1451@13:0>:int),
+      P[<<make_list_1032@8:1>@11:0>](<f_main_1451@13:0>:int,<f_main_1451@13:2>:int)|- P[<f_main_1451@13:2>](
+      <f_main_1451@13:0>:int,<f_main_1451@13:2>:int)
+      
+      P[<make_list_1032@8:0>](<make_list_1032@8:0>:int),
+      ((<make_list_1032@8:0> = 0) && (<<make_list_1032@8:1>@11:0> = 0))
+      |- P[<<make_list_1032@8:1>@11:0>](<make_list_1032@8:0>:int,<<make_list_1032@8:1>@11:0>:int)
+      
+      P[<main_1034@6:0>](<make_list_1032@8:0>:int)|- P[<make_list_1032@8:0>](<make_list_1032@8:0>:int)
+      
+      P[<f_1453@4:0>](<main_1034@6:0>:int)|- P[<main_1034@6:0>](<main_1034@6:0>:int)
+      
+      |- P[<f_1453@4:0>](<f_1453@4:0>:int)
+    call trees:
+      <main_1447@1>
+        <f_1453@4>
+          <main_1034@6>
+            <make_list_1032@8>
+            </<make_list_1032@8:1>@11>
+            <f_main_1451@13>
+              <is_nil_1030@16>
+              </<is_nil_1030@16:2>@19>
+              <f_main_1452@21>
+                <fail_1455@24>
+    inlined horn clauses:
+      P[<fail_1455@24:0>](<fail_1455@24:0>:bool)|- bot
+      
+      P[<<make_list_1032@8:1>@11:0>](<f_main_1452@21:0>:int,0:int), (
+      (<f_main_1452@21:0> > 0) && <fail_1455@24:0>) |- P[<fail_1455@24:0>](
+      <fail_1455@24:0>:bool)
+      
+      P[<make_list_1032@8:0>](<make_list_1032@8:0>:int),
+      ((<make_list_1032@8:0> = 0) && (<<make_list_1032@8:1>@11:0> = 0))
+      |- P[<<make_list_1032@8:1>@11:0>](<make_list_1032@8:0>:int,<<make_list_1032@8:1>@11:0>:int)
+      
+      |- P[<make_list_1032@8:0>](<make_list_1032@8:0>:int)
+    begin ParamSubstInfer.infer(1287)[3]
+      
+    end ParamSubstInfer.infer(1287)[3] (0.014998 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(1289)[3]
+      
+    end RefTypeInfer.elim_coeffs(1289)[3] (0.000000 sec.)
+    begin YhornInterface.solve(1422)[3]
+      begin HcSolver.solve_ub(1423)[4]
+        encoded:
+          P[<fail_1455@24:0>](<fail_1455@24:0>:int)|- bot
+          
+          P[<<make_list_1032@8:1>@11:0>](<f_main_1452@21:0>:int,0:int),
+          ((<f_main_1452@21:0> > 0) && (<fail_1455@24:0> = 1)) |- P[<fail_1455@24:0>](
+          <fail_1455@24:0>:int)
+          
+          P[<make_list_1032@8:0>](<make_list_1032@8:0>:int),
+          ((<make_list_1032@8:0> = 0) && (<<make_list_1032@8:1>@11:0> = 0))
+          |- P[<<make_list_1032@8:1>@11:0>](<make_list_1032@8:0>:int,
+                                            <<make_list_1032@8:1>@11:0>:int)
+          
+          |- P[<make_list_1032@8:0>](<make_list_1032@8:0>:int)
+        input to Yhorn:
+          P[<fail_1455@24:0>](<fail_1455@24:0>:int)|- bot
+          
+          P[<<make_list_1032@8:1>@11:0>](<f_main_1452@21:0>:int,var5:int),
+          ((<f_main_1452@21:0> > 0) && ((var5 = 0) && (<fail_1455@24:0> = 1)))
+          |- P[<fail_1455@24:0>](<fail_1455@24:0>:int)
+          
+          P[<make_list_1032@8:0>](<make_list_1032@8:0>:int),
+          ((<<make_list_1032@8:1>@11:0> = 0) && (<make_list_1032@8:0> = 0))
+          |- P[<<make_list_1032@8:1>@11:0>](<make_list_1032@8:0>:int,
+                                            <<make_list_1032@8:1>@11:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1455_sep_24_sep_0($6)) -> 1=0.
+(($6-1=0) & ($7=0) & ($8>0)) & (v_sep_make_list_1032_sep_8_sep_1_sep_11_sep_0($8,$7)) -> v_sep_fail_1455_sep_24_sep_0($6).
+(($9=0) & ($10=0)) & (v_sep_make_list_1032_sep_8_sep_0($9)) -> v_sep_make_list_1032_sep_8_sep_1_sep_11_sep_0($9,$10).
+0=0 -> v_sep_make_list_1032_sep_8_sep_0($9).
+
+
+v_sep_fail_1455_sep_24_sep_0: X
+v_sep_make_list_1032_sep_8_sep_0: X
+v_sep_make_list_1032_sep_8_sep_1_sep_11_sep_0: X
+....
+v_sep_fail_1455_sep_24_sep_0: X
+v_sep_make_list_1032_sep_8_sep_0: X
+v_sep_make_list_1032_sep_8_sep_1_sep_11_sep_0: X
+...
+v_sep_fail_1455_sep_24_sep_0: X
+v_sep_make_list_1032_sep_8_sep_0: X
+v_sep_make_list_1032_sep_8_sep_1_sep_11_sep_0: X
+....
+v_sep_fail_1455_sep_24_sep_0: X
+v_sep_make_list_1032_sep_8_sep_0: X
+v_sep_make_list_1032_sep_8_sep_1_sep_11_sep_0: X
+....(0=0) & (v_sep_fail_1455_sep_24_sep_0($6)) -> 1=0.
+(($6-1=0) & ($7=0) & ($8>0)) & (v_sep_make_list_1032_sep_8_sep_1_sep_11_sep_0($8,$7)) -> v_sep_fail_1455_sep_24_sep_0($6).
+(($9=0) & ($10=0)) & (v_sep_make_list_1032_sep_8_sep_0($9)) -> v_sep_make_list_1032_sep_8_sep_1_sep_11_sep_0($9,$10).
+0=0 -> v_sep_make_list_1032_sep_8_sep_0($9).
+
+          |- P[<make_list_1032@8:0>](<make_list_1032@8:0>:int)
+        solution:
+          P[<fail_1455@24:0>]($11:bool) = false
+          P[<make_list_1032@8:0>]($19:int) = true
+          P[<<make_list_1032@8:1>@11:0>]($14:int,$16:int) = ($14 <= 0)
+        
+      end HcSolver.solve_ub(1423)[4] (0.014998 sec.)
+      begin HcSolver.check_validity(1528)[4]
+        input:
+          P[<fail_1455@24:0>](<fail_1455@24:0>:bool)|- bot
+          
+          P[<<make_list_1032@8:1>@11:0>](<f_main_1452@21:0>:int,0:int), (
+          (<f_main_1452@21:0> > 0) && <fail_1455@24:0>) |- P[<fail_1455@24:0>](
+          <fail_1455@24:0>:bool)
+          
+          P[<make_list_1032@8:0>](<make_list_1032@8:0>:int),
+          ((<make_list_1032@8:0> = 0) && (<<make_list_1032@8:1>@11:0> = 0))
+          |- P[<<make_list_1032@8:1>@11:0>](<make_list_1032@8:0>:int,
+                                            <<make_list_1032@8:1>@11:0>:int)
+          
+          |- P[<make_list_1032@8:0>](<make_list_1032@8:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(1528)[4] (0.001000 sec.)
+      solution:
+        P[<fail_1455@24:0>]($11:bool) = false
+        P[<make_list_1032@8:0>]($19:int) = true
+        P[<<make_list_1032@8:1>@11:0>]($14:int,$16:int) = ($14 <= 0)
+    end YhornInterface.solve(1422)[3] (0.015998 sec.)
+    
+  end RefTypeInfer.infer_etrs(134)[2] (0.038995 sec.)
+  refinement types:
+    main_1447: X
+    f_1453: v1:int -> X
+    main_1034: v1:int -> (v2:unit -> X) -> X
+    make_list_1032: v1:int -> (v2:{v2:int | (v1 <= 0)} -> (v3:int -> (v4:int -> X) -> X) -> X) -> X
+    f_main_1451: v1:int -> (v2:unit -> X) -> v4:int -> (v5:int -> (v6:int -> X) -> X) -> X
+    is_nil_1030: v1:int -> (v2:int -> (v3:int -> X) -> X) -> (v6:bool -> X) -> X
+    f_main_1452: v1:int -> v2:int -> (v3:unit -> X) -> v5:bool -> X
+    fail_1455: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    cons_make_list_1073: var39:int ->
+                         var38:int ->
+                         var37:int ->
+                         (var36:int -> (var35:int -> X) -> X) ->
+                         (var32:int -> (var31:int -> (var30:int -> X) -> X) -> X) -> X
+    f_1454: var42:int -> var41:unit -> X
+    f_cons_make_list_1449: var53:int ->
+                           var52:int ->
+                           var51:int -> (var50:int -> (var49:int -> X) -> X) -> var46:int -> (var45:int -> X) -> X
+    f_make_list_1448: var58:int -> var57:int -> (var56:int -> X) -> X
+    f_make_list_1450: var71:int ->
+                      (var70:int -> (var69:int -> (var68:int -> X) -> X) -> X) ->
+                      var64:int -> (var63:int -> (var62:int -> X) -> X) -> X
+  abstraction types:
+    main_1447: X
+    f_1453: v1:int -> X
+    main_1034: v1:int -> (v2:unit -> X) -> X
+    make_list_1032: v1:int -> (v2:int[v2 -> (v1 <= 0)] -> (v3:int -> (v4:int -> X) -> X) -> X) -> X
+    f_main_1451: v1:int -> (v2:unit -> X) -> v4:int -> (v5:int -> (v6:int -> X) -> X) -> X
+    is_nil_1030: v1:int -> (v2:int -> (v3:int -> X) -> X) -> (v6:bool -> X) -> X
+    f_main_1452: v1:int -> v2:int -> (v3:unit -> X) -> v5:bool -> X
+    fail_1455: v1:bool -> (v2:unit -> X) -> X
+    cons_make_list_1073: var39:int ->
+                         var38:int ->
+                         var37:int ->
+                         (var36:int -> (var35:int -> X) -> X) ->
+                         (var32:int -> (var31:int -> (var30:int -> X) -> X) -> X) -> X
+    f_1454: var42:int -> var41:unit -> X
+    f_cons_make_list_1449: var53:int ->
+                           var52:int ->
+                           var51:int -> (var50:int -> (var49:int -> X) -> X) -> var46:int -> (var45:int -> X) -> X
+    f_make_list_1448: var58:int -> var57:int -> (var56:int -> X) -> X
+    f_make_list_1450: var71:int ->
+                      (var70:int -> (var69:int -> (var68:int -> X) -> X) -> X) ->
+                      var64:int -> (var63:int -> (var62:int -> X) -> X) -> X
+  
+end AbsTypeInfer.refine(133)[1] (0.041994 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 0
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1447
+  main_1447 -> (rand_int f_1453)
+  cons_make_list_1073 n_1033 x_1071 xs1_1072 xs2_1072 k_make_list_cons_make_list_1225 ->
+      (k_make_list_cons_make_list_1225 (xs1_1072 + 1) (f_cons_make_list_1449 n_1033 x_1071 xs1_1072 xs2_1072))
+  f_1453 x_1401 -> (main_1034 x_1401 (f_1454 x_1401))
+  f_1454 x_1401 x_1398 -> end
+  f_cons_make_list_1449 n_1033 x_1071 xs1_1072 xs2_1072 i_1070 k_make_list_cons_make_list_1240 when (
+      i_1070 = 0) -> (k_make_list_cons_make_list_1240 x_1071)
+  f_cons_make_list_1449 n_1033 x_1071 xs1_1072 xs2_1072 i_1070 k_make_list_cons_make_list_1240 when (
+      not (i_1070 = 0)) -> (xs2_1072 (i_1070 - 1) k_make_list_cons_make_list_1240)
+  f_main_1451 n_1035 k_main_1324 x1_1330 x2_1330 when (n_1035 > 0) ->
+      (is_nil_1030 x1_1330 x2_1330 (f_main_1452 n_1035 x1_1330 k_main_1324))
+  f_main_1451 n_1035 k_main_1324 x1_1330 x2_1330 when (not (n_1035 > 0)) -> (k_main_1324 ())
+  f_main_1452 n_1035 x1_1330 k_main_1324 b_1358 when (not b_1358) -> (k_main_1324 ())
+  f_main_1452 n_1035 x1_1330 k_main_1324 b_1358 when (not (not b_1358)) -> (fail_1455 true k_main_1324)
+  f_make_list_1448 n_1033 x_1077 k_make_list_1178 -> _|_
+  f_make_list_1450 n_1033 k_make_list_1166 x1_1303 x2_1303 ->
+      (cons_make_list_1073 n_1033 n_1033 x1_1303 x2_1303 k_make_list_1166)
+  fail_1455 b k -> {fail} => (k ())
+  is_nil_1030 xs1_1031 xs2_1031 k_is_nil_1133 when (xs1_1031 = 0) -> (k_is_nil_1133 true)
+  is_nil_1030 xs1_1031 xs2_1031 k_is_nil_1133 when (not (xs1_1031 = 0)) -> (k_is_nil_1133 false)
+  main_1034 n_1035 k_main_1324 -> (make_list_1032 n_1035 (f_main_1451 n_1035 k_main_1324))
+  make_list_1032 n_1033 k_make_list_1166 when (n_1033 = 0) -> (k_make_list_1166 0 (f_make_list_1448 n_1033))
+  make_list_1032 n_1033 k_make_list_1166 when (not (n_1033 = 0)) ->
+      (make_list_1032 (n_1033 - 1) (f_make_list_1450 n_1033 k_make_list_1166))
+Types:
+  main_1447 : X
+  fail_1455 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  make_list_1032 : (x_1:int -> (int[x_1 <= 0] -> (int -> (int -> X) -> X) -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1447 ... --> 
+  f_1453 ... --> 
+  main_1034 ... --> 
+  make_list_1032 [2/2] ... --> 
+  make_list_1032 [1/2] ... --> 
+  f_make_list_1450 ... --> 
+  cons_make_list_1073 ... --> 
+  f_main_1451 [1/2] ... --> 
+  is_nil_1030 [1/2] ... --> 
+  f_main_1452 [2/2] ... --> 
+  fail_1455 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 0; 0; 0; 0; 0; 1; 0
+
+(1-3) Checking counter-example ... DONE!
+
+(1-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(1953)[1]
+  program:
+    main_1447  | true = ((Random.int 0) f_1453)
+    cons_make_list_1073 n_1033 x_1071 xs1_1072 xs2_1072 k_make_list_cons_make_list_1225 | true = (
+    k_make_list_cons_make_list_1225 (xs1_1072 + 1)
+                                    (f_cons_make_list_1449 n_1033
+                                                           x_1071
+                                                           xs1_1072
+                                                           xs2_1072))
+    f_1453 x_1401 | true = (main_1034 x_1401
+                                      (f_1454 x_1401))
+    f_1454 x_1401 x_1398 | true = end
+    f_cons_make_list_1449 n_1033 x_1071 xs1_1072 xs2_1072 i_1070 k_make_list_cons_make_list_1240 | (
+    i_1070 = 0) = (k_make_list_cons_make_list_1240 x_1071)
+    f_cons_make_list_1449 n_1033 x_1071 xs1_1072 xs2_1072 i_1070 k_make_list_cons_make_list_1240 | (
+    not (i_1070 = 0)) = (xs2_1072 (i_1070 - 1)
+                                  k_make_list_cons_make_list_1240)
+    f_main_1451 n_1035 k_main_1324 x1_1330 x2_1330 | (n_1035 > 0) = (
+    is_nil_1030 x1_1330
+                x2_1330
+                (f_main_1452 n_1035
+                             x1_1330
+                             k_main_1324))
+    f_main_1451 n_1035 k_main_1324 x1_1330 x2_1330 | (not (n_1035 > 0)) = (
+    k_main_1324 ())
+    f_main_1452 n_1035 x1_1330 k_main_1324 b_1358 | (not b_1358) = (k_main_1324 ())
+    f_main_1452 n_1035 x1_1330 k_main_1324 b_1358 | (not (not b_1358)) = (
+    fail_1455 true
+              k_main_1324)
+    f_make_list_1448 n_1033 x_1077 k_make_list_1178 | true = bot
+    f_make_list_1450 n_1033 k_make_list_1166 x1_1303 x2_1303 | true = (
+    cons_make_list_1073 n_1033
+                        n_1033
+                        x1_1303
+                        x2_1303
+                        k_make_list_1166)
+    fail_1455 b k | true = (fail ())
+    is_nil_1030 xs1_1031 xs2_1031 k_is_nil_1133 | (xs1_1031 = 0) = (k_is_nil_1133 true)
+    is_nil_1030 xs1_1031 xs2_1031 k_is_nil_1133 | (not (xs1_1031 = 0)) = (
+    k_is_nil_1133 false)
+    main_1034 n_1035 k_main_1324 | true = (make_list_1032 n_1035
+                                                          (f_main_1451 n_1035
+                                                                    k_main_1324))
+    make_list_1032 n_1033 k_make_list_1166 | (n_1033 = 0) = (k_make_list_1166 0
+                                                                    (f_make_list_1448 n_1033))
+    make_list_1032 n_1033 k_make_list_1166 | (not (n_1033 = 0)) = (make_list_1032
+                                                                    (
+                                                                    n_1033 - 1)
+                                                                    (
+                                                                    f_make_list_1450 n_1033
+                                                                    k_make_list_1166))
+    main_1447:X
+    cons_make_list_1073:int -> int -> int -> (int -> (int -> X) -> X) -> (int -> (int -> (int -> X) -> X) -> X) -> X
+    f_1453:int -> X
+    f_1454:int -> unit -> X
+    f_cons_make_list_1449:int -> int -> int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    f_main_1451:int -> (unit -> X) -> int -> (int -> (int -> X) -> X) -> X
+    f_main_1452:int -> int -> (unit -> X) -> bool -> X
+    f_make_list_1448:int -> int -> (int -> X) -> X
+    f_make_list_1450:int -> (int -> (int -> (int -> X) -> X) -> X) -> int -> (int -> (int -> X) -> X) -> X
+    fail_1455:bool -> (unit -> X) -> X
+    is_nil_1030:int -> (int -> (int -> X) -> X) -> (bool -> X) -> X
+    main_1034:int -> (unit -> X) -> X
+    make_list_1032:int -> (int -> (int -> (int -> X) -> X) -> X) -> X
+  inlined functions: cons_make_list_1073,f_1453,f_1454,f_cons_make_list_1449,f_main_1451,f_main_1452,f_make_list_1448,f_make_list_1450,is_nil_1030,main_1034
+  counterexample: 0:0:0:1:0:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1453@30:0> = var72)
+     [true.(<main_1034@32:0> = <f_1453@30:0>)
+      [true.(<make_list_1032@34:0> = <main_1034@32:0>)
+       [(not (<make_list_1032@34:0> = 0)).(<make_list_1032@37:0> = (<make_list_1032@34:0> - 1))
+        [(<make_list_1032@37:0> = 0).(<<make_list_1032@37:1>@40:0> = 0)
+         [true.
+          ((<f_make_list_1450@42:0> = <make_list_1032@34:0>) &&
+           (<f_make_list_1450@42:2> = <<make_list_1032@37:1>@40:0>))
+          [true.
+           ((<cons_make_list_1073@44:0> = <f_make_list_1450@42:0>) &&
+            ((<cons_make_list_1073@44:1> = <f_make_list_1450@42:0>) &&
+             (<cons_make_list_1073@44:2> = <f_make_list_1450@42:2>)))
+           [true.(<<cons_make_list_1073@44:4>@46:0> = (<cons_make_list_1073@44:2> + 1))
+            [true.(<<f_make_list_1450@42:1>@48:0> = <<cons_make_list_1073@44:4>@46:0>)
+             [true.(<<make_list_1032@34:1>@50:0> = <<f_make_list_1450@42:1>@48:0>)
+              [true.((<f_main_1451@52:0> = <main_1034@32:0>) && (<f_main_1451@52:2> = <<make_list_1032@34:1>@50:0>))
+               [(<f_main_1451@52:0> > 0).(<is_nil_1030@55:0> = <f_main_1451@52:2>)
+                [(<is_nil_1030@55:0> = 0).(<<is_nil_1030@55:2>@58:0> = true)
+                 [true.
+                  ((<f_main_1452@60:0> = <f_main_1451@52:0>) &&
+                   ((<f_main_1452@60:1> = <f_main_1451@52:2>) && (<f_main_1452@60:3> = <<is_nil_1030@55:2>@58:0>)))
+                  [(not (not <f_main_1452@60:3>)).(<fail_1455@63:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(1954)[2]
+    horn clauses:
+      P[<fail_1455@63:0>](<fail_1455@63:0>:bool)|- bot
+      
+      P[<f_main_1452@60:3>](<f_main_1452@60:0>:int,<f_main_1452@60:1>:int,true:bool), <fail_1455@63:0>
+      |- P[<fail_1455@63:0>](<fail_1455@63:0>:bool)
+      
+      P[<f_main_1451@52:2>](<f_main_1452@60:0>:int,<f_main_1452@60:1>:int),
+      P[<<is_nil_1030@55:2>@58:0>](<f_main_1452@60:1>:int,<f_main_1452@60:3>:bool), (
+      <f_main_1452@60:0> > 0)
+      |- P[<f_main_1452@60:3>](<f_main_1452@60:0>:int,<f_main_1452@60:1>:int,
+                               <f_main_1452@60:3>:bool)
+      
+      P[<is_nil_1030@55:0>](<is_nil_1030@55:0>:int), ((<is_nil_1030@55:0> = 0) && <<is_nil_1030@55:2>@58:0>)
+      |- P[<<is_nil_1030@55:2>@58:0>](<is_nil_1030@55:0>:int,<<is_nil_1030@55:2>@58:0>:bool)
+      
+      P[<f_main_1451@52:2>](<f_main_1451@52:0>:int,<is_nil_1030@55:0>:int), (
+      <f_main_1451@52:0> > 0) |- P[<is_nil_1030@55:0>](<is_nil_1030@55:0>:int)
+      
+      P[<main_1034@32:0>](<f_main_1451@52:0>:int),
+      P[<<make_list_1032@34:1>@50:0>](<f_main_1451@52:0>:int,<f_main_1451@52:2>:int)|- P[<f_main_1451@52:2>](
+      <f_main_1451@52:0>:int,<f_main_1451@52:2>:int)
+      
+      P[<make_list_1032@34:0>](<make_list_1032@34:0>:int),
+      P[<<f_make_list_1450@42:1>@48:0>](<make_list_1032@34:0>:int,<<make_list_1032@34:1>@50:0>:int),
+      (<make_list_1032@34:0> <> 0)
+      |- P[<<make_list_1032@34:1>@50:0>](<make_list_1032@34:0>:int,<<make_list_1032@34:1>@50:0>:int)
+      
+      P[<f_make_list_1450@42:2>](<f_make_list_1450@42:0>:int,<cons_make_list_1073@44:2>:int),
+      P[<<cons_make_list_1073@44:4>@46:0>](<f_make_list_1450@42:0>:int,<f_make_list_1450@42:0>:int,<cons_make_list_1073@44:2>:int,<<f_make_list_1450@42:1>@48:0>:int)|- P[<<f_make_list_1450@42:1>@48:0>](
+      <f_make_list_1450@42:0>:int,<<f_make_list_1450@42:1>@48:0>:int)
+      
+      P[<cons_make_list_1073@44:2>](<cons_make_list_1073@44:0>:int,<cons_make_list_1073@44:1>:int,<cons_make_list_1073@44:2>:int),
+      (<<cons_make_list_1073@44:4>@46:0> = (1 + <cons_make_list_1073@44:2>))
+      |- P[<<cons_make_list_1073@44:4>@46:0>](<cons_make_list_1073@44:0>:int,
+                                              <cons_make_list_1073@44:1>:int,
+                                              <cons_make_list_1073@44:2>:int,
+                                              <<cons_make_list_1073@44:4>@46:0>:int)
+      
+      P[<f_make_list_1450@42:2>](<cons_make_list_1073@44:0>:int,<cons_make_list_1073@44:2>:int),
+      (<cons_make_list_1073@44:0> = <cons_make_list_1073@44:1>)
+      |- P[<cons_make_list_1073@44:2>](<cons_make_list_1073@44:0>:int,
+                                       <cons_make_list_1073@44:1>:int,
+                                       <cons_make_list_1073@44:2>:int)
+      
+      P[<make_list_1032@34:0>](<f_make_list_1450@42:0>:int),
+      P[<<make_list_1032@37:1>@40:0>]((-1 + <f_make_list_1450@42:0>):int,<f_make_list_1450@42:2>:int),
+      (<f_make_list_1450@42:0> <> 0)
+      |- P[<f_make_list_1450@42:2>](<f_make_list_1450@42:0>:int,<f_make_list_1450@42:2>:int)
+      
+      P[<make_list_1032@37:0>](<make_list_1032@37:0>:int),
+      ((<make_list_1032@37:0> = 0) && (<<make_list_1032@37:1>@40:0> = 0))
+      |- P[<<make_list_1032@37:1>@40:0>](<make_list_1032@37:0>:int,<<make_list_1032@37:1>@40:0>:int)
+      
+      P[<make_list_1032@34:0>]((1 + <make_list_1032@37:0>):int), ((1 + <make_list_1032@37:0>) <> 0)
+      |- P[<make_list_1032@37:0>](<make_list_1032@37:0>:int)
+      
+      P[<main_1034@32:0>](<make_list_1032@34:0>:int)|- P[<make_list_1032@34:0>](<make_list_1032@34:0>:int)
+      
+      P[<f_1453@30:0>](<main_1034@32:0>:int)|- P[<main_1034@32:0>](<main_1034@32:0>:int)
+      
+      |- P[<f_1453@30:0>](<f_1453@30:0>:int)
+    call trees:
+      <main_1447@27>
+        <f_1453@30>
+          <main_1034@32>
+            <make_list_1032@34>
+              <make_list_1032@37>
+              </<make_list_1032@37:1>@40>
+              <f_make_list_1450@42>
+                <cons_make_list_1073@44>
+                </<cons_make_list_1073@44:4>@46>
+              </<f_make_list_1450@42:1>@48>
+            </<make_list_1032@34:1>@50>
+            <f_main_1451@52>
+              <is_nil_1030@55>
+              </<is_nil_1030@55:2>@58>
+              <f_main_1452@60>
+                <fail_1455@63>
+    inlined horn clauses:
+      P[<fail_1455@63:0>](<fail_1455@63:0>:bool)|- bot
+      
+      P[<<make_list_1032@34:1>@50:0>](<f_main_1452@60:0>:int,0:int), (
+      (<f_main_1452@60:0> > 0) && <fail_1455@63:0>) |- P[<fail_1455@63:0>](
+      <fail_1455@63:0>:bool)
+      
+      P[<make_list_1032@34:0>](<make_list_1032@34:0>:int),
+      P[<<make_list_1032@37:1>@40:0>]((-1 + <make_list_1032@34:0>):int,(
+                                      -1 + <<make_list_1032@34:1>@50:0>):int), (
+      <make_list_1032@34:0> <> 0)
+      |- P[<<make_list_1032@34:1>@50:0>](<make_list_1032@34:0>:int,<<make_list_1032@34:1>@50:0>:int)
+      
+      P[<make_list_1032@37:0>](<make_list_1032@37:0>:int),
+      ((<make_list_1032@37:0> = 0) && (<<make_list_1032@37:1>@40:0> = 0))
+      |- P[<<make_list_1032@37:1>@40:0>](<make_list_1032@37:0>:int,<<make_list_1032@37:1>@40:0>:int)
+      
+      P[<make_list_1032@34:0>]((1 + <make_list_1032@37:0>):int), ((1 + <make_list_1032@37:0>) <> 0)
+      |- P[<make_list_1032@37:0>](<make_list_1032@37:0>:int)
+      
+      |- P[<make_list_1032@34:0>](<make_list_1032@34:0>:int)
+    begin ParamSubstInfer.infer(4010)[3]
+      
+    end ParamSubstInfer.infer(4010)[3] (0.029996 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(4012)[3]
+      
+    end RefTypeInfer.elim_coeffs(4012)[3] (0.000000 sec.)
+    begin YhornInterface.solve(4199)[3]
+      begin HcSolver.solve_ub(4200)[4]
+        encoded:
+          P[<fail_1455@63:0>](<fail_1455@63:0>:int)|- bot
+          
+          P[<<make_list_1032@34:1>@50:0>](<f_main_1452@60:0>:int,0:int),
+          ((<f_main_1452@60:0> > 0) && (<fail_1455@63:0> = 1)) |- P[<fail_1455@63:0>](
+          <fail_1455@63:0>:int)
+          
+          P[<make_list_1032@34:0>](<make_list_1032@34:0>:int),
+          P[<<make_list_1032@37:1>@40:0>]((-1 + <make_list_1032@34:0>):int,(
+                                          -1 + <<make_list_1032@34:1>@50:0>):int), (
+          <make_list_1032@34:0> <> 0)
+          |- P[<<make_list_1032@34:1>@50:0>](<make_list_1032@34:0>:int,
+                                             <<make_list_1032@34:1>@50:0>:int)
+          
+          P[<make_list_1032@37:0>](<make_list_1032@37:0>:int),
+          ((<make_list_1032@37:0> = 0) && (<<make_list_1032@37:1>@40:0> = 0))
+          |- P[<<make_list_1032@37:1>@40:0>](<make_list_1032@37:0>:int,
+                                             <<make_list_1032@37:1>@40:0>:int)
+          
+          P[<make_list_1032@34:0>]((1 + <make_list_1032@37:0>):int), (
+          (1 + <make_list_1032@37:0>) <> 0) |- P[<make_list_1032@37:0>](
+          <make_list_1032@37:0>:int)
+          
+          |- P[<make_list_1032@34:0>](<make_list_1032@34:0>:int)
+        input to Yhorn:
+          P[<fail_1455@63:0>](<fail_1455@63:0>:int)|- bot
+          
+          P[<<make_list_1032@34:1>@50:0>](<f_main_1452@60:0>:int,var75:int),
+          ((<f_main_1452@60:0> > 0) && ((var75 = 0) && (<fail_1455@63:0> = 1)))
+          |- P[<fail_1455@63:0>](<fail_1455@63:0>:int)
+          
+          P[<make_list_1032@34:0>](<make_list_1032@34:0>:int),
+          P[<<make_list_1032@37:1>@40:0>](var76:int,var77:int),
+          (((1 + var77) = <<make_list_1032@34:1>@50:0>) &&
+           (((1 + var76) = <make_list_1032@34:0>) && (<make_list_1032@34:0> <> 0)))
+          |- P[<<make_list_1032@34:1>@50:0>](<make_list_1032@34:0>:int,
+                                             <<make_list_1032@34:1>@50:0>:int)
+          
+          P[<make_list_1032@37:0>](<make_list_1032@37:0>:int),
+          ((<<make_list_1032@37:1>@40:0> = 0) && (<make_list_1032@37:0> = 0))
+          |- P[<<make_list_1032@37:1>@40:0>](<make_list_1032@37:0>:int,
+                                             <<make_list_1032@37:1>@40:0>:int)
+          
+          P[<make_list_1032@34:0>](var78:int),
+          ((var78 = (1 + <make_list_1032@37:0>)) && ((1 + <make_list_1032@37:0>) <> 0))
+          |- P[<make_list_1032@37:0>](<make_list_1032@37:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1455_sep_63_sep_0($78)) -> 1=0.
+(($78-1=0) & ($79=0) & ($80>0)) & (v_sep_make_list_1032_sep_34_sep_1_sep_50_sep_0($80,$79)) -> v_sep_fail_1455_sep_63_sep_0($78).
+(($81<>0) & (-$81+$82+1=0) & ($83-$84+1=0)) & (v_sep_make_list_1032_sep_37_sep_1_sep_40_sep_0($82,$83)) & (v_sep_make_list_1032_sep_34_sep_0($81)) -> v_sep_make_list_1032_sep_34_sep_1_sep_50_sep_0($81,$84).
+(($85=0) & ($86=0)) & (v_sep_make_list_1032_sep_37_sep_0($85)) -> v_sep_make_list_1032_sep_37_sep_1_sep_40_sep_0($85,$86).
+(($85+1<>0) & (-$85+$87-1=0)) & (v_sep_make_list_1032_sep_34_sep_0($87)) -> v_sep_make_list_1032_sep_37_sep_0($85).
+0=0 -> v_sep_make_list_1032_sep_34_sep_0($81).
+
+
+v_sep_fail_1455_sep_63_sep_0: X
+v_sep_make_list_1032_sep_34_sep_0: X
+v_sep_make_list_1032_sep_34_sep_1_sep_50_sep_0: X
+v_sep_make_list_1032_sep_37_sep_0: X
+v_sep_make_list_1032_sep_37_sep_1_sep_40_sep_0: X
+..........
+v_sep_fail_1455_sep_63_sep_0: X
+v_sep_make_list_1032_sep_34_sep_0: X
+v_sep_make_list_1032_sep_34_sep_1_sep_50_sep_0: X
+v_sep_make_list_1032_sep_37_sep_0: X
+v_sep_make_list_1032_sep_37_sep_1_sep_40_sep_0: X
+...
+v_sep_fail_1455_sep_63_sep_0: X
+v_sep_make_list_1032_sep_34_sep_0: X
+v_sep_make_list_1032_sep_34_sep_1_sep_50_sep_0: X
+v_sep_make_list_1032_sep_37_sep_0: X
+v_sep_make_list_1032_sep_37_sep_1_sep_40_sep_0: X
+.......
+v_sep_fail_1455_sep_63_sep_0: X
+v_sep_make_list_1032_sep_34_sep_0: X
+v_sep_make_list_1032_sep_34_sep_1_sep_50_sep_0: X
+v_sep_make_list_1032_sep_37_sep_0: X
+v_sep_make_list_1032_sep_37_sep_1_sep_40_sep_0: X
+........
+v_sep_fail_1455_sep_63_sep_0: X
+v_sep_make_list_1032_sep_34_sep_0: X
+v_sep_make_list_1032_sep_34_sep_1_sep_50_sep_0: X
+v_sep_make_list_1032_sep_37_sep_0: X
+v_sep_make_list_1032_sep_37_sep_1_sep_40_sep_0: X
+..........(0=0) & (v_sep_fail_1455_sep_63_sep_0($78)) -> 1=0.
+(($78-1=0) & ($79=0) & ($80>0)) & (v_sep_make_list_1032_sep_34_sep_1_sep_50_sep_0($80,$79)) -> v_sep_fail_1455_sep_63_sep_0($78).
+(($81<>0) & (-$81+$82+1=0) & ($83-$84+1=0)) & (v_sep_make_list_1032_sep_37_sep_1_sep_40_sep_0($82,$83)) & (v_sep_make_list_1032_sep_34_sep_0($81)) -> v_sep_make_list_1032_sep_34_sep_1_sep_50_sep_0($81,$84).
+(($85=0) & ($86=0)) & (v_sep_make_list_1032_sep_37_sep_0($85)) -> v_sep_make_list_1032_sep_37_sep_1_sep_40_sep_0($85,$86).
+(($85+1<>0) & (-$85+$87-1=0)) & (v_sep_make_list_1032_sep_34_sep_0($87)) -> v_sep_make_list_1032_sep_37_sep_0($85).
+0=0 -> v_sep_make_list_1032_sep_34_sep_0($81).
+
+          |- P[<make_list_1032@34:0>](<make_list_1032@34:0>:int)
+        solution:
+          P[<fail_1455@63:0>]($88:bool) = false
+          P[<make_list_1032@34:0>]($101:int) = true
+          P[<<make_list_1032@34:1>@50:0>]($91:int,$93:int) = ($91 <= $93)
+          P[<make_list_1032@37:0>]($104:int) = true
+          P[<<make_list_1032@37:1>@40:0>]($96:int,$98:int) = ($96 <= $98)
+        
+      end HcSolver.solve_ub(4200)[4] (0.030996 sec.)
+      begin HcSolver.check_validity(4459)[4]
+        input:
+          P[<fail_1455@63:0>](<fail_1455@63:0>:bool)|- bot
+          
+          P[<<make_list_1032@34:1>@50:0>](<f_main_1452@60:0>:int,0:int), (
+          (<f_main_1452@60:0> > 0) && <fail_1455@63:0>) |- P[<fail_1455@63:0>](
+          <fail_1455@63:0>:bool)
+          
+          P[<make_list_1032@34:0>](<make_list_1032@34:0>:int),
+          P[<<make_list_1032@37:1>@40:0>]((-1 + <make_list_1032@34:0>):int,(
+                                          -1 + <<make_list_1032@34:1>@50:0>):int), (
+          <make_list_1032@34:0> <> 0)
+          |- P[<<make_list_1032@34:1>@50:0>](<make_list_1032@34:0>:int,
+                                             <<make_list_1032@34:1>@50:0>:int)
+          
+          P[<make_list_1032@37:0>](<make_list_1032@37:0>:int),
+          ((<make_list_1032@37:0> = 0) && (<<make_list_1032@37:1>@40:0> = 0))
+          |- P[<<make_list_1032@37:1>@40:0>](<make_list_1032@37:0>:int,
+                                             <<make_list_1032@37:1>@40:0>:int)
+          
+          P[<make_list_1032@34:0>]((1 + <make_list_1032@37:0>):int), (
+          (1 + <make_list_1032@37:0>) <> 0) |- P[<make_list_1032@37:0>](
+          <make_list_1032@37:0>:int)
+          
+          |- P[<make_list_1032@34:0>](<make_list_1032@34:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(4459)[4] (0.001999 sec.)
+      solution:
+        P[<fail_1455@63:0>]($88:bool) = false
+        P[<make_list_1032@34:0>]($101:int) = true
+        P[<<make_list_1032@34:1>@50:0>]($91:int,$93:int) = ($91 <= $93)
+        P[<make_list_1032@37:0>]($104:int) = true
+        P[<<make_list_1032@37:1>@40:0>]($96:int,$98:int) = ($96 <= $98)
+    end YhornInterface.solve(4199)[3] (0.032995 sec.)
+    
+  end RefTypeInfer.infer_etrs(1954)[2] (0.077988 sec.)
+  refinement types:
+    main_1447: X
+    f_1453: v1:int -> X
+    main_1034: v1:int -> (v2:unit -> X) -> X
+    make_list_1032: v1:int -> (v2:{v2:int | (v1 <= v2)} -> (v3:int -> (v4:int -> X) -> X) -> X) -> X
+    make_list_1032: v1:int -> (v2:{v2:int | (v1 <= v2)} -> (v3:int -> (v4:int -> X) -> X) -> X) -> X
+    f_make_list_1450: v1:int ->
+                      (v2:int -> (v3:int -> (v4:int -> X) -> X) -> X) -> v8:int -> (v9:int -> (v10:int -> X) -> X) -> X
+    cons_make_list_1073: v1:int ->
+                         v2:int ->
+                         v3:int ->
+                         (v4:int -> (v5:int -> X) -> X) -> (v8:int -> (v9:int -> (v10:int -> X) -> X) -> X) -> X
+    f_main_1451: v1:int -> (v2:unit -> X) -> v4:int -> (v5:int -> (v6:int -> X) -> X) -> X
+    is_nil_1030: v1:int -> (v2:int -> (v3:int -> X) -> X) -> (v6:bool -> X) -> X
+    f_main_1452: v1:int -> v2:int -> (v3:unit -> X) -> v5:bool -> X
+    fail_1455: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1454: var121:int -> var120:unit -> X
+    f_cons_make_list_1449: var132:int ->
+                           var131:int ->
+                           var130:int -> (var129:int -> (var128:int -> X) -> X) -> var125:int -> (var124:int -> X) -> X
+    f_make_list_1448: var137:int -> var136:int -> (var135:int -> X) -> X
+  abstraction types:
+    main_1447: X
+    f_1453: v1:int -> X
+    main_1034: v1:int -> (v2:unit -> X) -> X
+    make_list_1032: var138:int ->
+                    (var139:int[var139 -> (var138 <= var139)] -> (var140:int -> (var141:int -> X) -> X) -> X) -> X
+    f_make_list_1450: v1:int ->
+                      (v2:int -> (v3:int -> (v4:int -> X) -> X) -> X) -> v8:int -> (v9:int -> (v10:int -> X) -> X) -> X
+    cons_make_list_1073: v1:int ->
+                         v2:int ->
+                         v3:int ->
+                         (v4:int -> (v5:int -> X) -> X) -> (v8:int -> (v9:int -> (v10:int -> X) -> X) -> X) -> X
+    f_main_1451: v1:int -> (v2:unit -> X) -> v4:int -> (v5:int -> (v6:int -> X) -> X) -> X
+    is_nil_1030: v1:int -> (v2:int -> (v3:int -> X) -> X) -> (v6:bool -> X) -> X
+    f_main_1452: v1:int -> v2:int -> (v3:unit -> X) -> v5:bool -> X
+    fail_1455: v1:bool -> (v2:unit -> X) -> X
+    f_1454: var121:int -> var120:unit -> X
+    f_cons_make_list_1449: var132:int ->
+                           var131:int ->
+                           var130:int -> (var129:int -> (var128:int -> X) -> X) -> var125:int -> (var124:int -> X) -> X
+    f_make_list_1448: var137:int -> var136:int -> (var135:int -> X) -> X
+  
+end AbsTypeInfer.refine(1953)[1] (0.083988 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 0; 0; 0; 0; 0
+
+Program with abstraction types (CEGAR-cycle 2)::
+Main: main_1447
+  main_1447 -> (rand_int f_1453)
+  cons_make_list_1073 n_1033 x_1071 xs1_1072 xs2_1072 k_make_list_cons_make_list_1225 ->
+      (k_make_list_cons_make_list_1225 (xs1_1072 + 1) (f_cons_make_list_1449 n_1033 x_1071 xs1_1072 xs2_1072))
+  f_1453 x_1401 -> (main_1034 x_1401 (f_1454 x_1401))
+  f_1454 x_1401 x_1398 -> end
+  f_cons_make_list_1449 n_1033 x_1071 xs1_1072 xs2_1072 i_1070 k_make_list_cons_make_list_1240 when (
+      i_1070 = 0) -> (k_make_list_cons_make_list_1240 x_1071)
+  f_cons_make_list_1449 n_1033 x_1071 xs1_1072 xs2_1072 i_1070 k_make_list_cons_make_list_1240 when (
+      not (i_1070 = 0)) -> (xs2_1072 (i_1070 - 1) k_make_list_cons_make_list_1240)
+  f_main_1451 n_1035 k_main_1324 x1_1330 x2_1330 when (n_1035 > 0) ->
+      (is_nil_1030 x1_1330 x2_1330 (f_main_1452 n_1035 x1_1330 k_main_1324))
+  f_main_1451 n_1035 k_main_1324 x1_1330 x2_1330 when (not (n_1035 > 0)) -> (k_main_1324 ())
+  f_main_1452 n_1035 x1_1330 k_main_1324 b_1358 when (not b_1358) -> (k_main_1324 ())
+  f_main_1452 n_1035 x1_1330 k_main_1324 b_1358 when (not (not b_1358)) -> (fail_1455 true k_main_1324)
+  f_make_list_1448 n_1033 x_1077 k_make_list_1178 -> _|_
+  f_make_list_1450 n_1033 k_make_list_1166 x1_1303 x2_1303 ->
+      (cons_make_list_1073 n_1033 n_1033 x1_1303 x2_1303 k_make_list_1166)
+  fail_1455 b k -> {fail} => (k ())
+  is_nil_1030 xs1_1031 xs2_1031 k_is_nil_1133 when (xs1_1031 = 0) -> (k_is_nil_1133 true)
+  is_nil_1030 xs1_1031 xs2_1031 k_is_nil_1133 when (not (xs1_1031 = 0)) -> (k_is_nil_1133 false)
+  main_1034 n_1035 k_main_1324 -> (make_list_1032 n_1035 (f_main_1451 n_1035 k_main_1324))
+  make_list_1032 n_1033 k_make_list_1166 when (n_1033 = 0) -> (k_make_list_1166 0 (f_make_list_1448 n_1033))
+  make_list_1032 n_1033 k_make_list_1166 when (not (n_1033 = 0)) ->
+      (make_list_1032 (n_1033 - 1) (f_make_list_1450 n_1033 k_make_list_1166))
+Types:
+  main_1447 : X
+  fail_1455 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  make_list_1032 : (x_1:int -> (x_3:int[x_1 <= x_3; x_1 <= 0] -> (int -> (int -> X) -> X) -> X) -> X)
+  
+(2-1) Abstracting ... DONE!
+
+(2-2) Checking HORS ... DONE!
+
+Safe!
+
+Refinement Types:
+  make_list: ((x_1:int -> ((Top list|x_2:x_1 <= 0|) \/ (Top list|x_4:x_1 > 0 && x_1 <= x_4|))) /\ 
+              (x_6:int -> (Top list|x_7:x_6 <= x_7|)))
+
+cycles: 2
+total: 0.424 sec
+  abst: 0.015 sec
+  mc: 0.036 sec
+  refine: 0.138 sec
+    exparam: 0.045 sec

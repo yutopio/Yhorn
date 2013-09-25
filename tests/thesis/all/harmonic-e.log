@@ -1,0 +1,393 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -gchi harmonic-e.ml
+
+parsed::
+ let rec div_1030 x_1031 y_1032 =
+   let u_1049 = if y_1032 <> 0 then
+                  ()
+                else
+                  {fail} () 
+   in
+     if x_1031 < y_1032 then
+       0
+     else
+       1 + div_1030 (x_1031 - y_1032) y_1032 
+ in
+ let rec fold_left_1033 f_1034 acc_1035 xs_1036 =
+   (match xs_1036 with
+      | [] -> acc_1035
+      | x_1037::xs'_1038 -> fold_left_1033 f_1034 (f_1034 acc_1035 x_1037) xs'_1038) 
+ in
+ let rec range_1039 i_1040 j_1041 =
+   if i_1040 > j_1041 then
+     []
+   else
+     let is_1042 = range_1039 (i_1040 + 1) j_1041 
+     in
+       i_1040::is_1042 
+ in
+ let harmonic_1043 n_1044 =
+   let ds_1045 = range_1039 0 n_1044 
+   in
+     fold_left_1033 (fun s_1046 -> fun k_1047 -> s_1046 + div_1030 10000 k_1047) 0 ds_1045 
+ in
+   ()
+
+set_target::
+ let rec div_1030 x_1031 y_1032 =
+   let u_1049 = if y_1032 <> 0 then
+                  ()
+                else
+                  {fail} () 
+   in
+     if x_1031 < y_1032 then
+       0
+     else
+       1 + div_1030 (x_1031 - y_1032) y_1032 
+ in
+ let rec fold_left_1033 f_1034 acc_1035 xs_1036 =
+   (match xs_1036 with
+      | [] -> acc_1035
+      | x_1037::xs'_1038 -> fold_left_1033 f_1034 (f_1034 acc_1035 x_1037) xs'_1038) 
+ in
+ let rec range_1039 i_1040 j_1041 =
+   if i_1040 > j_1041 then
+     []
+   else
+     let is_1042 = range_1039 (i_1040 + 1) j_1041 
+     in
+       i_1040::is_1042 
+ in
+ let harmonic_1043 n_1044 =
+   let ds_1045 = range_1039 0 n_1044 
+   in
+     fold_left_1033 (fun s_1046 -> fun k_1047 -> s_1046 + div_1030 10000 k_1047) 0 ds_1045 
+ in
+ let main_1115 = let arg1_1114 = rand_int () 
+                 in
+                   harmonic_1043 arg1_1114 
+ in
+   ()
+
+copy_poly::
+ let rec div_1030 (x_1031:int) (y_1032:int) =
+   let u_1049 = if y_1032 <> 0 then
+                  ()
+                else
+                  {fail} () 
+   in
+     if x_1031 < y_1032 then
+       0
+     else
+       1 + div_1030 (x_1031 - y_1032) y_1032 
+ in
+ let rec fold_left_1116 (f_1034:(int -> (int -> int))) (acc_1035:int) (xs_1036:
+   int list) =
+   (match xs_1036 with
+      | [] -> acc_1035
+      | x_1037::xs'_1038 -> fold_left_1116 f_1034 (f_1034 acc_1035 x_1037) xs'_1038) 
+ in
+ let rec range_1039 (i_1040:int) (j_1041:int) =
+   if i_1040 > j_1041 then
+     []
+   else
+     let is_1042 = range_1039 (i_1040 + 1) j_1041 
+     in
+       i_1040::is_1042 
+ in
+ let harmonic_1043 (n_1044:int) =
+   let ds_1045 = range_1039 0 n_1044 
+   in
+     fold_left_1116 (fun s_1046 -> fun k_1047 -> s_1046 + div_1030 10000 k_1047) 0 ds_1045 
+ in
+ let main_1115 = let arg1_1114 = rand_int () 
+                 in
+                   harmonic_1043 arg1_1114 
+ in
+   ()
+
+abst_list::
+ let rec div_1030 (x_1031:int) (y_1032:int) =
+   let u_1049 = if y_1032 <> 0 then
+                  ()
+                else
+                  {fail} () 
+   in
+     if x_1031 < y_1032 then
+       0
+     else
+       1 + div_1030 (x_1031 - y_1032) y_1032 
+ in
+ let rec fold_left_1116 (f_1034:(int -> (int -> int))) (acc_1035:int) (xs_1036:(
+   int * (int -> int))) =
+   if fst xs_1036 = 0 then
+     acc_1035
+   else
+     if 1 <= fst xs_1036 then
+       let xs'_1038 = (fst xs_1036 - 1, fun x_1121 -> (snd xs_1036) (x_1121 + 1)) 
+       in
+       let x_1037 = (snd xs_1036) 0 
+       in
+         fold_left_1116 f_1034 (f_1034 acc_1035 x_1037) xs'_1038
+     else
+       _|_ 
+ in
+ let rec range_1039 (i_1040:int) (j_1041:int) =
+   if i_1040 > j_1041 then
+     (0, fun x_1162 -> _|_)
+   else
+     let is_1042 = range_1039 (i_1040 + 1) j_1041 
+     in
+     let cons_range_1158 (x_1156:int) (xs_1157:(int * (int -> int))) =
+       (fst xs_1157 + 1, fun i_1155 -> (if i_1155 = 0 then
+                                          x_1156
+                                        else
+                                          (snd xs_1157) (i_1155 - 1))) 
+     in
+       cons_range_1158 i_1040 is_1042 
+ in
+ let harmonic_1043 (n_1044:int) =
+   let ds_1045 = range_1039 0 n_1044 
+   in
+     fold_left_1116 (fun s_1046 -> fun k_1047 -> s_1046 + div_1030 10000 k_1047) 0 ds_1045 
+ in
+ let main_1115 = let arg1_1114 = rand_int () 
+                 in
+                   harmonic_1043 arg1_1114 
+ in
+   ()
+
+CPS::
+ let rec div_1030 (x_1031:int) (y_1032:int) (k_div_1209:(int -> X)) =
+   let k_div_u_1222 (x_1212:unit) =
+     if x_1031 < y_1032 then
+       k_div_1209 0
+     else
+       div_1030 (x_1031 - y_1032) y_1032 (fun x_1227 -> k_div_1209 (1 + x_1227)) 
+   in
+     if y_1032 <> 0 then
+       k_div_u_1222 ()
+     else
+       {|fail|} () k_div_u_1222 
+ in
+ let rec fold_left_1116
+   (f_1034:(int -> (int -> ((int -> X) -> X)))) (acc_1035:int) (xs_1036:(
+   int * (int -> ((int -> X) -> X)))) (k_fold_left_1290:(int -> X)) =
+   if fst xs_1036 = 0 then
+     k_fold_left_1290 acc_1035
+   else
+     if 1 <= fst xs_1036 then
+       (snd xs_1036) 0
+         (fun x_1337 ->
+            f_1034 acc_1035 x_1337
+              (fun x_1391 ->
+                 fold_left_1116 f_1034 x_1391
+                   (fst xs_1036 - 1,
+                   fun x_1121 -> fun k_fold_left_xs'_1323 -> (snd xs_1036) (x_1121 + 1) k_fold_left_xs'_1323)
+                   k_fold_left_1290))
+     else
+       _|_ 
+ in
+ let rec range_1039 (i_1040:int) (j_1041:int) (k_range_1446:((int * (int -> ((int -> X) -> X))) -> X)) =
+   if i_1040 > j_1041 then
+     k_range_1446 (0, fun x_1162 -> fun k_range_1458 -> _|_)
+   else
+     range_1039 (i_1040 + 1) j_1041
+       (fun x_1470 ->
+          (let cons_range_1158
+             (x_1156:int) (xs_1157:(int * (int -> ((int -> X) -> X)))) (k_range_cons_range_1540:(
+             (int * (int -> ((int -> X) -> X))) -> X)) =
+             k_range_cons_range_1540
+               (fst xs_1157 + 1,
+               fun i_1155 ->
+                 fun k_range_cons_range_1555 ->
+                   (if i_1155 = 0 then
+                      k_range_cons_range_1555 x_1156
+                    else
+                      (snd xs_1157) (i_1155 - 1) k_range_cons_range_1555)) 
+           in
+             cons_range_1158 i_1040 x_1470 k_range_1446)) 
+ in
+ let harmonic_1043 (n_1044:int) (k_harmonic_1623:(int -> X)) =
+   range_1039 0 n_1044
+     (fun x_1629 ->
+        fold_left_1116
+          (fun s_1046 ->
+             fun k_1047 ->
+               fun k_harmonic_1669 -> div_1030 10000 k_1047 (fun x_1673 -> k_harmonic_1669 (s_1046 + x_1673))) 0 x_1629
+          k_harmonic_1623) 
+ in
+   rand_int_cps () (fun x_1706 -> harmonic_1043 x_1706 (fun x_1703 -> end))
+
+remove_pair::
+ let rec div_1030 (x_1031:int) (y_1032:int) (k_div_1209:(int -> X)) =
+   let k_div_u_1222 (x_1212:unit) =
+     if x_1031 < y_1032 then
+       k_div_1209 0
+     else
+       div_1030 (x_1031 - y_1032) y_1032 (fun x_1227 -> k_div_1209 (1 + x_1227)) 
+   in
+     if y_1032 <> 0 then
+       k_div_u_1222 ()
+     else
+       {|fail|} () k_div_u_1222 
+ in
+ let rec fold_left_1116
+   (f_1034:(int -> (int -> ((int -> X) -> X)))) (acc_1035:int) (xs1_1036:int) (xs2_1036:(
+   int -> ((int -> X) -> X))) (k_fold_left_1290:(int -> X)) =
+   if xs1_1036 = 0 then
+     k_fold_left_1290 acc_1035
+   else
+     if 1 <= xs1_1036 then
+       xs2_1036 0
+         (fun x_1337 ->
+            f_1034 acc_1035 x_1337
+              (fun x_1391 ->
+                 fold_left_1116 f_1034 x_1391 (xs1_1036 - 1)
+                   (fun x_1121 -> fun k_fold_left_xs'_1323 -> xs2_1036 (x_1121 + 1) k_fold_left_xs'_1323)
+                   k_fold_left_1290))
+     else
+       _|_ 
+ in
+ let rec range_1039 (i_1040:int) (j_1041:int) (k_range_1446:(int -> ((int -> ((int -> X) -> X)) -> X))) =
+   if i_1040 > j_1041 then
+     k_range_1446 0 (fun x_1162 -> fun k_range_1458 -> _|_)
+   else
+     range_1039 (i_1040 + 1) j_1041
+       (fun x1_1470 ->
+          fun x2_1470 ->
+            (let cons_range_1158
+               (x_1156:int) (xs1_1157:int) (xs2_1157:(int -> ((int -> X) -> X))) (k_range_cons_range_1540:(
+               int -> ((int -> ((int -> X) -> X)) -> X))) =
+               k_range_cons_range_1540 (xs1_1157 + 1)
+                 (fun i_1155 ->
+                    fun k_range_cons_range_1555 ->
+                      (if i_1155 = 0 then
+                         k_range_cons_range_1555 x_1156
+                       else
+                         xs2_1157 (i_1155 - 1) k_range_cons_range_1555)) 
+             in
+               cons_range_1158 i_1040 x1_1470 x2_1470 k_range_1446)) 
+ in
+ let harmonic_1043 (n_1044:int) (k_harmonic_1623:(int -> X)) =
+   range_1039 0 n_1044
+     (fun x1_1629 ->
+        fun x2_1629 ->
+          fold_left_1116
+            (fun s_1046 ->
+               fun k_1047 ->
+                 fun k_harmonic_1669 -> div_1030 10000 k_1047 (fun x_1673 -> k_harmonic_1669 (s_1046 + x_1673))) 0
+            x1_1629 x2_1629 k_harmonic_1623) 
+ in
+   rand_int_cps () (fun x_1706 -> harmonic_1043 x_1706 (fun x_1703 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1772
+  main_1772 -> (rand_int f_1783)
+  br_fold_left_1785 b_1786 f_1034 acc_1035 xs1_1036 xs2_1036 k_fold_left_1290 when b_1786 ->
+      (xs2_1036 0 (f_fold_left_1774 acc_1035 xs1_1036 f_1034 k_fold_left_1290 xs2_1036))
+  br_fold_left_1785 b_1786 f_1034 acc_1035 xs1_1036 xs2_1036 k_fold_left_1290 when (not b_1786) -> _|_
+  cons_range_1158 i_1040 j_1041 x1_1470 x_1156 xs1_1157 xs2_1157 k_range_cons_range_1540 ->
+      (k_range_cons_range_1540 (xs1_1157 + 1) (f_cons_range_1779 i_1040 j_1041 x1_1470 x_1156 xs1_1157 xs2_1157))
+  div_1030 x_1031 y_1032 k_div_1209 when (not (y_1032 = 0)) -> (k_div_u_1222 x_1031 y_1032 k_div_1209 ())
+  div_1030 x_1031 y_1032 k_div_1209 when (not (not (y_1032 = 0))) ->
+      (fail_1787 true (k_div_u_1222 x_1031 y_1032 k_div_1209))
+  f_1783 x_1706 -> (harmonic_1043 x_1706 (f_1784 x_1706))
+  f_1784 x_1706 x_1703 -> end
+  f_cons_range_1779 i_1040 j_1041 x1_1470 x_1156 xs1_1157 xs2_1157 i_1155 k_range_cons_range_1555 when (
+      i_1155 = 0) -> (k_range_cons_range_1555 x_1156)
+  f_cons_range_1779 i_1040 j_1041 x1_1470 x_1156 xs1_1157 xs2_1157 i_1155 k_range_cons_range_1555 when (
+      not (i_1155 = 0)) -> (xs2_1157 (i_1155 - 1) k_range_cons_range_1555)
+  f_fold_left_1774 acc_1035 xs1_1036 f_1034 k_fold_left_1290 xs2_1036 x_1337 ->
+      (f_1034 acc_1035 x_1337 (f_fold_left_1775 acc_1035 x_1337 xs1_1036 f_1034 k_fold_left_1290 xs2_1036))
+  f_fold_left_1775 acc_1035 x_1337 xs1_1036 f_1034 k_fold_left_1290 xs2_1036 x_1391 ->
+      (fold_left_1116 f_1034 x_1391 (xs1_1036 - 1) (f_fold_left_1776 acc_1035 x_1337 x_1391 xs1_1036 xs2_1036)
+        k_fold_left_1290)
+  f_fold_left_1776 acc_1035 x_1337 x_1391 xs1_1036 xs2_1036 x_1121 k_fold_left_xs'_1323 ->
+      (xs2_1036 (x_1121 + 1) k_fold_left_xs'_1323)
+  f_harmonic_1780 n_1044 k_harmonic_1623 x1_1629 x2_1629 ->
+      (fold_left_1116 (f_harmonic_1781 n_1044 x1_1629) 0 x1_1629 x2_1629 k_harmonic_1623)
+  f_harmonic_1781 n_1044 x1_1629 s_1046 k_1047 k_harmonic_1669 ->
+      (div_1030 10000 k_1047 (f_harmonic_1782 k_1047 n_1044 s_1046 x1_1629 k_harmonic_1669))
+  f_harmonic_1782 k_1047 n_1044 s_1046 x1_1629 k_harmonic_1669 x_1673 -> (k_harmonic_1669 (s_1046 + x_1673))
+  f_k_div_u_1773 x_1031 x_1212 y_1032 k_div_1209 x_1227 -> (k_div_1209 (1 + x_1227))
+  f_range_1777 i_1040 j_1041 x_1162 k_range_1458 -> _|_
+  f_range_1778 i_1040 j_1041 k_range_1446 x1_1470 x2_1470 ->
+      (cons_range_1158 i_1040 j_1041 x1_1470 i_1040 x1_1470 x2_1470 k_range_1446)
+  fail_1787 b k -> {fail} => (k ())
+  fold_left_1116 f_1034 acc_1035 xs1_1036 xs2_1036 k_fold_left_1290 when (xs1_1036 = 0) -> (k_fold_left_1290 acc_1035)
+  fold_left_1116 f_1034 acc_1035 xs1_1036 xs2_1036 k_fold_left_1290 when (
+      not (xs1_1036 = 0)) -> (br_fold_left_1785 (1 <= xs1_1036) f_1034 acc_1035 xs1_1036 xs2_1036 k_fold_left_1290)
+  harmonic_1043 n_1044 k_harmonic_1623 -> (range_1039 0 n_1044 (f_harmonic_1780 n_1044 k_harmonic_1623))
+  k_div_u_1222 x_1031 y_1032 k_div_1209 x_1212 when (x_1031 < y_1032) -> (k_div_1209 0)
+  k_div_u_1222 x_1031 y_1032 k_div_1209 x_1212 when (not (x_1031 < y_1032)) ->
+      (div_1030 (x_1031 - y_1032) y_1032 (f_k_div_u_1773 x_1031 x_1212 y_1032 k_div_1209))
+  range_1039 i_1040 j_1041 k_range_1446 when (i_1040 > j_1041) -> (k_range_1446 0 (f_range_1777 i_1040 j_1041))
+  range_1039 i_1040 j_1041 k_range_1446 when (not (i_1040 > j_1041)) ->
+      (range_1039 (i_1040 + 1) j_1041 (f_range_1778 i_1040 j_1041 k_range_1446))
+Types:
+  main_1772 : X
+  div_1030 : (int -> int -> (int -> X) -> X)
+  fail_1787 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  fold_left_1116 : ((int -> int -> (int -> X) -> X) -> int -> int -> (int -> (int -> X) -> X) -> (int -> X) -> X)
+  range_1039 : (int -> int -> (int -> (int -> (int -> X) -> X) -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1772 ... --> 
+  f_1783 ... --> 
+  harmonic_1043 ... --> 
+  range_1039 [2/2] ... --> 
+  range_1039 [1/2] ... --> 
+  f_range_1778 ... --> 
+  cons_range_1158 ... --> 
+  f_harmonic_1780 ... --> 
+  fold_left_1116 [2/2] ... --> 
+  br_fold_left_1785 [1/2] ... --> 
+  f_cons_range_1779 [1/2] ... --> 
+  f_fold_left_1774 ... --> 
+  f_harmonic_1781 ... --> 
+  div_1030 [2/2] ... --> 
+  fail_1787 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 0; 0; 0; 0; 1; 0; 0; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... begin Cvc3Interface.solve(296)[1]
+  CVC3 input: PUSH;cnt50_v_sep_r_2029:INT;CHECKSAT (TRUE AND ((NOT (NOT (0 = 0))) AND (TRUE AND (TRUE AND ((0 = 0) AND ((1 <= (0 + 1)) AND ((NOT ((0 + 1) = 0)) AND (TRUE AND (TRUE AND (TRUE AND (((0 + 1) > cnt50_v_sep_r_2029) AND ((NOT (0 > cnt50_v_sep_r_2029)) AND (TRUE AND (TRUE AND TRUE))))))))))))));COUNTERMODEL;POP;
+  CVC3 output: CVC> Satisfiable.
+  CVC3 output: Current scope level is 9.
+  CVC3 output: %Satisfiable  Variable Assignment: % 
+  CVC3 output: ASSERT (cnt50_v_sep_r_2029 = 0);
+  CVC3 output: CVC> 
+  v_sep_r_2029 = 0
+  end Cvc3Interface.solve(296)[1] (0.005999 sec.)
+DONE!
+
+Unsafe!
+
+Input for harmonic:
+  0
+Error trace:
+  harmonic 0 ->
+    range 0 0 ->
+      if false then ... ->
+      range 1 0 ->
+        if true then ... ->
+    fold_left <fun> 0 [0] ->
+      div 10000 0 ->
+        if false then ... ->
+        FAIL!
+
+cycles: 0
+total: 0.240 sec
+  abst: 0.005 sec
+  mc: 0.002 sec
+  refine: 0.008 sec
+    exparam: 0.000 sec

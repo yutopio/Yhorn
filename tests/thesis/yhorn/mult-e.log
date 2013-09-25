@@ -1,0 +1,435 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn mult-e.ml
+
+parsed::
+ let rec mult_1030 n_1031 m_1032 = if n_1031 <= 0 || m_1032 <= 0 then
+                                     0
+                                   else
+                                     n_1031 + mult_1030 n_1031 (m_1032 - 1) 
+ in
+ let main_1033 n_1034 = if n_1034 + 1 <= mult_1030 n_1034 n_1034 then
+                          ()
+                        else
+                          {fail} () 
+ in
+   ()
+
+set_target::
+ let rec mult_1030 n_1031 m_1032 = if n_1031 <= 0 || m_1032 <= 0 then
+                                     0
+                                   else
+                                     n_1031 + mult_1030 n_1031 (m_1032 - 1) 
+ in
+ let main_1033 n_1034 = if n_1034 + 1 <= mult_1030 n_1034 n_1034 then
+                          ()
+                        else
+                          {fail} () 
+ in
+ let main_1061 = let arg1_1060 = rand_int () 
+                 in
+                   main_1033 arg1_1060 
+ in
+   ()
+
+CPS::
+ let rec mult_1030 (n_1031:int) (m_1032:int) (k_mult_1089:(int -> X)) =
+   let k_mult_1092 (b_1112:bool) =
+     if b_1112 then
+       k_mult_1089 0
+     else
+       mult_1030 n_1031 (m_1032 - 1) (fun x_1097 -> k_mult_1089 (n_1031 + x_1097)) 
+   in
+     if n_1031 <= 0 then
+       k_mult_1092 true
+     else
+       k_mult_1092 (m_1032 <= 0) 
+ in
+ let main_1033 (n_1034:int) (k_main_1126:(unit -> X)) =
+   mult_1030 n_1034 n_1034
+     (fun x_1130 -> (if n_1034 + 1 <= x_1130 then
+                       k_main_1126 ()
+                     else
+                       {|fail|} () k_main_1126)) 
+ in
+   rand_int_cps () (fun x_1158 -> main_1033 x_1158 (fun x_1155 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1183
+  main_1183 -> (rand_int f_1186)
+  f_1186 x_1158 -> (main_1033 x_1158 (f_1187 x_1158))
+  f_1187 x_1158 x_1155 -> end
+  f_k_mult_1184 b_1112 m_1032 n_1031 k_mult_1089 x_1097 -> (k_mult_1089 (n_1031 + x_1097))
+  f_main_1185 n_1034 k_main_1126 x_1130 when ((n_1034 + 1) <= x_1130) -> (k_main_1126 ())
+  f_main_1185 n_1034 k_main_1126 x_1130 when (not ((n_1034 + 1) <= x_1130)) -> (fail_1188 true k_main_1126)
+  fail_1188 b k -> {fail} => (k ())
+  k_mult_1092 m_1032 n_1031 k_mult_1089 b_1112 when b_1112 -> (k_mult_1089 0)
+  k_mult_1092 m_1032 n_1031 k_mult_1089 b_1112 when (not b_1112) ->
+      (mult_1030 n_1031 (m_1032 - 1) (f_k_mult_1184 b_1112 m_1032 n_1031 k_mult_1089))
+  main_1033 n_1034 k_main_1126 -> (mult_1030 n_1034 n_1034 (f_main_1185 n_1034 k_main_1126))
+  mult_1030 n_1031 m_1032 k_mult_1089 when (n_1031 <= 0) -> (k_mult_1092 m_1032 n_1031 k_mult_1089 true)
+  mult_1030 n_1031 m_1032 k_mult_1089 when (not (n_1031 <= 0)) -> (k_mult_1092 m_1032 n_1031 k_mult_1089 (m_1032 <= 0))
+Types:
+  main_1183 : X
+  fail_1188 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  mult_1030 : (int -> int -> (int -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1183 ... --> 
+  f_1186 ... --> 
+  main_1033 ... --> 
+  mult_1030 [2/2] ... --> 
+  k_mult_1092 [1/2] ... --> 
+  f_main_1185 [2/2] ... --> 
+  fail_1188 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 0; 1; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(113)[1]
+  program:
+    main_1183  | true = ((Random.int 0) f_1186)
+    f_1186 x_1158 | true = (main_1033 x_1158
+                                      (f_1187 x_1158))
+    f_1187 x_1158 x_1155 | true = end
+    f_k_mult_1184 b_1112 m_1032 n_1031 k_mult_1089 x_1097 | true = (k_mult_1089 (
+                                                                    n_1031 + x_1097))
+    f_main_1185 n_1034 k_main_1126 x_1130 | ((n_1034 + 1) <= x_1130) = (
+    k_main_1126 ())
+    f_main_1185 n_1034 k_main_1126 x_1130 | (not ((n_1034 + 1) <= x_1130)) = (
+    fail_1188 true
+              k_main_1126)
+    fail_1188 b k | true = (fail ())
+    k_mult_1092 m_1032 n_1031 k_mult_1089 b_1112 | b_1112 = (k_mult_1089 0)
+    k_mult_1092 m_1032 n_1031 k_mult_1089 b_1112 | (not b_1112) = (mult_1030
+                                                                    n_1031
+                                                                    (
+                                                                    m_1032 - 1)
+                                                                    (
+                                                                    f_k_mult_1184 b_1112
+                                                                    m_1032
+                                                                    n_1031
+                                                                    k_mult_1089))
+    main_1033 n_1034 k_main_1126 | true = (mult_1030 n_1034
+                                                     n_1034
+                                                     (f_main_1185 n_1034
+                                                                  k_main_1126))
+    mult_1030 n_1031 m_1032 k_mult_1089 | (n_1031 <= 0) = (k_mult_1092 m_1032
+                                                                    n_1031
+                                                                    k_mult_1089
+                                                                    true)
+    mult_1030 n_1031 m_1032 k_mult_1089 | (not (n_1031 <= 0)) = (k_mult_1092 m_1032
+                                                                    n_1031
+                                                                    k_mult_1089
+                                                                    (m_1032 <= 0))
+    main_1183:X
+    f_1186:int -> X
+    f_1187:int -> unit -> X
+    f_k_mult_1184:bool -> int -> int -> (int -> X) -> int -> X
+    f_main_1185:int -> (unit -> X) -> int -> X
+    fail_1188:bool -> (unit -> X) -> X
+    k_mult_1092:int -> int -> (int -> X) -> bool -> X
+    main_1033:int -> (unit -> X) -> X
+    mult_1030:int -> int -> (int -> X) -> X
+  inlined functions: f_1186,f_1187,f_k_mult_1184,f_main_1185,k_mult_1092,main_1033
+  counterexample: 0:0:0:1:0:1:0
+  error traces:
+    [true.nop(<f_1186@4:0> = var2)
+     [true.(<main_1033@6:0> = <f_1186@4:0>)
+      [true.((<mult_1030@8:0> = <main_1033@6:0>) && (<mult_1030@8:1> = <main_1033@6:0>))
+       [(not (<mult_1030@8:0> <= 0)).
+        ((<k_mult_1092@11:0> = <mult_1030@8:1>) &&
+         ((<k_mult_1092@11:1> = <mult_1030@8:0>) && (<k_mult_1092@11:3> = (<mult_1030@8:1> <= 0))))
+        [<k_mult_1092@11:3>.(<<k_mult_1092@11:2>@14:0> = 0)
+         [true.(<<mult_1030@8:2>@16:0> = <<k_mult_1092@11:2>@14:0>)
+          [true.((<f_main_1185@18:0> = <main_1033@6:0>) && (<f_main_1185@18:2> = <<mult_1030@8:2>@16:0>))
+           [(not ((<f_main_1185@18:0> + 1) <= <f_main_1185@18:2>)).(<fail_1188@21:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(114)[2]
+    horn clauses:
+      P[<fail_1188@21:0>](<fail_1188@21:0>:bool)|- bot
+      
+      P[<f_main_1185@18:2>](<f_main_1185@18:0>:int,<f_main_1185@18:2>:int),
+      (((1 + <f_main_1185@18:0>) > <f_main_1185@18:2>) && <fail_1188@21:0>)
+      |- P[<fail_1188@21:0>](<fail_1188@21:0>:bool)
+      
+      P[<main_1033@6:0>](<f_main_1185@18:0>:int),
+      P[<<mult_1030@8:2>@16:0>](<f_main_1185@18:0>:int,<f_main_1185@18:0>:int,<f_main_1185@18:2>:int)|- P[<f_main_1185@18:2>](
+      <f_main_1185@18:0>:int,<f_main_1185@18:2>:int)
+      
+      P[<mult_1030@8:1>](<mult_1030@8:0>:int,<mult_1030@8:1>:int),
+      P[<<k_mult_1092@11:2>@14:0>](<mult_1030@8:1>:int,<mult_1030@8:0>:int,<<mult_1030@8:2>@16:0>:int),
+      (<mult_1030@8:0> > 0)
+      |- P[<<mult_1030@8:2>@16:0>](<mult_1030@8:0>:int,<mult_1030@8:1>:int,
+                                   <<mult_1030@8:2>@16:0>:int)
+      
+      P[<k_mult_1092@11:3>](<k_mult_1092@11:0>:int,<k_mult_1092@11:1>:int,true:bool), (
+      <<k_mult_1092@11:2>@14:0> = 0)
+      |- P[<<k_mult_1092@11:2>@14:0>](<k_mult_1092@11:0>:int,<k_mult_1092@11:1>:int,
+                                      <<k_mult_1092@11:2>@14:0>:int)
+      
+      P[<mult_1030@8:1>](<k_mult_1092@11:1>:int,<k_mult_1092@11:0>:int),
+      ((<k_mult_1092@11:1> > 0) && (<k_mult_1092@11:3> = (<k_mult_1092@11:0> <= 0)))
+      |- P[<k_mult_1092@11:3>](<k_mult_1092@11:0>:int,<k_mult_1092@11:1>:int,
+                               <k_mult_1092@11:3>:bool)
+      
+      P[<main_1033@6:0>](<mult_1030@8:1>:int), (<mult_1030@8:1> = <mult_1030@8:0>)
+      |- P[<mult_1030@8:1>](<mult_1030@8:0>:int,<mult_1030@8:1>:int)
+      
+      P[<f_1186@4:0>](<main_1033@6:0>:int)|- P[<main_1033@6:0>](<main_1033@6:0>:int)
+      
+      |- P[<f_1186@4:0>](<f_1186@4:0>:int)
+    call trees:
+      <main_1183@1>
+        <f_1186@4>
+          <main_1033@6>
+            <mult_1030@8>
+              <k_mult_1092@11>
+              </<k_mult_1092@11:2>@14>
+            </<mult_1030@8:2>@16>
+            <f_main_1185@18>
+              <fail_1188@21>
+    inlined horn clauses:
+      P[<fail_1188@21:0>](<fail_1188@21:0>:bool)|- bot
+      
+      P[<<mult_1030@8:2>@16:0>](<f_main_1185@18:0>:int,<f_main_1185@18:0>:int,<f_main_1185@18:2>:int),
+      (((1 + <f_main_1185@18:0>) > <f_main_1185@18:2>) && <fail_1188@21:0>)
+      |- P[<fail_1188@21:0>](<fail_1188@21:0>:bool)
+      
+      P[<mult_1030@8:1>](<mult_1030@8:0>:int,<mult_1030@8:1>:int),
+      ((<<mult_1030@8:2>@16:0> = 0) && ((<mult_1030@8:0> > 0) && (<mult_1030@8:1> <= 0)))
+      |- P[<<mult_1030@8:2>@16:0>](<mult_1030@8:0>:int,<mult_1030@8:1>:int,
+                                   <<mult_1030@8:2>@16:0>:int)
+      
+       (<mult_1030@8:1> = <mult_1030@8:0>) |- P[<mult_1030@8:1>](<mult_1030@8:0>:int,
+                                                                 <mult_1030@8:1>:int)
+    begin ParamSubstInfer.infer(1464)[3]
+      
+    end ParamSubstInfer.infer(1464)[3] (0.018997 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(1466)[3]
+      
+    end RefTypeInfer.elim_coeffs(1466)[3] (0.001000 sec.)
+    begin YhornInterface.solve(1687)[3]
+      begin HcSolver.solve_ub(1688)[4]
+        encoded:
+          P[<fail_1188@21:0>](<fail_1188@21:0>:int)|- bot
+          
+          P[<<mult_1030@8:2>@16:0>](<f_main_1185@18:0>:int,<f_main_1185@18:0>:int,<f_main_1185@18:2>:int),
+          (((1 + <f_main_1185@18:0>) > <f_main_1185@18:2>) && (<fail_1188@21:0> = 1))
+          |- P[<fail_1188@21:0>](<fail_1188@21:0>:int)
+          
+          P[<mult_1030@8:1>](<mult_1030@8:0>:int,<mult_1030@8:1>:int),
+          ((<<mult_1030@8:2>@16:0> = 0) && ((<mult_1030@8:0> > 0) && (<mult_1030@8:1> <= 0)))
+          |- P[<<mult_1030@8:2>@16:0>](<mult_1030@8:0>:int,<mult_1030@8:1>:int,
+                                       <<mult_1030@8:2>@16:0>:int)
+          
+           (<mult_1030@8:1> = <mult_1030@8:0>) |- P[<mult_1030@8:1>](<mult_1030@8:0>:int,
+                                                                    <mult_1030@8:1>:int)
+        input to Yhorn:
+          P[<fail_1188@21:0>](<fail_1188@21:0>:int)|- bot
+          
+          P[<<mult_1030@8:2>@16:0>](<f_main_1185@18:0>:int,<f_main_1185@18:0>:int,<f_main_1185@18:2>:int),
+          (((1 + <f_main_1185@18:0>) > <f_main_1185@18:2>) && (<fail_1188@21:0> = 1))
+          |- P[<fail_1188@21:0>](<fail_1188@21:0>:int)
+          
+          P[<mult_1030@8:1>](<mult_1030@8:0>:int,<mult_1030@8:1>:int),
+          ((<mult_1030@8:1> <= 0) && ((<mult_1030@8:0> > 0) && (<<mult_1030@8:2>@16:0> = 0)))
+          |- P[<<mult_1030@8:2>@16:0>](<mult_1030@8:0>:int,<mult_1030@8:1>:int,
+                                       <<mult_1030@8:2>@16:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1188_sep_21_sep_0($7)) -> 1=0.
+(($7-1=0) & ($8-$9+1>0)) & (v_sep_mult_1030_sep_8_sep_2_sep_16_sep_0($8,$8,$9)) -> v_sep_fail_1188_sep_21_sep_0($7).
+(($10=0) & ($11>0) & ($12<=0)) & (v_sep_mult_1030_sep_8_sep_1($11,$12)) -> v_sep_mult_1030_sep_8_sep_2_sep_16_sep_0($11,$12,$10).
+-$11+$12=0 -> v_sep_mult_1030_sep_8_sep_1($11,$12).
+
+
+v_sep_fail_1188_sep_21_sep_0: X
+v_sep_mult_1030_sep_8_sep_1: X
+v_sep_mult_1030_sep_8_sep_2_sep_16_sep_0: X
+....
+v_sep_fail_1188_sep_21_sep_0: X
+v_sep_mult_1030_sep_8_sep_1: X
+v_sep_mult_1030_sep_8_sep_2_sep_16_sep_0: X
+...
+v_sep_fail_1188_sep_21_sep_0: X
+v_sep_mult_1030_sep_8_sep_1: X
+v_sep_mult_1030_sep_8_sep_2_sep_16_sep_0: X
+....
+v_sep_fail_1188_sep_21_sep_0: X
+v_sep_mult_1030_sep_8_sep_1: X
+v_sep_mult_1030_sep_8_sep_2_sep_16_sep_0: X
+....(0=0) & (v_sep_fail_1188_sep_21_sep_0($7)) -> 1=0.
+(($7-1=0) & ($8-$9+1>0)) & (v_sep_mult_1030_sep_8_sep_2_sep_16_sep_0($8,$8,$9)) -> v_sep_fail_1188_sep_21_sep_0($7).
+(($10=0) & ($11>0) & ($12<=0)) & (v_sep_mult_1030_sep_8_sep_1($11,$12)) -> v_sep_mult_1030_sep_8_sep_2_sep_16_sep_0($11,$12,$10).
+-$11+$12=0 -> v_sep_mult_1030_sep_8_sep_1($11,$12).
+
+           (<mult_1030@8:1> = <mult_1030@8:0>) |- P[<mult_1030@8:1>](<mult_1030@8:0>:int,
+                                                                    <mult_1030@8:1>:int)
+        solution:
+          P[<fail_1188@21:0>]($13:bool) = false
+          P[<mult_1030@8:1>]($23:int,$25:int) = true
+          P[<<mult_1030@8:2>@16:0>]($16:int,$18:int,$20:int) = ((1 + $18) <= $16)
+        
+      end HcSolver.solve_ub(1688)[4] (0.015997 sec.)
+      begin HcSolver.check_validity(1846)[4]
+        input:
+          P[<fail_1188@21:0>](<fail_1188@21:0>:bool)|- bot
+          
+          P[<<mult_1030@8:2>@16:0>](<f_main_1185@18:0>:int,<f_main_1185@18:0>:int,<f_main_1185@18:2>:int),
+          (((1 + <f_main_1185@18:0>) > <f_main_1185@18:2>) && <fail_1188@21:0>)
+          |- P[<fail_1188@21:0>](<fail_1188@21:0>:bool)
+          
+          P[<mult_1030@8:1>](<mult_1030@8:0>:int,<mult_1030@8:1>:int),
+          ((<<mult_1030@8:2>@16:0> = 0) && ((<mult_1030@8:0> > 0) && (<mult_1030@8:1> <= 0)))
+          |- P[<<mult_1030@8:2>@16:0>](<mult_1030@8:0>:int,<mult_1030@8:1>:int,
+                                       <<mult_1030@8:2>@16:0>:int)
+          
+           (<mult_1030@8:1> = <mult_1030@8:0>) |- P[<mult_1030@8:1>](<mult_1030@8:0>:int,
+                                                                    <mult_1030@8:1>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(1846)[4] (0.002000 sec.)
+      solution:
+        P[<fail_1188@21:0>]($13:bool) = false
+        P[<mult_1030@8:1>]($23:int,$25:int) = true
+        P[<<mult_1030@8:2>@16:0>]($16:int,$18:int,$20:int) = ((1 + $18) <= $16)
+    end YhornInterface.solve(1687)[3] (0.017997 sec.)
+    
+  end RefTypeInfer.infer_etrs(114)[2] (0.043993 sec.)
+  refinement types:
+    main_1183: X
+    f_1186: v1:int -> X
+    main_1033: v1:int -> (v2:unit -> X) -> X
+    mult_1030: v1:int -> v2:int -> (v3:{v3:int | ((1 + v2) <= v1)} -> X) -> X
+    k_mult_1092: v1:int -> v2:int -> (v3:int -> X) -> v5:bool -> X
+    f_main_1185: v1:int -> (v2:unit -> X) -> v4:int -> X
+    fail_1188: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1187: var11:int -> var10:unit -> X
+    f_k_mult_1184: var18:bool -> var17:int -> var16:int -> (var15:int -> X) -> var13:int -> X
+  abstraction types:
+    main_1183: X
+    f_1186: v1:int -> X
+    main_1033: v1:int -> (v2:unit -> X) -> X
+    mult_1030: v1:int -> v2:int -> (v3:int[v3 -> ((1 + v2) <= v1)] -> X) -> X
+    k_mult_1092: v1:int -> v2:int -> (v3:int -> X) -> v5:bool -> X
+    f_main_1185: v1:int -> (v2:unit -> X) -> v4:int -> X
+    fail_1188: v1:bool -> (v2:unit -> X) -> X
+    f_1187: var11:int -> var10:unit -> X
+    f_k_mult_1184: var18:bool -> var17:int -> var16:int -> (var15:int -> X) -> var13:int -> X
+  
+end AbsTypeInfer.refine(113)[1] (0.044993 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 0
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1183
+  main_1183 -> (rand_int f_1186)
+  f_1186 x_1158 -> (main_1033 x_1158 (f_1187 x_1158))
+  f_1187 x_1158 x_1155 -> end
+  f_k_mult_1184 b_1112 m_1032 n_1031 k_mult_1089 x_1097 -> (k_mult_1089 (n_1031 + x_1097))
+  f_main_1185 n_1034 k_main_1126 x_1130 when ((n_1034 + 1) <= x_1130) -> (k_main_1126 ())
+  f_main_1185 n_1034 k_main_1126 x_1130 when (not ((n_1034 + 1) <= x_1130)) -> (fail_1188 true k_main_1126)
+  fail_1188 b k -> {fail} => (k ())
+  k_mult_1092 m_1032 n_1031 k_mult_1089 b_1112 when b_1112 -> (k_mult_1089 0)
+  k_mult_1092 m_1032 n_1031 k_mult_1089 b_1112 when (not b_1112) ->
+      (mult_1030 n_1031 (m_1032 - 1) (f_k_mult_1184 b_1112 m_1032 n_1031 k_mult_1089))
+  main_1033 n_1034 k_main_1126 -> (mult_1030 n_1034 n_1034 (f_main_1185 n_1034 k_main_1126))
+  mult_1030 n_1031 m_1032 k_mult_1089 when (n_1031 <= 0) -> (k_mult_1092 m_1032 n_1031 k_mult_1089 true)
+  mult_1030 n_1031 m_1032 k_mult_1089 when (not (n_1031 <= 0)) -> (k_mult_1092 m_1032 n_1031 k_mult_1089 (m_1032 <= 0))
+Types:
+  main_1183 : X
+  fail_1188 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  mult_1030 : (x_1:int -> x_2:int -> (int[x_1 >= x_2 + 1] -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Filter option enabled.
+Restart CEGAR-loop.
+Program with abstraction types (CEGAR-cycle 2)::
+Main: main_1183
+  main_1183 -> (rand_int f_1186)
+  f_1186 x_1158 -> (main_1033 x_1158 (f_1187 x_1158))
+  f_1187 x_1158 x_1155 -> end
+  f_k_mult_1184 b_1112 m_1032 n_1031 k_mult_1089 x_1097 -> (k_mult_1089 (n_1031 + x_1097))
+  f_main_1185 n_1034 k_main_1126 x_1130 when ((n_1034 + 1) <= x_1130) -> (k_main_1126 ())
+  f_main_1185 n_1034 k_main_1126 x_1130 when (not ((n_1034 + 1) <= x_1130)) -> (fail_1188 true k_main_1126)
+  fail_1188 b k -> {fail} => (k ())
+  k_mult_1092 m_1032 n_1031 k_mult_1089 b_1112 when b_1112 -> (k_mult_1089 0)
+  k_mult_1092 m_1032 n_1031 k_mult_1089 b_1112 when (not b_1112) ->
+      (mult_1030 n_1031 (m_1032 - 1) (f_k_mult_1184 b_1112 m_1032 n_1031 k_mult_1089))
+  main_1033 n_1034 k_main_1126 -> (mult_1030 n_1034 n_1034 (f_main_1185 n_1034 k_main_1126))
+  mult_1030 n_1031 m_1032 k_mult_1089 when (n_1031 <= 0) -> (k_mult_1092 m_1032 n_1031 k_mult_1089 true)
+  mult_1030 n_1031 m_1032 k_mult_1089 when (not (n_1031 <= 0)) -> (k_mult_1092 m_1032 n_1031 k_mult_1089 (m_1032 <= 0))
+Types:
+  main_1183 : X
+  fail_1188 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  mult_1030 : (x_1:int -> x_2:int -> (int[x_1 >= x_2 + 1] -> X) -> X)
+  
+(2-1) Abstracting ... DONE!
+
+(2-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1183 ... --> 
+  f_1186 ... --> 
+  main_1033 ... --> 
+  mult_1030 [1/2] ... --> 
+  k_mult_1092 [1/2] ... --> 
+  f_main_1185 [2/2] ... --> 
+  fail_1188 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 1; 0
+
+(2-3) Checking counter-example ... begin Cvc3Interface.solve(2669)[1]
+  CVC3 input: PUSH;cnt54_v_sep_r_1477:INT;CHECKSAT (TRUE AND ((NOT ((cnt54_v_sep_r_1477 + 1) <= 0)) AND (TRUE AND ((cnt54_v_sep_r_1477 <= 0) AND (TRUE AND (TRUE AND TRUE))))));COUNTERMODEL;POP;
+  CVC3 output: CVC> Satisfiable.
+  CVC3 output: Current scope level is 9.
+  CVC3 output: %Satisfiable  Variable Assignment: % 
+  CVC3 output: ASSERT (cnt54_v_sep_r_1477 = 0);
+  CVC3 output: CVC> 
+  v_sep_r_1477 = 0
+  end Cvc3Interface.solve(2669)[1] (0.003999 sec.)
+DONE!
+
+Unsafe!
+
+Input for main:
+  0
+Error trace:
+  main 0 ->
+    mult 0 0 ->
+      if true then ... ->
+    if false then ... ->
+    FAIL!
+
+cycles: 2
+total: 0.282 sec
+  abst: 0.009 sec
+  mc: 0.009 sec
+  refine: 0.053 sec
+    exparam: 0.019 sec

@@ -1,0 +1,82 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn exc-simple.ml
+
+parsed::
+ let f_1030 n_1031 k_1032 = if n_1031 >= 0 then
+                              ()
+                            else
+                              k_1032 0 
+ in
+ let g_1033 n_1034 = if n_1034 = 0 then
+                       ()
+                     else
+                       {fail} () 
+ in
+ let main_1035 n_1036 = f_1030 n_1036 g_1033 
+ in
+   ()
+
+set_target::
+ let f_1030 n_1031 k_1032 = if n_1031 >= 0 then
+                              ()
+                            else
+                              k_1032 0 
+ in
+ let g_1033 n_1034 = if n_1034 = 0 then
+                       ()
+                     else
+                       {fail} () 
+ in
+ let main_1035 n_1036 = f_1030 n_1036 g_1033 
+ in
+ let main_1060 = let arg1_1059 = rand_int () 
+                 in
+                   main_1035 arg1_1059 
+ in
+   ()
+
+CPS::
+ let f_1030 (n_1031:int) (k_1032:(int -> ((unit -> X) -> X))) (k_f_1100:(
+   unit -> X)) = if n_1031 >= 0 then
+                   k_f_1100 ()
+                 else
+                   k_1032 0 k_f_1100 
+ in
+ let g_1033 (n_1034:int) (k_g_1128:(unit -> X)) = if n_1034 = 0 then
+                                                    k_g_1128 ()
+                                                  else
+                                                    {|fail|} () k_g_1128 
+ in
+ let main_1035 (n_1036:int) (k_main_1153:(unit -> X)) = f_1030 n_1036 g_1033 k_main_1153 
+ in
+   rand_int_cps () (fun x_1182 -> main_1035 x_1182 (fun x_1179 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1207
+  main_1207 -> (rand_int f_1208)
+  f_1030 n_1031 k_1032 k_f_1100 when (n_1031 >= 0) -> (k_f_1100 ())
+  f_1030 n_1031 k_1032 k_f_1100 when (not (n_1031 >= 0)) -> (k_1032 0 k_f_1100)
+  f_1208 x_1182 -> (main_1035 x_1182 (f_1209 x_1182))
+  f_1209 x_1182 x_1179 -> end
+  fail_1210 b k -> {fail} => (k ())
+  g_1033 n_1034 k_g_1128 when (n_1034 = 0) -> (k_g_1128 ())
+  g_1033 n_1034 k_g_1128 when (not (n_1034 = 0)) -> (fail_1210 true k_g_1128)
+  main_1035 n_1036 k_main_1153 -> (f_1030 n_1036 g_1033 k_main_1153)
+Types:
+  main_1207 : X
+  fail_1210 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Safe!
+
+cycles: 0
+total: 0.182 sec
+  abst: 0.001 sec
+  mc: 0.004 sec
+  refine: 0.000 sec
+    exparam: 0.000 sec

@@ -1,0 +1,3266 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn map_map.ml
+
+parsed::
+ let rec map_1030 x_1031 = if x_1031 = 0 then
+                             x_1031
+                           else
+                             1 + map_1030 (x_1031 - 1) 
+ in
+ let main_1032 n_1033 = if map_1030 (map_1030 n_1033) = n_1033 then
+                          ()
+                        else
+                          {fail} () 
+ in
+   ()
+
+set_target::
+ let rec map_1030 x_1031 = if x_1031 = 0 then
+                             x_1031
+                           else
+                             1 + map_1030 (x_1031 - 1) 
+ in
+ let main_1032 n_1033 = if map_1030 (map_1030 n_1033) = n_1033 then
+                          ()
+                        else
+                          {fail} () 
+ in
+ let main_1049 = let arg1_1048 = rand_int () 
+                 in
+                   main_1032 arg1_1048 
+ in
+   ()
+
+CPS::
+ let rec map_1030 (x_1031:int) (k_map_1074:(int -> X)) =
+   if x_1031 = 0 then
+     k_map_1074 x_1031
+   else
+     map_1030 (x_1031 - 1) (fun x_1078 -> k_map_1074 (1 + x_1078)) 
+ in
+ let main_1032 (n_1033:int) (k_main_1106:(unit -> X)) =
+   map_1030 n_1033
+     (fun x_1130 ->
+        map_1030 x_1130 (fun x_1109 -> (if x_1109 = n_1033 then
+                                          k_main_1106 ()
+                                        else
+                                          {|fail|} () k_main_1106))) 
+ in
+   rand_int_cps () (fun x_1147 -> main_1032 x_1147 (fun x_1144 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1172
+  main_1172 -> (rand_int f_1176)
+  f_1176 x_1147 -> (main_1032 x_1147 (f_1177 x_1147))
+  f_1177 x_1147 x_1144 -> end
+  f_main_1174 n_1033 k_main_1106 x_1130 -> (map_1030 x_1130 (f_main_1175 n_1033 x_1130 k_main_1106))
+  f_main_1175 n_1033 x_1130 k_main_1106 x_1109 when (x_1109 = n_1033) -> (k_main_1106 ())
+  f_main_1175 n_1033 x_1130 k_main_1106 x_1109 when (not (x_1109 = n_1033)) -> (fail_1178 true k_main_1106)
+  f_map_1173 x_1031 k_map_1074 x_1078 -> (k_map_1074 (1 + x_1078))
+  fail_1178 b k -> {fail} => (k ())
+  main_1032 n_1033 k_main_1106 -> (map_1030 n_1033 (f_main_1174 n_1033 k_main_1106))
+  map_1030 x_1031 k_map_1074 when (x_1031 = 0) -> (k_map_1074 x_1031)
+  map_1030 x_1031 k_map_1074 when (not (x_1031 = 0)) -> (map_1030 (x_1031 - 1) (f_map_1173 x_1031 k_map_1074))
+Types:
+  main_1172 : X
+  fail_1178 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  map_1030 : (int -> (int -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1172 ... --> 
+  f_1176 ... --> 
+  main_1032 ... --> 
+  map_1030 [1/2] ... --> 
+  f_main_1174 ... --> 
+  map_1030 [1/2] ... --> 
+  f_main_1175 [2/2] ... --> 
+  fail_1178 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(107)[1]
+  program:
+    main_1172  | true = ((Random.int 0) f_1176)
+    f_1176 x_1147 | true = (main_1032 x_1147
+                                      (f_1177 x_1147))
+    f_1177 x_1147 x_1144 | true = end
+    f_main_1174 n_1033 k_main_1106 x_1130 | true = (map_1030 x_1130
+                                                             (f_main_1175 n_1033
+                                                                    x_1130
+                                                                    k_main_1106))
+    f_main_1175 n_1033 x_1130 k_main_1106 x_1109 | (x_1109 = n_1033) = (
+    k_main_1106 ())
+    f_main_1175 n_1033 x_1130 k_main_1106 x_1109 | (not (x_1109 = n_1033)) = (
+    fail_1178 true
+              k_main_1106)
+    f_map_1173 x_1031 k_map_1074 x_1078 | true = (k_map_1074 (1 + x_1078))
+    fail_1178 b k | true = (fail ())
+    main_1032 n_1033 k_main_1106 | true = (map_1030 n_1033
+                                                    (f_main_1174 n_1033
+                                                                 k_main_1106))
+    map_1030 x_1031 k_map_1074 | (x_1031 = 0) = (k_map_1074 x_1031)
+    map_1030 x_1031 k_map_1074 | (not (x_1031 = 0)) = (map_1030 (x_1031 - 1)
+                                                                (f_map_1173 x_1031
+                                                                    k_map_1074))
+    main_1172:X
+    f_1176:int -> X
+    f_1177:int -> unit -> X
+    f_main_1174:int -> (unit -> X) -> int -> X
+    f_main_1175:int -> int -> (unit -> X) -> int -> X
+    f_map_1173:int -> (int -> X) -> int -> X
+    fail_1178:bool -> (unit -> X) -> X
+    main_1032:int -> (unit -> X) -> X
+    map_1030:int -> (int -> X) -> X
+  inlined functions: f_1176,f_1177,f_main_1174,f_main_1175,f_map_1173,main_1032
+  counterexample: 0:0:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1176@4:0> = var2)
+     [true.(<main_1032@6:0> = <f_1176@4:0>)
+      [true.(<map_1030@8:0> = <main_1032@6:0>)
+       [(<map_1030@8:0> = 0).(<<map_1030@8:1>@11:0> = <map_1030@8:0>)
+        [true.((<f_main_1174@13:0> = <main_1032@6:0>) && (<f_main_1174@13:2> = <<map_1030@8:1>@11:0>))
+         [true.(<map_1030@15:0> = <f_main_1174@13:2>)
+          [(<map_1030@15:0> = 0).(<<map_1030@15:1>@18:0> = <map_1030@15:0>)
+           [true.
+            ((<f_main_1175@20:0> = <f_main_1174@13:0>) &&
+             ((<f_main_1175@20:1> = <f_main_1174@13:2>) && (<f_main_1175@20:3> = <<map_1030@15:1>@18:0>)))
+            [(not (<f_main_1175@20:3> = <f_main_1175@20:0>)).(<fail_1178@23:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(108)[2]
+    horn clauses:
+      P[<fail_1178@23:0>](<fail_1178@23:0>:bool)|- bot
+      
+      P[<f_main_1175@20:3>](<f_main_1175@20:0>:int,<f_main_1175@20:1>:int,<f_main_1175@20:3>:int),
+      ((<f_main_1175@20:3> <> <f_main_1175@20:0>) && <fail_1178@23:0>) |- P[<fail_1178@23:0>](
+      <fail_1178@23:0>:bool)
+      
+      P[<f_main_1174@13:2>](<f_main_1175@20:0>:int,<f_main_1175@20:1>:int),
+      P[<<map_1030@15:1>@18:0>](<f_main_1175@20:1>:int,<f_main_1175@20:3>:int)|- P[<f_main_1175@20:3>](
+      <f_main_1175@20:0>:int,<f_main_1175@20:1>:int,<f_main_1175@20:3>:int)
+      
+      P[<map_1030@15:0>](<map_1030@15:0>:int), ((<map_1030@15:0> = 0) && (<<map_1030@15:1>@18:0> = <map_1030@15:0>))
+      |- P[<<map_1030@15:1>@18:0>](<map_1030@15:0>:int,<<map_1030@15:1>@18:0>:int)
+      
+      P[<f_main_1174@13:2>](<f_main_1174@13:0>:int,<map_1030@15:0>:int)|- P[<map_1030@15:0>](<map_1030@15:0>:int)
+      
+      P[<main_1032@6:0>](<f_main_1174@13:0>:int),
+      P[<<map_1030@8:1>@11:0>](<f_main_1174@13:0>:int,<f_main_1174@13:2>:int)|- P[<f_main_1174@13:2>](
+      <f_main_1174@13:0>:int,<f_main_1174@13:2>:int)
+      
+      P[<map_1030@8:0>](<map_1030@8:0>:int), ((<map_1030@8:0> = 0) && (<<map_1030@8:1>@11:0> = <map_1030@8:0>))
+      |- P[<<map_1030@8:1>@11:0>](<map_1030@8:0>:int,<<map_1030@8:1>@11:0>:int)
+      
+      P[<main_1032@6:0>](<map_1030@8:0>:int)|- P[<map_1030@8:0>](<map_1030@8:0>:int)
+      
+      P[<f_1176@4:0>](<main_1032@6:0>:int)|- P[<main_1032@6:0>](<main_1032@6:0>:int)
+      
+      |- P[<f_1176@4:0>](<f_1176@4:0>:int)
+    call trees:
+      <main_1172@1>
+        <f_1176@4>
+          <main_1032@6>
+            <map_1030@8>
+            </<map_1030@8:1>@11>
+            <f_main_1174@13>
+              <map_1030@15>
+              </<map_1030@15:1>@18>
+              <f_main_1175@20>
+                <fail_1178@23>
+    inlined horn clauses:
+      P[<fail_1178@23:0>](<fail_1178@23:0>:bool)|- bot
+      
+      P[<<map_1030@8:1>@11:0>](<f_main_1175@20:0>:int,<f_main_1175@20:1>:int),
+      P[<<map_1030@15:1>@18:0>](<f_main_1175@20:1>:int,<f_main_1175@20:3>:int),
+      ((<f_main_1175@20:3> <> <f_main_1175@20:0>) && <fail_1178@23:0>) |- P[<fail_1178@23:0>](
+      <fail_1178@23:0>:bool)
+      
+      P[<map_1030@15:0>](<map_1030@15:0>:int), ((<map_1030@15:0> = 0) && (<<map_1030@15:1>@18:0> = <map_1030@15:0>))
+      |- P[<<map_1030@15:1>@18:0>](<map_1030@15:0>:int,<<map_1030@15:1>@18:0>:int)
+      
+      P[<<map_1030@8:1>@11:0>](<f_main_1174@13:0>:int,<map_1030@15:0>:int)|- P[<map_1030@15:0>](<map_1030@15:0>:int)
+      
+      P[<map_1030@8:0>](<map_1030@8:0>:int), ((<map_1030@8:0> = 0) && (<<map_1030@8:1>@11:0> = <map_1030@8:0>))
+      |- P[<<map_1030@8:1>@11:0>](<map_1030@8:0>:int,<<map_1030@8:1>@11:0>:int)
+      
+      |- P[<map_1030@8:0>](<map_1030@8:0>:int)
+    begin ParamSubstInfer.infer(1312)[3]
+      
+    end ParamSubstInfer.infer(1312)[3] (0.008998 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(1314)[3]
+      
+    end RefTypeInfer.elim_coeffs(1314)[3] (0.001000 sec.)
+    begin YhornInterface.solve(1555)[3]
+      begin HcSolver.solve_ub(1556)[4]
+        encoded:
+          P[<fail_1178@23:0>](<fail_1178@23:0>:int)|- bot
+          
+          P[<<map_1030@8:1>@11:0>](<f_main_1175@20:0>:int,<f_main_1175@20:1>:int),
+          P[<<map_1030@15:1>@18:0>](<f_main_1175@20:1>:int,<f_main_1175@20:3>:int),
+          ((<f_main_1175@20:3> <> <f_main_1175@20:0>) && (<fail_1178@23:0> = 1))
+          |- P[<fail_1178@23:0>](<fail_1178@23:0>:int)
+          
+          P[<map_1030@15:0>](<map_1030@15:0>:int),
+          ((<map_1030@15:0> = 0) && (<<map_1030@15:1>@18:0> = <map_1030@15:0>))
+          |- P[<<map_1030@15:1>@18:0>](<map_1030@15:0>:int,<<map_1030@15:1>@18:0>:int)
+          
+          P[<<map_1030@8:1>@11:0>](<f_main_1174@13:0>:int,<map_1030@15:0>:int)|- P[<map_1030@15:0>](
+          <map_1030@15:0>:int)
+          
+          P[<map_1030@8:0>](<map_1030@8:0>:int), ((<map_1030@8:0> = 0) && (<<map_1030@8:1>@11:0> = <map_1030@8:0>))
+          |- P[<<map_1030@8:1>@11:0>](<map_1030@8:0>:int,<<map_1030@8:1>@11:0>:int)
+          
+          |- P[<map_1030@8:0>](<map_1030@8:0>:int)
+        input to Yhorn:
+          P[<fail_1178@23:0>](<fail_1178@23:0>:int)|- bot
+          
+          P[<<map_1030@8:1>@11:0>](<f_main_1175@20:0>:int,<f_main_1175@20:1>:int),
+          P[<<map_1030@15:1>@18:0>](<f_main_1175@20:1>:int,<f_main_1175@20:3>:int),
+          ((<f_main_1175@20:3> <> <f_main_1175@20:0>) && (<fail_1178@23:0> = 1))
+          |- P[<fail_1178@23:0>](<fail_1178@23:0>:int)
+          
+          P[<map_1030@15:0>](<map_1030@15:0>:int),
+          ((<<map_1030@15:1>@18:0> = <map_1030@15:0>) && (<map_1030@15:0> = 0))
+          |- P[<<map_1030@15:1>@18:0>](<map_1030@15:0>:int,<<map_1030@15:1>@18:0>:int)
+          
+          P[<<map_1030@8:1>@11:0>](<f_main_1174@13:0>:int,<map_1030@15:0>:int)|- P[<map_1030@15:0>](
+          <map_1030@15:0>:int)
+          
+          P[<map_1030@8:0>](<map_1030@8:0>:int), ((<<map_1030@8:1>@11:0> = <map_1030@8:0>) && (<map_1030@8:0> = 0))
+          |- P[<<map_1030@8:1>@11:0>](<map_1030@8:0>:int,<<map_1030@8:1>@11:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1178_sep_23_sep_0($10)) -> 1=0.
+(($10-1=0) & ($11-$12<>0)) & (v_sep_map_1030_sep_15_sep_1_sep_18_sep_0($13,$11)) & (v_sep_map_1030_sep_8_sep_1_sep_11_sep_0($12,$13)) -> v_sep_fail_1178_sep_23_sep_0($10).
+(($14=0) & (-$14+$15=0)) & (v_sep_map_1030_sep_15_sep_0($14)) -> v_sep_map_1030_sep_15_sep_1_sep_18_sep_0($14,$15).
+(0=0) & (v_sep_map_1030_sep_8_sep_1_sep_11_sep_0($16,$14)) -> v_sep_map_1030_sep_15_sep_0($14).
+(($17=0) & (-$17+$18=0)) & (v_sep_map_1030_sep_8_sep_0($17)) -> v_sep_map_1030_sep_8_sep_1_sep_11_sep_0($17,$18).
+0=0 -> v_sep_map_1030_sep_8_sep_0($17).
+
+
+v_sep_fail_1178_sep_23_sep_0: X
+v_sep_map_1030_sep_15_sep_0: X
+v_sep_map_1030_sep_15_sep_1_sep_18_sep_0: X
+v_sep_map_1030_sep_8_sep_0: X
+v_sep_map_1030_sep_8_sep_1_sep_11_sep_0: X
+.........Split disj [20] 0.221965
+Reconstrcut: 3 **)
+
+v_sep_fail_1178_sep_23_sep_0: (X) | (X)
+v_sep_map_1030_sep_15_sep_0: X
+v_sep_map_1030_sep_15_sep_1_sep_18_sep_0: X
+v_sep_map_1030_sep_8_sep_0: X
+v_sep_map_1030_sep_8_sep_1_sep_11_sep_0: X
+.......
+v_sep_fail_1178_sep_23_sep_0: (X) | (X)
+v_sep_map_1030_sep_15_sep_0: X
+v_sep_map_1030_sep_15_sep_1_sep_18_sep_0: X
+v_sep_map_1030_sep_8_sep_0: X
+v_sep_map_1030_sep_8_sep_1_sep_11_sep_0: X
+.......Split conj [22] 0.227964
+(Reconstrcut: 8 **)
+v_sep_fail_1178_sep_23_sep_0: (X) | (X)
+v_sep_map_1030_sep_15_sep_0: X
+v_sep_map_1030_sep_15_sep_1_sep_18_sep_0: (X) & (X)
+v_sep_map_1030_sep_8_sep_0: X
+v_sep_map_1030_sep_8_sep_1_sep_11_sep_0: X
+.........
+v_sep_fail_1178_sep_23_sep_0: (X) | (X)
+v_sep_map_1030_sep_15_sep_0: X
+v_sep_map_1030_sep_15_sep_1_sep_18_sep_0: (X) & (X)
+v_sep_map_1030_sep_8_sep_0: X
+v_sep_map_1030_sep_8_sep_1_sep_11_sep_0: X
+.......Split conj [24] 0.234963
+(Reconstrcut: 14 ***)
+v_sep_fail_1178_sep_23_sep_0: (X) | (X)
+v_sep_map_1030_sep_15_sep_0: X
+v_sep_map_1030_sep_15_sep_1_sep_18_sep_0: (X) & (X)
+v_sep_map_1030_sep_8_sep_0: X
+v_sep_map_1030_sep_8_sep_1_sep_11_sep_0: (X) & (X) & (X)
+.............
+v_sep_fail_1178_sep_23_sep_0: (X) | (X)
+v_sep_map_1030_sep_15_sep_0: X
+v_sep_map_1030_sep_15_sep_1_sep_18_sep_0: (X) & (X)
+v_sep_map_1030_sep_8_sep_0: X
+v_sep_map_1030_sep_8_sep_1_sep_11_sep_0: (X) & (X) & (X)
+.......
+v_sep_fail_1178_sep_23_sep_0: (X) | (X)
+v_sep_map_1030_sep_15_sep_0: X
+v_sep_map_1030_sep_15_sep_1_sep_18_sep_0: (X) & (X)
+v_sep_map_1030_sep_8_sep_0: X
+v_sep_map_1030_sep_8_sep_1_sep_11_sep_0: (X) & (X) & (X)
+...........
+v_sep_fail_1178_sep_23_sep_0: (X) | (X)
+v_sep_map_1030_sep_15_sep_0: X
+v_sep_map_1030_sep_15_sep_1_sep_18_sep_0: (X) & (X)
+v_sep_map_1030_sep_8_sep_0: X
+v_sep_map_1030_sep_8_sep_1_sep_11_sep_0: (X) & (X) & (X)
+............
+v_sep_fail_1178_sep_23_sep_0: (X) | (X)
+v_sep_map_1030_sep_15_sep_0: X
+v_sep_map_1030_sep_15_sep_1_sep_18_sep_0: (X) & (X)
+v_sep_map_1030_sep_8_sep_0: X
+v_sep_map_1030_sep_8_sep_1_sep_11_sep_0: (X) & (X) & (X)
+.............(0=0) & (v_sep_fail_1178_sep_23_sep_0($10)) -> 1=0.
+(($10-1=0) & ($11-$12<>0)) & (v_sep_map_1030_sep_15_sep_1_sep_18_sep_0($13,$11)) & (v_sep_map_1030_sep_8_sep_1_sep_11_sep_0($12,$13)) -> v_sep_fail_1178_sep_23_sep_0($10).
+(($14=0) & (-$14+$15=0)) & (v_sep_map_1030_sep_15_sep_0($14)) -> v_sep_map_1030_sep_15_sep_1_sep_18_sep_0($14,$15).
+(0=0) & (v_sep_map_1030_sep_8_sep_1_sep_11_sep_0($16,$14)) -> v_sep_map_1030_sep_15_sep_0($14).
+(($17=0) & (-$17+$18=0)) & (v_sep_map_1030_sep_8_sep_0($17)) -> v_sep_map_1030_sep_8_sep_1_sep_11_sep_0($17,$18).
+0=0 -> v_sep_map_1030_sep_8_sep_0($17).
+
+          |- P[<map_1030@8:0>](<map_1030@8:0>:int)
+        solution:
+          P[<fail_1178@23:0>]($19:bool) = false
+          P[<map_1030@15:0>]($32:int) = true
+          P[<<map_1030@15:1>@18:0>]($22:int,$24:int) = ($24 = 0)
+          P[<map_1030@8:0>]($35:int) = true
+          P[<<map_1030@8:1>@11:0>]($27:int,$29:int) = ($27 = 0)
+        
+      end HcSolver.solve_ub(1556)[4] (0.039994 sec.)
+      begin HcSolver.check_validity(1731)[4]
+        input:
+          P[<fail_1178@23:0>](<fail_1178@23:0>:bool)|- bot
+          
+          P[<<map_1030@8:1>@11:0>](<f_main_1175@20:0>:int,<f_main_1175@20:1>:int),
+          P[<<map_1030@15:1>@18:0>](<f_main_1175@20:1>:int,<f_main_1175@20:3>:int),
+          ((<f_main_1175@20:3> <> <f_main_1175@20:0>) && <fail_1178@23:0>)
+          |- P[<fail_1178@23:0>](<fail_1178@23:0>:bool)
+          
+          P[<map_1030@15:0>](<map_1030@15:0>:int),
+          ((<map_1030@15:0> = 0) && (<<map_1030@15:1>@18:0> = <map_1030@15:0>))
+          |- P[<<map_1030@15:1>@18:0>](<map_1030@15:0>:int,<<map_1030@15:1>@18:0>:int)
+          
+          P[<<map_1030@8:1>@11:0>](<f_main_1174@13:0>:int,<map_1030@15:0>:int)|- P[<map_1030@15:0>](
+          <map_1030@15:0>:int)
+          
+          P[<map_1030@8:0>](<map_1030@8:0>:int), ((<map_1030@8:0> = 0) && (<<map_1030@8:1>@11:0> = <map_1030@8:0>))
+          |- P[<<map_1030@8:1>@11:0>](<map_1030@8:0>:int,<<map_1030@8:1>@11:0>:int)
+          
+          |- P[<map_1030@8:0>](<map_1030@8:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(1731)[4] (0.001999 sec.)
+      solution:
+        P[<fail_1178@23:0>]($19:bool) = false
+        P[<map_1030@15:0>]($32:int) = true
+        P[<<map_1030@15:1>@18:0>]($22:int,$24:int) = ($24 = 0)
+        P[<map_1030@8:0>]($35:int) = true
+        P[<<map_1030@8:1>@11:0>]($27:int,$29:int) = ($27 = 0)
+    end YhornInterface.solve(1555)[3] (0.041993 sec.)
+    
+  end RefTypeInfer.infer_etrs(108)[2] (0.059990 sec.)
+  refinement types:
+    main_1172: X
+    f_1176: v1:int -> X
+    main_1032: v1:int -> (v2:unit -> X) -> X
+    map_1030: v1:int -> (v2:{v2:int | (v1 = 0)} -> X) -> X
+    f_main_1174: v1:int -> (v2:unit -> X) -> v4:int -> X
+    map_1030: v1:int -> (v2:{v2:int | (v2 = 0)} -> X) -> X
+    f_main_1175: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1178: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1177: var13:int -> var12:unit -> X
+    f_map_1173: var18:int -> (var17:int -> X) -> var15:int -> X
+  abstraction types:
+    main_1172: X
+    f_1176: v1:int -> X
+    main_1032: v1:int -> (v2:unit -> X) -> X
+    map_1030: var19:int -> (var20:int[var20 -> (var19 = 0),
+                                      var20 -> (var20 = 0)] -> X) -> X
+    f_main_1174: v1:int -> (v2:unit -> X) -> v4:int -> X
+    f_main_1175: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1178: v1:bool -> (v2:unit -> X) -> X
+    f_1177: var13:int -> var12:unit -> X
+    f_map_1173: var18:int -> (var17:int -> X) -> var15:int -> X
+  
+end AbsTypeInfer.refine(107)[1] (0.060990 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1172
+  main_1172 -> (rand_int f_1176)
+  f_1176 x_1147 -> (main_1032 x_1147 (f_1177 x_1147))
+  f_1177 x_1147 x_1144 -> end
+  f_main_1174 n_1033 k_main_1106 x_1130 -> (map_1030 x_1130 (f_main_1175 n_1033 x_1130 k_main_1106))
+  f_main_1175 n_1033 x_1130 k_main_1106 x_1109 when (x_1109 = n_1033) -> (k_main_1106 ())
+  f_main_1175 n_1033 x_1130 k_main_1106 x_1109 when (not (x_1109 = n_1033)) -> (fail_1178 true k_main_1106)
+  f_map_1173 x_1031 k_map_1074 x_1078 -> (k_map_1074 (1 + x_1078))
+  fail_1178 b k -> {fail} => (k ())
+  main_1032 n_1033 k_main_1106 -> (map_1030 n_1033 (f_main_1174 n_1033 k_main_1106))
+  map_1030 x_1031 k_map_1074 when (x_1031 = 0) -> (k_map_1074 x_1031)
+  map_1030 x_1031 k_map_1074 when (not (x_1031 = 0)) -> (map_1030 (x_1031 - 1) (f_map_1173 x_1031 k_map_1074))
+Types:
+  main_1172 : X
+  fail_1178 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  map_1030 : (x_1:int -> (x_3:int[x_3 = 0; x_1 = 0] -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1172 ... --> 
+  f_1176 ... --> 
+  main_1032 ... --> 
+  map_1030 [2/2] ... --> 
+  map_1030 [1/2] ... --> 
+  f_map_1173 ... --> 
+  f_main_1174 ... --> 
+  map_1030 [2/2] ... --> 
+  map_1030 [1/2] ... --> 
+  f_map_1173 ... --> 
+  f_main_1175 [2/2] ... --> 
+  fail_1178 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 0; 0; 0; 1; 0; 0; 1; 0
+
+(1-3) Checking counter-example ... DONE!
+
+(1-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(2349)[1]
+  program:
+    main_1172  | true = ((Random.int 0) f_1176)
+    f_1176 x_1147 | true = (main_1032 x_1147
+                                      (f_1177 x_1147))
+    f_1177 x_1147 x_1144 | true = end
+    f_main_1174 n_1033 k_main_1106 x_1130 | true = (map_1030 x_1130
+                                                             (f_main_1175 n_1033
+                                                                    x_1130
+                                                                    k_main_1106))
+    f_main_1175 n_1033 x_1130 k_main_1106 x_1109 | (x_1109 = n_1033) = (
+    k_main_1106 ())
+    f_main_1175 n_1033 x_1130 k_main_1106 x_1109 | (not (x_1109 = n_1033)) = (
+    fail_1178 true
+              k_main_1106)
+    f_map_1173 x_1031 k_map_1074 x_1078 | true = (k_map_1074 (1 + x_1078))
+    fail_1178 b k | true = (fail ())
+    main_1032 n_1033 k_main_1106 | true = (map_1030 n_1033
+                                                    (f_main_1174 n_1033
+                                                                 k_main_1106))
+    map_1030 x_1031 k_map_1074 | (x_1031 = 0) = (k_map_1074 x_1031)
+    map_1030 x_1031 k_map_1074 | (not (x_1031 = 0)) = (map_1030 (x_1031 - 1)
+                                                                (f_map_1173 x_1031
+                                                                    k_map_1074))
+    main_1172:X
+    f_1176:int -> X
+    f_1177:int -> unit -> X
+    f_main_1174:int -> (unit -> X) -> int -> X
+    f_main_1175:int -> int -> (unit -> X) -> int -> X
+    f_map_1173:int -> (int -> X) -> int -> X
+    fail_1178:bool -> (unit -> X) -> X
+    main_1032:int -> (unit -> X) -> X
+    map_1030:int -> (int -> X) -> X
+  inlined functions: f_1176,f_1177,f_main_1174,f_main_1175,f_map_1173,main_1032
+  counterexample: 0:0:0:1:0:0:0:1:0:0:1:0
+  error traces:
+    [true.nop(<f_1176@29:0> = var23)
+     [true.(<main_1032@31:0> = <f_1176@29:0>)
+      [true.(<map_1030@33:0> = <main_1032@31:0>)
+       [(not (<map_1030@33:0> = 0)).(<map_1030@36:0> = (<map_1030@33:0> - 1))
+        [(<map_1030@36:0> = 0).(<<map_1030@36:1>@39:0> = <map_1030@36:0>)
+         [true.((<f_map_1173@41:0> = <map_1030@33:0>) && (<f_map_1173@41:2> = <<map_1030@36:1>@39:0>))
+          [true.(<<f_map_1173@41:1>@43:0> = (1 + <f_map_1173@41:2>))
+           [true.(<<map_1030@33:1>@45:0> = <<f_map_1173@41:1>@43:0>)
+            [true.((<f_main_1174@47:0> = <main_1032@31:0>) && (<f_main_1174@47:2> = <<map_1030@33:1>@45:0>))
+             [true.(<map_1030@49:0> = <f_main_1174@47:2>)
+              [(not (<map_1030@49:0> = 0)).(<map_1030@52:0> = (<map_1030@49:0> - 1))
+               [(<map_1030@52:0> = 0).(<<map_1030@52:1>@55:0> = <map_1030@52:0>)
+                [true.((<f_map_1173@57:0> = <map_1030@49:0>) && (<f_map_1173@57:2> = <<map_1030@52:1>@55:0>))
+                 [true.(<<f_map_1173@57:1>@59:0> = (1 + <f_map_1173@57:2>))
+                  [true.(<<map_1030@49:1>@61:0> = <<f_map_1173@57:1>@59:0>)
+                   [true.
+                    ((<f_main_1175@63:0> = <f_main_1174@47:0>) &&
+                     ((<f_main_1175@63:1> = <f_main_1174@47:2>) && (<f_main_1175@63:3> = <<map_1030@49:1>@61:0>)))
+                    [(not (<f_main_1175@63:3> = <f_main_1175@63:0>)).(<fail_1178@66:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(2350)[2]
+    horn clauses:
+      P[<fail_1178@66:0>](<fail_1178@66:0>:bool)|- bot
+      
+      P[<f_main_1175@63:3>](<f_main_1175@63:0>:int,<f_main_1175@63:1>:int,<f_main_1175@63:3>:int),
+      ((<f_main_1175@63:3> <> <f_main_1175@63:0>) && <fail_1178@66:0>) |- P[<fail_1178@66:0>](
+      <fail_1178@66:0>:bool)
+      
+      P[<f_main_1174@47:2>](<f_main_1175@63:0>:int,<f_main_1175@63:1>:int),
+      P[<<map_1030@49:1>@61:0>](<f_main_1175@63:1>:int,<f_main_1175@63:3>:int)|- P[<f_main_1175@63:3>](
+      <f_main_1175@63:0>:int,<f_main_1175@63:1>:int,<f_main_1175@63:3>:int)
+      
+      P[<map_1030@49:0>](<map_1030@49:0>:int),
+      P[<<f_map_1173@57:1>@59:0>](<map_1030@49:0>:int,<<map_1030@49:1>@61:0>:int), (
+      <map_1030@49:0> <> 0) |- P[<<map_1030@49:1>@61:0>](<map_1030@49:0>:int,
+                                                         <<map_1030@49:1>@61:0>:int)
+      
+      P[<f_map_1173@57:2>](<f_map_1173@57:0>:int,(-1 + <<f_map_1173@57:1>@59:0>):int)|- P[<<f_map_1173@57:1>@59:0>](
+      <f_map_1173@57:0>:int,<<f_map_1173@57:1>@59:0>:int)
+      
+      P[<map_1030@49:0>](<f_map_1173@57:0>:int),
+      P[<<map_1030@52:1>@55:0>]((-1 + <f_map_1173@57:0>):int,<f_map_1173@57:2>:int), (
+      <f_map_1173@57:0> <> 0) |- P[<f_map_1173@57:2>](<f_map_1173@57:0>:int,
+                                                      <f_map_1173@57:2>:int)
+      
+      P[<map_1030@52:0>](<map_1030@52:0>:int), ((<map_1030@52:0> = 0) && (<<map_1030@52:1>@55:0> = <map_1030@52:0>))
+      |- P[<<map_1030@52:1>@55:0>](<map_1030@52:0>:int,<<map_1030@52:1>@55:0>:int)
+      
+      P[<map_1030@49:0>]((1 + <map_1030@52:0>):int), ((1 + <map_1030@52:0>) <> 0)
+      |- P[<map_1030@52:0>](<map_1030@52:0>:int)
+      
+      P[<f_main_1174@47:2>](<f_main_1174@47:0>:int,<map_1030@49:0>:int)|- P[<map_1030@49:0>](<map_1030@49:0>:int)
+      
+      P[<main_1032@31:0>](<f_main_1174@47:0>:int),
+      P[<<map_1030@33:1>@45:0>](<f_main_1174@47:0>:int,<f_main_1174@47:2>:int)|- P[<f_main_1174@47:2>](
+      <f_main_1174@47:0>:int,<f_main_1174@47:2>:int)
+      
+      P[<map_1030@33:0>](<map_1030@33:0>:int),
+      P[<<f_map_1173@41:1>@43:0>](<map_1030@33:0>:int,<<map_1030@33:1>@45:0>:int), (
+      <map_1030@33:0> <> 0) |- P[<<map_1030@33:1>@45:0>](<map_1030@33:0>:int,
+                                                         <<map_1030@33:1>@45:0>:int)
+      
+      P[<f_map_1173@41:2>](<f_map_1173@41:0>:int,(-1 + <<f_map_1173@41:1>@43:0>):int)|- P[<<f_map_1173@41:1>@43:0>](
+      <f_map_1173@41:0>:int,<<f_map_1173@41:1>@43:0>:int)
+      
+      P[<map_1030@33:0>](<f_map_1173@41:0>:int),
+      P[<<map_1030@36:1>@39:0>]((-1 + <f_map_1173@41:0>):int,<f_map_1173@41:2>:int), (
+      <f_map_1173@41:0> <> 0) |- P[<f_map_1173@41:2>](<f_map_1173@41:0>:int,
+                                                      <f_map_1173@41:2>:int)
+      
+      P[<map_1030@36:0>](<map_1030@36:0>:int), ((<map_1030@36:0> = 0) && (<<map_1030@36:1>@39:0> = <map_1030@36:0>))
+      |- P[<<map_1030@36:1>@39:0>](<map_1030@36:0>:int,<<map_1030@36:1>@39:0>:int)
+      
+      P[<map_1030@33:0>]((1 + <map_1030@36:0>):int), ((1 + <map_1030@36:0>) <> 0)
+      |- P[<map_1030@36:0>](<map_1030@36:0>:int)
+      
+      P[<main_1032@31:0>](<map_1030@33:0>:int)|- P[<map_1030@33:0>](<map_1030@33:0>:int)
+      
+      P[<f_1176@29:0>](<main_1032@31:0>:int)|- P[<main_1032@31:0>](<main_1032@31:0>:int)
+      
+      |- P[<f_1176@29:0>](<f_1176@29:0>:int)
+    call trees:
+      <main_1172@26>
+        <f_1176@29>
+          <main_1032@31>
+            <map_1030@33>
+              <map_1030@36>
+              </<map_1030@36:1>@39>
+              <f_map_1173@41>
+              </<f_map_1173@41:1>@43>
+            </<map_1030@33:1>@45>
+            <f_main_1174@47>
+              <map_1030@49>
+                <map_1030@52>
+                </<map_1030@52:1>@55>
+                <f_map_1173@57>
+                </<f_map_1173@57:1>@59>
+              </<map_1030@49:1>@61>
+              <f_main_1175@63>
+                <fail_1178@66>
+    inlined horn clauses:
+      P[<fail_1178@66:0>](<fail_1178@66:0>:bool)|- bot
+      
+      P[<<map_1030@33:1>@45:0>](<f_main_1175@63:0>:int,<f_main_1175@63:1>:int),
+      P[<<map_1030@49:1>@61:0>](<f_main_1175@63:1>:int,<f_main_1175@63:3>:int),
+      ((<f_main_1175@63:3> <> <f_main_1175@63:0>) && <fail_1178@66:0>) |- P[<fail_1178@66:0>](
+      <fail_1178@66:0>:bool)
+      
+      P[<map_1030@49:0>](<map_1030@49:0>:int),
+      P[<<map_1030@52:1>@55:0>]((-1 + <map_1030@49:0>):int,(-1 + <<map_1030@49:1>@61:0>):int), (
+      <map_1030@49:0> <> 0) |- P[<<map_1030@49:1>@61:0>](<map_1030@49:0>:int,
+                                                         <<map_1030@49:1>@61:0>:int)
+      
+      P[<map_1030@52:0>](<map_1030@52:0>:int), ((<map_1030@52:0> = 0) && (<<map_1030@52:1>@55:0> = <map_1030@52:0>))
+      |- P[<<map_1030@52:1>@55:0>](<map_1030@52:0>:int,<<map_1030@52:1>@55:0>:int)
+      
+      P[<map_1030@49:0>]((1 + <map_1030@52:0>):int), ((1 + <map_1030@52:0>) <> 0)
+      |- P[<map_1030@52:0>](<map_1030@52:0>:int)
+      
+      P[<<map_1030@33:1>@45:0>](<f_main_1174@47:0>:int,<map_1030@49:0>:int)|- P[<map_1030@49:0>](<map_1030@49:0>:int)
+      
+      P[<map_1030@33:0>](<map_1030@33:0>:int),
+      P[<<map_1030@36:1>@39:0>]((-1 + <map_1030@33:0>):int,(-1 + <<map_1030@33:1>@45:0>):int), (
+      <map_1030@33:0> <> 0) |- P[<<map_1030@33:1>@45:0>](<map_1030@33:0>:int,
+                                                         <<map_1030@33:1>@45:0>:int)
+      
+      P[<map_1030@36:0>](<map_1030@36:0>:int), ((<map_1030@36:0> = 0) && (<<map_1030@36:1>@39:0> = <map_1030@36:0>))
+      |- P[<<map_1030@36:1>@39:0>](<map_1030@36:0>:int,<<map_1030@36:1>@39:0>:int)
+      
+      P[<map_1030@33:0>]((1 + <map_1030@36:0>):int), ((1 + <map_1030@36:0>) <> 0)
+      |- P[<map_1030@36:0>](<map_1030@36:0>:int)
+      
+      |- P[<map_1030@33:0>](<map_1030@33:0>:int)
+    begin ParamSubstInfer.infer(4580)[3]
+      
+    end ParamSubstInfer.infer(4580)[3] (0.024996 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(4582)[3]
+      
+    end RefTypeInfer.elim_coeffs(4582)[3] (0.003999 sec.)
+    begin YhornInterface.solve(4931)[3]
+      begin HcSolver.solve_ub(4932)[4]
+        encoded:
+          P[<fail_1178@66:0>](<fail_1178@66:0>:int)|- bot
+          
+          P[<<map_1030@33:1>@45:0>](<f_main_1175@63:0>:int,<f_main_1175@63:1>:int),
+          P[<<map_1030@49:1>@61:0>](<f_main_1175@63:1>:int,<f_main_1175@63:3>:int),
+          ((<f_main_1175@63:3> <> <f_main_1175@63:0>) && (<fail_1178@66:0> = 1))
+          |- P[<fail_1178@66:0>](<fail_1178@66:0>:int)
+          
+          P[<map_1030@49:0>](<map_1030@49:0>:int),
+          P[<<map_1030@52:1>@55:0>]((-1 + <map_1030@49:0>):int,(-1 + <<map_1030@49:1>@61:0>):int),
+          (<map_1030@49:0> <> 0) |- P[<<map_1030@49:1>@61:0>](<map_1030@49:0>:int,
+                                                              <<map_1030@49:1>@61:0>:int)
+          
+          P[<map_1030@52:0>](<map_1030@52:0>:int),
+          ((<map_1030@52:0> = 0) && (<<map_1030@52:1>@55:0> = <map_1030@52:0>))
+          |- P[<<map_1030@52:1>@55:0>](<map_1030@52:0>:int,<<map_1030@52:1>@55:0>:int)
+          
+          P[<map_1030@49:0>]((1 + <map_1030@52:0>):int), ((1 + <map_1030@52:0>) <> 0)
+          |- P[<map_1030@52:0>](<map_1030@52:0>:int)
+          
+          P[<<map_1030@33:1>@45:0>](<f_main_1174@47:0>:int,<map_1030@49:0>:int)|- P[<map_1030@49:0>](
+          <map_1030@49:0>:int)
+          
+          P[<map_1030@33:0>](<map_1030@33:0>:int),
+          P[<<map_1030@36:1>@39:0>]((-1 + <map_1030@33:0>):int,(-1 + <<map_1030@33:1>@45:0>):int),
+          (<map_1030@33:0> <> 0) |- P[<<map_1030@33:1>@45:0>](<map_1030@33:0>:int,
+                                                              <<map_1030@33:1>@45:0>:int)
+          
+          P[<map_1030@36:0>](<map_1030@36:0>:int),
+          ((<map_1030@36:0> = 0) && (<<map_1030@36:1>@39:0> = <map_1030@36:0>))
+          |- P[<<map_1030@36:1>@39:0>](<map_1030@36:0>:int,<<map_1030@36:1>@39:0>:int)
+          
+          P[<map_1030@33:0>]((1 + <map_1030@36:0>):int), ((1 + <map_1030@36:0>) <> 0)
+          |- P[<map_1030@36:0>](<map_1030@36:0>:int)
+          
+          |- P[<map_1030@33:0>](<map_1030@33:0>:int)
+        input to Yhorn:
+          P[<fail_1178@66:0>](<fail_1178@66:0>:int)|- bot
+          
+          P[<<map_1030@33:1>@45:0>](<f_main_1175@63:0>:int,<f_main_1175@63:1>:int),
+          P[<<map_1030@49:1>@61:0>](<f_main_1175@63:1>:int,<f_main_1175@63:3>:int),
+          ((<f_main_1175@63:3> <> <f_main_1175@63:0>) && (<fail_1178@66:0> = 1))
+          |- P[<fail_1178@66:0>](<fail_1178@66:0>:int)
+          
+          P[<map_1030@49:0>](<map_1030@49:0>:int),
+          P[<<map_1030@52:1>@55:0>](var24:int,var25:int),
+          (((1 + var25) = <<map_1030@49:1>@61:0>) && (((1 + var24) = <map_1030@49:0>) && (<map_1030@49:0> <> 0)))
+          |- P[<<map_1030@49:1>@61:0>](<map_1030@49:0>:int,<<map_1030@49:1>@61:0>:int)
+          
+          P[<map_1030@52:0>](<map_1030@52:0>:int),
+          ((<<map_1030@52:1>@55:0> = <map_1030@52:0>) && (<map_1030@52:0> = 0))
+          |- P[<<map_1030@52:1>@55:0>](<map_1030@52:0>:int,<<map_1030@52:1>@55:0>:int)
+          
+          P[<map_1030@49:0>](var26:int), ((var26 = (1 + <map_1030@52:0>)) && ((1 + <map_1030@52:0>) <> 0))
+          |- P[<map_1030@52:0>](<map_1030@52:0>:int)
+          
+          P[<<map_1030@33:1>@45:0>](<f_main_1174@47:0>:int,<map_1030@49:0>:int)|- P[<map_1030@49:0>](
+          <map_1030@49:0>:int)
+          
+          P[<map_1030@33:0>](<map_1030@33:0>:int),
+          P[<<map_1030@36:1>@39:0>](var27:int,var28:int),
+          (((1 + var28) = <<map_1030@33:1>@45:0>) && (((1 + var27) = <map_1030@33:0>) && (<map_1030@33:0> <> 0)))
+          |- P[<<map_1030@33:1>@45:0>](<map_1030@33:0>:int,<<map_1030@33:1>@45:0>:int)
+          
+          P[<map_1030@36:0>](<map_1030@36:0>:int),
+          ((<<map_1030@36:1>@39:0> = <map_1030@36:0>) && (<map_1030@36:0> = 0))
+          |- P[<<map_1030@36:1>@39:0>](<map_1030@36:0>:int,<<map_1030@36:1>@39:0>:int)
+          
+          P[<map_1030@33:0>](var29:int), ((var29 = (1 + <map_1030@36:0>)) && ((1 + <map_1030@36:0>) <> 0))
+          |- P[<map_1030@36:0>](<map_1030@36:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1178_sep_66_sep_0($275)) -> 1=0.
+(($275-1=0) & ($276-$277<>0)) & (v_sep_map_1030_sep_49_sep_1_sep_61_sep_0($278,$276)) & (v_sep_map_1030_sep_33_sep_1_sep_45_sep_0($277,$278)) -> v_sep_fail_1178_sep_66_sep_0($275).
+(($279<>0) & (-$279+$280+1=0) & ($281-$282+1=0)) & (v_sep_map_1030_sep_52_sep_1_sep_55_sep_0($280,$281)) & (v_sep_map_1030_sep_49_sep_0($279)) -> v_sep_map_1030_sep_49_sep_1_sep_61_sep_0($279,$282).
+(($283=0) & (-$283+$284=0)) & (v_sep_map_1030_sep_52_sep_0($283)) -> v_sep_map_1030_sep_52_sep_1_sep_55_sep_0($283,$284).
+(($283+1<>0) & (-$283+$285-1=0)) & (v_sep_map_1030_sep_49_sep_0($285)) -> v_sep_map_1030_sep_52_sep_0($283).
+(0=0) & (v_sep_map_1030_sep_33_sep_1_sep_45_sep_0($286,$279)) -> v_sep_map_1030_sep_49_sep_0($279).
+(($287<>0) & (-$287+$288+1=0) & ($289-$290+1=0)) & (v_sep_map_1030_sep_36_sep_1_sep_39_sep_0($288,$289)) & (v_sep_map_1030_sep_33_sep_0($287)) -> v_sep_map_1030_sep_33_sep_1_sep_45_sep_0($287,$290).
+(($291=0) & (-$291+$292=0)) & (v_sep_map_1030_sep_36_sep_0($291)) -> v_sep_map_1030_sep_36_sep_1_sep_39_sep_0($291,$292).
+(($291+1<>0) & (-$291+$293-1=0)) & (v_sep_map_1030_sep_33_sep_0($293)) -> v_sep_map_1030_sep_36_sep_0($291).
+0=0 -> v_sep_map_1030_sep_33_sep_0($287).
+
+
+v_sep_fail_1178_sep_66_sep_0: X
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: X
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: X
+v_sep_map_1030_sep_49_sep_0: X
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: X
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: X
+.....................Split disj [40] 0.32795
+Reconstrcut: 3 **)
+
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: X
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: X
+v_sep_map_1030_sep_49_sep_0: X
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: X
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: X
+.......
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: X
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: X
+v_sep_map_1030_sep_49_sep_0: X
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: X
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: X
+.......Split conj [42] 0.333949
+(Reconstrcut: 8 **)
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: X
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: X
+v_sep_map_1030_sep_49_sep_0: X
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: (X) & (X)
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: X
+...............
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: X
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: X
+v_sep_map_1030_sep_49_sep_0: X
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: (X) & (X)
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: X
+.......Split conj [45] 0.339948
+(Reconstrcut: 21 ***)
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: X
+v_sep_map_1030_sep_49_sep_0: X
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: (X) & (X)
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: X
+...............................
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: X
+v_sep_map_1030_sep_49_sep_0: X
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: (X) & (X)
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: X
+.......
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: X
+v_sep_map_1030_sep_49_sep_0: X
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: (X) & (X)
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: X
+.......................Split conj [51] 0.370942
+(Reconstrcut: 14 ****)
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: X
+v_sep_map_1030_sep_49_sep_0: X
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: (X) & (X)
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: (X) & (X) & (X) & (X)
+...................
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: X
+v_sep_map_1030_sep_49_sep_0: X
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: (X) & (X)
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: (X) & (X) & (X) & (X)
+.......
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: X
+v_sep_map_1030_sep_49_sep_0: X
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: (X) & (X)
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: (X) & (X) & (X) & (X)
+.......................Split conj [57] 0.400938
+(Reconstrcut: 25 ******)
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: X
+v_sep_map_1030_sep_49_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: (X) & (X)
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: (X) & (X) & (X) & (X)
+...........................
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: X
+v_sep_map_1030_sep_49_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: (X) & (X)
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: (X) & (X) & (X) & (X)
+.......
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: X
+v_sep_map_1030_sep_49_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: (X) & (X)
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: (X) & (X) & (X) & (X)
+.......................Split conj [67] 0.431933
+(Reconstrcut: 46 ******)
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_49_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: (X) & (X)
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: (X) & (X) & (X) & (X)
+.............................................
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_49_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: (X) & (X)
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: (X) & (X) & (X) & (X)
+.......
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_49_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: (X) & (X)
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: (X) & (X) & (X) & (X)
+.......................
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_49_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: (X) & (X)
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: (X) & (X) & (X) & (X)
+...................................
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_49_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: (X) & (X)
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: (X) & (X) & (X) & (X)
+...........................................
+v_sep_fail_1178_sep_66_sep_0: (X) | (X)
+v_sep_map_1030_sep_33_sep_0: X
+v_sep_map_1030_sep_33_sep_1_sep_45_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_36_sep_0: X
+v_sep_map_1030_sep_36_sep_1_sep_39_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_49_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_49_sep_1_sep_61_sep_0: (X) & (X)
+v_sep_map_1030_sep_52_sep_0: X
+v_sep_map_1030_sep_52_sep_1_sep_55_sep_0: (X) & (X) & (X) & (X)
+...............................................(0=0) & (v_sep_fail_1178_sep_66_sep_0($275)) -> 1=0.
+(($275-1=0) & ($276-$277<>0)) & (v_sep_map_1030_sep_49_sep_1_sep_61_sep_0($278,$276)) & (v_sep_map_1030_sep_33_sep_1_sep_45_sep_0($277,$278)) -> v_sep_fail_1178_sep_66_sep_0($275).
+(($279<>0) & (-$279+$280+1=0) & ($281-$282+1=0)) & (v_sep_map_1030_sep_52_sep_1_sep_55_sep_0($280,$281)) & (v_sep_map_1030_sep_49_sep_0($279)) -> v_sep_map_1030_sep_49_sep_1_sep_61_sep_0($279,$282).
+(($283=0) & (-$283+$284=0)) & (v_sep_map_1030_sep_52_sep_0($283)) -> v_sep_map_1030_sep_52_sep_1_sep_55_sep_0($283,$284).
+(($283+1<>0) & (-$283+$285-1=0)) & (v_sep_map_1030_sep_49_sep_0($285)) -> v_sep_map_1030_sep_52_sep_0($283).
+(0=0) & (v_sep_map_1030_sep_33_sep_1_sep_45_sep_0($286,$279)) -> v_sep_map_1030_sep_49_sep_0($279).
+(($287<>0) & (-$287+$288+1=0) & ($289-$290+1=0)) & (v_sep_map_1030_sep_36_sep_1_sep_39_sep_0($288,$289)) & (v_sep_map_1030_sep_33_sep_0($287)) -> v_sep_map_1030_sep_33_sep_1_sep_45_sep_0($287,$290).
+(($291=0) & (-$291+$292=0)) & (v_sep_map_1030_sep_36_sep_0($291)) -> v_sep_map_1030_sep_36_sep_1_sep_39_sep_0($291,$292).
+(($291+1<>0) & (-$291+$293-1=0)) & (v_sep_map_1030_sep_33_sep_0($293)) -> v_sep_map_1030_sep_36_sep_0($291).
+0=0 -> v_sep_map_1030_sep_33_sep_0($287).
+
+          |- P[<map_1030@33:0>](<map_1030@33:0>:int)
+        solution:
+          P[<fail_1178@66:0>]($294:bool) = false
+          P[<map_1030@33:0>]($323:int) = true
+          P[<<map_1030@33:1>@45:0>]($302:int,$304:int) = ((1 <= $302) && ($302 <= $304))
+          P[<map_1030@36:0>]($326:int) = true
+          P[<<map_1030@36:1>@39:0>]($318:int,$320:int) = ((0 <= $318) && ($318 <= $320))
+          P[<map_1030@49:0>]($312:int) = true
+          P[<<map_1030@49:1>@61:0>]($297:int,$299:int) = (($297 <= $299) && ($299 <= 1))
+          P[<map_1030@52:0>]($315:int) = true
+          P[<<map_1030@52:1>@55:0>]($307:int,$309:int) = (($309 <= 0) && ($307 <= $309))
+        
+      end HcSolver.solve_ub(4932)[4] (0.251962 sec.)
+      begin HcSolver.check_validity(5523)[4]
+        input:
+          P[<fail_1178@66:0>](<fail_1178@66:0>:bool)|- bot
+          
+          P[<<map_1030@33:1>@45:0>](<f_main_1175@63:0>:int,<f_main_1175@63:1>:int),
+          P[<<map_1030@49:1>@61:0>](<f_main_1175@63:1>:int,<f_main_1175@63:3>:int),
+          ((<f_main_1175@63:3> <> <f_main_1175@63:0>) && <fail_1178@66:0>)
+          |- P[<fail_1178@66:0>](<fail_1178@66:0>:bool)
+          
+          P[<map_1030@49:0>](<map_1030@49:0>:int),
+          P[<<map_1030@52:1>@55:0>]((-1 + <map_1030@49:0>):int,(-1 + <<map_1030@49:1>@61:0>):int),
+          (<map_1030@49:0> <> 0) |- P[<<map_1030@49:1>@61:0>](<map_1030@49:0>:int,
+                                                              <<map_1030@49:1>@61:0>:int)
+          
+          P[<map_1030@52:0>](<map_1030@52:0>:int),
+          ((<map_1030@52:0> = 0) && (<<map_1030@52:1>@55:0> = <map_1030@52:0>))
+          |- P[<<map_1030@52:1>@55:0>](<map_1030@52:0>:int,<<map_1030@52:1>@55:0>:int)
+          
+          P[<map_1030@49:0>]((1 + <map_1030@52:0>):int), ((1 + <map_1030@52:0>) <> 0)
+          |- P[<map_1030@52:0>](<map_1030@52:0>:int)
+          
+          P[<<map_1030@33:1>@45:0>](<f_main_1174@47:0>:int,<map_1030@49:0>:int)|- P[<map_1030@49:0>](
+          <map_1030@49:0>:int)
+          
+          P[<map_1030@33:0>](<map_1030@33:0>:int),
+          P[<<map_1030@36:1>@39:0>]((-1 + <map_1030@33:0>):int,(-1 + <<map_1030@33:1>@45:0>):int),
+          (<map_1030@33:0> <> 0) |- P[<<map_1030@33:1>@45:0>](<map_1030@33:0>:int,
+                                                              <<map_1030@33:1>@45:0>:int)
+          
+          P[<map_1030@36:0>](<map_1030@36:0>:int),
+          ((<map_1030@36:0> = 0) && (<<map_1030@36:1>@39:0> = <map_1030@36:0>))
+          |- P[<<map_1030@36:1>@39:0>](<map_1030@36:0>:int,<<map_1030@36:1>@39:0>:int)
+          
+          P[<map_1030@33:0>]((1 + <map_1030@36:0>):int), ((1 + <map_1030@36:0>) <> 0)
+          |- P[<map_1030@36:0>](<map_1030@36:0>:int)
+          
+          |- P[<map_1030@33:0>](<map_1030@33:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(5523)[4] (0.010998 sec.)
+      solution:
+        P[<fail_1178@66:0>]($294:bool) = false
+        P[<map_1030@33:0>]($323:int) = true
+        P[<<map_1030@33:1>@45:0>]($302:int,$304:int) = ((1 <= $302) && ($302 <= $304))
+        P[<map_1030@36:0>]($326:int) = true
+        P[<<map_1030@36:1>@39:0>]($318:int,$320:int) = ((0 <= $318) && ($318 <= $320))
+        P[<map_1030@49:0>]($312:int) = true
+        P[<<map_1030@49:1>@61:0>]($297:int,$299:int) = (($297 <= $299) && ($299 <= 1))
+        P[<map_1030@52:0>]($315:int) = true
+        P[<<map_1030@52:1>@55:0>]($307:int,$309:int) = (($309 <= 0) && ($307 <= $309))
+    end YhornInterface.solve(4931)[3] (0.262960 sec.)
+    
+  end RefTypeInfer.infer_etrs(2350)[2] (0.306953 sec.)
+  refinement types:
+    main_1172: X
+    f_1176: v1:int -> X
+    main_1032: v1:int -> (v2:unit -> X) -> X
+    map_1030: v1:int -> (v2:{v2:int | ((1 <= v1) && (v1 <= v2))} -> X) -> X
+    map_1030: v1:int -> (v2:{v2:int | ((0 <= v1) && (v1 <= v2))} -> X) -> X
+    f_map_1173: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_main_1174: v1:int -> (v2:unit -> X) -> v4:int -> X
+    map_1030: v1:int -> (v2:{v2:int | ((v1 <= v2) && (v2 <= 1))} -> X) -> X
+    map_1030: v1:int -> (v2:{v2:int | ((v2 <= 0) && (v1 <= v2))} -> X) -> X
+    f_map_1173: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_main_1175: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1178: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1177: var40:int -> var39:unit -> X
+  abstraction types:
+    main_1172: X
+    f_1176: v1:int -> X
+    main_1032: v1:int -> (v2:unit -> X) -> X
+    map_1030: var49:int ->
+              (var50:int[var50 -> ((1 <= var49) && (var49 <= var50)),
+                         var50 -> ((0 <= var49) && (var49 <= var50)),
+                         var50 -> ((var49 <= var50) && (var50 <= 1)),
+                         var50 -> ((var50 <= 0) && (var49 <= var50))] -> X) -> X
+    f_map_1173: var53:int -> (var54:int -> X) -> var56:int -> X
+    f_main_1174: v1:int -> (v2:unit -> X) -> v4:int -> X
+    f_main_1175: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1178: v1:bool -> (v2:unit -> X) -> X
+    f_1177: var40:int -> var39:unit -> X
+  
+end AbsTypeInfer.refine(2349)[1] (0.312952 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 0; 0; 0; 1; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 2)::
+Main: main_1172
+  main_1172 -> (rand_int f_1176)
+  f_1176 x_1147 -> (main_1032 x_1147 (f_1177 x_1147))
+  f_1177 x_1147 x_1144 -> end
+  f_main_1174 n_1033 k_main_1106 x_1130 -> (map_1030 x_1130 (f_main_1175 n_1033 x_1130 k_main_1106))
+  f_main_1175 n_1033 x_1130 k_main_1106 x_1109 when (x_1109 = n_1033) -> (k_main_1106 ())
+  f_main_1175 n_1033 x_1130 k_main_1106 x_1109 when (not (x_1109 = n_1033)) -> (fail_1178 true k_main_1106)
+  f_map_1173 x_1031 k_map_1074 x_1078 -> (k_map_1074 (1 + x_1078))
+  fail_1178 b k -> {fail} => (k ())
+  main_1032 n_1033 k_main_1106 -> (map_1030 n_1033 (f_main_1174 n_1033 k_main_1106))
+  map_1030 x_1031 k_map_1074 when (x_1031 = 0) -> (k_map_1074 x_1031)
+  map_1030 x_1031 k_map_1074 when (not (x_1031 = 0)) -> (map_1030 (x_1031 - 1) (f_map_1173 x_1031 k_map_1074))
+Types:
+  main_1172 : X
+  fail_1178 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  map_1030 : (x_1:int ->
+              (x_3:int[x_3 <= 0 && x_1 <= x_3; x_1 <= x_3 && x_3 <= 1; 
+                       x_1 >= 0 && x_1 <= x_3; x_1 >= 1 && x_1 <= x_3; 
+                       x_3 = 0; x_1 = 0] -> X) -> X)
+  
+(2-1) Abstracting ... DONE!
+
+(2-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1172 ... --> 
+  f_1176 ... --> 
+  main_1032 ... --> 
+  map_1030 [1/2] ... --> 
+  f_main_1174 ... --> 
+  map_1030 [2/2] ... --> 
+  map_1030 [1/2] ... --> 
+  f_map_1173 ... --> 
+  f_main_1175 [2/2] ... --> 
+  fail_1178 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 1; 0; 0; 1; 0
+
+(2-3) Checking counter-example ... DONE!
+
+(2-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(13606)[1]
+  program:
+    main_1172  | true = ((Random.int 0) f_1176)
+    f_1176 x_1147 | true = (main_1032 x_1147
+                                      (f_1177 x_1147))
+    f_1177 x_1147 x_1144 | true = end
+    f_main_1174 n_1033 k_main_1106 x_1130 | true = (map_1030 x_1130
+                                                             (f_main_1175 n_1033
+                                                                    x_1130
+                                                                    k_main_1106))
+    f_main_1175 n_1033 x_1130 k_main_1106 x_1109 | (x_1109 = n_1033) = (
+    k_main_1106 ())
+    f_main_1175 n_1033 x_1130 k_main_1106 x_1109 | (not (x_1109 = n_1033)) = (
+    fail_1178 true
+              k_main_1106)
+    f_map_1173 x_1031 k_map_1074 x_1078 | true = (k_map_1074 (1 + x_1078))
+    fail_1178 b k | true = (fail ())
+    main_1032 n_1033 k_main_1106 | true = (map_1030 n_1033
+                                                    (f_main_1174 n_1033
+                                                                 k_main_1106))
+    map_1030 x_1031 k_map_1074 | (x_1031 = 0) = (k_map_1074 x_1031)
+    map_1030 x_1031 k_map_1074 | (not (x_1031 = 0)) = (map_1030 (x_1031 - 1)
+                                                                (f_map_1173 x_1031
+                                                                    k_map_1074))
+    main_1172:X
+    f_1176:int -> X
+    f_1177:int -> unit -> X
+    f_main_1174:int -> (unit -> X) -> int -> X
+    f_main_1175:int -> int -> (unit -> X) -> int -> X
+    f_map_1173:int -> (int -> X) -> int -> X
+    fail_1178:bool -> (unit -> X) -> X
+    main_1032:int -> (unit -> X) -> X
+    map_1030:int -> (int -> X) -> X
+  inlined functions: f_1176,f_1177,f_main_1174,f_main_1175,f_map_1173,main_1032
+  counterexample: 0:0:0:0:0:1:0:0:1:0
+  error traces:
+    [true.nop(<f_1176@72:0> = var58)
+     [true.(<main_1032@74:0> = <f_1176@72:0>)
+      [true.(<map_1030@76:0> = <main_1032@74:0>)
+       [(<map_1030@76:0> = 0).(<<map_1030@76:1>@79:0> = <map_1030@76:0>)
+        [true.((<f_main_1174@81:0> = <main_1032@74:0>) && (<f_main_1174@81:2> = <<map_1030@76:1>@79:0>))
+         [true.(<map_1030@83:0> = <f_main_1174@81:2>)
+          [(not (<map_1030@83:0> = 0)).(<map_1030@86:0> = (<map_1030@83:0> - 1))
+           [(<map_1030@86:0> = 0).(<<map_1030@86:1>@89:0> = <map_1030@86:0>)
+            [true.((<f_map_1173@91:0> = <map_1030@83:0>) && (<f_map_1173@91:2> = <<map_1030@86:1>@89:0>))
+             [true.(<<f_map_1173@91:1>@93:0> = (1 + <f_map_1173@91:2>))
+              [true.(<<map_1030@83:1>@95:0> = <<f_map_1173@91:1>@93:0>)
+               [true.
+                ((<f_main_1175@97:0> = <f_main_1174@81:0>) &&
+                 ((<f_main_1175@97:1> = <f_main_1174@81:2>) && (<f_main_1175@97:3> = <<map_1030@83:1>@95:0>)))
+                [(not (<f_main_1175@97:3> = <f_main_1175@97:0>)).(<fail_1178@100:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(13607)[2]
+    horn clauses:
+      P[<fail_1178@100:0>](<fail_1178@100:0>:bool)|- bot
+      
+      P[<f_main_1175@97:3>](<f_main_1175@97:0>:int,<f_main_1175@97:1>:int,<f_main_1175@97:3>:int),
+      ((<f_main_1175@97:3> <> <f_main_1175@97:0>) && <fail_1178@100:0>) |- P[<fail_1178@100:0>](
+      <fail_1178@100:0>:bool)
+      
+      P[<f_main_1174@81:2>](<f_main_1175@97:0>:int,<f_main_1175@97:1>:int),
+      P[<<map_1030@83:1>@95:0>](<f_main_1175@97:1>:int,<f_main_1175@97:3>:int)|- P[<f_main_1175@97:3>](
+      <f_main_1175@97:0>:int,<f_main_1175@97:1>:int,<f_main_1175@97:3>:int)
+      
+      P[<map_1030@83:0>](<map_1030@83:0>:int),
+      P[<<f_map_1173@91:1>@93:0>](<map_1030@83:0>:int,<<map_1030@83:1>@95:0>:int), (
+      <map_1030@83:0> <> 0) |- P[<<map_1030@83:1>@95:0>](<map_1030@83:0>:int,
+                                                         <<map_1030@83:1>@95:0>:int)
+      
+      P[<f_map_1173@91:2>](<f_map_1173@91:0>:int,(-1 + <<f_map_1173@91:1>@93:0>):int)|- P[<<f_map_1173@91:1>@93:0>](
+      <f_map_1173@91:0>:int,<<f_map_1173@91:1>@93:0>:int)
+      
+      P[<map_1030@83:0>](<f_map_1173@91:0>:int),
+      P[<<map_1030@86:1>@89:0>]((-1 + <f_map_1173@91:0>):int,<f_map_1173@91:2>:int), (
+      <f_map_1173@91:0> <> 0) |- P[<f_map_1173@91:2>](<f_map_1173@91:0>:int,
+                                                      <f_map_1173@91:2>:int)
+      
+      P[<map_1030@86:0>](<map_1030@86:0>:int), ((<map_1030@86:0> = 0) && (<<map_1030@86:1>@89:0> = <map_1030@86:0>))
+      |- P[<<map_1030@86:1>@89:0>](<map_1030@86:0>:int,<<map_1030@86:1>@89:0>:int)
+      
+      P[<map_1030@83:0>]((1 + <map_1030@86:0>):int), ((1 + <map_1030@86:0>) <> 0)
+      |- P[<map_1030@86:0>](<map_1030@86:0>:int)
+      
+      P[<f_main_1174@81:2>](<f_main_1174@81:0>:int,<map_1030@83:0>:int)|- P[<map_1030@83:0>](<map_1030@83:0>:int)
+      
+      P[<main_1032@74:0>](<f_main_1174@81:0>:int),
+      P[<<map_1030@76:1>@79:0>](<f_main_1174@81:0>:int,<f_main_1174@81:2>:int)|- P[<f_main_1174@81:2>](
+      <f_main_1174@81:0>:int,<f_main_1174@81:2>:int)
+      
+      P[<map_1030@76:0>](<map_1030@76:0>:int), ((<map_1030@76:0> = 0) && (<<map_1030@76:1>@79:0> = <map_1030@76:0>))
+      |- P[<<map_1030@76:1>@79:0>](<map_1030@76:0>:int,<<map_1030@76:1>@79:0>:int)
+      
+      P[<main_1032@74:0>](<map_1030@76:0>:int)|- P[<map_1030@76:0>](<map_1030@76:0>:int)
+      
+      P[<f_1176@72:0>](<main_1032@74:0>:int)|- P[<main_1032@74:0>](<main_1032@74:0>:int)
+      
+      |- P[<f_1176@72:0>](<f_1176@72:0>:int)
+    call trees:
+      <main_1172@69>
+        <f_1176@72>
+          <main_1032@74>
+            <map_1030@76>
+            </<map_1030@76:1>@79>
+            <f_main_1174@81>
+              <map_1030@83>
+                <map_1030@86>
+                </<map_1030@86:1>@89>
+                <f_map_1173@91>
+                </<f_map_1173@91:1>@93>
+              </<map_1030@83:1>@95>
+              <f_main_1175@97>
+                <fail_1178@100>
+    inlined horn clauses:
+      P[<fail_1178@100:0>](<fail_1178@100:0>:bool)|- bot
+      
+      P[<<map_1030@76:1>@79:0>](<f_main_1175@97:0>:int,<f_main_1175@97:1>:int),
+      P[<<map_1030@83:1>@95:0>](<f_main_1175@97:1>:int,<f_main_1175@97:3>:int),
+      ((<f_main_1175@97:3> <> <f_main_1175@97:0>) && <fail_1178@100:0>) |- P[<fail_1178@100:0>](
+      <fail_1178@100:0>:bool)
+      
+      P[<map_1030@83:0>](<map_1030@83:0>:int),
+      P[<<map_1030@86:1>@89:0>]((-1 + <map_1030@83:0>):int,(-1 + <<map_1030@83:1>@95:0>):int), (
+      <map_1030@83:0> <> 0) |- P[<<map_1030@83:1>@95:0>](<map_1030@83:0>:int,
+                                                         <<map_1030@83:1>@95:0>:int)
+      
+      P[<map_1030@86:0>](<map_1030@86:0>:int), ((<map_1030@86:0> = 0) && (<<map_1030@86:1>@89:0> = <map_1030@86:0>))
+      |- P[<<map_1030@86:1>@89:0>](<map_1030@86:0>:int,<<map_1030@86:1>@89:0>:int)
+      
+      P[<map_1030@83:0>]((1 + <map_1030@86:0>):int), ((1 + <map_1030@86:0>) <> 0)
+      |- P[<map_1030@86:0>](<map_1030@86:0>:int)
+      
+      P[<<map_1030@76:1>@79:0>](<f_main_1174@81:0>:int,<map_1030@83:0>:int)|- P[<map_1030@83:0>](<map_1030@83:0>:int)
+      
+      P[<map_1030@76:0>](<map_1030@76:0>:int), ((<map_1030@76:0> = 0) && (<<map_1030@76:1>@79:0> = <map_1030@76:0>))
+      |- P[<<map_1030@76:1>@79:0>](<map_1030@76:0>:int,<<map_1030@76:1>@79:0>:int)
+      
+      |- P[<map_1030@76:0>](<map_1030@76:0>:int)
+    begin ParamSubstInfer.infer(15324)[3]
+      
+    end ParamSubstInfer.infer(15324)[3] (1.339796 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(15326)[3]
+      
+    end RefTypeInfer.elim_coeffs(15326)[3] (0.001000 sec.)
+    begin YhornInterface.solve(15621)[3]
+      begin HcSolver.solve_ub(15622)[4]
+        encoded:
+          P[<fail_1178@100:0>](<fail_1178@100:0>:int)|- bot
+          
+          P[<<map_1030@76:1>@79:0>](<f_main_1175@97:0>:int,<f_main_1175@97:1>:int),
+          P[<<map_1030@83:1>@95:0>](<f_main_1175@97:1>:int,<f_main_1175@97:3>:int),
+          ((<f_main_1175@97:3> <> <f_main_1175@97:0>) && (<fail_1178@100:0> = 1))
+          |- P[<fail_1178@100:0>](<fail_1178@100:0>:int)
+          
+          P[<map_1030@83:0>](<map_1030@83:0>:int),
+          P[<<map_1030@86:1>@89:0>]((-1 + <map_1030@83:0>):int,(-1 + <<map_1030@83:1>@95:0>):int),
+          (<map_1030@83:0> <> 0) |- P[<<map_1030@83:1>@95:0>](<map_1030@83:0>:int,
+                                                              <<map_1030@83:1>@95:0>:int)
+          
+          P[<map_1030@86:0>](<map_1030@86:0>:int),
+          ((<map_1030@86:0> = 0) && (<<map_1030@86:1>@89:0> = <map_1030@86:0>))
+          |- P[<<map_1030@86:1>@89:0>](<map_1030@86:0>:int,<<map_1030@86:1>@89:0>:int)
+          
+          P[<map_1030@83:0>]((1 + <map_1030@86:0>):int), ((1 + <map_1030@86:0>) <> 0)
+          |- P[<map_1030@86:0>](<map_1030@86:0>:int)
+          
+          P[<<map_1030@76:1>@79:0>](<f_main_1174@81:0>:int,<map_1030@83:0>:int)|- P[<map_1030@83:0>](
+          <map_1030@83:0>:int)
+          
+          P[<map_1030@76:0>](<map_1030@76:0>:int),
+          ((<map_1030@76:0> = 0) && (<<map_1030@76:1>@79:0> = <map_1030@76:0>))
+          |- P[<<map_1030@76:1>@79:0>](<map_1030@76:0>:int,<<map_1030@76:1>@79:0>:int)
+          
+          |- P[<map_1030@76:0>](<map_1030@76:0>:int)
+        input to Yhorn:
+          P[<fail_1178@100:0>](<fail_1178@100:0>:int)|- bot
+          
+          P[<<map_1030@76:1>@79:0>](<f_main_1175@97:0>:int,<f_main_1175@97:1>:int),
+          P[<<map_1030@83:1>@95:0>](<f_main_1175@97:1>:int,<f_main_1175@97:3>:int),
+          ((<f_main_1175@97:3> <> <f_main_1175@97:0>) && (<fail_1178@100:0> = 1))
+          |- P[<fail_1178@100:0>](<fail_1178@100:0>:int)
+          
+          P[<map_1030@83:0>](<map_1030@83:0>:int),
+          P[<<map_1030@86:1>@89:0>](var59:int,var60:int),
+          (((1 + var60) = <<map_1030@83:1>@95:0>) && (((1 + var59) = <map_1030@83:0>) && (<map_1030@83:0> <> 0)))
+          |- P[<<map_1030@83:1>@95:0>](<map_1030@83:0>:int,<<map_1030@83:1>@95:0>:int)
+          
+          P[<map_1030@86:0>](<map_1030@86:0>:int),
+          ((<<map_1030@86:1>@89:0> = <map_1030@86:0>) && (<map_1030@86:0> = 0))
+          |- P[<<map_1030@86:1>@89:0>](<map_1030@86:0>:int,<<map_1030@86:1>@89:0>:int)
+          
+          P[<map_1030@83:0>](var61:int), ((var61 = (1 + <map_1030@86:0>)) && ((1 + <map_1030@86:0>) <> 0))
+          |- P[<map_1030@86:0>](<map_1030@86:0>:int)
+          
+          P[<<map_1030@76:1>@79:0>](<f_main_1174@81:0>:int,<map_1030@83:0>:int)|- P[<map_1030@83:0>](
+          <map_1030@83:0>:int)
+          
+          P[<map_1030@76:0>](<map_1030@76:0>:int),
+          ((<<map_1030@76:1>@79:0> = <map_1030@76:0>) && (<map_1030@76:0> = 0))
+          |- P[<<map_1030@76:1>@79:0>](<map_1030@76:0>:int,<<map_1030@76:1>@79:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1178_sep_100_sep_0($1511)) -> 1=0.
+(($1511-1=0) & ($1512-$1513<>0)) & (v_sep_map_1030_sep_83_sep_1_sep_95_sep_0($1514,$1512)) & (v_sep_map_1030_sep_76_sep_1_sep_79_sep_0($1513,$1514)) -> v_sep_fail_1178_sep_100_sep_0($1511).
+(($1515<>0) & (-$1515+$1516+1=0) & ($1517-$1518+1=0)) & (v_sep_map_1030_sep_86_sep_1_sep_89_sep_0($1516,$1517)) & (v_sep_map_1030_sep_83_sep_0($1515)) -> v_sep_map_1030_sep_83_sep_1_sep_95_sep_0($1515,$1518).
+(($1519=0) & (-$1519+$1520=0)) & (v_sep_map_1030_sep_86_sep_0($1519)) -> v_sep_map_1030_sep_86_sep_1_sep_89_sep_0($1519,$1520).
+(($1519+1<>0) & (-$1519+$1521-1=0)) & (v_sep_map_1030_sep_83_sep_0($1521)) -> v_sep_map_1030_sep_86_sep_0($1519).
+(0=0) & (v_sep_map_1030_sep_76_sep_1_sep_79_sep_0($1522,$1515)) -> v_sep_map_1030_sep_83_sep_0($1515).
+(($1523=0) & (-$1523+$1524=0)) & (v_sep_map_1030_sep_76_sep_0($1523)) -> v_sep_map_1030_sep_76_sep_1_sep_79_sep_0($1523,$1524).
+0=0 -> v_sep_map_1030_sep_76_sep_0($1523).
+
+
+v_sep_fail_1178_sep_100_sep_0: X
+v_sep_map_1030_sep_76_sep_0: X
+v_sep_map_1030_sep_76_sep_1_sep_79_sep_0: X
+v_sep_map_1030_sep_83_sep_0: X
+v_sep_map_1030_sep_83_sep_1_sep_95_sep_0: X
+v_sep_map_1030_sep_86_sep_0: X
+v_sep_map_1030_sep_86_sep_1_sep_89_sep_0: X
+...............
+v_sep_fail_1178_sep_100_sep_0: X
+v_sep_map_1030_sep_76_sep_0: X
+v_sep_map_1030_sep_76_sep_1_sep_79_sep_0: X
+v_sep_map_1030_sep_83_sep_0: X
+v_sep_map_1030_sep_83_sep_1_sep_95_sep_0: X
+v_sep_map_1030_sep_86_sep_0: X
+v_sep_map_1030_sep_86_sep_1_sep_89_sep_0: X
+......
+v_sep_fail_1178_sep_100_sep_0: X
+v_sep_map_1030_sep_76_sep_0: X
+v_sep_map_1030_sep_76_sep_1_sep_79_sep_0: X
+v_sep_map_1030_sep_83_sep_0: X
+v_sep_map_1030_sep_83_sep_1_sep_95_sep_0: X
+v_sep_map_1030_sep_86_sep_0: X
+v_sep_map_1030_sep_86_sep_1_sep_89_sep_0: X
+...........
+v_sep_fail_1178_sep_100_sep_0: X
+v_sep_map_1030_sep_76_sep_0: X
+v_sep_map_1030_sep_76_sep_1_sep_79_sep_0: X
+v_sep_map_1030_sep_83_sep_0: X
+v_sep_map_1030_sep_83_sep_1_sep_95_sep_0: X
+v_sep_map_1030_sep_86_sep_0: X
+v_sep_map_1030_sep_86_sep_1_sep_89_sep_0: X
+.............
+v_sep_fail_1178_sep_100_sep_0: X
+v_sep_map_1030_sep_76_sep_0: X
+v_sep_map_1030_sep_76_sep_1_sep_79_sep_0: X
+v_sep_map_1030_sep_83_sep_0: X
+v_sep_map_1030_sep_83_sep_1_sep_95_sep_0: X
+v_sep_map_1030_sep_86_sep_0: X
+v_sep_map_1030_sep_86_sep_1_sep_89_sep_0: X
+...............(0=0) & (v_sep_fail_1178_sep_100_sep_0($1511)) -> 1=0.
+(($1511-1=0) & ($1512-$1513<>0)) & (v_sep_map_1030_sep_83_sep_1_sep_95_sep_0($1514,$1512)) & (v_sep_map_1030_sep_76_sep_1_sep_79_sep_0($1513,$1514)) -> v_sep_fail_1178_sep_100_sep_0($1511).
+(($1515<>0) & (-$1515+$1516+1=0) & ($1517-$1518+1=0)) & (v_sep_map_1030_sep_86_sep_1_sep_89_sep_0($1516,$1517)) & (v_sep_map_1030_sep_83_sep_0($1515)) -> v_sep_map_1030_sep_83_sep_1_sep_95_sep_0($1515,$1518).
+(($1519=0) & (-$1519+$1520=0)) & (v_sep_map_1030_sep_86_sep_0($1519)) -> v_sep_map_1030_sep_86_sep_1_sep_89_sep_0($1519,$1520).
+(($1519+1<>0) & (-$1519+$1521-1=0)) & (v_sep_map_1030_sep_83_sep_0($1521)) -> v_sep_map_1030_sep_86_sep_0($1519).
+(0=0) & (v_sep_map_1030_sep_76_sep_1_sep_79_sep_0($1522,$1515)) -> v_sep_map_1030_sep_83_sep_0($1515).
+(($1523=0) & (-$1523+$1524=0)) & (v_sep_map_1030_sep_76_sep_0($1523)) -> v_sep_map_1030_sep_76_sep_1_sep_79_sep_0($1523,$1524).
+0=0 -> v_sep_map_1030_sep_76_sep_0($1523).
+
+          |- P[<map_1030@76:0>](<map_1030@76:0>:int)
+        solution:
+          P[<fail_1178@100:0>]($1525:bool) = false
+          P[<map_1030@76:0>]($1549:int) = true
+          P[<<map_1030@76:1>@79:0>]($1533:int,$1535:int) = ($1535 <= 0)
+          P[<map_1030@83:0>]($1543:int) = ($1543 <= 0)
+          P[<<map_1030@83:1>@95:0>]($1528:int,$1530:int) = (3 <= $1528)
+          P[<map_1030@86:0>]($1546:int) = ((1 + $1546) <= 0)
+          P[<<map_1030@86:1>@89:0>]($1538:int,$1540:int) = (1 <= (2 * $1538))
+        
+      end HcSolver.solve_ub(15622)[4] (0.045993 sec.)
+      begin HcSolver.check_validity(15943)[4]
+        input:
+          P[<fail_1178@100:0>](<fail_1178@100:0>:bool)|- bot
+          
+          P[<<map_1030@76:1>@79:0>](<f_main_1175@97:0>:int,<f_main_1175@97:1>:int),
+          P[<<map_1030@83:1>@95:0>](<f_main_1175@97:1>:int,<f_main_1175@97:3>:int),
+          ((<f_main_1175@97:3> <> <f_main_1175@97:0>) && <fail_1178@100:0>)
+          |- P[<fail_1178@100:0>](<fail_1178@100:0>:bool)
+          
+          P[<map_1030@83:0>](<map_1030@83:0>:int),
+          P[<<map_1030@86:1>@89:0>]((-1 + <map_1030@83:0>):int,(-1 + <<map_1030@83:1>@95:0>):int),
+          (<map_1030@83:0> <> 0) |- P[<<map_1030@83:1>@95:0>](<map_1030@83:0>:int,
+                                                              <<map_1030@83:1>@95:0>:int)
+          
+          P[<map_1030@86:0>](<map_1030@86:0>:int),
+          ((<map_1030@86:0> = 0) && (<<map_1030@86:1>@89:0> = <map_1030@86:0>))
+          |- P[<<map_1030@86:1>@89:0>](<map_1030@86:0>:int,<<map_1030@86:1>@89:0>:int)
+          
+          P[<map_1030@83:0>]((1 + <map_1030@86:0>):int), ((1 + <map_1030@86:0>) <> 0)
+          |- P[<map_1030@86:0>](<map_1030@86:0>:int)
+          
+          P[<<map_1030@76:1>@79:0>](<f_main_1174@81:0>:int,<map_1030@83:0>:int)|- P[<map_1030@83:0>](
+          <map_1030@83:0>:int)
+          
+          P[<map_1030@76:0>](<map_1030@76:0>:int),
+          ((<map_1030@76:0> = 0) && (<<map_1030@76:1>@79:0> = <map_1030@76:0>))
+          |- P[<<map_1030@76:1>@79:0>](<map_1030@76:0>:int,<<map_1030@76:1>@79:0>:int)
+          
+          |- P[<map_1030@76:0>](<map_1030@76:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(15943)[4] (0.004000 sec.)
+      solution:
+        P[<fail_1178@100:0>]($1525:bool) = false
+        P[<map_1030@76:0>]($1549:int) = true
+        P[<<map_1030@76:1>@79:0>]($1533:int,$1535:int) = ($1535 <= 0)
+        P[<map_1030@83:0>]($1543:int) = ($1543 <= 0)
+        P[<<map_1030@83:1>@95:0>]($1528:int,$1530:int) = (3 <= $1528)
+        P[<map_1030@86:0>]($1546:int) = ((1 + $1546) <= 0)
+        P[<<map_1030@86:1>@89:0>]($1538:int,$1540:int) = (1 <= (2 * $1538))
+    end YhornInterface.solve(15621)[3] (0.049993 sec.)
+    
+  end RefTypeInfer.infer_etrs(13607)[2] (1.401787 sec.)
+  refinement types:
+    main_1172: X
+    f_1176: v1:int -> X
+    main_1032: v1:int -> (v2:unit -> X) -> X
+    map_1030: v1:int -> (v2:{v2:int | (v2 <= 0)} -> X) -> X
+    f_main_1174: v1:int -> (v2:unit -> X) -> v4:int -> X
+    map_1030: v1:{v1:int | (v1 <= 0)} -> (v2:{v2:int | (3 <= v1)} -> X) -> X
+    map_1030: v1:{v1:int | ((1 + v1) <= 0)} -> (v2:{v2:int | (1 <= (2 * v1))} -> X) -> X
+    f_map_1173: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_main_1175: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1178: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1177: var72:int -> var71:unit -> X
+  abstraction types:
+    main_1172: X
+    f_1176: v1:int -> X
+    main_1032: v1:int -> (v2:unit -> X) -> X
+    map_1030: var77:int[var77 -> (var77 <= 0),
+                        var77 -> ((1 + var77) <= 0)] ->
+              (var78:int[var78 -> (var78 <= 0),
+                         var78 -> (3 <= var77),
+                         var78 -> (1 <= (2 * var77))] -> X) -> X
+    f_main_1174: v1:int -> (v2:unit -> X) -> v4:int -> X
+    f_map_1173: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_main_1175: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1178: v1:bool -> (v2:unit -> X) -> X
+    f_1177: var72:int -> var71:unit -> X
+  
+end AbsTypeInfer.refine(13606)[1] (1.404787 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 3)::
+Main: main_1172
+  main_1172 -> (rand_int f_1176)
+  f_1176 x_1147 -> (main_1032 x_1147 (f_1177 x_1147))
+  f_1177 x_1147 x_1144 -> end
+  f_main_1174 n_1033 k_main_1106 x_1130 -> (map_1030 x_1130 (f_main_1175 n_1033 x_1130 k_main_1106))
+  f_main_1175 n_1033 x_1130 k_main_1106 x_1109 when (x_1109 = n_1033) -> (k_main_1106 ())
+  f_main_1175 n_1033 x_1130 k_main_1106 x_1109 when (not (x_1109 = n_1033)) -> (fail_1178 true k_main_1106)
+  f_map_1173 x_1031 k_map_1074 x_1078 -> (k_map_1074 (1 + x_1078))
+  fail_1178 b k -> {fail} => (k ())
+  main_1032 n_1033 k_main_1106 -> (map_1030 n_1033 (f_main_1174 n_1033 k_main_1106))
+  map_1030 x_1031 k_map_1074 when (x_1031 = 0) -> (k_map_1074 x_1031)
+  map_1030 x_1031 k_map_1074 when (not (x_1031 = 0)) -> (map_1030 (x_1031 - 1) (f_map_1173 x_1031 k_map_1074))
+Types:
+  main_1172 : X
+  fail_1178 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  map_1030 : (x_1:int[x_1 <= -1; x_1 <= 0] ->
+              (x_3:int[2*x_1 >= 1; x_1 >= 3; x_3 <= 0; x_3 <= 0 && x_1 <= x_3; 
+                       x_1 <= x_3 && x_3 <= 1; x_1 >= 0 && x_1 <= x_3; 
+                       x_1 >= 1 && x_1 <= x_3; x_3 = 0; x_1 = 0] -> X) -> X)
+  
+(3-1) Abstracting ... DONE!
+
+(3-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1172 ... --> 
+  f_1176 ... --> 
+  main_1032 ... --> 
+  map_1030 [2/2] ... --> 
+  map_1030 [1/2] ... --> 
+  f_map_1173 ... --> 
+  f_main_1174 ... --> 
+  map_1030 [2/2] ... --> 
+  map_1030 [2/2] ... --> 
+  map_1030 [1/2] ... --> 
+  f_map_1173 ... --> 
+  f_map_1173 ... --> 
+  f_main_1175 [2/2] ... --> 
+  fail_1178 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 0; 0; 0; 1; 1; 0; 0; 0; 1; 0
+
+(3-3) Checking counter-example ... DONE!
+
+(3-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(39839)[1]
+  program:
+    main_1172  | true = ((Random.int 0) f_1176)
+    f_1176 x_1147 | true = (main_1032 x_1147
+                                      (f_1177 x_1147))
+    f_1177 x_1147 x_1144 | true = end
+    f_main_1174 n_1033 k_main_1106 x_1130 | true = (map_1030 x_1130
+                                                             (f_main_1175 n_1033
+                                                                    x_1130
+                                                                    k_main_1106))
+    f_main_1175 n_1033 x_1130 k_main_1106 x_1109 | (x_1109 = n_1033) = (
+    k_main_1106 ())
+    f_main_1175 n_1033 x_1130 k_main_1106 x_1109 | (not (x_1109 = n_1033)) = (
+    fail_1178 true
+              k_main_1106)
+    f_map_1173 x_1031 k_map_1074 x_1078 | true = (k_map_1074 (1 + x_1078))
+    fail_1178 b k | true = (fail ())
+    main_1032 n_1033 k_main_1106 | true = (map_1030 n_1033
+                                                    (f_main_1174 n_1033
+                                                                 k_main_1106))
+    map_1030 x_1031 k_map_1074 | (x_1031 = 0) = (k_map_1074 x_1031)
+    map_1030 x_1031 k_map_1074 | (not (x_1031 = 0)) = (map_1030 (x_1031 - 1)
+                                                                (f_map_1173 x_1031
+                                                                    k_map_1074))
+    main_1172:X
+    f_1176:int -> X
+    f_1177:int -> unit -> X
+    f_main_1174:int -> (unit -> X) -> int -> X
+    f_main_1175:int -> int -> (unit -> X) -> int -> X
+    f_map_1173:int -> (int -> X) -> int -> X
+    fail_1178:bool -> (unit -> X) -> X
+    main_1032:int -> (unit -> X) -> X
+    map_1030:int -> (int -> X) -> X
+  inlined functions: f_1176,f_1177,f_main_1174,f_main_1175,f_map_1173,main_1032
+  counterexample: 0:0:0:1:0:0:0:1:1:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1176@106:0> = var81)
+     [true.(<main_1032@108:0> = <f_1176@106:0>)
+      [true.(<map_1030@110:0> = <main_1032@108:0>)
+       [(not (<map_1030@110:0> = 0)).(<map_1030@113:0> = (<map_1030@110:0> - 1))
+        [(<map_1030@113:0> = 0).(<<map_1030@113:1>@116:0> = <map_1030@113:0>)
+         [true.((<f_map_1173@118:0> = <map_1030@110:0>) && (<f_map_1173@118:2> = <<map_1030@113:1>@116:0>))
+          [true.(<<f_map_1173@118:1>@120:0> = (1 + <f_map_1173@118:2>))
+           [true.(<<map_1030@110:1>@122:0> = <<f_map_1173@118:1>@120:0>)
+            [true.((<f_main_1174@124:0> = <main_1032@108:0>) && (<f_main_1174@124:2> = <<map_1030@110:1>@122:0>))
+             [true.(<map_1030@126:0> = <f_main_1174@124:2>)
+              [(not (<map_1030@126:0> = 0)).(<map_1030@129:0> = (<map_1030@126:0> - 1))
+               [(not (<map_1030@129:0> = 0)).(<map_1030@132:0> = (<map_1030@129:0> - 1))
+                [(<map_1030@132:0> = 0).(<<map_1030@132:1>@135:0> = <map_1030@132:0>)
+                 [true.((<f_map_1173@137:0> = <map_1030@129:0>) && (<f_map_1173@137:2> = <<map_1030@132:1>@135:0>))
+                  [true.(<<f_map_1173@137:1>@139:0> = (1 + <f_map_1173@137:2>))
+                   [true.(<<map_1030@129:1>@141:0> = <<f_map_1173@137:1>@139:0>)
+                    [true.((<f_map_1173@143:0> = <map_1030@126:0>) && (<f_map_1173@143:2> = <<map_1030@129:1>@141:0>))
+                     [true.(<<f_map_1173@143:1>@145:0> = (1 + <f_map_1173@143:2>))
+                      [true.(<<map_1030@126:1>@147:0> = <<f_map_1173@143:1>@145:0>)
+                       [true.
+                        ((<f_main_1175@149:0> = <f_main_1174@124:0>) &&
+                         ((<f_main_1175@149:1> = <f_main_1174@124:2>) &&
+                          (<f_main_1175@149:3> = <<map_1030@126:1>@147:0>)))
+                        [(not (<f_main_1175@149:3> = <f_main_1175@149:0>)).(<fail_1178@152:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(39840)[2]
+    horn clauses:
+      P[<fail_1178@152:0>](<fail_1178@152:0>:bool)|- bot
+      
+      P[<f_main_1175@149:3>](<f_main_1175@149:0>:int,<f_main_1175@149:1>:int,<f_main_1175@149:3>:int),
+      ((<f_main_1175@149:3> <> <f_main_1175@149:0>) && <fail_1178@152:0>)
+      |- P[<fail_1178@152:0>](<fail_1178@152:0>:bool)
+      
+      P[<f_main_1174@124:2>](<f_main_1175@149:0>:int,<f_main_1175@149:1>:int),
+      P[<<map_1030@126:1>@147:0>](<f_main_1175@149:1>:int,<f_main_1175@149:3>:int)|- P[<f_main_1175@149:3>](
+      <f_main_1175@149:0>:int,<f_main_1175@149:1>:int,<f_main_1175@149:3>:int)
+      
+      P[<map_1030@126:0>](<map_1030@126:0>:int),
+      P[<<f_map_1173@143:1>@145:0>](<map_1030@126:0>:int,<<map_1030@126:1>@147:0>:int), (
+      <map_1030@126:0> <> 0) |- P[<<map_1030@126:1>@147:0>](<map_1030@126:0>:int,
+                                                            <<map_1030@126:1>@147:0>:int)
+      
+      P[<f_map_1173@143:2>](<f_map_1173@143:0>:int,(-1 + <<f_map_1173@143:1>@145:0>):int)|- P[<<f_map_1173@143:1>@145:0>](
+      <f_map_1173@143:0>:int,<<f_map_1173@143:1>@145:0>:int)
+      
+      P[<map_1030@126:0>](<f_map_1173@143:0>:int),
+      P[<<map_1030@129:1>@141:0>]((-1 + <f_map_1173@143:0>):int,<f_map_1173@143:2>:int), (
+      <f_map_1173@143:0> <> 0) |- P[<f_map_1173@143:2>](<f_map_1173@143:0>:int,
+                                                        <f_map_1173@143:2>:int)
+      
+      P[<map_1030@129:0>](<map_1030@129:0>:int),
+      P[<<f_map_1173@137:1>@139:0>](<map_1030@129:0>:int,<<map_1030@129:1>@141:0>:int), (
+      <map_1030@129:0> <> 0) |- P[<<map_1030@129:1>@141:0>](<map_1030@129:0>:int,
+                                                            <<map_1030@129:1>@141:0>:int)
+      
+      P[<f_map_1173@137:2>](<f_map_1173@137:0>:int,(-1 + <<f_map_1173@137:1>@139:0>):int)|- P[<<f_map_1173@137:1>@139:0>](
+      <f_map_1173@137:0>:int,<<f_map_1173@137:1>@139:0>:int)
+      
+      P[<map_1030@129:0>](<f_map_1173@137:0>:int),
+      P[<<map_1030@132:1>@135:0>]((-1 + <f_map_1173@137:0>):int,<f_map_1173@137:2>:int), (
+      <f_map_1173@137:0> <> 0) |- P[<f_map_1173@137:2>](<f_map_1173@137:0>:int,
+                                                        <f_map_1173@137:2>:int)
+      
+      P[<map_1030@132:0>](<map_1030@132:0>:int),
+      ((<map_1030@132:0> = 0) && (<<map_1030@132:1>@135:0> = <map_1030@132:0>))
+      |- P[<<map_1030@132:1>@135:0>](<map_1030@132:0>:int,<<map_1030@132:1>@135:0>:int)
+      
+      P[<map_1030@129:0>]((1 + <map_1030@132:0>):int), ((1 + <map_1030@132:0>) <> 0)
+      |- P[<map_1030@132:0>](<map_1030@132:0>:int)
+      
+      P[<map_1030@126:0>]((1 + <map_1030@129:0>):int), ((1 + <map_1030@129:0>) <> 0)
+      |- P[<map_1030@129:0>](<map_1030@129:0>:int)
+      
+      P[<f_main_1174@124:2>](<f_main_1174@124:0>:int,<map_1030@126:0>:int)|- P[<map_1030@126:0>](<map_1030@126:0>:int)
+      
+      P[<main_1032@108:0>](<f_main_1174@124:0>:int),
+      P[<<map_1030@110:1>@122:0>](<f_main_1174@124:0>:int,<f_main_1174@124:2>:int)|- P[<f_main_1174@124:2>](
+      <f_main_1174@124:0>:int,<f_main_1174@124:2>:int)
+      
+      P[<map_1030@110:0>](<map_1030@110:0>:int),
+      P[<<f_map_1173@118:1>@120:0>](<map_1030@110:0>:int,<<map_1030@110:1>@122:0>:int), (
+      <map_1030@110:0> <> 0) |- P[<<map_1030@110:1>@122:0>](<map_1030@110:0>:int,
+                                                            <<map_1030@110:1>@122:0>:int)
+      
+      P[<f_map_1173@118:2>](<f_map_1173@118:0>:int,(-1 + <<f_map_1173@118:1>@120:0>):int)|- P[<<f_map_1173@118:1>@120:0>](
+      <f_map_1173@118:0>:int,<<f_map_1173@118:1>@120:0>:int)
+      
+      P[<map_1030@110:0>](<f_map_1173@118:0>:int),
+      P[<<map_1030@113:1>@116:0>]((-1 + <f_map_1173@118:0>):int,<f_map_1173@118:2>:int), (
+      <f_map_1173@118:0> <> 0) |- P[<f_map_1173@118:2>](<f_map_1173@118:0>:int,
+                                                        <f_map_1173@118:2>:int)
+      
+      P[<map_1030@113:0>](<map_1030@113:0>:int),
+      ((<map_1030@113:0> = 0) && (<<map_1030@113:1>@116:0> = <map_1030@113:0>))
+      |- P[<<map_1030@113:1>@116:0>](<map_1030@113:0>:int,<<map_1030@113:1>@116:0>:int)
+      
+      P[<map_1030@110:0>]((1 + <map_1030@113:0>):int), ((1 + <map_1030@113:0>) <> 0)
+      |- P[<map_1030@113:0>](<map_1030@113:0>:int)
+      
+      P[<main_1032@108:0>](<map_1030@110:0>:int)|- P[<map_1030@110:0>](<map_1030@110:0>:int)
+      
+      P[<f_1176@106:0>](<main_1032@108:0>:int)|- P[<main_1032@108:0>](<main_1032@108:0>:int)
+      
+      |- P[<f_1176@106:0>](<f_1176@106:0>:int)
+    call trees:
+      <main_1172@103>
+        <f_1176@106>
+          <main_1032@108>
+            <map_1030@110>
+              <map_1030@113>
+              </<map_1030@113:1>@116>
+              <f_map_1173@118>
+              </<f_map_1173@118:1>@120>
+            </<map_1030@110:1>@122>
+            <f_main_1174@124>
+              <map_1030@126>
+                <map_1030@129>
+                  <map_1030@132>
+                  </<map_1030@132:1>@135>
+                  <f_map_1173@137>
+                  </<f_map_1173@137:1>@139>
+                </<map_1030@129:1>@141>
+                <f_map_1173@143>
+                </<f_map_1173@143:1>@145>
+              </<map_1030@126:1>@147>
+              <f_main_1175@149>
+                <fail_1178@152>
+    inlined horn clauses:
+      P[<fail_1178@152:0>](<fail_1178@152:0>:bool)|- bot
+      
+      P[<<map_1030@110:1>@122:0>](<f_main_1175@149:0>:int,<f_main_1175@149:1>:int),
+      P[<<map_1030@126:1>@147:0>](<f_main_1175@149:1>:int,<f_main_1175@149:3>:int),
+      ((<f_main_1175@149:3> <> <f_main_1175@149:0>) && <fail_1178@152:0>)
+      |- P[<fail_1178@152:0>](<fail_1178@152:0>:bool)
+      
+      P[<map_1030@126:0>](<map_1030@126:0>:int),
+      P[<<map_1030@129:1>@141:0>]((-1 + <map_1030@126:0>):int,(-1 + <<map_1030@126:1>@147:0>):int),
+      (<map_1030@126:0> <> 0) |- P[<<map_1030@126:1>@147:0>](<map_1030@126:0>:int,
+                                                             <<map_1030@126:1>@147:0>:int)
+      
+      P[<map_1030@129:0>](<map_1030@129:0>:int),
+      P[<<map_1030@132:1>@135:0>]((-1 + <map_1030@129:0>):int,(-1 + <<map_1030@129:1>@141:0>):int),
+      (<map_1030@129:0> <> 0) |- P[<<map_1030@129:1>@141:0>](<map_1030@129:0>:int,
+                                                             <<map_1030@129:1>@141:0>:int)
+      
+      P[<map_1030@132:0>](<map_1030@132:0>:int),
+      ((<map_1030@132:0> = 0) && (<<map_1030@132:1>@135:0> = <map_1030@132:0>))
+      |- P[<<map_1030@132:1>@135:0>](<map_1030@132:0>:int,<<map_1030@132:1>@135:0>:int)
+      
+      P[<map_1030@129:0>]((1 + <map_1030@132:0>):int), ((1 + <map_1030@132:0>) <> 0)
+      |- P[<map_1030@132:0>](<map_1030@132:0>:int)
+      
+      P[<map_1030@126:0>]((1 + <map_1030@129:0>):int), ((1 + <map_1030@129:0>) <> 0)
+      |- P[<map_1030@129:0>](<map_1030@129:0>:int)
+      
+      P[<<map_1030@110:1>@122:0>](<f_main_1174@124:0>:int,<map_1030@126:0>:int)|- P[<map_1030@126:0>](
+      <map_1030@126:0>:int)
+      
+      P[<map_1030@110:0>](<map_1030@110:0>:int),
+      P[<<map_1030@113:1>@116:0>]((-1 + <map_1030@110:0>):int,(-1 + <<map_1030@110:1>@122:0>):int),
+      (<map_1030@110:0> <> 0) |- P[<<map_1030@110:1>@122:0>](<map_1030@110:0>:int,
+                                                             <<map_1030@110:1>@122:0>:int)
+      
+      P[<map_1030@113:0>](<map_1030@113:0>:int),
+      ((<map_1030@113:0> = 0) && (<<map_1030@113:1>@116:0> = <map_1030@113:0>))
+      |- P[<<map_1030@113:1>@116:0>](<map_1030@113:0>:int,<<map_1030@113:1>@116:0>:int)
+      
+      P[<map_1030@110:0>]((1 + <map_1030@113:0>):int), ((1 + <map_1030@113:0>) <> 0)
+      |- P[<map_1030@113:0>](<map_1030@113:0>:int)
+      
+      |- P[<map_1030@110:0>](<map_1030@110:0>:int)
+    begin ParamSubstInfer.infer(42583)[3]
+      
+    end ParamSubstInfer.infer(42583)[3] (4.874260 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(42585)[3]
+      
+    end RefTypeInfer.elim_coeffs(42585)[3] (0.001000 sec.)
+    begin YhornInterface.solve(42988)[3]
+      begin HcSolver.solve_ub(42989)[4]
+        encoded:
+          P[<fail_1178@152:0>](<fail_1178@152:0>:int)|- bot
+          
+          P[<<map_1030@110:1>@122:0>](<f_main_1175@149:0>:int,<f_main_1175@149:1>:int),
+          P[<<map_1030@126:1>@147:0>](<f_main_1175@149:1>:int,<f_main_1175@149:3>:int),
+          ((<f_main_1175@149:3> <> <f_main_1175@149:0>) && (<fail_1178@152:0> = 1))
+          |- P[<fail_1178@152:0>](<fail_1178@152:0>:int)
+          
+          P[<map_1030@126:0>](<map_1030@126:0>:int),
+          P[<<map_1030@129:1>@141:0>]((-1 + <map_1030@126:0>):int,(-1 + <<map_1030@126:1>@147:0>):int),
+          (<map_1030@126:0> <> 0) |- P[<<map_1030@126:1>@147:0>](<map_1030@126:0>:int,
+                                                                 <<map_1030@126:1>@147:0>:int)
+          
+          P[<map_1030@129:0>](<map_1030@129:0>:int),
+          P[<<map_1030@132:1>@135:0>]((-1 + <map_1030@129:0>):int,(-1 + <<map_1030@129:1>@141:0>):int),
+          (<map_1030@129:0> <> 0) |- P[<<map_1030@129:1>@141:0>](<map_1030@129:0>:int,
+                                                                 <<map_1030@129:1>@141:0>:int)
+          
+          P[<map_1030@132:0>](<map_1030@132:0>:int),
+          ((<map_1030@132:0> = 0) && (<<map_1030@132:1>@135:0> = <map_1030@132:0>))
+          |- P[<<map_1030@132:1>@135:0>](<map_1030@132:0>:int,<<map_1030@132:1>@135:0>:int)
+          
+          P[<map_1030@129:0>]((1 + <map_1030@132:0>):int), ((1 + <map_1030@132:0>) <> 0)
+          |- P[<map_1030@132:0>](<map_1030@132:0>:int)
+          
+          P[<map_1030@126:0>]((1 + <map_1030@129:0>):int), ((1 + <map_1030@129:0>) <> 0)
+          |- P[<map_1030@129:0>](<map_1030@129:0>:int)
+          
+          P[<<map_1030@110:1>@122:0>](<f_main_1174@124:0>:int,<map_1030@126:0>:int)|- P[<map_1030@126:0>](
+          <map_1030@126:0>:int)
+          
+          P[<map_1030@110:0>](<map_1030@110:0>:int),
+          P[<<map_1030@113:1>@116:0>]((-1 + <map_1030@110:0>):int,(-1 + <<map_1030@110:1>@122:0>):int),
+          (<map_1030@110:0> <> 0) |- P[<<map_1030@110:1>@122:0>](<map_1030@110:0>:int,
+                                                                 <<map_1030@110:1>@122:0>:int)
+          
+          P[<map_1030@113:0>](<map_1030@113:0>:int),
+          ((<map_1030@113:0> = 0) && (<<map_1030@113:1>@116:0> = <map_1030@113:0>))
+          |- P[<<map_1030@113:1>@116:0>](<map_1030@113:0>:int,<<map_1030@113:1>@116:0>:int)
+          
+          P[<map_1030@110:0>]((1 + <map_1030@113:0>):int), ((1 + <map_1030@113:0>) <> 0)
+          |- P[<map_1030@113:0>](<map_1030@113:0>:int)
+          
+          |- P[<map_1030@110:0>](<map_1030@110:0>:int)
+        input to Yhorn:
+          P[<fail_1178@152:0>](<fail_1178@152:0>:int)|- bot
+          
+          P[<<map_1030@110:1>@122:0>](<f_main_1175@149:0>:int,<f_main_1175@149:1>:int),
+          P[<<map_1030@126:1>@147:0>](<f_main_1175@149:1>:int,<f_main_1175@149:3>:int),
+          ((<f_main_1175@149:3> <> <f_main_1175@149:0>) && (<fail_1178@152:0> = 1))
+          |- P[<fail_1178@152:0>](<fail_1178@152:0>:int)
+          
+          P[<map_1030@126:0>](<map_1030@126:0>:int),
+          P[<<map_1030@129:1>@141:0>](var82:int,var83:int),
+          (((1 + var83) = <<map_1030@126:1>@147:0>) && (((1 + var82) = <map_1030@126:0>) && (<map_1030@126:0> <> 0)))
+          |- P[<<map_1030@126:1>@147:0>](<map_1030@126:0>:int,<<map_1030@126:1>@147:0>:int)
+          
+          P[<map_1030@129:0>](<map_1030@129:0>:int),
+          P[<<map_1030@132:1>@135:0>](var84:int,var85:int),
+          (((1 + var85) = <<map_1030@129:1>@141:0>) && (((1 + var84) = <map_1030@129:0>) && (<map_1030@129:0> <> 0)))
+          |- P[<<map_1030@129:1>@141:0>](<map_1030@129:0>:int,<<map_1030@129:1>@141:0>:int)
+          
+          P[<map_1030@132:0>](<map_1030@132:0>:int),
+          ((<<map_1030@132:1>@135:0> = <map_1030@132:0>) && (<map_1030@132:0> = 0))
+          |- P[<<map_1030@132:1>@135:0>](<map_1030@132:0>:int,<<map_1030@132:1>@135:0>:int)
+          
+          P[<map_1030@129:0>](var86:int), ((var86 = (1 + <map_1030@132:0>)) && ((1 + <map_1030@132:0>) <> 0))
+          |- P[<map_1030@132:0>](<map_1030@132:0>:int)
+          
+          P[<map_1030@126:0>](var87:int), ((var87 = (1 + <map_1030@129:0>)) && ((1 + <map_1030@129:0>) <> 0))
+          |- P[<map_1030@129:0>](<map_1030@129:0>:int)
+          
+          P[<<map_1030@110:1>@122:0>](<f_main_1174@124:0>:int,<map_1030@126:0>:int)|- P[<map_1030@126:0>](
+          <map_1030@126:0>:int)
+          
+          P[<map_1030@110:0>](<map_1030@110:0>:int),
+          P[<<map_1030@113:1>@116:0>](var88:int,var89:int),
+          (((1 + var89) = <<map_1030@110:1>@122:0>) && (((1 + var88) = <map_1030@110:0>) && (<map_1030@110:0> <> 0)))
+          |- P[<<map_1030@110:1>@122:0>](<map_1030@110:0>:int,<<map_1030@110:1>@122:0>:int)
+          
+          P[<map_1030@113:0>](<map_1030@113:0>:int),
+          ((<<map_1030@113:1>@116:0> = <map_1030@113:0>) && (<map_1030@113:0> = 0))
+          |- P[<<map_1030@113:1>@116:0>](<map_1030@113:0>:int,<<map_1030@113:1>@116:0>:int)
+          
+          P[<map_1030@110:0>](var90:int), ((var90 = (1 + <map_1030@113:0>)) && ((1 + <map_1030@113:0>) <> 0))
+          |- P[<map_1030@113:0>](<map_1030@113:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1178_sep_152_sep_0($1721)) -> 1=0.
+(($1721-1=0) & ($1722-$1723<>0)) & (v_sep_map_1030_sep_126_sep_1_sep_147_sep_0($1724,$1722)) & (v_sep_map_1030_sep_110_sep_1_sep_122_sep_0($1723,$1724)) -> v_sep_fail_1178_sep_152_sep_0($1721).
+(($1725<>0) & (-$1725+$1726+1=0) & ($1727-$1728+1=0)) & (v_sep_map_1030_sep_129_sep_1_sep_141_sep_0($1726,$1727)) & (v_sep_map_1030_sep_126_sep_0($1725)) -> v_sep_map_1030_sep_126_sep_1_sep_147_sep_0($1725,$1728).
+(($1729<>0) & (-$1729+$1730+1=0) & ($1731-$1732+1=0)) & (v_sep_map_1030_sep_132_sep_1_sep_135_sep_0($1730,$1731)) & (v_sep_map_1030_sep_129_sep_0($1729)) -> v_sep_map_1030_sep_129_sep_1_sep_141_sep_0($1729,$1732).
+(($1733=0) & (-$1733+$1734=0)) & (v_sep_map_1030_sep_132_sep_0($1733)) -> v_sep_map_1030_sep_132_sep_1_sep_135_sep_0($1733,$1734).
+(($1733+1<>0) & (-$1733+$1735-1=0)) & (v_sep_map_1030_sep_129_sep_0($1735)) -> v_sep_map_1030_sep_132_sep_0($1733).
+(($1729+1<>0) & (-$1729+$1736-1=0)) & (v_sep_map_1030_sep_126_sep_0($1736)) -> v_sep_map_1030_sep_129_sep_0($1729).
+(0=0) & (v_sep_map_1030_sep_110_sep_1_sep_122_sep_0($1737,$1725)) -> v_sep_map_1030_sep_126_sep_0($1725).
+(($1738<>0) & (-$1738+$1739+1=0) & ($1740-$1741+1=0)) & (v_sep_map_1030_sep_113_sep_1_sep_116_sep_0($1739,$1740)) & (v_sep_map_1030_sep_110_sep_0($1738)) -> v_sep_map_1030_sep_110_sep_1_sep_122_sep_0($1738,$1741).
+(($1742=0) & (-$1742+$1743=0)) & (v_sep_map_1030_sep_113_sep_0($1742)) -> v_sep_map_1030_sep_113_sep_1_sep_116_sep_0($1742,$1743).
+(($1742+1<>0) & (-$1742+$1744-1=0)) & (v_sep_map_1030_sep_110_sep_0($1744)) -> v_sep_map_1030_sep_113_sep_0($1742).
+0=0 -> v_sep_map_1030_sep_110_sep_0($1738).
+
+
+v_sep_fail_1178_sep_152_sep_0: X
+v_sep_map_1030_sep_110_sep_0: X
+v_sep_map_1030_sep_110_sep_1_sep_122_sep_0: X
+v_sep_map_1030_sep_113_sep_0: X
+v_sep_map_1030_sep_113_sep_1_sep_116_sep_0: X
+v_sep_map_1030_sep_126_sep_0: X
+v_sep_map_1030_sep_126_sep_1_sep_147_sep_0: X
+v_sep_map_1030_sep_129_sep_0: X
+v_sep_map_1030_sep_129_sep_1_sep_141_sep_0: X
+v_sep_map_1030_sep_132_sep_0: X
+v_sep_map_1030_sep_132_sep_1_sep_135_sep_0: X
+...........................
+v_sep_fail_1178_sep_152_sep_0: X
+v_sep_map_1030_sep_110_sep_0: X
+v_sep_map_1030_sep_110_sep_1_sep_122_sep_0: X
+v_sep_map_1030_sep_113_sep_0: X
+v_sep_map_1030_sep_113_sep_1_sep_116_sep_0: X
+v_sep_map_1030_sep_126_sep_0: X
+v_sep_map_1030_sep_126_sep_1_sep_147_sep_0: X
+v_sep_map_1030_sep_129_sep_0: X
+v_sep_map_1030_sep_129_sep_1_sep_141_sep_0: X
+v_sep_map_1030_sep_132_sep_0: X
+v_sep_map_1030_sep_132_sep_1_sep_135_sep_0: X
+......
+v_sep_fail_1178_sep_152_sep_0: X
+v_sep_map_1030_sep_110_sep_0: X
+v_sep_map_1030_sep_110_sep_1_sep_122_sep_0: X
+v_sep_map_1030_sep_113_sep_0: X
+v_sep_map_1030_sep_113_sep_1_sep_116_sep_0: X
+v_sep_map_1030_sep_126_sep_0: X
+v_sep_map_1030_sep_126_sep_1_sep_147_sep_0: X
+v_sep_map_1030_sep_129_sep_0: X
+v_sep_map_1030_sep_129_sep_1_sep_141_sep_0: X
+v_sep_map_1030_sep_132_sep_0: X
+v_sep_map_1030_sep_132_sep_1_sep_135_sep_0: X
+..............
+v_sep_fail_1178_sep_152_sep_0: X
+v_sep_map_1030_sep_110_sep_0: X
+v_sep_map_1030_sep_110_sep_1_sep_122_sep_0: X
+v_sep_map_1030_sep_113_sep_0: X
+v_sep_map_1030_sep_113_sep_1_sep_116_sep_0: X
+v_sep_map_1030_sep_126_sep_0: X
+v_sep_map_1030_sep_126_sep_1_sep_147_sep_0: X
+v_sep_map_1030_sep_129_sep_0: X
+v_sep_map_1030_sep_129_sep_1_sep_141_sep_0: X
+v_sep_map_1030_sep_132_sep_0: X
+v_sep_map_1030_sep_132_sep_1_sep_135_sep_0: X
+....................
+v_sep_fail_1178_sep_152_sep_0: X
+v_sep_map_1030_sep_110_sep_0: X
+v_sep_map_1030_sep_110_sep_1_sep_122_sep_0: X
+v_sep_map_1030_sep_113_sep_0: X
+v_sep_map_1030_sep_113_sep_1_sep_116_sep_0: X
+v_sep_map_1030_sep_126_sep_0: X
+v_sep_map_1030_sep_126_sep_1_sep_147_sep_0: X
+v_sep_map_1030_sep_129_sep_0: X
+v_sep_map_1030_sep_129_sep_1_sep_141_sep_0: X
+v_sep_map_1030_sep_132_sep_0: X
+v_sep_map_1030_sep_132_sep_1_sep_135_sep_0: X
+.........................
+v_sep_fail_1178_sep_152_sep_0: X
+v_sep_map_1030_sep_110_sep_0: X
+v_sep_map_1030_sep_110_sep_1_sep_122_sep_0: X
+v_sep_map_1030_sep_113_sep_0: X
+v_sep_map_1030_sep_113_sep_1_sep_116_sep_0: X
+v_sep_map_1030_sep_126_sep_0: X
+v_sep_map_1030_sep_126_sep_1_sep_147_sep_0: X
+v_sep_map_1030_sep_129_sep_0: X
+v_sep_map_1030_sep_129_sep_1_sep_141_sep_0: X
+v_sep_map_1030_sep_132_sep_0: X
+v_sep_map_1030_sep_132_sep_1_sep_135_sep_0: X
+...........................(0=0) & (v_sep_fail_1178_sep_152_sep_0($1721)) -> 1=0.
+(($1721-1=0) & ($1722-$1723<>0)) & (v_sep_map_1030_sep_126_sep_1_sep_147_sep_0($1724,$1722)) & (v_sep_map_1030_sep_110_sep_1_sep_122_sep_0($1723,$1724)) -> v_sep_fail_1178_sep_152_sep_0($1721).
+(($1725<>0) & (-$1725+$1726+1=0) & ($1727-$1728+1=0)) & (v_sep_map_1030_sep_129_sep_1_sep_141_sep_0($1726,$1727)) & (v_sep_map_1030_sep_126_sep_0($1725)) -> v_sep_map_1030_sep_126_sep_1_sep_147_sep_0($1725,$1728).
+(($1729<>0) & (-$1729+$1730+1=0) & ($1731-$1732+1=0)) & (v_sep_map_1030_sep_132_sep_1_sep_135_sep_0($1730,$1731)) & (v_sep_map_1030_sep_129_sep_0($1729)) -> v_sep_map_1030_sep_129_sep_1_sep_141_sep_0($1729,$1732).
+(($1733=0) & (-$1733+$1734=0)) & (v_sep_map_1030_sep_132_sep_0($1733)) -> v_sep_map_1030_sep_132_sep_1_sep_135_sep_0($1733,$1734).
+(($1733+1<>0) & (-$1733+$1735-1=0)) & (v_sep_map_1030_sep_129_sep_0($1735)) -> v_sep_map_1030_sep_132_sep_0($1733).
+(($1729+1<>0) & (-$1729+$1736-1=0)) & (v_sep_map_1030_sep_126_sep_0($1736)) -> v_sep_map_1030_sep_129_sep_0($1729).
+(0=0) & (v_sep_map_1030_sep_110_sep_1_sep_122_sep_0($1737,$1725)) -> v_sep_map_1030_sep_126_sep_0($1725).
+(($1738<>0) & (-$1738+$1739+1=0) & ($1740-$1741+1=0)) & (v_sep_map_1030_sep_113_sep_1_sep_116_sep_0($1739,$1740)) & (v_sep_map_1030_sep_110_sep_0($1738)) -> v_sep_map_1030_sep_110_sep_1_sep_122_sep_0($1738,$1741).
+(($1742=0) & (-$1742+$1743=0)) & (v_sep_map_1030_sep_113_sep_0($1742)) -> v_sep_map_1030_sep_113_sep_1_sep_116_sep_0($1742,$1743).
+(($1742+1<>0) & (-$1742+$1744-1=0)) & (v_sep_map_1030_sep_110_sep_0($1744)) -> v_sep_map_1030_sep_113_sep_0($1742).
+0=0 -> v_sep_map_1030_sep_110_sep_0($1738).
+
+          |- P[<map_1030@110:0>](<map_1030@110:0>:int)
+        solution:
+          P[<fail_1178@152:0>]($1745:bool) = false
+          P[<map_1030@110:0>]($1782:int) = true
+          P[<<map_1030@110:1>@122:0>]($1753:int,$1755:int) = ($1755 <= 1)
+          P[<map_1030@113:0>]($1785:int) = true
+          P[<<map_1030@113:1>@116:0>]($1777:int,$1779:int) = ($1779 <= 0)
+          P[<map_1030@126:0>]($1763:int) = ($1763 <= 1)
+          P[<<map_1030@126:1>@147:0>]($1748:int,$1750:int) = (5 <= $1748)
+          P[<map_1030@129:0>]($1771:int) = ($1771 <= 0)
+          P[<<map_1030@129:1>@141:0>]($1758:int,$1760:int) = (2 <= $1758)
+          P[<map_1030@132:0>]($1774:int) = ((1 + $1774) <= 0)
+          P[<<map_1030@132:1>@135:0>]($1766:int,$1768:int) = (1 <= (3 * $1766))
+        
+      end HcSolver.solve_ub(42989)[4] (0.453931 sec.)
+      begin HcSolver.check_validity(43618)[4]
+        input:
+          P[<fail_1178@152:0>](<fail_1178@152:0>:bool)|- bot
+          
+          P[<<map_1030@110:1>@122:0>](<f_main_1175@149:0>:int,<f_main_1175@149:1>:int),
+          P[<<map_1030@126:1>@147:0>](<f_main_1175@149:1>:int,<f_main_1175@149:3>:int),
+          ((<f_main_1175@149:3> <> <f_main_1175@149:0>) && <fail_1178@152:0>)
+          |- P[<fail_1178@152:0>](<fail_1178@152:0>:bool)
+          
+          P[<map_1030@126:0>](<map_1030@126:0>:int),
+          P[<<map_1030@129:1>@141:0>]((-1 + <map_1030@126:0>):int,(-1 + <<map_1030@126:1>@147:0>):int),
+          (<map_1030@126:0> <> 0) |- P[<<map_1030@126:1>@147:0>](<map_1030@126:0>:int,
+                                                                 <<map_1030@126:1>@147:0>:int)
+          
+          P[<map_1030@129:0>](<map_1030@129:0>:int),
+          P[<<map_1030@132:1>@135:0>]((-1 + <map_1030@129:0>):int,(-1 + <<map_1030@129:1>@141:0>):int),
+          (<map_1030@129:0> <> 0) |- P[<<map_1030@129:1>@141:0>](<map_1030@129:0>:int,
+                                                                 <<map_1030@129:1>@141:0>:int)
+          
+          P[<map_1030@132:0>](<map_1030@132:0>:int),
+          ((<map_1030@132:0> = 0) && (<<map_1030@132:1>@135:0> = <map_1030@132:0>))
+          |- P[<<map_1030@132:1>@135:0>](<map_1030@132:0>:int,<<map_1030@132:1>@135:0>:int)
+          
+          P[<map_1030@129:0>]((1 + <map_1030@132:0>):int), ((1 + <map_1030@132:0>) <> 0)
+          |- P[<map_1030@132:0>](<map_1030@132:0>:int)
+          
+          P[<map_1030@126:0>]((1 + <map_1030@129:0>):int), ((1 + <map_1030@129:0>) <> 0)
+          |- P[<map_1030@129:0>](<map_1030@129:0>:int)
+          
+          P[<<map_1030@110:1>@122:0>](<f_main_1174@124:0>:int,<map_1030@126:0>:int)|- P[<map_1030@126:0>](
+          <map_1030@126:0>:int)
+          
+          P[<map_1030@110:0>](<map_1030@110:0>:int),
+          P[<<map_1030@113:1>@116:0>]((-1 + <map_1030@110:0>):int,(-1 + <<map_1030@110:1>@122:0>):int),
+          (<map_1030@110:0> <> 0) |- P[<<map_1030@110:1>@122:0>](<map_1030@110:0>:int,
+                                                                 <<map_1030@110:1>@122:0>:int)
+          
+          P[<map_1030@113:0>](<map_1030@113:0>:int),
+          ((<map_1030@113:0> = 0) && (<<map_1030@113:1>@116:0> = <map_1030@113:0>))
+          |- P[<<map_1030@113:1>@116:0>](<map_1030@113:0>:int,<<map_1030@113:1>@116:0>:int)
+          
+          P[<map_1030@110:0>]((1 + <map_1030@113:0>):int), ((1 + <map_1030@113:0>) <> 0)
+          |- P[<map_1030@113:0>](<map_1030@113:0>:int)
+          
+          |- P[<map_1030@110:0>](<map_1030@110:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(43618)[4] (0.025996 sec.)
+      solution:
+        P[<fail_1178@152:0>]($1745:bool) = false
+        P[<map_1030@110:0>]($1782:int) = true
+        P[<<map_1030@110:1>@122:0>]($1753:int,$1755:int) = ($1755 <= 1)
+        P[<map_1030@113:0>]($1785:int) = true
+        P[<<map_1030@113:1>@116:0>]($1777:int,$1779:int) = ($1779 <= 0)
+        P[<map_1030@126:0>]($1763:int) = ($1763 <= 1)
+        P[<<map_1030@126:1>@147:0>]($1748:int,$1750:int) = (5 <= $1748)
+        P[<map_1030@129:0>]($1771:int) = ($1771 <= 0)
+        P[<<map_1030@129:1>@141:0>]($1758:int,$1760:int) = (2 <= $1758)
+        P[<map_1030@132:0>]($1774:int) = ((1 + $1774) <= 0)
+        P[<<map_1030@132:1>@135:0>]($1766:int,$1768:int) = (1 <= (3 * $1766))
+    end YhornInterface.solve(42988)[3] (0.479927 sec.)
+    
+  end RefTypeInfer.infer_etrs(39840)[2] (5.374184 sec.)
+  refinement types:
+    main_1172: X
+    f_1176: v1:int -> X
+    main_1032: v1:int -> (v2:unit -> X) -> X
+    map_1030: v1:int -> (v2:{v2:int | (v2 <= 1)} -> X) -> X
+    map_1030: v1:int -> (v2:{v2:int | (v2 <= 0)} -> X) -> X
+    f_map_1173: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_main_1174: v1:int -> (v2:unit -> X) -> v4:int -> X
+    map_1030: v1:{v1:int | (v1 <= 1)} -> (v2:{v2:int | (5 <= v1)} -> X) -> X
+    map_1030: v1:{v1:int | (v1 <= 0)} -> (v2:{v2:int | (2 <= v1)} -> X) -> X
+    map_1030: v1:{v1:int | ((1 + v1) <= 0)} -> (v2:{v2:int | (1 <= (3 * v1))} -> X) -> X
+    f_map_1173: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_map_1173: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_main_1175: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1178: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1177: var101:int -> var100:unit -> X
+  abstraction types:
+    main_1172: X
+    f_1176: v1:int -> X
+    main_1032: v1:int -> (v2:unit -> X) -> X
+    map_1030: var114:int[var114 -> (var114 <= 1),
+                         var114 -> (var114 <= 0),
+                         var114 -> ((1 + var114) <= 0)] ->
+              (var115:int[var115 -> (var115 <= 1),
+                          var115 -> (var115 <= 0),
+                          var115 -> (5 <= var114),
+                          var115 -> (2 <= var114),
+                          var115 -> (1 <= (3 * var114))] -> X) -> X
+    f_map_1173: var123:int -> (var124:int -> X) -> var126:int -> X
+    f_main_1174: v1:int -> (v2:unit -> X) -> v4:int -> X
+    f_main_1175: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1178: v1:bool -> (v2:unit -> X) -> X
+    f_1177: var101:int -> var100:unit -> X
+  
+end AbsTypeInfer.refine(39839)[1] (5.380183 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 0; 0; 0; 1; 1
+
+Program with abstraction types (CEGAR-cycle 4)::
+Main: main_1172
+  main_1172 -> (rand_int f_1176)
+  f_1176 x_1147 -> (main_1032 x_1147 (f_1177 x_1147))
+  f_1177 x_1147 x_1144 -> end
+  f_main_1174 n_1033 k_main_1106 x_1130 -> (map_1030 x_1130 (f_main_1175 n_1033 x_1130 k_main_1106))
+  f_main_1175 n_1033 x_1130 k_main_1106 x_1109 when (x_1109 = n_1033) -> (k_main_1106 ())
+  f_main_1175 n_1033 x_1130 k_main_1106 x_1109 when (not (x_1109 = n_1033)) -> (fail_1178 true k_main_1106)
+  f_map_1173 x_1031 k_map_1074 x_1078 -> (k_map_1074 (1 + x_1078))
+  fail_1178 b k -> {fail} => (k ())
+  main_1032 n_1033 k_main_1106 -> (map_1030 n_1033 (f_main_1174 n_1033 k_main_1106))
+  map_1030 x_1031 k_map_1074 when (x_1031 = 0) -> (k_map_1074 x_1031)
+  map_1030 x_1031 k_map_1074 when (not (x_1031 = 0)) -> (map_1030 (x_1031 - 1) (f_map_1173 x_1031 k_map_1074))
+Types:
+  main_1172 : X
+  fail_1178 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  map_1030 : (x_1:int[x_1 <= 1; x_1 <= -1; x_1 <= 0] ->
+              (x_3:int[x_1 >= 2; x_1 >= 5; x_3 <= 1; 2*x_1 >= 1; x_1 >= 3; 
+                       x_3 <= 0; x_3 <= 0 && x_1 <= x_3; x_1 <= x_3 && x_3 <= 1; 
+                       x_1 >= 0 && x_1 <= x_3; x_1 >= 1 && x_1 <= x_3; 
+                       x_3 = 0; x_1 = 0] -> X) -> X)
+  
+(4-1) Abstracting ... DONE!
+
+(4-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1172 ... --> 
+  f_1176 ... --> 
+  main_1032 ... --> 
+  map_1030 [2/2] ... --> 
+  map_1030 [2/2] ... --> 
+  map_1030 [1/2] ... --> 
+  f_map_1173 ... --> 
+  f_map_1173 ... --> 
+  f_main_1174 ... --> 
+  map_1030 [2/2] ... --> 
+  map_1030 [2/2] ... --> 
+  map_1030 [1/2] ... --> 
+  f_map_1173 ... --> 
+  f_map_1173 ... --> 
+  f_main_1175 [2/2] ... --> 
+  fail_1178 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 1; 0; 0; 0; 0; 1; 1; 0; 0; 0; 1; 0
+
+(4-3) Checking counter-example ... DONE!
+
+(4-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(103852)[1]
+  program:
+    main_1172  | true = ((Random.int 0) f_1176)
+    f_1176 x_1147 | true = (main_1032 x_1147
+                                      (f_1177 x_1147))
+    f_1177 x_1147 x_1144 | true = end
+    f_main_1174 n_1033 k_main_1106 x_1130 | true = (map_1030 x_1130
+                                                             (f_main_1175 n_1033
+                                                                    x_1130
+                                                                    k_main_1106))
+    f_main_1175 n_1033 x_1130 k_main_1106 x_1109 | (x_1109 = n_1033) = (
+    k_main_1106 ())
+    f_main_1175 n_1033 x_1130 k_main_1106 x_1109 | (not (x_1109 = n_1033)) = (
+    fail_1178 true
+              k_main_1106)
+    f_map_1173 x_1031 k_map_1074 x_1078 | true = (k_map_1074 (1 + x_1078))
+    fail_1178 b k | true = (fail ())
+    main_1032 n_1033 k_main_1106 | true = (map_1030 n_1033
+                                                    (f_main_1174 n_1033
+                                                                 k_main_1106))
+    map_1030 x_1031 k_map_1074 | (x_1031 = 0) = (k_map_1074 x_1031)
+    map_1030 x_1031 k_map_1074 | (not (x_1031 = 0)) = (map_1030 (x_1031 - 1)
+                                                                (f_map_1173 x_1031
+                                                                    k_map_1074))
+    main_1172:X
+    f_1176:int -> X
+    f_1177:int -> unit -> X
+    f_main_1174:int -> (unit -> X) -> int -> X
+    f_main_1175:int -> int -> (unit -> X) -> int -> X
+    f_map_1173:int -> (int -> X) -> int -> X
+    fail_1178:bool -> (unit -> X) -> X
+    main_1032:int -> (unit -> X) -> X
+    map_1030:int -> (int -> X) -> X
+  inlined functions: f_1176,f_1177,f_main_1174,f_main_1175,f_map_1173,main_1032
+  counterexample: 0:0:0:1:1:0:0:0:0:1:1:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1176@158:0> = var128)
+     [true.(<main_1032@160:0> = <f_1176@158:0>)
+      [true.(<map_1030@162:0> = <main_1032@160:0>)
+       [(not (<map_1030@162:0> = 0)).(<map_1030@165:0> = (<map_1030@162:0> - 1))
+        [(not (<map_1030@165:0> = 0)).(<map_1030@168:0> = (<map_1030@165:0> - 1))
+         [(<map_1030@168:0> = 0).(<<map_1030@168:1>@171:0> = <map_1030@168:0>)
+          [true.((<f_map_1173@173:0> = <map_1030@165:0>) && (<f_map_1173@173:2> = <<map_1030@168:1>@171:0>))
+           [true.(<<f_map_1173@173:1>@175:0> = (1 + <f_map_1173@173:2>))
+            [true.(<<map_1030@165:1>@177:0> = <<f_map_1173@173:1>@175:0>)
+             [true.((<f_map_1173@179:0> = <map_1030@162:0>) && (<f_map_1173@179:2> = <<map_1030@165:1>@177:0>))
+              [true.(<<f_map_1173@179:1>@181:0> = (1 + <f_map_1173@179:2>))
+               [true.(<<map_1030@162:1>@183:0> = <<f_map_1173@179:1>@181:0>)
+                [true.((<f_main_1174@185:0> = <main_1032@160:0>) && (<f_main_1174@185:2> = <<map_1030@162:1>@183:0>))
+                 [true.(<map_1030@187:0> = <f_main_1174@185:2>)
+                  [(not (<map_1030@187:0> = 0)).(<map_1030@190:0> = (<map_1030@187:0> - 1))
+                   [(not (<map_1030@190:0> = 0)).(<map_1030@193:0> = (<map_1030@190:0> - 1))
+                    [(<map_1030@193:0> = 0).(<<map_1030@193:1>@196:0> = <map_1030@193:0>)
+                     [true.((<f_map_1173@198:0> = <map_1030@190:0>) && (<f_map_1173@198:2> = <<map_1030@193:1>@196:0>))
+                      [true.(<<f_map_1173@198:1>@200:0> = (1 + <f_map_1173@198:2>))
+                       [true.(<<map_1030@190:1>@202:0> = <<f_map_1173@198:1>@200:0>)
+                        [true.
+                         ((<f_map_1173@204:0> = <map_1030@187:0>) && (<f_map_1173@204:2> = <<map_1030@190:1>@202:0>))
+                         [true.(<<f_map_1173@204:1>@206:0> = (1 + <f_map_1173@204:2>))
+                          [true.(<<map_1030@187:1>@208:0> = <<f_map_1173@204:1>@206:0>)
+                           [true.
+                            ((<f_main_1175@210:0> = <f_main_1174@185:0>) &&
+                             ((<f_main_1175@210:1> = <f_main_1174@185:2>) &&
+                              (<f_main_1175@210:3> = <<map_1030@187:1>@208:0>)))
+                            [(not (<f_main_1175@210:3> = <f_main_1175@210:0>)).(<fail_1178@213:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(103853)[2]
+    horn clauses:
+      P[<fail_1178@213:0>](<fail_1178@213:0>:bool)|- bot
+      
+      P[<f_main_1175@210:3>](<f_main_1175@210:0>:int,<f_main_1175@210:1>:int,<f_main_1175@210:3>:int),
+      ((<f_main_1175@210:3> <> <f_main_1175@210:0>) && <fail_1178@213:0>)
+      |- P[<fail_1178@213:0>](<fail_1178@213:0>:bool)
+      
+      P[<f_main_1174@185:2>](<f_main_1175@210:0>:int,<f_main_1175@210:1>:int),
+      P[<<map_1030@187:1>@208:0>](<f_main_1175@210:1>:int,<f_main_1175@210:3>:int)|- P[<f_main_1175@210:3>](
+      <f_main_1175@210:0>:int,<f_main_1175@210:1>:int,<f_main_1175@210:3>:int)
+      
+      P[<map_1030@187:0>](<map_1030@187:0>:int),
+      P[<<f_map_1173@204:1>@206:0>](<map_1030@187:0>:int,<<map_1030@187:1>@208:0>:int), (
+      <map_1030@187:0> <> 0) |- P[<<map_1030@187:1>@208:0>](<map_1030@187:0>:int,
+                                                            <<map_1030@187:1>@208:0>:int)
+      
+      P[<f_map_1173@204:2>](<f_map_1173@204:0>:int,(-1 + <<f_map_1173@204:1>@206:0>):int)|- P[<<f_map_1173@204:1>@206:0>](
+      <f_map_1173@204:0>:int,<<f_map_1173@204:1>@206:0>:int)
+      
+      P[<map_1030@187:0>](<f_map_1173@204:0>:int),
+      P[<<map_1030@190:1>@202:0>]((-1 + <f_map_1173@204:0>):int,<f_map_1173@204:2>:int), (
+      <f_map_1173@204:0> <> 0) |- P[<f_map_1173@204:2>](<f_map_1173@204:0>:int,
+                                                        <f_map_1173@204:2>:int)
+      
+      P[<map_1030@190:0>](<map_1030@190:0>:int),
+      P[<<f_map_1173@198:1>@200:0>](<map_1030@190:0>:int,<<map_1030@190:1>@202:0>:int), (
+      <map_1030@190:0> <> 0) |- P[<<map_1030@190:1>@202:0>](<map_1030@190:0>:int,
+                                                            <<map_1030@190:1>@202:0>:int)
+      
+      P[<f_map_1173@198:2>](<f_map_1173@198:0>:int,(-1 + <<f_map_1173@198:1>@200:0>):int)|- P[<<f_map_1173@198:1>@200:0>](
+      <f_map_1173@198:0>:int,<<f_map_1173@198:1>@200:0>:int)
+      
+      P[<map_1030@190:0>](<f_map_1173@198:0>:int),
+      P[<<map_1030@193:1>@196:0>]((-1 + <f_map_1173@198:0>):int,<f_map_1173@198:2>:int), (
+      <f_map_1173@198:0> <> 0) |- P[<f_map_1173@198:2>](<f_map_1173@198:0>:int,
+                                                        <f_map_1173@198:2>:int)
+      
+      P[<map_1030@193:0>](<map_1030@193:0>:int),
+      ((<map_1030@193:0> = 0) && (<<map_1030@193:1>@196:0> = <map_1030@193:0>))
+      |- P[<<map_1030@193:1>@196:0>](<map_1030@193:0>:int,<<map_1030@193:1>@196:0>:int)
+      
+      P[<map_1030@190:0>]((1 + <map_1030@193:0>):int), ((1 + <map_1030@193:0>) <> 0)
+      |- P[<map_1030@193:0>](<map_1030@193:0>:int)
+      
+      P[<map_1030@187:0>]((1 + <map_1030@190:0>):int), ((1 + <map_1030@190:0>) <> 0)
+      |- P[<map_1030@190:0>](<map_1030@190:0>:int)
+      
+      P[<f_main_1174@185:2>](<f_main_1174@185:0>:int,<map_1030@187:0>:int)|- P[<map_1030@187:0>](<map_1030@187:0>:int)
+      
+      P[<main_1032@160:0>](<f_main_1174@185:0>:int),
+      P[<<map_1030@162:1>@183:0>](<f_main_1174@185:0>:int,<f_main_1174@185:2>:int)|- P[<f_main_1174@185:2>](
+      <f_main_1174@185:0>:int,<f_main_1174@185:2>:int)
+      
+      P[<map_1030@162:0>](<map_1030@162:0>:int),
+      P[<<f_map_1173@179:1>@181:0>](<map_1030@162:0>:int,<<map_1030@162:1>@183:0>:int), (
+      <map_1030@162:0> <> 0) |- P[<<map_1030@162:1>@183:0>](<map_1030@162:0>:int,
+                                                            <<map_1030@162:1>@183:0>:int)
+      
+      P[<f_map_1173@179:2>](<f_map_1173@179:0>:int,(-1 + <<f_map_1173@179:1>@181:0>):int)|- P[<<f_map_1173@179:1>@181:0>](
+      <f_map_1173@179:0>:int,<<f_map_1173@179:1>@181:0>:int)
+      
+      P[<map_1030@162:0>](<f_map_1173@179:0>:int),
+      P[<<map_1030@165:1>@177:0>]((-1 + <f_map_1173@179:0>):int,<f_map_1173@179:2>:int), (
+      <f_map_1173@179:0> <> 0) |- P[<f_map_1173@179:2>](<f_map_1173@179:0>:int,
+                                                        <f_map_1173@179:2>:int)
+      
+      P[<map_1030@165:0>](<map_1030@165:0>:int),
+      P[<<f_map_1173@173:1>@175:0>](<map_1030@165:0>:int,<<map_1030@165:1>@177:0>:int), (
+      <map_1030@165:0> <> 0) |- P[<<map_1030@165:1>@177:0>](<map_1030@165:0>:int,
+                                                            <<map_1030@165:1>@177:0>:int)
+      
+      P[<f_map_1173@173:2>](<f_map_1173@173:0>:int,(-1 + <<f_map_1173@173:1>@175:0>):int)|- P[<<f_map_1173@173:1>@175:0>](
+      <f_map_1173@173:0>:int,<<f_map_1173@173:1>@175:0>:int)
+      
+      P[<map_1030@165:0>](<f_map_1173@173:0>:int),
+      P[<<map_1030@168:1>@171:0>]((-1 + <f_map_1173@173:0>):int,<f_map_1173@173:2>:int), (
+      <f_map_1173@173:0> <> 0) |- P[<f_map_1173@173:2>](<f_map_1173@173:0>:int,
+                                                        <f_map_1173@173:2>:int)
+      
+      P[<map_1030@168:0>](<map_1030@168:0>:int),
+      ((<map_1030@168:0> = 0) && (<<map_1030@168:1>@171:0> = <map_1030@168:0>))
+      |- P[<<map_1030@168:1>@171:0>](<map_1030@168:0>:int,<<map_1030@168:1>@171:0>:int)
+      
+      P[<map_1030@165:0>]((1 + <map_1030@168:0>):int), ((1 + <map_1030@168:0>) <> 0)
+      |- P[<map_1030@168:0>](<map_1030@168:0>:int)
+      
+      P[<map_1030@162:0>]((1 + <map_1030@165:0>):int), ((1 + <map_1030@165:0>) <> 0)
+      |- P[<map_1030@165:0>](<map_1030@165:0>:int)
+      
+      P[<main_1032@160:0>](<map_1030@162:0>:int)|- P[<map_1030@162:0>](<map_1030@162:0>:int)
+      
+      P[<f_1176@158:0>](<main_1032@160:0>:int)|- P[<main_1032@160:0>](<main_1032@160:0>:int)
+      
+      |- P[<f_1176@158:0>](<f_1176@158:0>:int)
+    call trees:
+      <main_1172@155>
+        <f_1176@158>
+          <main_1032@160>
+            <map_1030@162>
+              <map_1030@165>
+                <map_1030@168>
+                </<map_1030@168:1>@171>
+                <f_map_1173@173>
+                </<f_map_1173@173:1>@175>
+              </<map_1030@165:1>@177>
+              <f_map_1173@179>
+              </<f_map_1173@179:1>@181>
+            </<map_1030@162:1>@183>
+            <f_main_1174@185>
+              <map_1030@187>
+                <map_1030@190>
+                  <map_1030@193>
+                  </<map_1030@193:1>@196>
+                  <f_map_1173@198>
+                  </<f_map_1173@198:1>@200>
+                </<map_1030@190:1>@202>
+                <f_map_1173@204>
+                </<f_map_1173@204:1>@206>
+              </<map_1030@187:1>@208>
+              <f_main_1175@210>
+                <fail_1178@213>
+    inlined horn clauses:
+      P[<fail_1178@213:0>](<fail_1178@213:0>:bool)|- bot
+      
+      P[<<map_1030@162:1>@183:0>](<f_main_1175@210:0>:int,<f_main_1175@210:1>:int),
+      P[<<map_1030@187:1>@208:0>](<f_main_1175@210:1>:int,<f_main_1175@210:3>:int),
+      ((<f_main_1175@210:3> <> <f_main_1175@210:0>) && <fail_1178@213:0>)
+      |- P[<fail_1178@213:0>](<fail_1178@213:0>:bool)
+      
+      P[<map_1030@187:0>](<map_1030@187:0>:int),
+      P[<<map_1030@190:1>@202:0>]((-1 + <map_1030@187:0>):int,(-1 + <<map_1030@187:1>@208:0>):int),
+      (<map_1030@187:0> <> 0) |- P[<<map_1030@187:1>@208:0>](<map_1030@187:0>:int,
+                                                             <<map_1030@187:1>@208:0>:int)
+      
+      P[<map_1030@190:0>](<map_1030@190:0>:int),
+      P[<<map_1030@193:1>@196:0>]((-1 + <map_1030@190:0>):int,(-1 + <<map_1030@190:1>@202:0>):int),
+      (<map_1030@190:0> <> 0) |- P[<<map_1030@190:1>@202:0>](<map_1030@190:0>:int,
+                                                             <<map_1030@190:1>@202:0>:int)
+      
+      P[<map_1030@193:0>](<map_1030@193:0>:int),
+      ((<map_1030@193:0> = 0) && (<<map_1030@193:1>@196:0> = <map_1030@193:0>))
+      |- P[<<map_1030@193:1>@196:0>](<map_1030@193:0>:int,<<map_1030@193:1>@196:0>:int)
+      
+      P[<map_1030@190:0>]((1 + <map_1030@193:0>):int), ((1 + <map_1030@193:0>) <> 0)
+      |- P[<map_1030@193:0>](<map_1030@193:0>:int)
+      
+      P[<map_1030@187:0>]((1 + <map_1030@190:0>):int), ((1 + <map_1030@190:0>) <> 0)
+      |- P[<map_1030@190:0>](<map_1030@190:0>:int)
+      
+      P[<<map_1030@162:1>@183:0>](<f_main_1174@185:0>:int,<map_1030@187:0>:int)|- P[<map_1030@187:0>](
+      <map_1030@187:0>:int)
+      
+      P[<map_1030@162:0>](<map_1030@162:0>:int),
+      P[<<map_1030@165:1>@177:0>]((-1 + <map_1030@162:0>):int,(-1 + <<map_1030@162:1>@183:0>):int),
+      (<map_1030@162:0> <> 0) |- P[<<map_1030@162:1>@183:0>](<map_1030@162:0>:int,
+                                                             <<map_1030@162:1>@183:0>:int)
+      
+      P[<map_1030@165:0>](<map_1030@165:0>:int),
+      P[<<map_1030@168:1>@171:0>]((-1 + <map_1030@165:0>):int,(-1 + <<map_1030@165:1>@177:0>):int),
+      (<map_1030@165:0> <> 0) |- P[<<map_1030@165:1>@177:0>](<map_1030@165:0>:int,
+                                                             <<map_1030@165:1>@177:0>:int)
+      
+      P[<map_1030@168:0>](<map_1030@168:0>:int),
+      ((<map_1030@168:0> = 0) && (<<map_1030@168:1>@171:0> = <map_1030@168:0>))
+      |- P[<<map_1030@168:1>@171:0>](<map_1030@168:0>:int,<<map_1030@168:1>@171:0>:int)
+      
+      P[<map_1030@165:0>]((1 + <map_1030@168:0>):int), ((1 + <map_1030@168:0>) <> 0)
+      |- P[<map_1030@168:0>](<map_1030@168:0>:int)
+      
+      P[<map_1030@162:0>]((1 + <map_1030@165:0>):int), ((1 + <map_1030@165:0>) <> 0)
+      |- P[<map_1030@165:0>](<map_1030@165:0>:int)
+      
+      |- P[<map_1030@162:0>](<map_1030@162:0>:int)
+    begin ParamSubstInfer.infer(107109)[3]
+      
+    end ParamSubstInfer.infer(107109)[3] (11.984178 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(107111)[3]
+      
+    end RefTypeInfer.elim_coeffs(107111)[3] (0.003999 sec.)
+    begin YhornInterface.solve(107568)[3]
+      begin HcSolver.solve_ub(107569)[4]
+        encoded:
+          P[<fail_1178@213:0>](<fail_1178@213:0>:int)|- bot
+          
+          P[<<map_1030@162:1>@183:0>](<f_main_1175@210:0>:int,<f_main_1175@210:1>:int),
+          P[<<map_1030@187:1>@208:0>](<f_main_1175@210:1>:int,<f_main_1175@210:3>:int),
+          ((<f_main_1175@210:3> <> <f_main_1175@210:0>) && (<fail_1178@213:0> = 1))
+          |- P[<fail_1178@213:0>](<fail_1178@213:0>:int)
+          
+          P[<map_1030@187:0>](<map_1030@187:0>:int),
+          P[<<map_1030@190:1>@202:0>]((-1 + <map_1030@187:0>):int,(-1 + <<map_1030@187:1>@208:0>):int),
+          (<map_1030@187:0> <> 0) |- P[<<map_1030@187:1>@208:0>](<map_1030@187:0>:int,
+                                                                 <<map_1030@187:1>@208:0>:int)
+          
+          P[<map_1030@190:0>](<map_1030@190:0>:int),
+          P[<<map_1030@193:1>@196:0>]((-1 + <map_1030@190:0>):int,(-1 + <<map_1030@190:1>@202:0>):int),
+          (<map_1030@190:0> <> 0) |- P[<<map_1030@190:1>@202:0>](<map_1030@190:0>:int,
+                                                                 <<map_1030@190:1>@202:0>:int)
+          
+          P[<map_1030@193:0>](<map_1030@193:0>:int),
+          ((<map_1030@193:0> = 0) && (<<map_1030@193:1>@196:0> = <map_1030@193:0>))
+          |- P[<<map_1030@193:1>@196:0>](<map_1030@193:0>:int,<<map_1030@193:1>@196:0>:int)
+          
+          P[<map_1030@190:0>]((1 + <map_1030@193:0>):int), ((1 + <map_1030@193:0>) <> 0)
+          |- P[<map_1030@193:0>](<map_1030@193:0>:int)
+          
+          P[<map_1030@187:0>]((1 + <map_1030@190:0>):int), ((1 + <map_1030@190:0>) <> 0)
+          |- P[<map_1030@190:0>](<map_1030@190:0>:int)
+          
+          P[<<map_1030@162:1>@183:0>](<f_main_1174@185:0>:int,<map_1030@187:0>:int)|- P[<map_1030@187:0>](
+          <map_1030@187:0>:int)
+          
+          P[<map_1030@162:0>](<map_1030@162:0>:int),
+          P[<<map_1030@165:1>@177:0>]((-1 + <map_1030@162:0>):int,(-1 + <<map_1030@162:1>@183:0>):int),
+          (<map_1030@162:0> <> 0) |- P[<<map_1030@162:1>@183:0>](<map_1030@162:0>:int,
+                                                                 <<map_1030@162:1>@183:0>:int)
+          
+          P[<map_1030@165:0>](<map_1030@165:0>:int),
+          P[<<map_1030@168:1>@171:0>]((-1 + <map_1030@165:0>):int,(-1 + <<map_1030@165:1>@177:0>):int),
+          (<map_1030@165:0> <> 0) |- P[<<map_1030@165:1>@177:0>](<map_1030@165:0>:int,
+                                                                 <<map_1030@165:1>@177:0>:int)
+          
+          P[<map_1030@168:0>](<map_1030@168:0>:int),
+          ((<map_1030@168:0> = 0) && (<<map_1030@168:1>@171:0> = <map_1030@168:0>))
+          |- P[<<map_1030@168:1>@171:0>](<map_1030@168:0>:int,<<map_1030@168:1>@171:0>:int)
+          
+          P[<map_1030@165:0>]((1 + <map_1030@168:0>):int), ((1 + <map_1030@168:0>) <> 0)
+          |- P[<map_1030@168:0>](<map_1030@168:0>:int)
+          
+          P[<map_1030@162:0>]((1 + <map_1030@165:0>):int), ((1 + <map_1030@165:0>) <> 0)
+          |- P[<map_1030@165:0>](<map_1030@165:0>:int)
+          
+          |- P[<map_1030@162:0>](<map_1030@162:0>:int)
+        input to Yhorn:
+          P[<fail_1178@213:0>](<fail_1178@213:0>:int)|- bot
+          
+          P[<<map_1030@162:1>@183:0>](<f_main_1175@210:0>:int,<f_main_1175@210:1>:int),
+          P[<<map_1030@187:1>@208:0>](<f_main_1175@210:1>:int,<f_main_1175@210:3>:int),
+          ((<f_main_1175@210:3> <> <f_main_1175@210:0>) && (<fail_1178@213:0> = 1))
+          |- P[<fail_1178@213:0>](<fail_1178@213:0>:int)
+          
+          P[<map_1030@187:0>](<map_1030@187:0>:int),
+          P[<<map_1030@190:1>@202:0>](var129:int,var130:int),
+          (((1 + var130) = <<map_1030@187:1>@208:0>) && (((1 + var129) = <map_1030@187:0>) && (<map_1030@187:0> <> 0)))
+          |- P[<<map_1030@187:1>@208:0>](<map_1030@187:0>:int,<<map_1030@187:1>@208:0>:int)
+          
+          P[<map_1030@190:0>](<map_1030@190:0>:int),
+          P[<<map_1030@193:1>@196:0>](var131:int,var132:int),
+          (((1 + var132) = <<map_1030@190:1>@202:0>) && (((1 + var131) = <map_1030@190:0>) && (<map_1030@190:0> <> 0)))
+          |- P[<<map_1030@190:1>@202:0>](<map_1030@190:0>:int,<<map_1030@190:1>@202:0>:int)
+          
+          P[<map_1030@193:0>](<map_1030@193:0>:int),
+          ((<<map_1030@193:1>@196:0> = <map_1030@193:0>) && (<map_1030@193:0> = 0))
+          |- P[<<map_1030@193:1>@196:0>](<map_1030@193:0>:int,<<map_1030@193:1>@196:0>:int)
+          
+          P[<map_1030@190:0>](var133:int), ((var133 = (1 + <map_1030@193:0>)) && ((1 + <map_1030@193:0>) <> 0))
+          |- P[<map_1030@193:0>](<map_1030@193:0>:int)
+          
+          P[<map_1030@187:0>](var134:int), ((var134 = (1 + <map_1030@190:0>)) && ((1 + <map_1030@190:0>) <> 0))
+          |- P[<map_1030@190:0>](<map_1030@190:0>:int)
+          
+          P[<<map_1030@162:1>@183:0>](<f_main_1174@185:0>:int,<map_1030@187:0>:int)|- P[<map_1030@187:0>](
+          <map_1030@187:0>:int)
+          
+          P[<map_1030@162:0>](<map_1030@162:0>:int),
+          P[<<map_1030@165:1>@177:0>](var135:int,var136:int),
+          (((1 + var136) = <<map_1030@162:1>@183:0>) && (((1 + var135) = <map_1030@162:0>) && (<map_1030@162:0> <> 0)))
+          |- P[<<map_1030@162:1>@183:0>](<map_1030@162:0>:int,<<map_1030@162:1>@183:0>:int)
+          
+          P[<map_1030@165:0>](<map_1030@165:0>:int),
+          P[<<map_1030@168:1>@171:0>](var137:int,var138:int),
+          (((1 + var138) = <<map_1030@165:1>@177:0>) && (((1 + var137) = <map_1030@165:0>) && (<map_1030@165:0> <> 0)))
+          |- P[<<map_1030@165:1>@177:0>](<map_1030@165:0>:int,<<map_1030@165:1>@177:0>:int)
+          
+          P[<map_1030@168:0>](<map_1030@168:0>:int),
+          ((<<map_1030@168:1>@171:0> = <map_1030@168:0>) && (<map_1030@168:0> = 0))
+          |- P[<<map_1030@168:1>@171:0>](<map_1030@168:0>:int,<<map_1030@168:1>@171:0>:int)
+          
+          P[<map_1030@165:0>](var139:int), ((var139 = (1 + <map_1030@168:0>)) && ((1 + <map_1030@168:0>) <> 0))
+          |- P[<map_1030@168:0>](<map_1030@168:0>:int)
+          
+          P[<map_1030@162:0>](var140:int), ((var140 = (1 + <map_1030@165:0>)) && ((1 + <map_1030@165:0>) <> 0))
+          |- P[<map_1030@165:0>](<map_1030@165:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1178_sep_213_sep_0($2122)) -> 1=0.
+(($2122-1=0) & ($2123-$2124<>0)) & (v_sep_map_1030_sep_187_sep_1_sep_208_sep_0($2125,$2123)) & (v_sep_map_1030_sep_162_sep_1_sep_183_sep_0($2124,$2125)) -> v_sep_fail_1178_sep_213_sep_0($2122).
+(($2126<>0) & (-$2126+$2127+1=0) & ($2128-$2129+1=0)) & (v_sep_map_1030_sep_190_sep_1_sep_202_sep_0($2127,$2128)) & (v_sep_map_1030_sep_187_sep_0($2126)) -> v_sep_map_1030_sep_187_sep_1_sep_208_sep_0($2126,$2129).
+(($2130<>0) & (-$2130+$2131+1=0) & ($2132-$2133+1=0)) & (v_sep_map_1030_sep_193_sep_1_sep_196_sep_0($2131,$2132)) & (v_sep_map_1030_sep_190_sep_0($2130)) -> v_sep_map_1030_sep_190_sep_1_sep_202_sep_0($2130,$2133).
+(($2134=0) & (-$2134+$2135=0)) & (v_sep_map_1030_sep_193_sep_0($2134)) -> v_sep_map_1030_sep_193_sep_1_sep_196_sep_0($2134,$2135).
+(($2134+1<>0) & (-$2134+$2136-1=0)) & (v_sep_map_1030_sep_190_sep_0($2136)) -> v_sep_map_1030_sep_193_sep_0($2134).
+(($2130+1<>0) & (-$2130+$2137-1=0)) & (v_sep_map_1030_sep_187_sep_0($2137)) -> v_sep_map_1030_sep_190_sep_0($2130).
+(0=0) & (v_sep_map_1030_sep_162_sep_1_sep_183_sep_0($2138,$2126)) -> v_sep_map_1030_sep_187_sep_0($2126).
+(($2139<>0) & (-$2139+$2140+1=0) & ($2141-$2142+1=0)) & (v_sep_map_1030_sep_165_sep_1_sep_177_sep_0($2140,$2141)) & (v_sep_map_1030_sep_162_sep_0($2139)) -> v_sep_map_1030_sep_162_sep_1_sep_183_sep_0($2139,$2142).
+(($2143<>0) & (-$2143+$2144+1=0) & ($2145-$2146+1=0)) & (v_sep_map_1030_sep_168_sep_1_sep_171_sep_0($2144,$2145)) & (v_sep_map_1030_sep_165_sep_0($2143)) -> v_sep_map_1030_sep_165_sep_1_sep_177_sep_0($2143,$2146).
+(($2147=0) & (-$2147+$2148=0)) & (v_sep_map_1030_sep_168_sep_0($2147)) -> v_sep_map_1030_sep_168_sep_1_sep_171_sep_0($2147,$2148).
+(($2147+1<>0) & (-$2147+$2149-1=0)) & (v_sep_map_1030_sep_165_sep_0($2149)) -> v_sep_map_1030_sep_168_sep_0($2147).
+(($2143+1<>0) & (-$2143+$2150-1=0)) & (v_sep_map_1030_sep_162_sep_0($2150)) -> v_sep_map_1030_sep_165_sep_0($2143).
+0=0 -> v_sep_map_1030_sep_162_sep_0($2139).
+
+
+v_sep_fail_1178_sep_213_sep_0: X
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: X
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: X
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: X
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: X
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: X
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+.................................Split disj [60] 17.836288
+Reconstrcut: 3 **)
+
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: X
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: X
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: X
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: X
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: X
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+.......
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: X
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: X
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: X
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: X
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: X
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+.......Split conj [62] 17.873282
+(Reconstrcut: 8 **)
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: X
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: X
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: X
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: X
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+...............
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: X
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: X
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: X
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: X
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+.......Split conj [65] 17.918275
+(Reconstrcut: 27 ***)
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: X
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: X
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: X
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+.....................................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: X
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: X
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: X
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+.......
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: X
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: X
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: X
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+.......................Split conj [71] 17.990264
+(Reconstrcut: 14 ****)
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: X
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: X
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+...............................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: X
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: X
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+.......
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: X
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: X
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+.......................Split conj [80] 18.078251
+(Reconstrcut: 34 ******)
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: X
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+..........................................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: X
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+.......
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: X
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+.......................Split conj [90] 18.112246
+(Reconstrcut: 55 ******)
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+..............................................................................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+.......
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+.......................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+...........................................................Split conj [105] 18.181235
+(Reconstrcut: 46 ******)
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+..................................................................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+.......
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+.......................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: X
+...........................................................Split conj [120] 18.293218
+(Reconstrcut: 26 ********)
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+.......................................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+.......
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+.......................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: X
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+...........................................................Split conj [134] 18.392203
+(Reconstrcut: 45 **********)
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+.............................................................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+.......
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+.......................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: X
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+...........................................................Split conj [161] 18.512184
+(Reconstrcut: 137 ******************)
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+................................................................................................................................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+.......
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+.......................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: X
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+...........................................................Split conj [195] 18.61017
+(Reconstrcut: 129 ************)
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+.......................................................................................................................................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+.......
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+.......................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+...........................................................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+.............................................................................................................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+...........................................................................................................................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+...........................................................................................................................................
+v_sep_fail_1178_sep_213_sep_0: (X) | (X)
+v_sep_map_1030_sep_162_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_162_sep_1_sep_183_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_165_sep_0: X
+v_sep_map_1030_sep_165_sep_1_sep_177_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_168_sep_0: X
+v_sep_map_1030_sep_168_sep_1_sep_171_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_187_sep_1_sep_208_sep_0: (X) & (X)
+v_sep_map_1030_sep_190_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_190_sep_1_sep_202_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1030_sep_193_sep_0: X
+v_sep_map_1030_sep_193_sep_1_sep_196_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+...........................................................................................................................................(0=0) & (v_sep_fail_1178_sep_213_sep_0($2122)) -> 1=0.
+(($2122-1=0) & ($2123-$2124<>0)) & (v_sep_map_1030_sep_187_sep_1_sep_208_sep_0($2125,$2123)) & (v_sep_map_1030_sep_162_sep_1_sep_183_sep_0($2124,$2125)) -> v_sep_fail_1178_sep_213_sep_0($2122).
+(($2126<>0) & (-$2126+$2127+1=0) & ($2128-$2129+1=0)) & (v_sep_map_1030_sep_190_sep_1_sep_202_sep_0($2127,$2128)) & (v_sep_map_1030_sep_187_sep_0($2126)) -> v_sep_map_1030_sep_187_sep_1_sep_208_sep_0($2126,$2129).
+(($2130<>0) & (-$2130+$2131+1=0) & ($2132-$2133+1=0)) & (v_sep_map_1030_sep_193_sep_1_sep_196_sep_0($2131,$2132)) & (v_sep_map_1030_sep_190_sep_0($2130)) -> v_sep_map_1030_sep_190_sep_1_sep_202_sep_0($2130,$2133).
+(($2134=0) & (-$2134+$2135=0)) & (v_sep_map_1030_sep_193_sep_0($2134)) -> v_sep_map_1030_sep_193_sep_1_sep_196_sep_0($2134,$2135).
+(($2134+1<>0) & (-$2134+$2136-1=0)) & (v_sep_map_1030_sep_190_sep_0($2136)) -> v_sep_map_1030_sep_193_sep_0($2134).
+(($2130+1<>0) & (-$2130+$2137-1=0)) & (v_sep_map_1030_sep_187_sep_0($2137)) -> v_sep_map_1030_sep_190_sep_0($2130).
+(0=0) & (v_sep_map_1030_sep_162_sep_1_sep_183_sep_0($2138,$2126)) -> v_sep_map_1030_sep_187_sep_0($2126).
+(($2139<>0) & (-$2139+$2140+1=0) & ($2141-$2142+1=0)) & (v_sep_map_1030_sep_165_sep_1_sep_177_sep_0($2140,$2141)) & (v_sep_map_1030_sep_162_sep_0($2139)) -> v_sep_map_1030_sep_162_sep_1_sep_183_sep_0($2139,$2142).
+(($2143<>0) & (-$2143+$2144+1=0) & ($2145-$2146+1=0)) & (v_sep_map_1030_sep_168_sep_1_sep_171_sep_0($2144,$2145)) & (v_sep_map_1030_sep_165_sep_0($2143)) -> v_sep_map_1030_sep_165_sep_1_sep_177_sep_0($2143,$2146).
+(($2147=0) & (-$2147+$2148=0)) & (v_sep_map_1030_sep_168_sep_0($2147)) -> v_sep_map_1030_sep_168_sep_1_sep_171_sep_0($2147,$2148).
+(($2147+1<>0) & (-$2147+$2149-1=0)) & (v_sep_map_1030_sep_165_sep_0($2149)) -> v_sep_map_1030_sep_168_sep_0($2147).
+(($2143+1<>0) & (-$2143+$2150-1=0)) & (v_sep_map_1030_sep_162_sep_0($2150)) -> v_sep_map_1030_sep_165_sep_0($2143).
+0=0 -> v_sep_map_1030_sep_162_sep_0($2139).
+
+          |- P[<map_1030@162:0>](<map_1030@162:0>:int)
+        solution:
+          P[<fail_1178@213:0>]($2151:bool) = false
+          P[<map_1030@162:0>]($2188:int) = true
+          P[<<map_1030@162:1>@183:0>]($2159:int,$2161:int) = (((3 * $2159) <= (4 + $2161)) && (2 <= $2159))
+          P[<map_1030@165:0>]($2196:int) = true
+          P[<<map_1030@165:1>@177:0>]($2183:int,$2185:int) = ((1 <= $2183) && ((3 * $2183) <= (2 + $2185)))
+          P[<map_1030@168:0>]($2199:int) = true
+          P[<<map_1030@168:1>@171:0>]($2191:int,$2193:int) = ((0 <= $2191) && ((3 * $2191) <= $2193))
+          P[<map_1030@187:0>]($2169:int) = true
+          P[<<map_1030@187:1>@208:0>]($2154:int,$2156:int) = (((4 + $2154) <= (3 * $2156)) && ($2156 <= 2))
+          P[<map_1030@190:0>]($2177:int) = true
+          P[<<map_1030@190:1>@202:0>]($2164:int,$2166:int) =
+          ((0 <= $2166) && ((1 >= $2166) && ((2 + $2164) <= (3 * $2166))))
+          P[<map_1030@193:0>]($2180:int) = true
+          P[<<map_1030@193:1>@196:0>]($2172:int,$2174:int) = (($2174 = 0) && ($2172 <= (3 * $2174)))
+        
+      end HcSolver.solve_ub(107569)[4] (8.569698 sec.)
+      begin HcSolver.check_validity(108649)[4]
+        input:
+          P[<fail_1178@213:0>](<fail_1178@213:0>:bool)|- bot
+          
+          P[<<map_1030@162:1>@183:0>](<f_main_1175@210:0>:int,<f_main_1175@210:1>:int),
+          P[<<map_1030@187:1>@208:0>](<f_main_1175@210:1>:int,<f_main_1175@210:3>:int),
+          ((<f_main_1175@210:3> <> <f_main_1175@210:0>) && <fail_1178@213:0>)
+          |- P[<fail_1178@213:0>](<fail_1178@213:0>:bool)
+          
+          P[<map_1030@187:0>](<map_1030@187:0>:int),
+          P[<<map_1030@190:1>@202:0>]((-1 + <map_1030@187:0>):int,(-1 + <<map_1030@187:1>@208:0>):int),
+          (<map_1030@187:0> <> 0) |- P[<<map_1030@187:1>@208:0>](<map_1030@187:0>:int,
+                                                                 <<map_1030@187:1>@208:0>:int)
+          
+          P[<map_1030@190:0>](<map_1030@190:0>:int),
+          P[<<map_1030@193:1>@196:0>]((-1 + <map_1030@190:0>):int,(-1 + <<map_1030@190:1>@202:0>):int),
+          (<map_1030@190:0> <> 0) |- P[<<map_1030@190:1>@202:0>](<map_1030@190:0>:int,
+                                                                 <<map_1030@190:1>@202:0>:int)
+          
+          P[<map_1030@193:0>](<map_1030@193:0>:int),
+          ((<map_1030@193:0> = 0) && (<<map_1030@193:1>@196:0> = <map_1030@193:0>))
+          |- P[<<map_1030@193:1>@196:0>](<map_1030@193:0>:int,<<map_1030@193:1>@196:0>:int)
+          
+          P[<map_1030@190:0>]((1 + <map_1030@193:0>):int), ((1 + <map_1030@193:0>) <> 0)
+          |- P[<map_1030@193:0>](<map_1030@193:0>:int)
+          
+          P[<map_1030@187:0>]((1 + <map_1030@190:0>):int), ((1 + <map_1030@190:0>) <> 0)
+          |- P[<map_1030@190:0>](<map_1030@190:0>:int)
+          
+          P[<<map_1030@162:1>@183:0>](<f_main_1174@185:0>:int,<map_1030@187:0>:int)|- P[<map_1030@187:0>](
+          <map_1030@187:0>:int)
+          
+          P[<map_1030@162:0>](<map_1030@162:0>:int),
+          P[<<map_1030@165:1>@177:0>]((-1 + <map_1030@162:0>):int,(-1 + <<map_1030@162:1>@183:0>):int),
+          (<map_1030@162:0> <> 0) |- P[<<map_1030@162:1>@183:0>](<map_1030@162:0>:int,
+                                                                 <<map_1030@162:1>@183:0>:int)
+          
+          P[<map_1030@165:0>](<map_1030@165:0>:int),
+          P[<<map_1030@168:1>@171:0>]((-1 + <map_1030@165:0>):int,(-1 + <<map_1030@165:1>@177:0>):int),
+          (<map_1030@165:0> <> 0) |- P[<<map_1030@165:1>@177:0>](<map_1030@165:0>:int,
+                                                                 <<map_1030@165:1>@177:0>:int)
+          
+          P[<map_1030@168:0>](<map_1030@168:0>:int),
+          ((<map_1030@168:0> = 0) && (<<map_1030@168:1>@171:0> = <map_1030@168:0>))
+          |- P[<<map_1030@168:1>@171:0>](<map_1030@168:0>:int,<<map_1030@168:1>@171:0>:int)
+          
+          P[<map_1030@165:0>]((1 + <map_1030@168:0>):int), ((1 + <map_1030@168:0>) <> 0)
+          |- P[<map_1030@168:0>](<map_1030@168:0>:int)
+          
+          P[<map_1030@162:0>]((1 + <map_1030@165:0>):int), ((1 + <map_1030@165:0>) <> 0)
+          |- P[<map_1030@165:0>](<map_1030@165:0>:int)
+          
+          |- P[<map_1030@162:0>](<map_1030@162:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(108649)[4] (0.016997 sec.)
+      solution:
+        P[<fail_1178@213:0>]($2151:bool) = false
+        P[<map_1030@162:0>]($2188:int) = true
+        P[<<map_1030@162:1>@183:0>]($2159:int,$2161:int) = (((3 * $2159) <= (4 + $2161)) && (2 <= $2159))
+        P[<map_1030@165:0>]($2196:int) = true
+        P[<<map_1030@165:1>@177:0>]($2183:int,$2185:int) = ((1 <= $2183) && ((3 * $2183) <= (2 + $2185)))
+        P[<map_1030@168:0>]($2199:int) = true
+        P[<<map_1030@168:1>@171:0>]($2191:int,$2193:int) = ((0 <= $2191) && ((3 * $2191) <= $2193))
+        P[<map_1030@187:0>]($2169:int) = true
+        P[<<map_1030@187:1>@208:0>]($2154:int,$2156:int) = (((4 + $2154) <= (3 * $2156)) && ($2156 <= 2))
+        P[<map_1030@190:0>]($2177:int) = true
+        P[<<map_1030@190:1>@202:0>]($2164:int,$2166:int) =
+        ((0 <= $2166) && ((1 >= $2166) && ((2 + $2164) <= (3 * $2166))))
+        P[<map_1030@193:0>]($2180:int) = true
+        P[<<map_1030@193:1>@196:0>]($2172:int,$2174:int) = (($2174 = 0) && ($2172 <= (3 * $2174)))
+    end YhornInterface.solve(107568)[3] (8.586695 sec.)
+    
+  end RefTypeInfer.infer_etrs(103853)[2] (20.592869 sec.)
+  refinement types:
+    main_1172: X
+    f_1176: v1:int -> X
+    main_1032: v1:int -> (v2:unit -> X) -> X
+    map_1030: v1:int -> (v2:{v2:int | (((3 * v1) <= (4 + v2)) && (2 <= v1))} -> X) -> X
+    map_1030: v1:int -> (v2:{v2:int | ((1 <= v1) && ((3 * v1) <= (2 + v2)))} -> X) -> X
+    map_1030: v1:int -> (v2:{v2:int | ((0 <= v1) && ((3 * v1) <= v2))} -> X) -> X
+    f_map_1173: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_map_1173: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_main_1174: v1:int -> (v2:unit -> X) -> v4:int -> X
+    map_1030: v1:int -> (v2:{v2:int | (((4 + v1) <= (3 * v2)) && (v2 <= 2))} -> X) -> X
+    map_1030: v1:int -> (v2:{v2:int | ((0 <= v2) && ((1 >= v2) && ((2 + v1) <= (3 * v2))))} -> X) -> X
+    map_1030: v1:int -> (v2:{v2:int | ((v2 = 0) && (v1 <= (3 * v2)))} -> X) -> X
+    f_map_1173: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_map_1173: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_main_1175: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1178: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1177: var151:int -> var150:unit -> X
+  abstraction types:
+    main_1172: X
+    f_1176: v1:int -> X
+    main_1032: v1:int -> (v2:unit -> X) -> X
+    map_1030: var168:int ->
+              (var169:int[var169 -> (((3 * var168) <= (4 + var169)) && (2 <= var168)),
+                          var169 -> ((1 <= var168) && ((3 * var168) <= (2 + var169))),
+                          var169 -> ((0 <= var168) && ((3 * var168) <= var169)),
+                          var169 -> (((4 + var168) <= (3 * var169)) && (var169 <= 2)),
+                          var169 -> ((0 <= var169) && ((1 >= var169) && ((2 + var168) <= (3 * var169)))),
+                          var169 -> ((var169 = 0) && (var168 <= (3 * var169)))] -> X) -> X
+    f_map_1173: var182:int -> (var183:int -> X) -> var185:int -> X
+    f_main_1174: v1:int -> (v2:unit -> X) -> v4:int -> X
+    f_main_1175: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1178: v1:bool -> (v2:unit -> X) -> X
+    f_1177: var151:int -> var150:unit -> X
+  
+end AbsTypeInfer.refine(103852)[1] (20.599869 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 1; 0; 0; 0; 0; 1; 1; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 5)::
+Main: main_1172
+  main_1172 -> (rand_int f_1176)
+  f_1176 x_1147 -> (main_1032 x_1147 (f_1177 x_1147))
+  f_1177 x_1147 x_1144 -> end
+  f_main_1174 n_1033 k_main_1106 x_1130 -> (map_1030 x_1130 (f_main_1175 n_1033 x_1130 k_main_1106))
+  f_main_1175 n_1033 x_1130 k_main_1106 x_1109 when (x_1109 = n_1033) -> (k_main_1106 ())
+  f_main_1175 n_1033 x_1130 k_main_1106 x_1109 when (not (x_1109 = n_1033)) -> (fail_1178 true k_main_1106)
+  f_map_1173 x_1031 k_map_1074 x_1078 -> (k_map_1074 (1 + x_1078))
+  fail_1178 b k -> {fail} => (k ())
+  main_1032 n_1033 k_main_1106 -> (map_1030 n_1033 (f_main_1174 n_1033 k_main_1106))
+  map_1030 x_1031 k_map_1074 when (x_1031 = 0) -> (k_map_1074 x_1031)
+  map_1030 x_1031 k_map_1074 when (not (x_1031 = 0)) -> (map_1030 (x_1031 - 1) (f_map_1173 x_1031 k_map_1074))
+Types:
+  main_1172 : X
+  fail_1178 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  map_1030 : (x_1:int[x_1 <= 1; x_1 <= -1; x_1 <= 0] ->
+              (x_3:int[x_3 = 0 && x_1 <= 3*x_3; x_3 >= 0 && x_3 <= 1 && x_1 <= 3*x_3 - 2; 
+                       x_1 <= 3*x_3 - 4 && x_3 <= 2; x_1 >= 0 && 3*x_1 <= x_3; 
+                       x_1 >= 1 && 3*x_1 <= x_3 + 2; 3*x_1 <= x_3 + 4 && x_1 >= 2; 
+                       x_1 >= 2; x_1 >= 5; x_3 <= 1; 2*x_1 >= 1; x_1 >= 3; 
+                       x_3 <= 0; x_3 <= 0 && x_1 <= x_3; x_1 <= x_3 && x_3 <= 1; 
+                       x_1 >= 0 && x_1 <= x_3; x_1 >= 1 && x_1 <= x_3; 
+                       x_3 = 0; x_1 = 0] -> X) -> X)
+  
+(5-1) Abstracting ... 

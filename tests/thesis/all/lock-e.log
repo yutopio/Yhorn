@@ -1,0 +1,190 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -gchi lock-e.ml
+
+parsed::
+ let lock_1030 st_1031 = let u_1036 = if st_1031 = 0 then
+                                        ()
+                                      else
+                                        {fail} () 
+                         in
+                           1 
+ in
+ let unlock_1032 st_1033 = let u_1042 = if st_1033 = 1 then
+                                          ()
+                                        else
+                                          {fail} () 
+                           in
+                             0 
+ in
+ let f_1034 n_1035 st_1036 = if n_1035 > 0 then
+                               lock_1030 st_1036
+                             else
+                               st_1036 
+ in
+ let g_1037 n_1038 st_1039 = if n_1038 >= 0 then
+                               unlock_1032 st_1039
+                             else
+                               st_1039 
+ in
+ let main_1040 n_1041 = if g_1037 n_1041 (f_1034 n_1041 0) = 0 then
+                          ()
+                        else
+                          {fail} () 
+ in
+   ()
+
+set_target::
+ let lock_1030 st_1031 = let u_1036 = if st_1031 = 0 then
+                                        ()
+                                      else
+                                        {fail} () 
+                         in
+                           1 
+ in
+ let unlock_1032 st_1033 = let u_1042 = if st_1033 = 1 then
+                                          ()
+                                        else
+                                          {fail} () 
+                           in
+                             0 
+ in
+ let f_1034 n_1035 st_1036 = if n_1035 > 0 then
+                               lock_1030 st_1036
+                             else
+                               st_1036 
+ in
+ let g_1037 n_1038 st_1039 = if n_1038 >= 0 then
+                               unlock_1032 st_1039
+                             else
+                               st_1039 
+ in
+ let main_1040 n_1041 = if g_1037 n_1041 (f_1034 n_1041 0) = 0 then
+                          ()
+                        else
+                          {fail} () 
+ in
+ let main_1075 = let arg1_1074 = rand_int () 
+                 in
+                   main_1040 arg1_1074 
+ in
+   ()
+
+CPS::
+ let lock_1030 (st_1031:int) (k_lock_1100:(int -> X)) =
+   let k_lock_u_1113 (x_1103:unit) = k_lock_1100 1 
+   in
+     if st_1031 = 0 then
+       k_lock_u_1113 ()
+     else
+       {|fail|} () k_lock_u_1113 
+ in
+ let unlock_1032 (st_1033:int) (k_unlock_1128:(int -> X)) =
+   let k_unlock_u_1141 (x_1131:unit) = k_unlock_1128 0 
+   in
+     if st_1033 = 1 then
+       k_unlock_u_1141 ()
+     else
+       {|fail|} () k_unlock_u_1141 
+ in
+ let f_1034 (n_1035:int) (st_1036:int) (k_f_1159:(int -> X)) =
+   if n_1035 > 0 then
+     lock_1030 st_1036 k_f_1159
+   else
+     k_f_1159 st_1036 
+ in
+ let g_1037 (n_1038:int) (st_1039:int) (k_g_1190:(int -> X)) =
+   if n_1038 >= 0 then
+     unlock_1032 st_1039 k_g_1190
+   else
+     k_g_1190 st_1039 
+ in
+ let main_1040 (n_1041:int) (k_main_1218:(unit -> X)) =
+   f_1034 n_1041 0
+     (fun x_1244 ->
+        g_1037 n_1041 x_1244 (fun x_1221 -> (if x_1221 = 0 then
+                                               k_main_1218 ()
+                                             else
+                                               {|fail|} () k_main_1218))) 
+ in
+   rand_int_cps () (fun x_1261 -> main_1040 x_1261 (fun x_1258 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1286
+  main_1286 -> (rand_int f_1289)
+  f_1034 n_1035 st_1036 k_f_1159 when (n_1035 > 0) -> (lock_1030 st_1036 k_f_1159)
+  f_1034 n_1035 st_1036 k_f_1159 when (not (n_1035 > 0)) -> (k_f_1159 st_1036)
+  f_1289 x_1261 -> (main_1040 x_1261 (f_1290 x_1261))
+  f_1290 x_1261 x_1258 -> end
+  f_main_1287 n_1041 k_main_1218 x_1244 -> (g_1037 n_1041 x_1244 (f_main_1288 n_1041 x_1244 k_main_1218))
+  f_main_1288 n_1041 x_1244 k_main_1218 x_1221 when (x_1221 = 0) -> (k_main_1218 ())
+  f_main_1288 n_1041 x_1244 k_main_1218 x_1221 when (not (x_1221 = 0)) -> (fail_1293 true k_main_1218)
+  fail_1291 b k -> {fail} => (k ())
+  fail_1292 b k -> {fail} => (k ())
+  fail_1293 b k -> {fail} => (k ())
+  g_1037 n_1038 st_1039 k_g_1190 when (n_1038 >= 0) -> (unlock_1032 st_1039 k_g_1190)
+  g_1037 n_1038 st_1039 k_g_1190 when (not (n_1038 >= 0)) -> (k_g_1190 st_1039)
+  k_lock_u_1113 st_1031 k_lock_1100 x_1103 -> (k_lock_1100 1)
+  k_unlock_u_1141 st_1033 k_unlock_1128 x_1131 -> (k_unlock_1128 0)
+  lock_1030 st_1031 k_lock_1100 when (st_1031 = 0) -> (k_lock_u_1113 st_1031 k_lock_1100 ())
+  lock_1030 st_1031 k_lock_1100 when (not (st_1031 = 0)) -> (fail_1291 true (k_lock_u_1113 st_1031 k_lock_1100))
+  main_1040 n_1041 k_main_1218 -> (f_1034 n_1041 0 (f_main_1287 n_1041 k_main_1218))
+  unlock_1032 st_1033 k_unlock_1128 when (st_1033 = 1) -> (k_unlock_u_1141 st_1033 k_unlock_1128 ())
+  unlock_1032 st_1033 k_unlock_1128 when (not (st_1033 = 1)) ->
+      (fail_1292 true (k_unlock_u_1141 st_1033 k_unlock_1128))
+Types:
+  main_1286 : X
+  fail_1291 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  fail_1292 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  fail_1293 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1286 ... --> 
+  f_1289 ... --> 
+  main_1040 ... --> 
+  f_1034 [2/2] ... --> 
+  f_main_1287 ... --> 
+  g_1037 [1/2] ... --> 
+  unlock_1032 [2/2] ... --> 
+  fail_1292 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... begin Cvc3Interface.solve(204)[1]
+  CVC3 input: PUSH;cnt25_v_sep_r_1386:INT;CHECKSAT (TRUE AND ((NOT (0 = 1)) AND ((cnt25_v_sep_r_1386 >= 0) AND (TRUE AND ((NOT (cnt25_v_sep_r_1386 > 0)) AND (TRUE AND (TRUE AND TRUE)))))));COUNTERMODEL;POP;
+  CVC3 output: CVC> Satisfiable.
+  CVC3 output: Current scope level is 9.
+  CVC3 output: %Satisfiable  Variable Assignment: % 
+  CVC3 output: ASSERT (cnt25_v_sep_r_1386 = 0);
+  CVC3 output: CVC> 
+  v_sep_r_1386 = 0
+  end Cvc3Interface.solve(204)[1] (0.002999 sec.)
+DONE!
+
+Unsafe!
+
+Input for main:
+  0
+Error trace:
+  main 0 ->
+    f 0 0 ->
+      if false then ... ->
+    g 0 0 ->
+      if true then ... ->
+      unlock 0 ->
+        if false then ... ->
+        FAIL!
+
+cycles: 0
+total: 0.200 sec
+  abst: 0.002 sec
+  mc: 0.003 sec
+  refine: 0.003 sec
+    exparam: 0.000 sec

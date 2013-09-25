@@ -1,0 +1,780 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn exc-fact.ml
+
+parsed::
+ let rec fact_1030 n_1031 exn_1032 =
+   if n_1031 <= 0 then
+     exn_1032 0
+   else
+     let exn_1033 n_1034 = if n_1034 = 0 then
+                             1
+                           else
+                             exn_1032 n_1034 
+     in
+       n_1031 * fact_1030 (n_1031 - 1) exn_1033 
+ in
+ let exn_1035 n_1036 = let u_1065 = {fail} () 
+                       in
+                         _|_ 
+ in
+ let main_1037 n_1038 = if n_1038 > 0 then
+                          let u_1075 = fact_1030 n_1038 exn_1035 
+                          in
+                            ()
+                        else
+                          () 
+ in
+   ()
+
+set_target::
+ let rec fact_1030 n_1031 exn_1032 =
+   if n_1031 <= 0 then
+     exn_1032 0
+   else
+     let exn_1033 n_1034 = if n_1034 = 0 then
+                             1
+                           else
+                             exn_1032 n_1034 
+     in
+       n_1031 * fact_1030 (n_1031 - 1) exn_1033 
+ in
+ let exn_1035 n_1036 = let u_1065 = {fail} () 
+                       in
+                         _|_ 
+ in
+ let main_1037 n_1038 = if n_1038 > 0 then
+                          let u_1075 = fact_1030 n_1038 exn_1035 
+                          in
+                            ()
+                        else
+                          () 
+ in
+ let main_1077 = let arg1_1076 = rand_int () 
+                 in
+                   main_1037 arg1_1076 
+ in
+   ()
+
+copy_poly::
+ let rec fact_1030 (n_1031:int) (exn_1032:(int -> int)) =
+   if n_1031 <= 0 then
+     exn_1032 0
+   else
+     let exn_1033 (n_1034:int) = if n_1034 = 0 then
+                                   1
+                                 else
+                                   exn_1032 n_1034 
+     in
+       n_1031 * fact_1030 (n_1031 - 1) exn_1033 
+ in
+ let exn_1078 (n_1036:int) = let u_1065 = {fail} () 
+                             in
+                               _|_ 
+ in
+ let main_1037 (n_1038:int) = if n_1038 > 0 then
+                                let u_1075 = fact_1030 n_1038 exn_1078 
+                                in
+                                  ()
+                              else
+                                () 
+ in
+ let main_1077 = let arg1_1076 = rand_int () 
+                 in
+                   main_1037 arg1_1076 
+ in
+   ()
+
+CPS::
+ let rec fact_1030 (n_1031:int) (exn_1032:(int -> ((int -> X) -> X))) (k_fact_1118:(
+   int -> X)) =
+   if n_1031 <= 0 then
+     exn_1032 0 k_fact_1118
+   else
+     let exn_1033 (n_1034:int) (k_fact_exn_1142:(int -> X)) =
+       if n_1034 = 0 then
+         k_fact_exn_1142 1
+       else
+         exn_1032 n_1034 k_fact_exn_1142 
+     in
+       fact_1030 (n_1031 - 1) exn_1033 (fun x_1160 -> k_fact_1118 (n_1031 * x_1160)) 
+ in
+ let exn_1078 (n_1036:int) (k_exn_1201:(int -> X)) = {|fail|} () (fun x_1204 -> _|_) 
+ in
+ let main_1037 (n_1038:int) (k_main_1227:(unit -> X)) =
+   if n_1038 > 0 then
+     fact_1030 n_1038 exn_1078 (fun x_1230 -> k_main_1227 ())
+   else
+     k_main_1227 () 
+ in
+   rand_int_cps () (fun x_1263 -> main_1037 x_1263 (fun x_1260 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1288
+  main_1288 -> (rand_int f_1292)
+  exn_1033 n_1031 exn_1032 n_1034 k_fact_exn_1142 when (n_1034 = 0) -> (k_fact_exn_1142 1)
+  exn_1033 n_1031 exn_1032 n_1034 k_fact_exn_1142 when (not (n_1034 = 0)) -> (exn_1032 n_1034 k_fact_exn_1142)
+  exn_1078 n_1036 k_exn_1201 -> {fail} => (f_exn_1290 n_1036 ())
+  f_1292 x_1263 -> (main_1037 x_1263 (f_1293 x_1263))
+  f_1293 x_1263 x_1260 -> end
+  f_exn_1290 n_1036 x_1204 -> _|_
+  f_fact_1289 n_1031 k_fact_1118 x_1160 -> (k_fact_1118 (n_1031 * x_1160))
+  f_main_1291 n_1038 k_main_1227 x_1230 -> (k_main_1227 ())
+  fact_1030 n_1031 exn_1032 k_fact_1118 when (n_1031 <= 0) -> (exn_1032 0 k_fact_1118)
+  fact_1030 n_1031 exn_1032 k_fact_1118 when (not (n_1031 <= 0)) ->
+      (fact_1030 (n_1031 - 1) (exn_1033 n_1031 exn_1032) (f_fact_1289 n_1031 k_fact_1118))
+  main_1037 n_1038 k_main_1227 when (n_1038 > 0) -> (fact_1030 n_1038 exn_1078 (f_main_1291 n_1038 k_main_1227))
+  main_1037 n_1038 k_main_1227 when (not (n_1038 > 0)) -> (k_main_1227 ())
+Types:
+  main_1288 : X
+  exn_1078 : (int -> (int -> X) -> X)
+  fact_1030 : (int -> (int -> (int -> X) -> X) -> (int -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1288 ... --> 
+  f_1292 ... --> 
+  main_1037 [1/2] ... --> 
+  fact_1030 [1/2] ... --> 
+  exn_1078 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(95)[1]
+  program:
+    main_1288  | true = ((Random.int 0) f_1292)
+    exn_1033 n_1031 exn_1032 n_1034 k_fact_exn_1142 | (n_1034 = 0) = (
+    k_fact_exn_1142 1)
+    exn_1033 n_1031 exn_1032 n_1034 k_fact_exn_1142 | (not (n_1034 = 0)) = (
+    exn_1032 n_1034
+             k_fact_exn_1142)
+    exn_1078 n_1036 k_exn_1201 | true = (fail ())
+    f_1292 x_1263 | true = (main_1037 x_1263
+                                      (f_1293 x_1263))
+    f_1293 x_1263 x_1260 | true = end
+    f_exn_1290 n_1036 x_1204 | true = bot
+    f_fact_1289 n_1031 k_fact_1118 x_1160 | true = (k_fact_1118 (n_1031 * x_1160))
+    f_main_1291 n_1038 k_main_1227 x_1230 | true = (k_main_1227 ())
+    fact_1030 n_1031 exn_1032 k_fact_1118 | (n_1031 <= 0) = (exn_1032 0
+                                                                    k_fact_1118)
+    fact_1030 n_1031 exn_1032 k_fact_1118 | (not (n_1031 <= 0)) = (fact_1030
+                                                                    (
+                                                                    n_1031 - 1)
+                                                                    (
+                                                                    exn_1033 n_1031
+                                                                    exn_1032)
+                                                                    (
+                                                                    f_fact_1289 n_1031
+                                                                    k_fact_1118))
+    main_1037 n_1038 k_main_1227 | (n_1038 > 0) = (fact_1030 n_1038
+                                                             exn_1078
+                                                             (f_main_1291 n_1038
+                                                                    k_main_1227))
+    main_1037 n_1038 k_main_1227 | (not (n_1038 > 0)) = (k_main_1227 ())
+    main_1288:X
+    exn_1033:int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    exn_1078:int -> (int -> X) -> X
+    f_1292:int -> X
+    f_1293:int -> unit -> X
+    f_exn_1290:int -> unit -> X
+    f_fact_1289:int -> (int -> X) -> int -> X
+    f_main_1291:int -> (unit -> X) -> int -> X
+    fact_1030:int -> (int -> (int -> X) -> X) -> (int -> X) -> X
+    main_1037:int -> (unit -> X) -> X
+  inlined functions: exn_1033,f_1292,f_1293,f_exn_1290,f_fact_1289,f_main_1291,main_1037
+  counterexample: 0:0:0:0:0
+  error traces:
+    [true.nop(<f_1292@4:0> = var2)
+     [true.(<main_1037@6:0> = <f_1292@4:0>)
+      [(<main_1037@6:0> > 0).(<fact_1030@9:0> = <main_1037@6:0>)
+       [(<fact_1030@9:0> <= 0).(<<fact_1030@9:1>@12:0> = 0)[true.(<exn_1078@14:0> = <<fact_1030@9:1>@12:0>)[true.error
+  begin RefTypeInfer.infer_etrs(96)[2]
+    horn clauses:
+      P[<exn_1078@14:0>](<exn_1078@14:0>:int)|- bot
+      
+      P[<main_1037@6:0>](<fact_1030@9:0>:int),
+      P[<<fact_1030@9:1>@12:0>](<fact_1030@9:0>:int,<exn_1078@14:0>:int), (
+      <fact_1030@9:0> > 0) |- P[<exn_1078@14:0>](<exn_1078@14:0>:int)
+      
+      P[<fact_1030@9:0>](<fact_1030@9:0>:int), ((<<fact_1030@9:1>@12:0> = 0) && (<fact_1030@9:0> <= 0))
+      |- P[<<fact_1030@9:1>@12:0>](<fact_1030@9:0>:int,<<fact_1030@9:1>@12:0>:int)
+      
+      P[<main_1037@6:0>](<fact_1030@9:0>:int), (<fact_1030@9:0> > 0) |- P[<fact_1030@9:0>](<fact_1030@9:0>:int)
+      
+      P[<f_1292@4:0>](<main_1037@6:0>:int)|- P[<main_1037@6:0>](<main_1037@6:0>:int)
+      
+      |- P[<f_1292@4:0>](<f_1292@4:0>:int)
+    call trees:
+      <main_1288@1>
+        <f_1292@4>
+          <main_1037@6>
+            <fact_1030@9>
+            </<fact_1030@9:1>@12>
+            <exn_1078@14>
+    inlined horn clauses:
+      P[<exn_1078@14:0>](<exn_1078@14:0>:int)|- bot
+      
+      P[<<fact_1030@9:1>@12:0>](<fact_1030@9:0>:int,<exn_1078@14:0>:int), (
+      <fact_1030@9:0> > 0) |- P[<exn_1078@14:0>](<exn_1078@14:0>:int)
+      
+      P[<fact_1030@9:0>](<fact_1030@9:0>:int), ((<<fact_1030@9:1>@12:0> = 0) && (<fact_1030@9:0> <= 0))
+      |- P[<<fact_1030@9:1>@12:0>](<fact_1030@9:0>:int,<<fact_1030@9:1>@12:0>:int)
+      
+       (<fact_1030@9:0> > 0) |- P[<fact_1030@9:0>](<fact_1030@9:0>:int)
+    begin ParamSubstInfer.infer(700)[3]
+      
+    end ParamSubstInfer.infer(700)[3] (0.014998 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(702)[3]
+      
+    end RefTypeInfer.elim_coeffs(702)[3] (0.000000 sec.)
+    begin YhornInterface.solve(823)[3]
+      begin HcSolver.solve_ub(824)[4]
+        encoded:
+          P[<exn_1078@14:0>](<exn_1078@14:0>:int)|- bot
+          
+          P[<<fact_1030@9:1>@12:0>](<fact_1030@9:0>:int,<exn_1078@14:0>:int), (
+          <fact_1030@9:0> > 0) |- P[<exn_1078@14:0>](<exn_1078@14:0>:int)
+          
+          P[<fact_1030@9:0>](<fact_1030@9:0>:int), ((<<fact_1030@9:1>@12:0> = 0) && (<fact_1030@9:0> <= 0))
+          |- P[<<fact_1030@9:1>@12:0>](<fact_1030@9:0>:int,<<fact_1030@9:1>@12:0>:int)
+          
+           (<fact_1030@9:0> > 0) |- P[<fact_1030@9:0>](<fact_1030@9:0>:int)
+        input to Yhorn:
+          P[<exn_1078@14:0>](<exn_1078@14:0>:int)|- bot
+          
+          P[<<fact_1030@9:1>@12:0>](<fact_1030@9:0>:int,<exn_1078@14:0>:int), (
+          <fact_1030@9:0> > 0) |- P[<exn_1078@14:0>](<exn_1078@14:0>:int)
+          
+          P[<fact_1030@9:0>](<fact_1030@9:0>:int), ((<fact_1030@9:0> <= 0) && (<<fact_1030@9:1>@12:0> = 0))
+          |- P[<<fact_1030@9:1>@12:0>](<fact_1030@9:0>:int,<<fact_1030@9:1>@12:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_exn_1078_sep_14_sep_0($4)) -> 1=0.
+($5>0) & (v_sep_fact_1030_sep_9_sep_1_sep_12_sep_0($5,$4)) -> v_sep_exn_1078_sep_14_sep_0($4).
+(($6=0) & ($5<=0)) & (v_sep_fact_1030_sep_9_sep_0($5)) -> v_sep_fact_1030_sep_9_sep_1_sep_12_sep_0($5,$6).
+$5>0 -> v_sep_fact_1030_sep_9_sep_0($5).
+
+
+v_sep_exn_1078_sep_14_sep_0: X
+v_sep_fact_1030_sep_9_sep_0: X
+v_sep_fact_1030_sep_9_sep_1_sep_12_sep_0: X
+....
+v_sep_exn_1078_sep_14_sep_0: X
+v_sep_fact_1030_sep_9_sep_0: X
+v_sep_fact_1030_sep_9_sep_1_sep_12_sep_0: X
+...
+v_sep_exn_1078_sep_14_sep_0: X
+v_sep_fact_1030_sep_9_sep_0: X
+v_sep_fact_1030_sep_9_sep_1_sep_12_sep_0: X
+....
+v_sep_exn_1078_sep_14_sep_0: X
+v_sep_fact_1030_sep_9_sep_0: X
+v_sep_fact_1030_sep_9_sep_1_sep_12_sep_0: X
+....(0=0) & (v_sep_exn_1078_sep_14_sep_0($4)) -> 1=0.
+($5>0) & (v_sep_fact_1030_sep_9_sep_1_sep_12_sep_0($5,$4)) -> v_sep_exn_1078_sep_14_sep_0($4).
+(($6=0) & ($5<=0)) & (v_sep_fact_1030_sep_9_sep_0($5)) -> v_sep_fact_1030_sep_9_sep_1_sep_12_sep_0($5,$6).
+$5>0 -> v_sep_fact_1030_sep_9_sep_0($5).
+
+           (<fact_1030@9:0> > 0) |- P[<fact_1030@9:0>](<fact_1030@9:0>:int)
+        solution:
+          P[<exn_1078@14:0>]($7:int) = false
+          P[<fact_1030@9:0>]($15:int) = true
+          P[<<fact_1030@9:1>@12:0>]($10:int,$12:int) = ($10 <= 0)
+        
+      end HcSolver.solve_ub(824)[4] (0.008999 sec.)
+      begin HcSolver.check_validity(897)[4]
+        input:
+          P[<exn_1078@14:0>](<exn_1078@14:0>:int)|- bot
+          
+          P[<<fact_1030@9:1>@12:0>](<fact_1030@9:0>:int,<exn_1078@14:0>:int), (
+          <fact_1030@9:0> > 0) |- P[<exn_1078@14:0>](<exn_1078@14:0>:int)
+          
+          P[<fact_1030@9:0>](<fact_1030@9:0>:int), ((<<fact_1030@9:1>@12:0> = 0) && (<fact_1030@9:0> <= 0))
+          |- P[<<fact_1030@9:1>@12:0>](<fact_1030@9:0>:int,<<fact_1030@9:1>@12:0>:int)
+          
+           (<fact_1030@9:0> > 0) |- P[<fact_1030@9:0>](<fact_1030@9:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(897)[4] (0.001999 sec.)
+      solution:
+        P[<exn_1078@14:0>]($7:int) = false
+        P[<fact_1030@9:0>]($15:int) = true
+        P[<<fact_1030@9:1>@12:0>]($10:int,$12:int) = ($10 <= 0)
+    end YhornInterface.solve(823)[3] (0.010998 sec.)
+    
+  end RefTypeInfer.infer_etrs(96)[2] (0.028995 sec.)
+  refinement types:
+    main_1288: X
+    f_1292: v1:int -> X
+    main_1037: v1:int -> (v2:unit -> X) -> X
+    fact_1030: v1:int -> (v2:{v2:int | (v1 <= 0)} -> (v3:int -> X) -> X) -> (v6:int -> X) -> X
+    exn_1078: v1:{v1:int | false} -> (v2:int -> X) -> X
+    exn_1033: var19:int -> (var18:int -> (var17:int -> X) -> X) -> var14:int -> (var13:int -> X) -> X
+    f_1293: var22:int -> var21:unit -> X
+    f_exn_1290: var25:int -> var24:unit -> X
+    f_fact_1289: var30:int -> (var29:int -> X) -> var27:int -> X
+    f_main_1291: var35:int -> (var34:unit -> X) -> var32:int -> X
+  abstraction types:
+    main_1288: X
+    f_1292: v1:int -> X
+    main_1037: v1:int -> (v2:unit -> X) -> X
+    fact_1030: v1:int -> (v2:int[v2 -> (v1 <= 0)] -> (v3:int -> X) -> X) -> (v6:int -> X) -> X
+    exn_1078: v1:int -> (v2:int -> X) -> X
+    exn_1033: var19:int -> (var18:int -> (var17:int -> X) -> X) -> var14:int -> (var13:int -> X) -> X
+    f_1293: var22:int -> var21:unit -> X
+    f_exn_1290: var25:int -> var24:unit -> X
+    f_fact_1289: var30:int -> (var29:int -> X) -> var27:int -> X
+    f_main_1291: var35:int -> (var34:unit -> X) -> var32:int -> X
+  
+end AbsTypeInfer.refine(95)[1] (0.030995 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1288
+  main_1288 -> (rand_int f_1292)
+  exn_1033 n_1031 exn_1032 n_1034 k_fact_exn_1142 when (n_1034 = 0) -> (k_fact_exn_1142 1)
+  exn_1033 n_1031 exn_1032 n_1034 k_fact_exn_1142 when (not (n_1034 = 0)) -> (exn_1032 n_1034 k_fact_exn_1142)
+  exn_1078 n_1036 k_exn_1201 -> {fail} => (f_exn_1290 n_1036 ())
+  f_1292 x_1263 -> (main_1037 x_1263 (f_1293 x_1263))
+  f_1293 x_1263 x_1260 -> end
+  f_exn_1290 n_1036 x_1204 -> _|_
+  f_fact_1289 n_1031 k_fact_1118 x_1160 -> (k_fact_1118 (n_1031 * x_1160))
+  f_main_1291 n_1038 k_main_1227 x_1230 -> (k_main_1227 ())
+  fact_1030 n_1031 exn_1032 k_fact_1118 when (n_1031 <= 0) -> (exn_1032 0 k_fact_1118)
+  fact_1030 n_1031 exn_1032 k_fact_1118 when (not (n_1031 <= 0)) ->
+      (fact_1030 (n_1031 - 1) (exn_1033 n_1031 exn_1032) (f_fact_1289 n_1031 k_fact_1118))
+  main_1037 n_1038 k_main_1227 when (n_1038 > 0) -> (fact_1030 n_1038 exn_1078 (f_main_1291 n_1038 k_main_1227))
+  main_1037 n_1038 k_main_1227 when (not (n_1038 > 0)) -> (k_main_1227 ())
+Types:
+  main_1288 : X
+  exn_1078 : (int -> (int -> X) -> X)
+  fact_1030 : (x_1:int -> (int[x_1 <= 0] -> (int -> X) -> X) -> (int -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Filter option enabled.
+Restart CEGAR-loop.
+Program with abstraction types (CEGAR-cycle 2)::
+Main: main_1288
+  main_1288 -> (rand_int f_1292)
+  exn_1033 n_1031 exn_1032 n_1034 k_fact_exn_1142 when (n_1034 = 0) -> (k_fact_exn_1142 1)
+  exn_1033 n_1031 exn_1032 n_1034 k_fact_exn_1142 when (not (n_1034 = 0)) -> (exn_1032 n_1034 k_fact_exn_1142)
+  exn_1078 n_1036 k_exn_1201 -> {fail} => (f_exn_1290 n_1036 ())
+  f_1292 x_1263 -> (main_1037 x_1263 (f_1293 x_1263))
+  f_1293 x_1263 x_1260 -> end
+  f_exn_1290 n_1036 x_1204 -> _|_
+  f_fact_1289 n_1031 k_fact_1118 x_1160 -> (k_fact_1118 (n_1031 * x_1160))
+  f_main_1291 n_1038 k_main_1227 x_1230 -> (k_main_1227 ())
+  fact_1030 n_1031 exn_1032 k_fact_1118 when (n_1031 <= 0) -> (exn_1032 0 k_fact_1118)
+  fact_1030 n_1031 exn_1032 k_fact_1118 when (not (n_1031 <= 0)) ->
+      (fact_1030 (n_1031 - 1) (exn_1033 n_1031 exn_1032) (f_fact_1289 n_1031 k_fact_1118))
+  main_1037 n_1038 k_main_1227 when (n_1038 > 0) -> (fact_1030 n_1038 exn_1078 (f_main_1291 n_1038 k_main_1227))
+  main_1037 n_1038 k_main_1227 when (not (n_1038 > 0)) -> (k_main_1227 ())
+Types:
+  main_1288 : X
+  exn_1078 : (int -> (int -> X) -> X)
+  fact_1030 : (x_1:int -> (int[x_1 <= 0] -> (int -> X) -> X) -> (int -> X) -> X)
+  
+(2-1) Abstracting ... DONE!
+
+(2-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1288 ... --> 
+  f_1292 ... --> 
+  main_1037 [1/2] ... --> 
+  fact_1030 [2/2] ... --> 
+  fact_1030 [1/2] ... --> 
+  exn_1033 [2/2] ... --> 
+  exn_1078 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 0; 1; 0
+
+(2-3) Checking counter-example ... DONE!
+
+(2-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(1349)[1]
+  program:
+    main_1288  | true = ((Random.int 0) f_1292)
+    exn_1033 n_1031 exn_1032 n_1034 k_fact_exn_1142 | (n_1034 = 0) = (
+    k_fact_exn_1142 1)
+    exn_1033 n_1031 exn_1032 n_1034 k_fact_exn_1142 | (not (n_1034 = 0)) = (
+    exn_1032 n_1034
+             k_fact_exn_1142)
+    exn_1078 n_1036 k_exn_1201 | true = (fail ())
+    f_1292 x_1263 | true = (main_1037 x_1263
+                                      (f_1293 x_1263))
+    f_1293 x_1263 x_1260 | true = end
+    f_exn_1290 n_1036 x_1204 | true = bot
+    f_fact_1289 n_1031 k_fact_1118 x_1160 | true = (k_fact_1118 (n_1031 * x_1160))
+    f_main_1291 n_1038 k_main_1227 x_1230 | true = (k_main_1227 ())
+    fact_1030 n_1031 exn_1032 k_fact_1118 | (n_1031 <= 0) = (exn_1032 0
+                                                                    k_fact_1118)
+    fact_1030 n_1031 exn_1032 k_fact_1118 | (not (n_1031 <= 0)) = (fact_1030
+                                                                    (
+                                                                    n_1031 - 1)
+                                                                    (
+                                                                    exn_1033 n_1031
+                                                                    exn_1032)
+                                                                    (
+                                                                    f_fact_1289 n_1031
+                                                                    k_fact_1118))
+    main_1037 n_1038 k_main_1227 | (n_1038 > 0) = (fact_1030 n_1038
+                                                             exn_1078
+                                                             (f_main_1291 n_1038
+                                                                    k_main_1227))
+    main_1037 n_1038 k_main_1227 | (not (n_1038 > 0)) = (k_main_1227 ())
+    main_1288:X
+    exn_1033:int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    exn_1078:int -> (int -> X) -> X
+    f_1292:int -> X
+    f_1293:int -> unit -> X
+    f_exn_1290:int -> unit -> X
+    f_fact_1289:int -> (int -> X) -> int -> X
+    f_main_1291:int -> (unit -> X) -> int -> X
+    fact_1030:int -> (int -> (int -> X) -> X) -> (int -> X) -> X
+    main_1037:int -> (unit -> X) -> X
+  inlined functions: exn_1033,f_1292,f_1293,f_exn_1290,f_fact_1289,f_main_1291,main_1037
+  counterexample: 0:0:0:1:0:1:0
+  error traces:
+    [true.nop(<f_1292@20:0> = var36)
+     [true.(<main_1037@22:0> = <f_1292@20:0>)
+      [(<main_1037@22:0> > 0).(<fact_1030@25:0> = <main_1037@22:0>)
+       [(not (<fact_1030@25:0> <= 0)).(<fact_1030@28:0> = (<fact_1030@25:0> - 1))
+        [(<fact_1030@28:0> <= 0).(<<fact_1030@28:1>@31:0> = 0)
+         [true.((<exn_1033@33:0> = <fact_1030@25:0>) && (<exn_1033@33:2> = <<fact_1030@28:1>@31:0>))
+          [(not (<exn_1033@33:2> = 0)).(<<exn_1033@33:1>@36:0> = <exn_1033@33:2>)
+           [true.(<<fact_1030@25:1>@38:0> = <<exn_1033@33:1>@36:0>)
+            [true.(<exn_1078@40:0> = <<fact_1030@25:1>@38:0>)[true.error
+  begin RefTypeInfer.infer_etrs(1350)[2]
+    horn clauses:
+      P[<exn_1078@40:0>](<exn_1078@40:0>:int)|- bot
+      
+      P[<main_1037@22:0>](<fact_1030@25:0>:int),
+      P[<<fact_1030@25:1>@38:0>](<fact_1030@25:0>:int,<exn_1078@40:0>:int), (
+      <fact_1030@25:0> > 0) |- P[<exn_1078@40:0>](<exn_1078@40:0>:int)
+      
+      P[<fact_1030@25:0>](<fact_1030@25:0>:int),
+      P[<<exn_1033@33:1>@36:0>](<fact_1030@25:0>:int,<<fact_1030@25:1>@38:0>:int), (
+      <fact_1030@25:0> > 0) |- P[<<fact_1030@25:1>@38:0>](<fact_1030@25:0>:int,
+                                                          <<fact_1030@25:1>@38:0>:int)
+      
+      P[<exn_1033@33:2>](<exn_1033@33:0>:int,<<exn_1033@33:1>@36:0>:int), (
+      <<exn_1033@33:1>@36:0> <> 0) |- P[<<exn_1033@33:1>@36:0>](<exn_1033@33:0>:int,
+                                                                <<exn_1033@33:1>@36:0>:int)
+      
+      P[<fact_1030@25:0>](<exn_1033@33:0>:int),
+      P[<<fact_1030@28:1>@31:0>]((-1 + <exn_1033@33:0>):int,<exn_1033@33:2>:int), (
+      <exn_1033@33:0> > 0) |- P[<exn_1033@33:2>](<exn_1033@33:0>:int,
+                                                 <exn_1033@33:2>:int)
+      
+      P[<fact_1030@28:0>](<fact_1030@28:0>:int), ((<<fact_1030@28:1>@31:0> = 0) && (<fact_1030@28:0> <= 0))
+      |- P[<<fact_1030@28:1>@31:0>](<fact_1030@28:0>:int,<<fact_1030@28:1>@31:0>:int)
+      
+      P[<fact_1030@25:0>]((1 + <fact_1030@28:0>):int), ((1 + <fact_1030@28:0>) > 0)
+      |- P[<fact_1030@28:0>](<fact_1030@28:0>:int)
+      
+      P[<main_1037@22:0>](<fact_1030@25:0>:int), (<fact_1030@25:0> > 0) |- P[<fact_1030@25:0>](<fact_1030@25:0>:int)
+      
+      P[<f_1292@20:0>](<main_1037@22:0>:int)|- P[<main_1037@22:0>](<main_1037@22:0>:int)
+      
+      |- P[<f_1292@20:0>](<f_1292@20:0>:int)
+    call trees:
+      <main_1288@17>
+        <f_1292@20>
+          <main_1037@22>
+            <fact_1030@25>
+              <fact_1030@28>
+              </<fact_1030@28:1>@31>
+              <exn_1033@33>
+              </<exn_1033@33:1>@36>
+            </<fact_1030@25:1>@38>
+            <exn_1078@40>
+    inlined horn clauses:
+      P[<exn_1078@40:0>](<exn_1078@40:0>:int)|- bot
+      
+      P[<<fact_1030@25:1>@38:0>](<fact_1030@25:0>:int,<exn_1078@40:0>:int), (
+      <fact_1030@25:0> > 0) |- P[<exn_1078@40:0>](<exn_1078@40:0>:int)
+      
+      P[<fact_1030@25:0>](<fact_1030@25:0>:int),
+      P[<<fact_1030@28:1>@31:0>]((-1 + <fact_1030@25:0>):int,<<fact_1030@25:1>@38:0>:int),
+      ((<<fact_1030@25:1>@38:0> <> 0) && (<fact_1030@25:0> > 0))
+      |- P[<<fact_1030@25:1>@38:0>](<fact_1030@25:0>:int,<<fact_1030@25:1>@38:0>:int)
+      
+      P[<fact_1030@28:0>](<fact_1030@28:0>:int), ((<<fact_1030@28:1>@31:0> = 0) && (<fact_1030@28:0> <= 0))
+      |- P[<<fact_1030@28:1>@31:0>](<fact_1030@28:0>:int,<<fact_1030@28:1>@31:0>:int)
+      
+      P[<fact_1030@25:0>]((1 + <fact_1030@28:0>):int), ((1 + <fact_1030@28:0>) > 0)
+      |- P[<fact_1030@28:0>](<fact_1030@28:0>:int)
+      
+       (<fact_1030@25:0> > 0) |- P[<fact_1030@25:0>](<fact_1030@25:0>:int)
+    begin ParamSubstInfer.infer(2564)[3]
+      
+    end ParamSubstInfer.infer(2564)[3] (0.034995 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(2566)[3]
+      
+    end RefTypeInfer.elim_coeffs(2566)[3] (0.001000 sec.)
+    begin YhornInterface.solve(2775)[3]
+      begin HcSolver.solve_ub(2776)[4]
+        encoded:
+          P[<exn_1078@40:0>](<exn_1078@40:0>:int)|- bot
+          
+          P[<<fact_1030@25:1>@38:0>](<fact_1030@25:0>:int,<exn_1078@40:0>:int), (
+          <fact_1030@25:0> > 0) |- P[<exn_1078@40:0>](<exn_1078@40:0>:int)
+          
+          P[<fact_1030@25:0>](<fact_1030@25:0>:int),
+          P[<<fact_1030@28:1>@31:0>]((-1 + <fact_1030@25:0>):int,<<fact_1030@25:1>@38:0>:int),
+          ((<<fact_1030@25:1>@38:0> <> 0) && (<fact_1030@25:0> > 0))
+          |- P[<<fact_1030@25:1>@38:0>](<fact_1030@25:0>:int,<<fact_1030@25:1>@38:0>:int)
+          
+          P[<fact_1030@28:0>](<fact_1030@28:0>:int), ((<<fact_1030@28:1>@31:0> = 0) && (<fact_1030@28:0> <= 0))
+          |- P[<<fact_1030@28:1>@31:0>](<fact_1030@28:0>:int,<<fact_1030@28:1>@31:0>:int)
+          
+          P[<fact_1030@25:0>]((1 + <fact_1030@28:0>):int), ((1 + <fact_1030@28:0>) > 0)
+          |- P[<fact_1030@28:0>](<fact_1030@28:0>:int)
+          
+           (<fact_1030@25:0> > 0) |- P[<fact_1030@25:0>](<fact_1030@25:0>:int)
+        input to Yhorn:
+          P[<exn_1078@40:0>](<exn_1078@40:0>:int)|- bot
+          
+          P[<<fact_1030@25:1>@38:0>](<fact_1030@25:0>:int,<exn_1078@40:0>:int), (
+          <fact_1030@25:0> > 0) |- P[<exn_1078@40:0>](<exn_1078@40:0>:int)
+          
+          P[<fact_1030@25:0>](<fact_1030@25:0>:int),
+          P[<<fact_1030@28:1>@31:0>](var37:int,<<fact_1030@25:1>@38:0>:int),
+          (((1 + var37) = <fact_1030@25:0>) && ((<fact_1030@25:0> > 0) && (<<fact_1030@25:1>@38:0> <> 0)))
+          |- P[<<fact_1030@25:1>@38:0>](<fact_1030@25:0>:int,<<fact_1030@25:1>@38:0>:int)
+          
+          P[<fact_1030@28:0>](<fact_1030@28:0>:int), ((<fact_1030@28:0> <= 0) && (<<fact_1030@28:1>@31:0> = 0))
+          |- P[<<fact_1030@28:1>@31:0>](<fact_1030@28:0>:int,<<fact_1030@28:1>@31:0>:int)
+          
+          P[<fact_1030@25:0>](var38:int), ((var38 = (1 + <fact_1030@28:0>)) && ((1 + <fact_1030@28:0>) > 0))
+          |- P[<fact_1030@28:0>](<fact_1030@28:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_exn_1078_sep_40_sep_0($49)) -> 1=0.
+($50>0) & (v_sep_fact_1030_sep_25_sep_1_sep_38_sep_0($50,$49)) -> v_sep_exn_1078_sep_40_sep_0($49).
+(($51<>0) & ($50>0) & (-$50+$52+1=0)) & (v_sep_fact_1030_sep_28_sep_1_sep_31_sep_0($52,$51)) & (v_sep_fact_1030_sep_25_sep_0($50)) -> v_sep_fact_1030_sep_25_sep_1_sep_38_sep_0($50,$51).
+(($53=0) & ($54<=0)) & (v_sep_fact_1030_sep_28_sep_0($54)) -> v_sep_fact_1030_sep_28_sep_1_sep_31_sep_0($54,$53).
+(($54+1>0) & (-$54+$55-1=0)) & (v_sep_fact_1030_sep_25_sep_0($55)) -> v_sep_fact_1030_sep_28_sep_0($54).
+$50>0 -> v_sep_fact_1030_sep_25_sep_0($50).
+
+
+v_sep_exn_1078_sep_40_sep_0: X
+v_sep_fact_1030_sep_25_sep_0: X
+v_sep_fact_1030_sep_25_sep_1_sep_38_sep_0: X
+v_sep_fact_1030_sep_28_sep_0: X
+v_sep_fact_1030_sep_28_sep_1_sep_31_sep_0: X
+.........Extend [20]0.250961
+Reconstrcut: 4
+
+v_sep_exn_1078_sep_40_sep_0: X
+v_sep_fact_1030_sep_25_sep_0: X
+v_sep_fact_1030_sep_25_sep_1_sep_38_sep_0: X
+v_sep_fact_1030_sep_28_sep_0: X
+v_sep_fact_1030_sep_28_sep_1_sep_31_sep_0: X
+...Split disj [20] 0.251961
+Reconstrcut: 5 **)
+
+v_sep_exn_1078_sep_40_sep_0: X
+v_sep_fact_1030_sep_25_sep_0: X
+v_sep_fact_1030_sep_25_sep_1_sep_38_sep_0: (X) | (X)
+v_sep_fact_1030_sep_28_sep_0: X
+v_sep_fact_1030_sep_28_sep_1_sep_31_sep_0: X
+........
+v_sep_exn_1078_sep_40_sep_0: X
+v_sep_fact_1030_sep_25_sep_0: X
+v_sep_fact_1030_sep_25_sep_1_sep_38_sep_0: (X) | (X)
+v_sep_fact_1030_sep_28_sep_0: X
+v_sep_fact_1030_sep_28_sep_1_sep_31_sep_0: X
+....
+v_sep_exn_1078_sep_40_sep_0: X
+v_sep_fact_1030_sep_25_sep_0: X
+v_sep_fact_1030_sep_25_sep_1_sep_38_sep_0: (X) | (X)
+v_sep_fact_1030_sep_28_sep_0: X
+v_sep_fact_1030_sep_28_sep_1_sep_31_sep_0: X
+........Split conj [22] 0.25996
+(Reconstrcut: 10 **)
+v_sep_exn_1078_sep_40_sep_0: X
+v_sep_fact_1030_sep_25_sep_0: X
+v_sep_fact_1030_sep_25_sep_1_sep_38_sep_0: (X) | (X)
+v_sep_fact_1030_sep_28_sep_0: X
+v_sep_fact_1030_sep_28_sep_1_sep_31_sep_0: (X) & (X)
+..........
+v_sep_exn_1078_sep_40_sep_0: X
+v_sep_fact_1030_sep_25_sep_0: X
+v_sep_fact_1030_sep_25_sep_1_sep_38_sep_0: (X) | (X)
+v_sep_fact_1030_sep_28_sep_0: X
+v_sep_fact_1030_sep_28_sep_1_sep_31_sep_0: (X) & (X)
+....
+v_sep_exn_1078_sep_40_sep_0: X
+v_sep_fact_1030_sep_25_sep_0: X
+v_sep_fact_1030_sep_25_sep_1_sep_38_sep_0: (X) | (X)
+v_sep_fact_1030_sep_28_sep_0: X
+v_sep_fact_1030_sep_28_sep_1_sep_31_sep_0: (X) & (X)
+........
+v_sep_exn_1078_sep_40_sep_0: X
+v_sep_fact_1030_sep_25_sep_0: X
+v_sep_fact_1030_sep_25_sep_1_sep_38_sep_0: (X) | (X)
+v_sep_fact_1030_sep_28_sep_0: X
+v_sep_fact_1030_sep_28_sep_1_sep_31_sep_0: (X) & (X)
+..........
+v_sep_exn_1078_sep_40_sep_0: X
+v_sep_fact_1030_sep_25_sep_0: X
+v_sep_fact_1030_sep_25_sep_1_sep_38_sep_0: (X) | (X)
+v_sep_fact_1030_sep_28_sep_0: X
+v_sep_fact_1030_sep_28_sep_1_sep_31_sep_0: (X) & (X)
+...........(0=0) & (v_sep_exn_1078_sep_40_sep_0($49)) -> 1=0.
+($50>0) & (v_sep_fact_1030_sep_25_sep_1_sep_38_sep_0($50,$49)) -> v_sep_exn_1078_sep_40_sep_0($49).
+(($51<>0) & ($50>0) & (-$50+$52+1=0)) & (v_sep_fact_1030_sep_28_sep_1_sep_31_sep_0($52,$51)) & (v_sep_fact_1030_sep_25_sep_0($50)) -> v_sep_fact_1030_sep_25_sep_1_sep_38_sep_0($50,$51).
+(($53=0) & ($54<=0)) & (v_sep_fact_1030_sep_28_sep_0($54)) -> v_sep_fact_1030_sep_28_sep_1_sep_31_sep_0($54,$53).
+(($54+1>0) & (-$54+$55-1=0)) & (v_sep_fact_1030_sep_25_sep_0($55)) -> v_sep_fact_1030_sep_28_sep_0($54).
+$50>0 -> v_sep_fact_1030_sep_25_sep_0($50).
+
+           (<fact_1030@25:0> > 0) |- P[<fact_1030@25:0>](<fact_1030@25:0>:int)
+        solution:
+          P[<exn_1078@40:0>]($56:int) = false
+          P[<fact_1030@25:0>]($69:int) = true
+          P[<<fact_1030@25:1>@38:0>]($59:int,$61:int) = false
+          P[<fact_1030@28:0>]($72:int) = true
+          P[<<fact_1030@28:1>@31:0>]($64:int,$66:int) = ($66 = 0)
+        
+      end HcSolver.solve_ub(2776)[4] (0.036994 sec.)
+      begin HcSolver.check_validity(2987)[4]
+        input:
+          P[<exn_1078@40:0>](<exn_1078@40:0>:int)|- bot
+          
+          P[<<fact_1030@25:1>@38:0>](<fact_1030@25:0>:int,<exn_1078@40:0>:int), (
+          <fact_1030@25:0> > 0) |- P[<exn_1078@40:0>](<exn_1078@40:0>:int)
+          
+          P[<fact_1030@25:0>](<fact_1030@25:0>:int),
+          P[<<fact_1030@28:1>@31:0>]((-1 + <fact_1030@25:0>):int,<<fact_1030@25:1>@38:0>:int),
+          ((<<fact_1030@25:1>@38:0> <> 0) && (<fact_1030@25:0> > 0))
+          |- P[<<fact_1030@25:1>@38:0>](<fact_1030@25:0>:int,<<fact_1030@25:1>@38:0>:int)
+          
+          P[<fact_1030@28:0>](<fact_1030@28:0>:int), ((<<fact_1030@28:1>@31:0> = 0) && (<fact_1030@28:0> <= 0))
+          |- P[<<fact_1030@28:1>@31:0>](<fact_1030@28:0>:int,<<fact_1030@28:1>@31:0>:int)
+          
+          P[<fact_1030@25:0>]((1 + <fact_1030@28:0>):int), ((1 + <fact_1030@28:0>) > 0)
+          |- P[<fact_1030@28:0>](<fact_1030@28:0>:int)
+          
+           (<fact_1030@25:0> > 0) |- P[<fact_1030@25:0>](<fact_1030@25:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(2987)[4] (0.001000 sec.)
+      solution:
+        P[<exn_1078@40:0>]($56:int) = false
+        P[<fact_1030@25:0>]($69:int) = true
+        P[<<fact_1030@25:1>@38:0>]($59:int,$61:int) = false
+        P[<fact_1030@28:0>]($72:int) = true
+        P[<<fact_1030@28:1>@31:0>]($64:int,$66:int) = ($66 = 0)
+    end YhornInterface.solve(2775)[3] (0.037994 sec.)
+    
+  end RefTypeInfer.infer_etrs(1350)[2] (0.080988 sec.)
+  refinement types:
+    main_1288: X
+    f_1292: v1:int -> X
+    main_1037: v1:int -> (v2:unit -> X) -> X
+    fact_1030: v1:int -> (v2:{v2:int | false} -> (v3:int -> X) -> X) -> (v6:int -> X) -> X
+    fact_1030: v1:int -> (v2:{v2:int | (v2 = 0)} -> (v3:int -> X) -> X) -> (v6:int -> X) -> X
+    exn_1033: v1:int -> (v2:int -> (v3:int -> X) -> X) -> v6:int -> (v7:int -> X) -> X
+    exn_1078: v1:{v1:int | false} -> (v2:int -> X) -> X
+    f_1293: var57:int -> var56:unit -> X
+    f_exn_1290: var60:int -> var59:unit -> X
+    f_fact_1289: var65:int -> (var64:int -> X) -> var62:int -> X
+    f_main_1291: var70:int -> (var69:unit -> X) -> var67:int -> X
+  abstraction types:
+    main_1288: X
+    f_1292: v1:int -> X
+    main_1037: v1:int -> (v2:unit -> X) -> X
+    fact_1030: var71:int -> (var72:int[var72 -> (var72 = 0)] -> (var73:int -> X) -> X) -> (var76:int -> X) -> X
+    exn_1033: v1:int -> (v2:int -> (v3:int -> X) -> X) -> v6:int -> (v7:int -> X) -> X
+    exn_1078: v1:int -> (v2:int -> X) -> X
+    f_1293: var57:int -> var56:unit -> X
+    f_exn_1290: var60:int -> var59:unit -> X
+    f_fact_1289: var65:int -> (var64:int -> X) -> var62:int -> X
+    f_main_1291: var70:int -> (var69:unit -> X) -> var67:int -> X
+  
+end AbsTypeInfer.refine(1349)[1] (0.084988 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 0; 1
+
+Program with abstraction types (CEGAR-cycle 3)::
+Main: main_1288
+  main_1288 -> (rand_int f_1292)
+  exn_1033 n_1031 exn_1032 n_1034 k_fact_exn_1142 when (n_1034 = 0) -> (k_fact_exn_1142 1)
+  exn_1033 n_1031 exn_1032 n_1034 k_fact_exn_1142 when (not (n_1034 = 0)) -> (exn_1032 n_1034 k_fact_exn_1142)
+  exn_1078 n_1036 k_exn_1201 -> {fail} => (f_exn_1290 n_1036 ())
+  f_1292 x_1263 -> (main_1037 x_1263 (f_1293 x_1263))
+  f_1293 x_1263 x_1260 -> end
+  f_exn_1290 n_1036 x_1204 -> _|_
+  f_fact_1289 n_1031 k_fact_1118 x_1160 -> (k_fact_1118 (n_1031 * x_1160))
+  f_main_1291 n_1038 k_main_1227 x_1230 -> (k_main_1227 ())
+  fact_1030 n_1031 exn_1032 k_fact_1118 when (n_1031 <= 0) -> (exn_1032 0 k_fact_1118)
+  fact_1030 n_1031 exn_1032 k_fact_1118 when (not (n_1031 <= 0)) ->
+      (fact_1030 (n_1031 - 1) (exn_1033 n_1031 exn_1032) (f_fact_1289 n_1031 k_fact_1118))
+  main_1037 n_1038 k_main_1227 when (n_1038 > 0) -> (fact_1030 n_1038 exn_1078 (f_main_1291 n_1038 k_main_1227))
+  main_1037 n_1038 k_main_1227 when (not (n_1038 > 0)) -> (k_main_1227 ())
+Types:
+  main_1288 : X
+  exn_1078 : (int -> (int -> X) -> X)
+  fact_1030 : (x_1:int -> (x_3:int[x_3 = 0; x_1 <= 0] -> (int -> X) -> X) -> (int -> X) -> X)
+  
+(3-1) Abstracting ... DONE!
+
+(3-2) Checking HORS ... DONE!
+
+Safe!
+
+Refinement Types:
+  exn: Top
+  fact: ((x_1:int -> (({x_4:int | x_1 <= 0} -> Bottom) -> int)) /\ (int -> (({0} -> int) -> int)))
+
+cycles: 3
+total: 0.378 sec
+  abst: 0.013 sec
+  mc: 0.033 sec
+  refine: 0.129 sec
+    exparam: 0.050 sec

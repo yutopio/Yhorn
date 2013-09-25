@@ -1,0 +1,102 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn intro3.ml
+
+parsed::
+ let f_1030 x_1031 g_1032 = g_1032 (x_1031 + 1) 
+ in
+ let h_1033 z_1034 y_1035 = if y_1035 > z_1034 then
+                              ()
+                            else
+                              {fail} () 
+ in
+ let main_1036 n_1037 = if n_1037 >= 0 then
+                          f_1030 n_1037 (h_1033 n_1037)
+                        else
+                          () 
+ in
+   ()
+
+set_target::
+ let f_1030 x_1031 g_1032 = g_1032 (x_1031 + 1) 
+ in
+ let h_1033 z_1034 y_1035 = if y_1035 > z_1034 then
+                              ()
+                            else
+                              {fail} () 
+ in
+ let main_1036 n_1037 = if n_1037 >= 0 then
+                          f_1030 n_1037 (h_1033 n_1037)
+                        else
+                          () 
+ in
+ let main_1069 = let arg1_1068 = rand_int () 
+                 in
+                   main_1036 arg1_1068 
+ in
+   ()
+
+copy_poly::
+ let f_1030 (x_1031:int) (g_1032:(int -> unit)) = g_1032 (x_1031 + 1) 
+ in
+ let h_1070 (z_1034:int) (y_1035:int) = if y_1035 > z_1034 then
+                                          ()
+                                        else
+                                          {fail} () 
+ in
+ let main_1036 (n_1037:int) = if n_1037 >= 0 then
+                                f_1030 n_1037 (h_1070 n_1037)
+                              else
+                                () 
+ in
+ let main_1069 = let arg1_1068 = rand_int () 
+                 in
+                   main_1036 arg1_1068 
+ in
+   ()
+
+CPS::
+ let f_1030 (x_1031:int) (g_1032:(int -> ((unit -> X) -> X))) (k_f_1110:(unit -> X)) = g_1032 (x_1031 + 1) k_f_1110 
+ in
+ let h_1070 (z_1034:int) (y_1035:int) (k_h_1137:(unit -> X)) =
+   if y_1035 > z_1034 then
+     k_h_1137 ()
+   else
+     {|fail|} () k_h_1137 
+ in
+ let main_1036 (n_1037:int) (k_main_1162:(unit -> X)) =
+   if n_1037 >= 0 then
+     f_1030 n_1037 (h_1070 n_1037) k_main_1162
+   else
+     k_main_1162 () 
+ in
+   rand_int_cps () (fun x_1196 -> main_1036 x_1196 (fun x_1193 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1221
+  main_1221 -> (rand_int f_1222)
+  f_1030 x_1031 g_1032 k_f_1110 -> (g_1032 (x_1031 + 1) k_f_1110)
+  f_1222 x_1196 -> (main_1036 x_1196 (f_1223 x_1196))
+  f_1223 x_1196 x_1193 -> end
+  fail_1224 b k -> {fail} => (k ())
+  h_1070 z_1034 y_1035 k_h_1137 when (y_1035 > z_1034) -> (k_h_1137 ())
+  h_1070 z_1034 y_1035 k_h_1137 when (not (y_1035 > z_1034)) -> (fail_1224 true k_h_1137)
+  main_1036 n_1037 k_main_1162 when (n_1037 >= 0) -> (f_1030 n_1037 (h_1070 n_1037) k_main_1162)
+  main_1036 n_1037 k_main_1162 when (not (n_1037 >= 0)) -> (k_main_1162 ())
+Types:
+  main_1221 : X
+  fail_1224 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Safe!
+
+cycles: 0
+total: 0.175 sec
+  abst: 0.001 sec
+  mc: 0.002 sec
+  refine: 0.000 sec
+    exparam: 0.000 sec

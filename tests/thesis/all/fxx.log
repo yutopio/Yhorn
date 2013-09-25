@@ -1,0 +1,72 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -gchi fxx.ml
+
+parsed::
+ let f_1030 x_1031 y_1032 = if not (x_1031 > 0 && y_1032 <= 0) then
+                              ()
+                            else
+                              {fail} () 
+ in
+ let g_1033 x_1034 = f_1030 x_1034 x_1034 
+ in
+   ()
+
+set_target::
+ let f_1030 x_1031 y_1032 = if not (x_1031 > 0 && y_1032 <= 0) then
+                              ()
+                            else
+                              {fail} () 
+ in
+ let g_1033 x_1034 = f_1030 x_1034 x_1034 
+ in
+ let main_1052 = let arg1_1051 = rand_int () 
+                 in
+                   g_1033 arg1_1051 
+ in
+   ()
+
+CPS::
+ let f_1030 (x_1031:int) (y_1032:int) (k_f_1080:(unit -> X)) =
+   let k_f_1086 (b_1083:bool) = if not b_1083 then
+                                  k_f_1080 ()
+                                else
+                                  {|fail|} () k_f_1080 
+   in
+     if x_1031 > 0 then
+       k_f_1086 (y_1032 <= 0)
+     else
+       k_f_1086 false 
+ in
+ let g_1033 (x_1034:int) (k_g_1112:(unit -> X)) = f_1030 x_1034 x_1034 k_g_1112 
+ in
+   rand_int_cps () (fun x_1129 -> g_1033 x_1129 (fun x_1126 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1154
+  main_1154 -> (rand_int f_1155)
+  f_1030 x_1031 y_1032 k_f_1080 when (x_1031 > 0) -> (k_f_1086 x_1031 y_1032 k_f_1080 (y_1032 <= 0))
+  f_1030 x_1031 y_1032 k_f_1080 when (not (x_1031 > 0)) -> (k_f_1086 x_1031 y_1032 k_f_1080 false)
+  f_1155 x_1129 -> (g_1033 x_1129 (f_1156 x_1129))
+  f_1156 x_1129 x_1126 -> end
+  fail_1157 b k -> {fail} => (k ())
+  g_1033 x_1034 k_g_1112 -> (f_1030 x_1034 x_1034 k_g_1112)
+  k_f_1086 x_1031 y_1032 k_f_1080 b_1083 when (not b_1083) -> (k_f_1080 ())
+  k_f_1086 x_1031 y_1032 k_f_1080 b_1083 when (not (not b_1083)) -> (fail_1157 true k_f_1080)
+Types:
+  main_1154 : X
+  fail_1157 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Safe!
+
+cycles: 0
+total: 0.167 sec
+  abst: 0.001 sec
+  mc: 0.003 sec
+  refine: 0.000 sec
+    exparam: 0.000 sec

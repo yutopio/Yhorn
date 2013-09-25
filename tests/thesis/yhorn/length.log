@@ -1,0 +1,2853 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn length.ml
+
+parsed::
+ let rec length_1030 xs_1031 = (match xs_1031 with
+                                  | [] -> 0
+                                  | _::xs'_1032 -> 1 + length_1030 xs'_1032) 
+ in
+ let rec make_list_1033 n_1034 = if n_1034 = 0 then
+                                   []
+                                 else
+                                   n_1034::make_list_1033 (n_1034 - 1) 
+ in
+ let main_1035 n_1036 =
+   let xs_1037 = make_list_1033 n_1036 
+   in
+     if length_1030 xs_1037 = n_1036 then
+       ()
+     else
+       {fail} () 
+ in
+   ()
+
+set_target::
+ let rec length_1030 xs_1031 = (match xs_1031 with
+                                  | [] -> 0
+                                  | _::xs'_1032 -> 1 + length_1030 xs'_1032) 
+ in
+ let rec make_list_1033 n_1034 = if n_1034 = 0 then
+                                   []
+                                 else
+                                   n_1034::make_list_1033 (n_1034 - 1) 
+ in
+ let main_1035 n_1036 =
+   let xs_1037 = make_list_1033 n_1036 
+   in
+     if length_1030 xs_1037 = n_1036 then
+       ()
+     else
+       {fail} () 
+ in
+ let main_1053 = let arg1_1052 = rand_int () 
+                 in
+                   main_1035 arg1_1052 
+ in
+   ()
+
+copy_poly::
+ let rec length_1054 (xs_1031:int list) = (match xs_1031 with
+                                             | [] -> 0
+                                             | _::xs'_1032 -> 1 + length_1054 xs'_1032) 
+ in
+ let rec make_list_1033 (n_1034:int) = if n_1034 = 0 then
+                                         []
+                                       else
+                                         n_1034::make_list_1033 (n_1034 - 1) 
+ in
+ let main_1035 (n_1036:int) =
+   let xs_1037 = make_list_1033 n_1036 
+   in
+     if length_1054 xs_1037 = n_1036 then
+       ()
+     else
+       {fail} () 
+ in
+ let main_1053 = let arg1_1052 = rand_int () 
+                 in
+                   main_1035 arg1_1052 
+ in
+   ()
+
+abst_list::
+ let rec length_1054 (xs_1031:(int * (int -> int))) =
+   if fst xs_1031 = 0 then
+     0
+   else
+     if 1 <= fst xs_1031 then
+       let xs'_1032 = (fst xs_1031 - 1, fun x_1059 -> (snd xs_1031) (x_1059 + 1)) 
+       in
+         1 + length_1054 xs'_1032
+     else
+       _|_ 
+ in
+ let rec make_list_1033 (n_1034:int) =
+   if n_1034 = 0 then
+     (0, fun x_1092 -> _|_)
+   else
+     let cons_make_list_1088 (x_1086:int) (xs_1087:(int * (int -> int))) =
+       (fst xs_1087 + 1, fun i_1085 -> (if i_1085 = 0 then
+                                          x_1086
+                                        else
+                                          (snd xs_1087) (i_1085 - 1))) 
+     in
+       cons_make_list_1088 n_1034 (make_list_1033 (n_1034 - 1)) 
+ in
+ let main_1035 (n_1036:int) =
+   let xs_1037 = make_list_1033 n_1036 
+   in
+     if length_1054 xs_1037 = n_1036 then
+       ()
+     else
+       {fail} () 
+ in
+ let main_1053 = let arg1_1052 = rand_int () 
+                 in
+                   main_1035 arg1_1052 
+ in
+   ()
+
+CPS::
+ let rec length_1054 (xs_1031:(int * (int -> ((int -> X) -> X)))) (k_length_1148:(
+   int -> X)) =
+   if fst xs_1031 = 0 then
+     k_length_1148 0
+   else
+     if 1 <= fst xs_1031 then
+       length_1054
+         (fst xs_1031 - 1, fun x_1059 -> fun k_length_xs'_1181 -> (snd xs_1031) (x_1059 + 1) k_length_xs'_1181)
+         (fun x_1196 -> k_length_1148 (1 + x_1196))
+     else
+       _|_ 
+ in
+ let rec make_list_1033 (n_1034:int) (k_make_list_1254:((int * (int -> ((int -> X) -> X))) -> X)) =
+   if n_1034 = 0 then
+     k_make_list_1254 (0, fun x_1092 -> fun k_make_list_1266 -> _|_)
+   else
+     let cons_make_list_1088
+       (x_1086:int) (xs_1087:(int * (int -> ((int -> X) -> X)))) (k_make_list_cons_make_list_1313:(
+       (int * (int -> ((int -> X) -> X))) -> X)) =
+       k_make_list_cons_make_list_1313
+         (fst xs_1087 + 1,
+         fun i_1085 ->
+           fun k_make_list_cons_make_list_1328 ->
+             (if i_1085 = 0 then
+                k_make_list_cons_make_list_1328 x_1086
+              else
+                (snd xs_1087) (i_1085 - 1) k_make_list_cons_make_list_1328)) 
+     in
+       make_list_1033 (n_1034 - 1) (fun x_1391 -> cons_make_list_1088 n_1034 x_1391 k_make_list_1254) 
+ in
+ let main_1035 (n_1036:int) (k_main_1412:(unit -> X)) =
+   make_list_1033 n_1036
+     (fun x_1418 ->
+        length_1054 x_1418 (fun x_1446 -> (if x_1446 = n_1036 then
+                                             k_main_1412 ()
+                                           else
+                                             {|fail|} () k_main_1412))) 
+ in
+   rand_int_cps () (fun x_1486 -> main_1035 x_1486 (fun x_1483 -> end))
+
+remove_pair::
+ let rec length_1054 (xs1_1031:int) (xs2_1031:(int -> ((int -> X) -> X))) (k_length_1148:(
+   int -> X)) =
+   if xs1_1031 = 0 then
+     k_length_1148 0
+   else
+     if 1 <= xs1_1031 then
+       length_1054 (xs1_1031 - 1) (fun x_1059 -> fun k_length_xs'_1181 -> xs2_1031 (x_1059 + 1) k_length_xs'_1181)
+         (fun x_1196 -> k_length_1148 (1 + x_1196))
+     else
+       _|_ 
+ in
+ let rec make_list_1033 (n_1034:int) (k_make_list_1254:(int -> ((int -> ((int -> X) -> X)) -> X))) =
+   if n_1034 = 0 then
+     k_make_list_1254 0 (fun x_1092 -> fun k_make_list_1266 -> _|_)
+   else
+     let cons_make_list_1088
+       (x_1086:int) (xs1_1087:int) (xs2_1087:(int -> ((int -> X) -> X))) (k_make_list_cons_make_list_1313:(
+       int -> ((int -> ((int -> X) -> X)) -> X))) =
+       k_make_list_cons_make_list_1313 (xs1_1087 + 1)
+         (fun i_1085 ->
+            fun k_make_list_cons_make_list_1328 ->
+              (if i_1085 = 0 then
+                 k_make_list_cons_make_list_1328 x_1086
+               else
+                 xs2_1087 (i_1085 - 1) k_make_list_cons_make_list_1328)) 
+     in
+       make_list_1033 (n_1034 - 1)
+         (fun x1_1391 -> fun x2_1391 -> cons_make_list_1088 n_1034 x1_1391 x2_1391 k_make_list_1254) 
+ in
+ let main_1035 (n_1036:int) (k_main_1412:(unit -> X)) =
+   make_list_1033 n_1036
+     (fun x1_1418 ->
+        fun x2_1418 ->
+          length_1054 x1_1418 x2_1418
+            (fun x_1446 -> (if x_1446 = n_1036 then
+                              k_main_1412 ()
+                            else
+                              {|fail|} () k_main_1412))) 
+ in
+   rand_int_cps () (fun x_1486 -> main_1035 x_1486 (fun x_1483 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1544
+  main_1544 -> (rand_int f_1552)
+  br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 when b_1555 ->
+      (length_1054 (xs1_1031 - 1) (f_length_1545 xs1_1031 xs2_1031) (f_length_1546 xs1_1031 k_length_1148))
+  br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 when (not b_1555) -> _|_
+  cons_make_list_1088 n_1034 x_1086 xs1_1087 xs2_1087 k_make_list_cons_make_list_1313 ->
+      (k_make_list_cons_make_list_1313 (xs1_1087 + 1) (f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087))
+  f_1552 x_1486 -> (main_1035 x_1486 (f_1553 x_1486))
+  f_1553 x_1486 x_1483 -> end
+  f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 when (
+      i_1085 = 0) -> (k_make_list_cons_make_list_1328 x_1086)
+  f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 when (
+      not (i_1085 = 0)) -> (xs2_1087 (i_1085 - 1) k_make_list_cons_make_list_1328)
+  f_length_1545 xs1_1031 xs2_1031 x_1059 k_length_xs'_1181 -> (xs2_1031 (x_1059 + 1) k_length_xs'_1181)
+  f_length_1546 xs1_1031 k_length_1148 x_1196 -> (k_length_1148 (1 + x_1196))
+  f_main_1550 n_1036 k_main_1412 x1_1418 x2_1418 ->
+      (length_1054 x1_1418 x2_1418 (f_main_1551 n_1036 x1_1418 k_main_1412))
+  f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 when (x_1446 = n_1036) -> (k_main_1412 ())
+  f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 when (not (x_1446 = n_1036)) -> (fail_1556 true k_main_1412)
+  f_make_list_1547 n_1034 x_1092 k_make_list_1266 -> _|_
+  f_make_list_1549 n_1034 k_make_list_1254 x1_1391 x2_1391 ->
+      (cons_make_list_1088 n_1034 n_1034 x1_1391 x2_1391 k_make_list_1254)
+  fail_1556 b k -> {fail} => (k ())
+  length_1054 xs1_1031 xs2_1031 k_length_1148 when (xs1_1031 = 0) -> (k_length_1148 0)
+  length_1054 xs1_1031 xs2_1031 k_length_1148 when (not (xs1_1031 = 0)) ->
+      (br_length_1554 (1 <= xs1_1031) xs1_1031 xs2_1031 k_length_1148)
+  main_1035 n_1036 k_main_1412 -> (make_list_1033 n_1036 (f_main_1550 n_1036 k_main_1412))
+  make_list_1033 n_1034 k_make_list_1254 when (n_1034 = 0) -> (k_make_list_1254 0 (f_make_list_1547 n_1034))
+  make_list_1033 n_1034 k_make_list_1254 when (not (n_1034 = 0)) ->
+      (make_list_1033 (n_1034 - 1) (f_make_list_1549 n_1034 k_make_list_1254))
+Types:
+  main_1544 : X
+  fail_1556 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  length_1054 : (int -> (int -> (int -> X) -> X) -> (int -> X) -> X)
+  make_list_1033 : (int -> (int -> (int -> (int -> X) -> X) -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1544 ... --> 
+  f_1552 ... --> 
+  main_1035 ... --> 
+  make_list_1033 [1/2] ... --> 
+  f_main_1550 ... --> 
+  length_1054 [1/2] ... --> 
+  f_main_1551 [2/2] ... --> 
+  fail_1556 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(173)[1]
+  program:
+    main_1544  | true = ((Random.int 0) f_1552)
+    br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 | b_1555 = (
+    length_1054 (xs1_1031 - 1)
+                (f_length_1545 xs1_1031
+                               xs2_1031)
+                (f_length_1546 xs1_1031
+                               k_length_1148))
+    br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 | (not b_1555) = bot
+    cons_make_list_1088 n_1034 x_1086 xs1_1087 xs2_1087 k_make_list_cons_make_list_1313 | true = (
+    k_make_list_cons_make_list_1313 (xs1_1087 + 1)
+                                    (f_cons_make_list_1548 n_1034
+                                                           x_1086
+                                                           xs1_1087
+                                                           xs2_1087))
+    f_1552 x_1486 | true = (main_1035 x_1486
+                                      (f_1553 x_1486))
+    f_1553 x_1486 x_1483 | true = end
+    f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 | (
+    i_1085 = 0) = (k_make_list_cons_make_list_1328 x_1086)
+    f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 | (
+    not (i_1085 = 0)) = (xs2_1087 (i_1085 - 1)
+                                  k_make_list_cons_make_list_1328)
+    f_length_1545 xs1_1031 xs2_1031 x_1059 k_length_xs'_1181 | true = (
+    xs2_1031 (x_1059 + 1)
+             k_length_xs'_1181)
+    f_length_1546 xs1_1031 k_length_1148 x_1196 | true = (k_length_1148 (
+                                                                    1 + x_1196))
+    f_main_1550 n_1036 k_main_1412 x1_1418 x2_1418 | true = (length_1054
+                                                               x1_1418
+                                                               x2_1418
+                                                               (f_main_1551 n_1036
+                                                                    x1_1418
+                                                                    k_main_1412))
+    f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 | (x_1446 = n_1036) = (
+    k_main_1412 ())
+    f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 | (not (x_1446 = n_1036)) = (
+    fail_1556 true
+              k_main_1412)
+    f_make_list_1547 n_1034 x_1092 k_make_list_1266 | true = bot
+    f_make_list_1549 n_1034 k_make_list_1254 x1_1391 x2_1391 | true = (
+    cons_make_list_1088 n_1034
+                        n_1034
+                        x1_1391
+                        x2_1391
+                        k_make_list_1254)
+    fail_1556 b k | true = (fail ())
+    length_1054 xs1_1031 xs2_1031 k_length_1148 | (xs1_1031 = 0) = (k_length_1148 0)
+    length_1054 xs1_1031 xs2_1031 k_length_1148 | (not (xs1_1031 = 0)) = (
+    br_length_1554 (1 <= xs1_1031)
+                   xs1_1031
+                   xs2_1031
+                   k_length_1148)
+    main_1035 n_1036 k_main_1412 | true = (make_list_1033 n_1036
+                                                          (f_main_1550 n_1036
+                                                                    k_main_1412))
+    make_list_1033 n_1034 k_make_list_1254 | (n_1034 = 0) = (k_make_list_1254 0
+                                                                    (f_make_list_1547 n_1034))
+    make_list_1033 n_1034 k_make_list_1254 | (not (n_1034 = 0)) = (make_list_1033
+                                                                    (
+                                                                    n_1034 - 1)
+                                                                    (
+                                                                    f_make_list_1549 n_1034
+                                                                    k_make_list_1254))
+    main_1544:X
+    br_length_1554:bool -> int -> (int -> (int -> X) -> X) -> (int -> X) -> X
+    cons_make_list_1088:int -> int -> int -> (int -> (int -> X) -> X) -> (int -> (int -> (int -> X) -> X) -> X) -> X
+    f_1552:int -> X
+    f_1553:int -> unit -> X
+    f_cons_make_list_1548:int -> int -> int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    f_length_1545:int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    f_length_1546:int -> (int -> X) -> int -> X
+    f_main_1550:int -> (unit -> X) -> int -> (int -> (int -> X) -> X) -> X
+    f_main_1551:int -> int -> (unit -> X) -> int -> X
+    f_make_list_1547:int -> int -> (int -> X) -> X
+    f_make_list_1549:int -> (int -> (int -> (int -> X) -> X) -> X) -> int -> (int -> (int -> X) -> X) -> X
+    fail_1556:bool -> (unit -> X) -> X
+    length_1054:int -> (int -> (int -> X) -> X) -> (int -> X) -> X
+    main_1035:int -> (unit -> X) -> X
+    make_list_1033:int -> (int -> (int -> (int -> X) -> X) -> X) -> X
+  inlined functions: br_length_1554,cons_make_list_1088,f_1552,f_1553,f_cons_make_list_1548,f_length_1545,f_length_1546,f_main_1550,f_main_1551,f_make_list_1547,f_make_list_1549,main_1035
+  counterexample: 0:0:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1552@4:0> = var2)
+     [true.(<main_1035@6:0> = <f_1552@4:0>)
+      [true.(<make_list_1033@8:0> = <main_1035@6:0>)
+       [(<make_list_1033@8:0> = 0).(<<make_list_1033@8:1>@11:0> = 0)
+        [true.((<f_main_1550@13:0> = <main_1035@6:0>) && (<f_main_1550@13:2> = <<make_list_1033@8:1>@11:0>))
+         [true.(<length_1054@15:0> = <f_main_1550@13:2>)
+          [(<length_1054@15:0> = 0).(<<length_1054@15:2>@18:0> = 0)
+           [true.
+            ((<f_main_1551@20:0> = <f_main_1550@13:0>) &&
+             ((<f_main_1551@20:1> = <f_main_1550@13:2>) && (<f_main_1551@20:3> = <<length_1054@15:2>@18:0>)))
+            [(not (<f_main_1551@20:3> = <f_main_1551@20:0>)).(<fail_1556@23:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(174)[2]
+    horn clauses:
+      P[<fail_1556@23:0>](<fail_1556@23:0>:bool)|- bot
+      
+      P[<f_main_1551@20:3>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int,<f_main_1551@20:3>:int),
+      ((<f_main_1551@20:3> <> <f_main_1551@20:0>) && <fail_1556@23:0>) |- P[<fail_1556@23:0>](
+      <fail_1556@23:0>:bool)
+      
+      P[<f_main_1550@13:2>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int),
+      P[<<length_1054@15:2>@18:0>](<f_main_1551@20:1>:int,<f_main_1551@20:3>:int)|- P[<f_main_1551@20:3>](
+      <f_main_1551@20:0>:int,<f_main_1551@20:1>:int,<f_main_1551@20:3>:int)
+      
+      P[<length_1054@15:0>](<length_1054@15:0>:int), ((<length_1054@15:0> = 0) && (<<length_1054@15:2>@18:0> = 0))
+      |- P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int)
+      
+      P[<f_main_1550@13:2>](<f_main_1550@13:0>:int,<length_1054@15:0>:int)|- P[<length_1054@15:0>](
+      <length_1054@15:0>:int)
+      
+      P[<main_1035@6:0>](<f_main_1550@13:0>:int),
+      P[<<make_list_1033@8:1>@11:0>](<f_main_1550@13:0>:int,<f_main_1550@13:2>:int)|- P[<f_main_1550@13:2>](
+      <f_main_1550@13:0>:int,<f_main_1550@13:2>:int)
+      
+      P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+      ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+      |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int)
+      
+      P[<main_1035@6:0>](<make_list_1033@8:0>:int)|- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+      
+      P[<f_1552@4:0>](<main_1035@6:0>:int)|- P[<main_1035@6:0>](<main_1035@6:0>:int)
+      
+      |- P[<f_1552@4:0>](<f_1552@4:0>:int)
+    call trees:
+      <main_1544@1>
+        <f_1552@4>
+          <main_1035@6>
+            <make_list_1033@8>
+            </<make_list_1033@8:1>@11>
+            <f_main_1550@13>
+              <length_1054@15>
+              </<length_1054@15:2>@18>
+              <f_main_1551@20>
+                <fail_1556@23>
+    inlined horn clauses:
+      P[<fail_1556@23:0>](<fail_1556@23:0>:bool)|- bot
+      
+      P[<<make_list_1033@8:1>@11:0>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int),
+      P[<<length_1054@15:2>@18:0>](<f_main_1551@20:1>:int,<f_main_1551@20:3>:int),
+      ((<f_main_1551@20:3> <> <f_main_1551@20:0>) && <fail_1556@23:0>) |- P[<fail_1556@23:0>](
+      <fail_1556@23:0>:bool)
+      
+      P[<length_1054@15:0>](<length_1054@15:0>:int), ((<length_1054@15:0> = 0) && (<<length_1054@15:2>@18:0> = 0))
+      |- P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int)
+      
+      P[<<make_list_1033@8:1>@11:0>](<f_main_1550@13:0>:int,<length_1054@15:0>:int)|- P[<length_1054@15:0>](
+      <length_1054@15:0>:int)
+      
+      P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+      ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+      |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int)
+      
+      |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+    begin ParamSubstInfer.infer(1250)[3]
+      
+    end ParamSubstInfer.infer(1250)[3] (0.009998 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(1252)[3]
+      
+    end RefTypeInfer.elim_coeffs(1252)[3] (0.001000 sec.)
+    begin YhornInterface.solve(1461)[3]
+      begin HcSolver.solve_ub(1462)[4]
+        encoded:
+          P[<fail_1556@23:0>](<fail_1556@23:0>:int)|- bot
+          
+          P[<<make_list_1033@8:1>@11:0>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int),
+          P[<<length_1054@15:2>@18:0>](<f_main_1551@20:1>:int,<f_main_1551@20:3>:int),
+          ((<f_main_1551@20:3> <> <f_main_1551@20:0>) && (<fail_1556@23:0> = 1))
+          |- P[<fail_1556@23:0>](<fail_1556@23:0>:int)
+          
+          P[<length_1054@15:0>](<length_1054@15:0>:int), ((<length_1054@15:0> = 0) && (<<length_1054@15:2>@18:0> = 0))
+          |- P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int)
+          
+          P[<<make_list_1033@8:1>@11:0>](<f_main_1550@13:0>:int,<length_1054@15:0>:int)|- P[<length_1054@15:0>](
+          <length_1054@15:0>:int)
+          
+          P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+          ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+          |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,
+                                            <<make_list_1033@8:1>@11:0>:int)
+          
+          |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+        input to Yhorn:
+          P[<fail_1556@23:0>](<fail_1556@23:0>:int)|- bot
+          
+          P[<<make_list_1033@8:1>@11:0>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int),
+          P[<<length_1054@15:2>@18:0>](<f_main_1551@20:1>:int,<f_main_1551@20:3>:int),
+          ((<f_main_1551@20:3> <> <f_main_1551@20:0>) && (<fail_1556@23:0> = 1))
+          |- P[<fail_1556@23:0>](<fail_1556@23:0>:int)
+          
+          P[<length_1054@15:0>](<length_1054@15:0>:int), ((<<length_1054@15:2>@18:0> = 0) && (<length_1054@15:0> = 0))
+          |- P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int)
+          
+          P[<<make_list_1033@8:1>@11:0>](<f_main_1550@13:0>:int,<length_1054@15:0>:int)|- P[<length_1054@15:0>](
+          <length_1054@15:0>:int)
+          
+          P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+          ((<<make_list_1033@8:1>@11:0> = 0) && (<make_list_1033@8:0> = 0))
+          |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,
+                                            <<make_list_1033@8:1>@11:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1556_sep_23_sep_0($10)) -> 1=0.
+(($10-1=0) & ($11-$12<>0)) & (v_sep_length_1054_sep_15_sep_2_sep_18_sep_0($13,$11)) & (v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0($12,$13)) -> v_sep_fail_1556_sep_23_sep_0($10).
+(($14=0) & ($15=0)) & (v_sep_length_1054_sep_15_sep_0($14)) -> v_sep_length_1054_sep_15_sep_2_sep_18_sep_0($14,$15).
+(0=0) & (v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0($16,$14)) -> v_sep_length_1054_sep_15_sep_0($14).
+(($17=0) & ($18=0)) & (v_sep_make_list_1033_sep_8_sep_0($17)) -> v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0($17,$18).
+0=0 -> v_sep_make_list_1033_sep_8_sep_0($17).
+
+
+v_sep_fail_1556_sep_23_sep_0: X
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: X
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: X
+.........Split disj [20] 0.202968
+Reconstrcut: 3 **)
+
+v_sep_fail_1556_sep_23_sep_0: (X) | (X)
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: X
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: X
+.......
+v_sep_fail_1556_sep_23_sep_0: (X) | (X)
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: X
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: X
+.......Split conj [22] 0.208967
+(Reconstrcut: 8 **)
+v_sep_fail_1556_sep_23_sep_0: (X) | (X)
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: X
+.........
+v_sep_fail_1556_sep_23_sep_0: (X) | (X)
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: X
+.......Split conj [24] 0.214966
+(Reconstrcut: 14 ***)
+v_sep_fail_1556_sep_23_sep_0: (X) | (X)
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: (X) & (X) & (X)
+.............
+v_sep_fail_1556_sep_23_sep_0: (X) | (X)
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: (X) & (X) & (X)
+.......
+v_sep_fail_1556_sep_23_sep_0: (X) | (X)
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: (X) & (X) & (X)
+...........
+v_sep_fail_1556_sep_23_sep_0: (X) | (X)
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: (X) & (X) & (X)
+............
+v_sep_fail_1556_sep_23_sep_0: (X) | (X)
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: (X) & (X) & (X)
+.............(0=0) & (v_sep_fail_1556_sep_23_sep_0($10)) -> 1=0.
+(($10-1=0) & ($11-$12<>0)) & (v_sep_length_1054_sep_15_sep_2_sep_18_sep_0($13,$11)) & (v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0($12,$13)) -> v_sep_fail_1556_sep_23_sep_0($10).
+(($14=0) & ($15=0)) & (v_sep_length_1054_sep_15_sep_0($14)) -> v_sep_length_1054_sep_15_sep_2_sep_18_sep_0($14,$15).
+(0=0) & (v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0($16,$14)) -> v_sep_length_1054_sep_15_sep_0($14).
+(($17=0) & ($18=0)) & (v_sep_make_list_1033_sep_8_sep_0($17)) -> v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0($17,$18).
+0=0 -> v_sep_make_list_1033_sep_8_sep_0($17).
+
+          |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+        solution:
+          P[<fail_1556@23:0>]($19:bool) = false
+          P[<length_1054@15:0>]($32:int) = true
+          P[<<length_1054@15:2>@18:0>]($22:int,$24:int) = ($24 = 0)
+          P[<make_list_1033@8:0>]($35:int) = true
+          P[<<make_list_1033@8:1>@11:0>]($27:int,$29:int) = ($27 = 0)
+        
+      end HcSolver.solve_ub(1462)[4] (0.036994 sec.)
+      begin HcSolver.check_validity(1611)[4]
+        input:
+          P[<fail_1556@23:0>](<fail_1556@23:0>:bool)|- bot
+          
+          P[<<make_list_1033@8:1>@11:0>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int),
+          P[<<length_1054@15:2>@18:0>](<f_main_1551@20:1>:int,<f_main_1551@20:3>:int),
+          ((<f_main_1551@20:3> <> <f_main_1551@20:0>) && <fail_1556@23:0>)
+          |- P[<fail_1556@23:0>](<fail_1556@23:0>:bool)
+          
+          P[<length_1054@15:0>](<length_1054@15:0>:int), ((<length_1054@15:0> = 0) && (<<length_1054@15:2>@18:0> = 0))
+          |- P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int)
+          
+          P[<<make_list_1033@8:1>@11:0>](<f_main_1550@13:0>:int,<length_1054@15:0>:int)|- P[<length_1054@15:0>](
+          <length_1054@15:0>:int)
+          
+          P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+          ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+          |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,
+                                            <<make_list_1033@8:1>@11:0>:int)
+          
+          |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(1611)[4] (0.002000 sec.)
+      solution:
+        P[<fail_1556@23:0>]($19:bool) = false
+        P[<length_1054@15:0>]($32:int) = true
+        P[<<length_1054@15:2>@18:0>]($22:int,$24:int) = ($24 = 0)
+        P[<make_list_1033@8:0>]($35:int) = true
+        P[<<make_list_1033@8:1>@11:0>]($27:int,$29:int) = ($27 = 0)
+    end YhornInterface.solve(1461)[3] (0.038994 sec.)
+    
+  end RefTypeInfer.infer_etrs(174)[2] (0.054991 sec.)
+  refinement types:
+    main_1544: X
+    f_1552: v1:int -> X
+    main_1035: v1:int -> (v2:unit -> X) -> X
+    make_list_1033: v1:int -> (v2:{v2:int | (v1 = 0)} -> (v3:int -> (v4:int -> X) -> X) -> X) -> X
+    f_main_1550: v1:int -> (v2:unit -> X) -> v4:int -> (v5:int -> (v6:int -> X) -> X) -> X
+    length_1054: v1:int -> (v2:int -> (v3:int -> X) -> X) -> (v6:{v6:int | (v6 = 0)} -> X) -> X
+    f_main_1551: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1556: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    br_length_1554: var31:bool -> var30:int -> (var29:int -> (var28:int -> X) -> X) -> (var25:int -> X) -> X
+    cons_make_list_1088: var45:int ->
+                         var44:int ->
+                         var43:int ->
+                         (var42:int -> (var41:int -> X) -> X) ->
+                         (var38:int -> (var37:int -> (var36:int -> X) -> X) -> X) -> X
+    f_1553: var48:int -> var47:unit -> X
+    f_cons_make_list_1548: var59:int ->
+                           var58:int ->
+                           var57:int -> (var56:int -> (var55:int -> X) -> X) -> var52:int -> (var51:int -> X) -> X
+    f_length_1545: var68:int -> (var67:int -> (var66:int -> X) -> X) -> var63:int -> (var62:int -> X) -> X
+    f_length_1546: var73:int -> (var72:int -> X) -> var70:int -> X
+    f_make_list_1547: var78:int -> var77:int -> (var76:int -> X) -> X
+    f_make_list_1549: var91:int ->
+                      (var90:int -> (var89:int -> (var88:int -> X) -> X) -> X) ->
+                      var84:int -> (var83:int -> (var82:int -> X) -> X) -> X
+  abstraction types:
+    main_1544: X
+    f_1552: v1:int -> X
+    main_1035: v1:int -> (v2:unit -> X) -> X
+    make_list_1033: v1:int -> (v2:int[v2 -> (v1 = 0)] -> (v3:int -> (v4:int -> X) -> X) -> X) -> X
+    f_main_1550: v1:int -> (v2:unit -> X) -> v4:int -> (v5:int -> (v6:int -> X) -> X) -> X
+    length_1054: v1:int -> (v2:int -> (v3:int -> X) -> X) -> (v6:int[v6 -> (
+                                                                    v6 = 0)] -> X) -> X
+    f_main_1551: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1556: v1:bool -> (v2:unit -> X) -> X
+    br_length_1554: var31:bool -> var30:int -> (var29:int -> (var28:int -> X) -> X) -> (var25:int -> X) -> X
+    cons_make_list_1088: var45:int ->
+                         var44:int ->
+                         var43:int ->
+                         (var42:int -> (var41:int -> X) -> X) ->
+                         (var38:int -> (var37:int -> (var36:int -> X) -> X) -> X) -> X
+    f_1553: var48:int -> var47:unit -> X
+    f_cons_make_list_1548: var59:int ->
+                           var58:int ->
+                           var57:int -> (var56:int -> (var55:int -> X) -> X) -> var52:int -> (var51:int -> X) -> X
+    f_length_1545: var68:int -> (var67:int -> (var66:int -> X) -> X) -> var63:int -> (var62:int -> X) -> X
+    f_length_1546: var73:int -> (var72:int -> X) -> var70:int -> X
+    f_make_list_1547: var78:int -> var77:int -> (var76:int -> X) -> X
+    f_make_list_1549: var91:int ->
+                      (var90:int -> (var89:int -> (var88:int -> X) -> X) -> X) ->
+                      var84:int -> (var83:int -> (var82:int -> X) -> X) -> X
+  
+end AbsTypeInfer.refine(173)[1] (0.061990 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1544
+  main_1544 -> (rand_int f_1552)
+  br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 when b_1555 ->
+      (length_1054 (xs1_1031 - 1) (f_length_1545 xs1_1031 xs2_1031) (f_length_1546 xs1_1031 k_length_1148))
+  br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 when (not b_1555) -> _|_
+  cons_make_list_1088 n_1034 x_1086 xs1_1087 xs2_1087 k_make_list_cons_make_list_1313 ->
+      (k_make_list_cons_make_list_1313 (xs1_1087 + 1) (f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087))
+  f_1552 x_1486 -> (main_1035 x_1486 (f_1553 x_1486))
+  f_1553 x_1486 x_1483 -> end
+  f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 when (
+      i_1085 = 0) -> (k_make_list_cons_make_list_1328 x_1086)
+  f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 when (
+      not (i_1085 = 0)) -> (xs2_1087 (i_1085 - 1) k_make_list_cons_make_list_1328)
+  f_length_1545 xs1_1031 xs2_1031 x_1059 k_length_xs'_1181 -> (xs2_1031 (x_1059 + 1) k_length_xs'_1181)
+  f_length_1546 xs1_1031 k_length_1148 x_1196 -> (k_length_1148 (1 + x_1196))
+  f_main_1550 n_1036 k_main_1412 x1_1418 x2_1418 ->
+      (length_1054 x1_1418 x2_1418 (f_main_1551 n_1036 x1_1418 k_main_1412))
+  f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 when (x_1446 = n_1036) -> (k_main_1412 ())
+  f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 when (not (x_1446 = n_1036)) -> (fail_1556 true k_main_1412)
+  f_make_list_1547 n_1034 x_1092 k_make_list_1266 -> _|_
+  f_make_list_1549 n_1034 k_make_list_1254 x1_1391 x2_1391 ->
+      (cons_make_list_1088 n_1034 n_1034 x1_1391 x2_1391 k_make_list_1254)
+  fail_1556 b k -> {fail} => (k ())
+  length_1054 xs1_1031 xs2_1031 k_length_1148 when (xs1_1031 = 0) -> (k_length_1148 0)
+  length_1054 xs1_1031 xs2_1031 k_length_1148 when (not (xs1_1031 = 0)) ->
+      (br_length_1554 (1 <= xs1_1031) xs1_1031 xs2_1031 k_length_1148)
+  main_1035 n_1036 k_main_1412 -> (make_list_1033 n_1036 (f_main_1550 n_1036 k_main_1412))
+  make_list_1033 n_1034 k_make_list_1254 when (n_1034 = 0) -> (k_make_list_1254 0 (f_make_list_1547 n_1034))
+  make_list_1033 n_1034 k_make_list_1254 when (not (n_1034 = 0)) ->
+      (make_list_1033 (n_1034 - 1) (f_make_list_1549 n_1034 k_make_list_1254))
+Types:
+  main_1544 : X
+  fail_1556 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  length_1054 : (int -> (int -> (int -> X) -> X) -> (x_9:int[x_9 = 0] -> X) -> X)
+  make_list_1033 : (x_1:int -> (int[x_1 = 0] -> (int -> (int -> X) -> X) -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1544 ... --> 
+  f_1552 ... --> 
+  main_1035 ... --> 
+  make_list_1033 [2/2] ... --> 
+  make_list_1033 [1/2] ... --> 
+  f_make_list_1549 ... --> 
+  cons_make_list_1088 ... --> 
+  f_main_1550 ... --> 
+  length_1054 [1/2] ... --> 
+  f_main_1551 [2/2] ... --> 
+  fail_1556 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 0; 0; 0; 0; 0; 1; 0
+
+(1-3) Checking counter-example ... DONE!
+
+(1-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(2245)[1]
+  program:
+    main_1544  | true = ((Random.int 0) f_1552)
+    br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 | b_1555 = (
+    length_1054 (xs1_1031 - 1)
+                (f_length_1545 xs1_1031
+                               xs2_1031)
+                (f_length_1546 xs1_1031
+                               k_length_1148))
+    br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 | (not b_1555) = bot
+    cons_make_list_1088 n_1034 x_1086 xs1_1087 xs2_1087 k_make_list_cons_make_list_1313 | true = (
+    k_make_list_cons_make_list_1313 (xs1_1087 + 1)
+                                    (f_cons_make_list_1548 n_1034
+                                                           x_1086
+                                                           xs1_1087
+                                                           xs2_1087))
+    f_1552 x_1486 | true = (main_1035 x_1486
+                                      (f_1553 x_1486))
+    f_1553 x_1486 x_1483 | true = end
+    f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 | (
+    i_1085 = 0) = (k_make_list_cons_make_list_1328 x_1086)
+    f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 | (
+    not (i_1085 = 0)) = (xs2_1087 (i_1085 - 1)
+                                  k_make_list_cons_make_list_1328)
+    f_length_1545 xs1_1031 xs2_1031 x_1059 k_length_xs'_1181 | true = (
+    xs2_1031 (x_1059 + 1)
+             k_length_xs'_1181)
+    f_length_1546 xs1_1031 k_length_1148 x_1196 | true = (k_length_1148 (
+                                                                    1 + x_1196))
+    f_main_1550 n_1036 k_main_1412 x1_1418 x2_1418 | true = (length_1054
+                                                               x1_1418
+                                                               x2_1418
+                                                               (f_main_1551 n_1036
+                                                                    x1_1418
+                                                                    k_main_1412))
+    f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 | (x_1446 = n_1036) = (
+    k_main_1412 ())
+    f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 | (not (x_1446 = n_1036)) = (
+    fail_1556 true
+              k_main_1412)
+    f_make_list_1547 n_1034 x_1092 k_make_list_1266 | true = bot
+    f_make_list_1549 n_1034 k_make_list_1254 x1_1391 x2_1391 | true = (
+    cons_make_list_1088 n_1034
+                        n_1034
+                        x1_1391
+                        x2_1391
+                        k_make_list_1254)
+    fail_1556 b k | true = (fail ())
+    length_1054 xs1_1031 xs2_1031 k_length_1148 | (xs1_1031 = 0) = (k_length_1148 0)
+    length_1054 xs1_1031 xs2_1031 k_length_1148 | (not (xs1_1031 = 0)) = (
+    br_length_1554 (1 <= xs1_1031)
+                   xs1_1031
+                   xs2_1031
+                   k_length_1148)
+    main_1035 n_1036 k_main_1412 | true = (make_list_1033 n_1036
+                                                          (f_main_1550 n_1036
+                                                                    k_main_1412))
+    make_list_1033 n_1034 k_make_list_1254 | (n_1034 = 0) = (k_make_list_1254 0
+                                                                    (f_make_list_1547 n_1034))
+    make_list_1033 n_1034 k_make_list_1254 | (not (n_1034 = 0)) = (make_list_1033
+                                                                    (
+                                                                    n_1034 - 1)
+                                                                    (
+                                                                    f_make_list_1549 n_1034
+                                                                    k_make_list_1254))
+    main_1544:X
+    br_length_1554:bool -> int -> (int -> (int -> X) -> X) -> (int -> X) -> X
+    cons_make_list_1088:int -> int -> int -> (int -> (int -> X) -> X) -> (int -> (int -> (int -> X) -> X) -> X) -> X
+    f_1552:int -> X
+    f_1553:int -> unit -> X
+    f_cons_make_list_1548:int -> int -> int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    f_length_1545:int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    f_length_1546:int -> (int -> X) -> int -> X
+    f_main_1550:int -> (unit -> X) -> int -> (int -> (int -> X) -> X) -> X
+    f_main_1551:int -> int -> (unit -> X) -> int -> X
+    f_make_list_1547:int -> int -> (int -> X) -> X
+    f_make_list_1549:int -> (int -> (int -> (int -> X) -> X) -> X) -> int -> (int -> (int -> X) -> X) -> X
+    fail_1556:bool -> (unit -> X) -> X
+    length_1054:int -> (int -> (int -> X) -> X) -> (int -> X) -> X
+    main_1035:int -> (unit -> X) -> X
+    make_list_1033:int -> (int -> (int -> (int -> X) -> X) -> X) -> X
+  inlined functions: br_length_1554,cons_make_list_1088,f_1552,f_1553,f_cons_make_list_1548,f_length_1545,f_length_1546,f_main_1550,f_main_1551,f_make_list_1547,f_make_list_1549,main_1035
+  counterexample: 0:0:0:1:0:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1552@29:0> = var92)
+     [true.(<main_1035@31:0> = <f_1552@29:0>)
+      [true.(<make_list_1033@33:0> = <main_1035@31:0>)
+       [(not (<make_list_1033@33:0> = 0)).(<make_list_1033@36:0> = (<make_list_1033@33:0> - 1))
+        [(<make_list_1033@36:0> = 0).(<<make_list_1033@36:1>@39:0> = 0)
+         [true.
+          ((<f_make_list_1549@41:0> = <make_list_1033@33:0>) &&
+           (<f_make_list_1549@41:2> = <<make_list_1033@36:1>@39:0>))
+          [true.
+           ((<cons_make_list_1088@43:0> = <f_make_list_1549@41:0>) &&
+            ((<cons_make_list_1088@43:1> = <f_make_list_1549@41:0>) &&
+             (<cons_make_list_1088@43:2> = <f_make_list_1549@41:2>)))
+           [true.(<<cons_make_list_1088@43:4>@45:0> = (<cons_make_list_1088@43:2> + 1))
+            [true.(<<f_make_list_1549@41:1>@47:0> = <<cons_make_list_1088@43:4>@45:0>)
+             [true.(<<make_list_1033@33:1>@49:0> = <<f_make_list_1549@41:1>@47:0>)
+              [true.((<f_main_1550@51:0> = <main_1035@31:0>) && (<f_main_1550@51:2> = <<make_list_1033@33:1>@49:0>))
+               [true.(<length_1054@53:0> = <f_main_1550@51:2>)
+                [(<length_1054@53:0> = 0).(<<length_1054@53:2>@56:0> = 0)
+                 [true.
+                  ((<f_main_1551@58:0> = <f_main_1550@51:0>) &&
+                   ((<f_main_1551@58:1> = <f_main_1550@51:2>) && (<f_main_1551@58:3> = <<length_1054@53:2>@56:0>)))
+                  [(not (<f_main_1551@58:3> = <f_main_1551@58:0>)).(<fail_1556@61:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(2246)[2]
+    horn clauses:
+      P[<fail_1556@61:0>](<fail_1556@61:0>:bool)|- bot
+      
+      P[<f_main_1551@58:3>](<f_main_1551@58:0>:int,<f_main_1551@58:1>:int,<f_main_1551@58:3>:int),
+      ((<f_main_1551@58:3> <> <f_main_1551@58:0>) && <fail_1556@61:0>) |- P[<fail_1556@61:0>](
+      <fail_1556@61:0>:bool)
+      
+      P[<f_main_1550@51:2>](<f_main_1551@58:0>:int,<f_main_1551@58:1>:int),
+      P[<<length_1054@53:2>@56:0>](<f_main_1551@58:1>:int,<f_main_1551@58:3>:int)|- P[<f_main_1551@58:3>](
+      <f_main_1551@58:0>:int,<f_main_1551@58:1>:int,<f_main_1551@58:3>:int)
+      
+      P[<length_1054@53:0>](<length_1054@53:0>:int), ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+      |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+      
+      P[<f_main_1550@51:2>](<f_main_1550@51:0>:int,<length_1054@53:0>:int)|- P[<length_1054@53:0>](
+      <length_1054@53:0>:int)
+      
+      P[<main_1035@31:0>](<f_main_1550@51:0>:int),
+      P[<<make_list_1033@33:1>@49:0>](<f_main_1550@51:0>:int,<f_main_1550@51:2>:int)|- P[<f_main_1550@51:2>](
+      <f_main_1550@51:0>:int,<f_main_1550@51:2>:int)
+      
+      P[<make_list_1033@33:0>](<make_list_1033@33:0>:int),
+      P[<<f_make_list_1549@41:1>@47:0>](<make_list_1033@33:0>:int,<<make_list_1033@33:1>@49:0>:int),
+      (<make_list_1033@33:0> <> 0)
+      |- P[<<make_list_1033@33:1>@49:0>](<make_list_1033@33:0>:int,<<make_list_1033@33:1>@49:0>:int)
+      
+      P[<f_make_list_1549@41:2>](<f_make_list_1549@41:0>:int,<cons_make_list_1088@43:2>:int),
+      P[<<cons_make_list_1088@43:4>@45:0>](<f_make_list_1549@41:0>:int,<f_make_list_1549@41:0>:int,<cons_make_list_1088@43:2>:int,<<f_make_list_1549@41:1>@47:0>:int)|- P[<<f_make_list_1549@41:1>@47:0>](
+      <f_make_list_1549@41:0>:int,<<f_make_list_1549@41:1>@47:0>:int)
+      
+      P[<cons_make_list_1088@43:2>](<cons_make_list_1088@43:0>:int,<cons_make_list_1088@43:1>:int,<cons_make_list_1088@43:2>:int),
+      (<<cons_make_list_1088@43:4>@45:0> = (1 + <cons_make_list_1088@43:2>))
+      |- P[<<cons_make_list_1088@43:4>@45:0>](<cons_make_list_1088@43:0>:int,
+                                              <cons_make_list_1088@43:1>:int,
+                                              <cons_make_list_1088@43:2>:int,
+                                              <<cons_make_list_1088@43:4>@45:0>:int)
+      
+      P[<f_make_list_1549@41:2>](<cons_make_list_1088@43:0>:int,<cons_make_list_1088@43:2>:int),
+      (<cons_make_list_1088@43:0> = <cons_make_list_1088@43:1>)
+      |- P[<cons_make_list_1088@43:2>](<cons_make_list_1088@43:0>:int,
+                                       <cons_make_list_1088@43:1>:int,
+                                       <cons_make_list_1088@43:2>:int)
+      
+      P[<make_list_1033@33:0>](<f_make_list_1549@41:0>:int),
+      P[<<make_list_1033@36:1>@39:0>]((-1 + <f_make_list_1549@41:0>):int,<f_make_list_1549@41:2>:int),
+      (<f_make_list_1549@41:0> <> 0)
+      |- P[<f_make_list_1549@41:2>](<f_make_list_1549@41:0>:int,<f_make_list_1549@41:2>:int)
+      
+      P[<make_list_1033@36:0>](<make_list_1033@36:0>:int),
+      ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+      |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int)
+      
+      P[<make_list_1033@33:0>]((1 + <make_list_1033@36:0>):int), ((1 + <make_list_1033@36:0>) <> 0)
+      |- P[<make_list_1033@36:0>](<make_list_1033@36:0>:int)
+      
+      P[<main_1035@31:0>](<make_list_1033@33:0>:int)|- P[<make_list_1033@33:0>](<make_list_1033@33:0>:int)
+      
+      P[<f_1552@29:0>](<main_1035@31:0>:int)|- P[<main_1035@31:0>](<main_1035@31:0>:int)
+      
+      |- P[<f_1552@29:0>](<f_1552@29:0>:int)
+    call trees:
+      <main_1544@26>
+        <f_1552@29>
+          <main_1035@31>
+            <make_list_1033@33>
+              <make_list_1033@36>
+              </<make_list_1033@36:1>@39>
+              <f_make_list_1549@41>
+                <cons_make_list_1088@43>
+                </<cons_make_list_1088@43:4>@45>
+              </<f_make_list_1549@41:1>@47>
+            </<make_list_1033@33:1>@49>
+            <f_main_1550@51>
+              <length_1054@53>
+              </<length_1054@53:2>@56>
+              <f_main_1551@58>
+                <fail_1556@61>
+    inlined horn clauses:
+      P[<fail_1556@61:0>](<fail_1556@61:0>:bool)|- bot
+      
+      P[<<make_list_1033@33:1>@49:0>](<f_main_1551@58:0>:int,<f_main_1551@58:1>:int),
+      P[<<length_1054@53:2>@56:0>](<f_main_1551@58:1>:int,<f_main_1551@58:3>:int),
+      ((<f_main_1551@58:3> <> <f_main_1551@58:0>) && <fail_1556@61:0>) |- P[<fail_1556@61:0>](
+      <fail_1556@61:0>:bool)
+      
+      P[<length_1054@53:0>](<length_1054@53:0>:int), ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+      |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+      
+      P[<<make_list_1033@33:1>@49:0>](<f_main_1550@51:0>:int,<length_1054@53:0>:int)|- P[<length_1054@53:0>](
+      <length_1054@53:0>:int)
+      
+      P[<make_list_1033@33:0>](<make_list_1033@33:0>:int),
+      P[<<make_list_1033@36:1>@39:0>]((-1 + <make_list_1033@33:0>):int,(
+                                      -1 + <<make_list_1033@33:1>@49:0>):int), (
+      <make_list_1033@33:0> <> 0)
+      |- P[<<make_list_1033@33:1>@49:0>](<make_list_1033@33:0>:int,<<make_list_1033@33:1>@49:0>:int)
+      
+      P[<make_list_1033@36:0>](<make_list_1033@36:0>:int),
+      ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+      |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int)
+      
+      P[<make_list_1033@33:0>]((1 + <make_list_1033@36:0>):int), ((1 + <make_list_1033@36:0>) <> 0)
+      |- P[<make_list_1033@36:0>](<make_list_1033@36:0>:int)
+      
+      |- P[<make_list_1033@33:0>](<make_list_1033@33:0>:int)
+    begin ParamSubstInfer.infer(4225)[3]
+      
+    end ParamSubstInfer.infer(4225)[3] (0.023996 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(4227)[3]
+      
+    end RefTypeInfer.elim_coeffs(4227)[3] (0.001000 sec.)
+    begin YhornInterface.solve(4490)[3]
+      begin HcSolver.solve_ub(4491)[4]
+        encoded:
+          P[<fail_1556@61:0>](<fail_1556@61:0>:int)|- bot
+          
+          P[<<make_list_1033@33:1>@49:0>](<f_main_1551@58:0>:int,<f_main_1551@58:1>:int),
+          P[<<length_1054@53:2>@56:0>](<f_main_1551@58:1>:int,<f_main_1551@58:3>:int),
+          ((<f_main_1551@58:3> <> <f_main_1551@58:0>) && (<fail_1556@61:0> = 1))
+          |- P[<fail_1556@61:0>](<fail_1556@61:0>:int)
+          
+          P[<length_1054@53:0>](<length_1054@53:0>:int), ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+          |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+          
+          P[<<make_list_1033@33:1>@49:0>](<f_main_1550@51:0>:int,<length_1054@53:0>:int)|- P[<length_1054@53:0>](
+          <length_1054@53:0>:int)
+          
+          P[<make_list_1033@33:0>](<make_list_1033@33:0>:int),
+          P[<<make_list_1033@36:1>@39:0>]((-1 + <make_list_1033@33:0>):int,(
+                                          -1 + <<make_list_1033@33:1>@49:0>):int), (
+          <make_list_1033@33:0> <> 0)
+          |- P[<<make_list_1033@33:1>@49:0>](<make_list_1033@33:0>:int,
+                                             <<make_list_1033@33:1>@49:0>:int)
+          
+          P[<make_list_1033@36:0>](<make_list_1033@36:0>:int),
+          ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+          |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,
+                                             <<make_list_1033@36:1>@39:0>:int)
+          
+          P[<make_list_1033@33:0>]((1 + <make_list_1033@36:0>):int), (
+          (1 + <make_list_1033@36:0>) <> 0) |- P[<make_list_1033@36:0>](
+          <make_list_1033@36:0>:int)
+          
+          |- P[<make_list_1033@33:0>](<make_list_1033@33:0>:int)
+        input to Yhorn:
+          P[<fail_1556@61:0>](<fail_1556@61:0>:int)|- bot
+          
+          P[<<make_list_1033@33:1>@49:0>](<f_main_1551@58:0>:int,<f_main_1551@58:1>:int),
+          P[<<length_1054@53:2>@56:0>](<f_main_1551@58:1>:int,<f_main_1551@58:3>:int),
+          ((<f_main_1551@58:3> <> <f_main_1551@58:0>) && (<fail_1556@61:0> = 1))
+          |- P[<fail_1556@61:0>](<fail_1556@61:0>:int)
+          
+          P[<length_1054@53:0>](<length_1054@53:0>:int), ((<<length_1054@53:2>@56:0> = 0) && (<length_1054@53:0> = 0))
+          |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+          
+          P[<<make_list_1033@33:1>@49:0>](<f_main_1550@51:0>:int,<length_1054@53:0>:int)|- P[<length_1054@53:0>](
+          <length_1054@53:0>:int)
+          
+          P[<make_list_1033@33:0>](<make_list_1033@33:0>:int),
+          P[<<make_list_1033@36:1>@39:0>](var93:int,var94:int),
+          (((1 + var94) = <<make_list_1033@33:1>@49:0>) &&
+           (((1 + var93) = <make_list_1033@33:0>) && (<make_list_1033@33:0> <> 0)))
+          |- P[<<make_list_1033@33:1>@49:0>](<make_list_1033@33:0>:int,
+                                             <<make_list_1033@33:1>@49:0>:int)
+          
+          P[<make_list_1033@36:0>](<make_list_1033@36:0>:int),
+          ((<<make_list_1033@36:1>@39:0> = 0) && (<make_list_1033@36:0> = 0))
+          |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,
+                                             <<make_list_1033@36:1>@39:0>:int)
+          
+          P[<make_list_1033@33:0>](var95:int),
+          ((var95 = (1 + <make_list_1033@36:0>)) && ((1 + <make_list_1033@36:0>) <> 0))
+          |- P[<make_list_1033@36:0>](<make_list_1033@36:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1556_sep_61_sep_0($270)) -> 1=0.
+(($270-1=0) & ($271-$272<>0)) & (v_sep_length_1054_sep_53_sep_2_sep_56_sep_0($273,$271)) & (v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0($272,$273)) -> v_sep_fail_1556_sep_61_sep_0($270).
+(($274=0) & ($275=0)) & (v_sep_length_1054_sep_53_sep_0($274)) -> v_sep_length_1054_sep_53_sep_2_sep_56_sep_0($274,$275).
+(0=0) & (v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0($276,$274)) -> v_sep_length_1054_sep_53_sep_0($274).
+(($277<>0) & (-$277+$278+1=0) & ($279-$280+1=0)) & (v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0($278,$279)) & (v_sep_make_list_1033_sep_33_sep_0($277)) -> v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0($277,$280).
+(($281=0) & ($282=0)) & (v_sep_make_list_1033_sep_36_sep_0($281)) -> v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0($281,$282).
+(($281+1<>0) & (-$281+$283-1=0)) & (v_sep_make_list_1033_sep_33_sep_0($283)) -> v_sep_make_list_1033_sep_36_sep_0($281).
+0=0 -> v_sep_make_list_1033_sep_33_sep_0($277).
+
+
+v_sep_fail_1556_sep_61_sep_0: X
+v_sep_length_1054_sep_53_sep_0: X
+v_sep_length_1054_sep_53_sep_2_sep_56_sep_0: X
+v_sep_make_list_1033_sep_33_sep_0: X
+v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0: X
+v_sep_make_list_1033_sep_36_sep_0: X
+v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0: X
+...............
+v_sep_fail_1556_sep_61_sep_0: X
+v_sep_length_1054_sep_53_sep_0: X
+v_sep_length_1054_sep_53_sep_2_sep_56_sep_0: X
+v_sep_make_list_1033_sep_33_sep_0: X
+v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0: X
+v_sep_make_list_1033_sep_36_sep_0: X
+v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0: X
+......
+v_sep_fail_1556_sep_61_sep_0: X
+v_sep_length_1054_sep_53_sep_0: X
+v_sep_length_1054_sep_53_sep_2_sep_56_sep_0: X
+v_sep_make_list_1033_sep_33_sep_0: X
+v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0: X
+v_sep_make_list_1033_sep_36_sep_0: X
+v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0: X
+...........
+v_sep_fail_1556_sep_61_sep_0: X
+v_sep_length_1054_sep_53_sep_0: X
+v_sep_length_1054_sep_53_sep_2_sep_56_sep_0: X
+v_sep_make_list_1033_sep_33_sep_0: X
+v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0: X
+v_sep_make_list_1033_sep_36_sep_0: X
+v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0: X
+.............
+v_sep_fail_1556_sep_61_sep_0: X
+v_sep_length_1054_sep_53_sep_0: X
+v_sep_length_1054_sep_53_sep_2_sep_56_sep_0: X
+v_sep_make_list_1033_sep_33_sep_0: X
+v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0: X
+v_sep_make_list_1033_sep_36_sep_0: X
+v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0: X
+...............(0=0) & (v_sep_fail_1556_sep_61_sep_0($270)) -> 1=0.
+(($270-1=0) & ($271-$272<>0)) & (v_sep_length_1054_sep_53_sep_2_sep_56_sep_0($273,$271)) & (v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0($272,$273)) -> v_sep_fail_1556_sep_61_sep_0($270).
+(($274=0) & ($275=0)) & (v_sep_length_1054_sep_53_sep_0($274)) -> v_sep_length_1054_sep_53_sep_2_sep_56_sep_0($274,$275).
+(0=0) & (v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0($276,$274)) -> v_sep_length_1054_sep_53_sep_0($274).
+(($277<>0) & (-$277+$278+1=0) & ($279-$280+1=0)) & (v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0($278,$279)) & (v_sep_make_list_1033_sep_33_sep_0($277)) -> v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0($277,$280).
+(($281=0) & ($282=0)) & (v_sep_make_list_1033_sep_36_sep_0($281)) -> v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0($281,$282).
+(($281+1<>0) & (-$281+$283-1=0)) & (v_sep_make_list_1033_sep_33_sep_0($283)) -> v_sep_make_list_1033_sep_36_sep_0($281).
+0=0 -> v_sep_make_list_1033_sep_33_sep_0($277).
+
+          |- P[<make_list_1033@33:0>](<make_list_1033@33:0>:int)
+        solution:
+          P[<fail_1556@61:0>]($284:bool) = false
+          P[<length_1054@53:0>]($297:int) = (1 <= $297)
+          P[<<length_1054@53:2>@56:0>]($287:int,$289:int) = ((1 + $287) <= 0)
+          P[<make_list_1033@33:0>]($305:int) = true
+          P[<<make_list_1033@33:1>@49:0>]($292:int,$294:int) = (1 <= $294)
+          P[<make_list_1033@36:0>]($308:int) = true
+          P[<<make_list_1033@36:1>@39:0>]($300:int,$302:int) = (0 <= $302)
+        
+      end HcSolver.solve_ub(4491)[4] (0.040994 sec.)
+      begin HcSolver.check_validity(4785)[4]
+        input:
+          P[<fail_1556@61:0>](<fail_1556@61:0>:bool)|- bot
+          
+          P[<<make_list_1033@33:1>@49:0>](<f_main_1551@58:0>:int,<f_main_1551@58:1>:int),
+          P[<<length_1054@53:2>@56:0>](<f_main_1551@58:1>:int,<f_main_1551@58:3>:int),
+          ((<f_main_1551@58:3> <> <f_main_1551@58:0>) && <fail_1556@61:0>)
+          |- P[<fail_1556@61:0>](<fail_1556@61:0>:bool)
+          
+          P[<length_1054@53:0>](<length_1054@53:0>:int), ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+          |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+          
+          P[<<make_list_1033@33:1>@49:0>](<f_main_1550@51:0>:int,<length_1054@53:0>:int)|- P[<length_1054@53:0>](
+          <length_1054@53:0>:int)
+          
+          P[<make_list_1033@33:0>](<make_list_1033@33:0>:int),
+          P[<<make_list_1033@36:1>@39:0>]((-1 + <make_list_1033@33:0>):int,(
+                                          -1 + <<make_list_1033@33:1>@49:0>):int), (
+          <make_list_1033@33:0> <> 0)
+          |- P[<<make_list_1033@33:1>@49:0>](<make_list_1033@33:0>:int,
+                                             <<make_list_1033@33:1>@49:0>:int)
+          
+          P[<make_list_1033@36:0>](<make_list_1033@36:0>:int),
+          ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+          |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,
+                                             <<make_list_1033@36:1>@39:0>:int)
+          
+          P[<make_list_1033@33:0>]((1 + <make_list_1033@36:0>):int), (
+          (1 + <make_list_1033@36:0>) <> 0) |- P[<make_list_1033@36:0>](
+          <make_list_1033@36:0>:int)
+          
+          |- P[<make_list_1033@33:0>](<make_list_1033@33:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(4785)[4] (0.003999 sec.)
+      solution:
+        P[<fail_1556@61:0>]($284:bool) = false
+        P[<length_1054@53:0>]($297:int) = (1 <= $297)
+        P[<<length_1054@53:2>@56:0>]($287:int,$289:int) = ((1 + $287) <= 0)
+        P[<make_list_1033@33:0>]($305:int) = true
+        P[<<make_list_1033@33:1>@49:0>]($292:int,$294:int) = (1 <= $294)
+        P[<make_list_1033@36:0>]($308:int) = true
+        P[<<make_list_1033@36:1>@39:0>]($300:int,$302:int) = (0 <= $302)
+    end YhornInterface.solve(4490)[3] (0.045993 sec.)
+    
+  end RefTypeInfer.infer_etrs(2246)[2] (0.082987 sec.)
+  refinement types:
+    main_1544: X
+    f_1552: v1:int -> X
+    main_1035: v1:int -> (v2:unit -> X) -> X
+    make_list_1033: v1:int -> (v2:{v2:int | (1 <= v2)} -> (v3:int -> (v4:int -> X) -> X) -> X) -> X
+    make_list_1033: v1:int -> (v2:{v2:int | (0 <= v2)} -> (v3:int -> (v4:int -> X) -> X) -> X) -> X
+    f_make_list_1549: v1:int ->
+                      (v2:int -> (v3:int -> (v4:int -> X) -> X) -> X) -> v8:int -> (v9:int -> (v10:int -> X) -> X) -> X
+    cons_make_list_1088: v1:int ->
+                         v2:int ->
+                         v3:int ->
+                         (v4:int -> (v5:int -> X) -> X) -> (v8:int -> (v9:int -> (v10:int -> X) -> X) -> X) -> X
+    f_main_1550: v1:int -> (v2:unit -> X) -> v4:int -> (v5:int -> (v6:int -> X) -> X) -> X
+    length_1054: v1:{v1:int | (1 <= v1)} -> (v2:int -> (v3:int -> X) -> X) -> (v6:{v6:int | ((1 + v1) <= 0)} -> X) -> X
+    f_main_1551: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1556: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    br_length_1554: var144:bool -> var143:int -> (var142:int -> (var141:int -> X) -> X) -> (var138:int -> X) -> X
+    f_1553: var147:int -> var146:unit -> X
+    f_cons_make_list_1548: var158:int ->
+                           var157:int ->
+                           var156:int -> (var155:int -> (var154:int -> X) -> X) -> var151:int -> (var150:int -> X) -> X
+    f_length_1545: var167:int -> (var166:int -> (var165:int -> X) -> X) -> var162:int -> (var161:int -> X) -> X
+    f_length_1546: var172:int -> (var171:int -> X) -> var169:int -> X
+    f_make_list_1547: var177:int -> var176:int -> (var175:int -> X) -> X
+  abstraction types:
+    main_1544: X
+    f_1552: v1:int -> X
+    main_1035: v1:int -> (v2:unit -> X) -> X
+    make_list_1033: var178:int ->
+                    (var179:int[var179 -> (1 <= var179),
+                                var179 -> (0 <= var179)] -> (var180:int -> (var181:int -> X) -> X) -> X) -> X
+    f_make_list_1549: v1:int ->
+                      (v2:int -> (v3:int -> (v4:int -> X) -> X) -> X) -> v8:int -> (v9:int -> (v10:int -> X) -> X) -> X
+    cons_make_list_1088: v1:int ->
+                         v2:int ->
+                         v3:int ->
+                         (v4:int -> (v5:int -> X) -> X) -> (v8:int -> (v9:int -> (v10:int -> X) -> X) -> X) -> X
+    f_main_1550: v1:int -> (v2:unit -> X) -> v4:int -> (v5:int -> (v6:int -> X) -> X) -> X
+    length_1054: v1:int[v1 -> (1 <= v1)] -> (v2:int -> (v3:int -> X) -> X) -> (v6:int[v6 -> (
+                                                                    (1 + v1) <= 0)] -> X) -> X
+    f_main_1551: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1556: v1:bool -> (v2:unit -> X) -> X
+    br_length_1554: var144:bool -> var143:int -> (var142:int -> (var141:int -> X) -> X) -> (var138:int -> X) -> X
+    f_1553: var147:int -> var146:unit -> X
+    f_cons_make_list_1548: var158:int ->
+                           var157:int ->
+                           var156:int -> (var155:int -> (var154:int -> X) -> X) -> var151:int -> (var150:int -> X) -> X
+    f_length_1545: var167:int -> (var166:int -> (var165:int -> X) -> X) -> var162:int -> (var161:int -> X) -> X
+    f_length_1546: var172:int -> (var171:int -> X) -> var169:int -> X
+    f_make_list_1547: var177:int -> var176:int -> (var175:int -> X) -> X
+  
+end AbsTypeInfer.refine(2245)[1] (0.091985 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 0; 0; 0; 0; 0
+
+Program with abstraction types (CEGAR-cycle 2)::
+Main: main_1544
+  main_1544 -> (rand_int f_1552)
+  br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 when b_1555 ->
+      (length_1054 (xs1_1031 - 1) (f_length_1545 xs1_1031 xs2_1031) (f_length_1546 xs1_1031 k_length_1148))
+  br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 when (not b_1555) -> _|_
+  cons_make_list_1088 n_1034 x_1086 xs1_1087 xs2_1087 k_make_list_cons_make_list_1313 ->
+      (k_make_list_cons_make_list_1313 (xs1_1087 + 1) (f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087))
+  f_1552 x_1486 -> (main_1035 x_1486 (f_1553 x_1486))
+  f_1553 x_1486 x_1483 -> end
+  f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 when (
+      i_1085 = 0) -> (k_make_list_cons_make_list_1328 x_1086)
+  f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 when (
+      not (i_1085 = 0)) -> (xs2_1087 (i_1085 - 1) k_make_list_cons_make_list_1328)
+  f_length_1545 xs1_1031 xs2_1031 x_1059 k_length_xs'_1181 -> (xs2_1031 (x_1059 + 1) k_length_xs'_1181)
+  f_length_1546 xs1_1031 k_length_1148 x_1196 -> (k_length_1148 (1 + x_1196))
+  f_main_1550 n_1036 k_main_1412 x1_1418 x2_1418 ->
+      (length_1054 x1_1418 x2_1418 (f_main_1551 n_1036 x1_1418 k_main_1412))
+  f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 when (x_1446 = n_1036) -> (k_main_1412 ())
+  f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 when (not (x_1446 = n_1036)) -> (fail_1556 true k_main_1412)
+  f_make_list_1547 n_1034 x_1092 k_make_list_1266 -> _|_
+  f_make_list_1549 n_1034 k_make_list_1254 x1_1391 x2_1391 ->
+      (cons_make_list_1088 n_1034 n_1034 x1_1391 x2_1391 k_make_list_1254)
+  fail_1556 b k -> {fail} => (k ())
+  length_1054 xs1_1031 xs2_1031 k_length_1148 when (xs1_1031 = 0) -> (k_length_1148 0)
+  length_1054 xs1_1031 xs2_1031 k_length_1148 when (not (xs1_1031 = 0)) ->
+      (br_length_1554 (1 <= xs1_1031) xs1_1031 xs2_1031 k_length_1148)
+  main_1035 n_1036 k_main_1412 -> (make_list_1033 n_1036 (f_main_1550 n_1036 k_main_1412))
+  make_list_1033 n_1034 k_make_list_1254 when (n_1034 = 0) -> (k_make_list_1254 0 (f_make_list_1547 n_1034))
+  make_list_1033 n_1034 k_make_list_1254 when (not (n_1034 = 0)) ->
+      (make_list_1033 (n_1034 - 1) (f_make_list_1549 n_1034 k_make_list_1254))
+Types:
+  main_1544 : X
+  fail_1556 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  length_1054 : (x_1:int[x_1 >= 1] -> (int -> (int -> X) -> X) -> (x_9:int[x_1 <= -1; x_9 = 0] -> X) -> X)
+  make_list_1033 : (x_1:int -> (x_3:int[x_3 >= 0; x_3 >= 1; x_1 = 0] -> (int -> (int -> X) -> X) -> X) -> X)
+  
+(2-1) Abstracting ... DONE!
+
+(2-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1544 ... --> 
+  f_1552 ... --> 
+  main_1035 ... --> 
+  make_list_1033 [2/2] ... --> 
+  make_list_1033 [1/2] ... --> 
+  f_make_list_1549 ... --> 
+  cons_make_list_1088 ... --> 
+  f_main_1550 ... --> 
+  length_1054 [2/2] ... --> 
+  br_length_1554 [1/2] ... --> 
+  length_1054 [2/2] ... --> 
+  br_length_1554 [1/2] ... --> 
+  length_1054 [1/2] ... --> 
+  f_length_1546 ... --> 
+  f_length_1546 ... --> 
+  f_main_1551 [2/2] ... --> 
+  fail_1556 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 0; 0; 0; 0; 1; 0; 1; 0; 0; 0; 0; 1; 0
+
+(2-3) Checking counter-example ... DONE!
+
+(2-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(5985)[1]
+  program:
+    main_1544  | true = ((Random.int 0) f_1552)
+    br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 | b_1555 = (
+    length_1054 (xs1_1031 - 1)
+                (f_length_1545 xs1_1031
+                               xs2_1031)
+                (f_length_1546 xs1_1031
+                               k_length_1148))
+    br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 | (not b_1555) = bot
+    cons_make_list_1088 n_1034 x_1086 xs1_1087 xs2_1087 k_make_list_cons_make_list_1313 | true = (
+    k_make_list_cons_make_list_1313 (xs1_1087 + 1)
+                                    (f_cons_make_list_1548 n_1034
+                                                           x_1086
+                                                           xs1_1087
+                                                           xs2_1087))
+    f_1552 x_1486 | true = (main_1035 x_1486
+                                      (f_1553 x_1486))
+    f_1553 x_1486 x_1483 | true = end
+    f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 | (
+    i_1085 = 0) = (k_make_list_cons_make_list_1328 x_1086)
+    f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 | (
+    not (i_1085 = 0)) = (xs2_1087 (i_1085 - 1)
+                                  k_make_list_cons_make_list_1328)
+    f_length_1545 xs1_1031 xs2_1031 x_1059 k_length_xs'_1181 | true = (
+    xs2_1031 (x_1059 + 1)
+             k_length_xs'_1181)
+    f_length_1546 xs1_1031 k_length_1148 x_1196 | true = (k_length_1148 (
+                                                                    1 + x_1196))
+    f_main_1550 n_1036 k_main_1412 x1_1418 x2_1418 | true = (length_1054
+                                                               x1_1418
+                                                               x2_1418
+                                                               (f_main_1551 n_1036
+                                                                    x1_1418
+                                                                    k_main_1412))
+    f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 | (x_1446 = n_1036) = (
+    k_main_1412 ())
+    f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 | (not (x_1446 = n_1036)) = (
+    fail_1556 true
+              k_main_1412)
+    f_make_list_1547 n_1034 x_1092 k_make_list_1266 | true = bot
+    f_make_list_1549 n_1034 k_make_list_1254 x1_1391 x2_1391 | true = (
+    cons_make_list_1088 n_1034
+                        n_1034
+                        x1_1391
+                        x2_1391
+                        k_make_list_1254)
+    fail_1556 b k | true = (fail ())
+    length_1054 xs1_1031 xs2_1031 k_length_1148 | (xs1_1031 = 0) = (k_length_1148 0)
+    length_1054 xs1_1031 xs2_1031 k_length_1148 | (not (xs1_1031 = 0)) = (
+    br_length_1554 (1 <= xs1_1031)
+                   xs1_1031
+                   xs2_1031
+                   k_length_1148)
+    main_1035 n_1036 k_main_1412 | true = (make_list_1033 n_1036
+                                                          (f_main_1550 n_1036
+                                                                    k_main_1412))
+    make_list_1033 n_1034 k_make_list_1254 | (n_1034 = 0) = (k_make_list_1254 0
+                                                                    (f_make_list_1547 n_1034))
+    make_list_1033 n_1034 k_make_list_1254 | (not (n_1034 = 0)) = (make_list_1033
+                                                                    (
+                                                                    n_1034 - 1)
+                                                                    (
+                                                                    f_make_list_1549 n_1034
+                                                                    k_make_list_1254))
+    main_1544:X
+    br_length_1554:bool -> int -> (int -> (int -> X) -> X) -> (int -> X) -> X
+    cons_make_list_1088:int -> int -> int -> (int -> (int -> X) -> X) -> (int -> (int -> (int -> X) -> X) -> X) -> X
+    f_1552:int -> X
+    f_1553:int -> unit -> X
+    f_cons_make_list_1548:int -> int -> int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    f_length_1545:int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    f_length_1546:int -> (int -> X) -> int -> X
+    f_main_1550:int -> (unit -> X) -> int -> (int -> (int -> X) -> X) -> X
+    f_main_1551:int -> int -> (unit -> X) -> int -> X
+    f_make_list_1547:int -> int -> (int -> X) -> X
+    f_make_list_1549:int -> (int -> (int -> (int -> X) -> X) -> X) -> int -> (int -> (int -> X) -> X) -> X
+    fail_1556:bool -> (unit -> X) -> X
+    length_1054:int -> (int -> (int -> X) -> X) -> (int -> X) -> X
+    main_1035:int -> (unit -> X) -> X
+    make_list_1033:int -> (int -> (int -> (int -> X) -> X) -> X) -> X
+  inlined functions: br_length_1554,cons_make_list_1088,f_1552,f_1553,f_cons_make_list_1548,f_length_1545,f_length_1546,f_main_1550,f_main_1551,f_make_list_1547,f_make_list_1549,main_1035
+  counterexample: 0:0:0:1:0:0:0:0:1:0:1:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1552@67:0> = var186)
+     [true.(<main_1035@69:0> = <f_1552@67:0>)
+      [true.(<make_list_1033@71:0> = <main_1035@69:0>)
+       [(not (<make_list_1033@71:0> = 0)).(<make_list_1033@74:0> = (<make_list_1033@71:0> - 1))
+        [(<make_list_1033@74:0> = 0).(<<make_list_1033@74:1>@77:0> = 0)
+         [true.
+          ((<f_make_list_1549@79:0> = <make_list_1033@71:0>) &&
+           (<f_make_list_1549@79:2> = <<make_list_1033@74:1>@77:0>))
+          [true.
+           ((<cons_make_list_1088@81:0> = <f_make_list_1549@79:0>) &&
+            ((<cons_make_list_1088@81:1> = <f_make_list_1549@79:0>) &&
+             (<cons_make_list_1088@81:2> = <f_make_list_1549@79:2>)))
+           [true.(<<cons_make_list_1088@81:4>@83:0> = (<cons_make_list_1088@81:2> + 1))
+            [true.(<<f_make_list_1549@79:1>@85:0> = <<cons_make_list_1088@81:4>@83:0>)
+             [true.(<<make_list_1033@71:1>@87:0> = <<f_make_list_1549@79:1>@85:0>)
+              [true.((<f_main_1550@89:0> = <main_1035@69:0>) && (<f_main_1550@89:2> = <<make_list_1033@71:1>@87:0>))
+               [true.(<length_1054@91:0> = <f_main_1550@89:2>)
+                [(not (<length_1054@91:0> = 0)).
+                 ((<br_length_1554@94:0> = (1 <= <length_1054@91:0>)) && (<br_length_1554@94:1> = <length_1054@91:0>))
+                 [<br_length_1554@94:0>.(<length_1054@97:0> = (<br_length_1554@94:1> - 1))
+                  [(not (<length_1054@97:0> = 0)).
+                   ((<br_length_1554@100:0> = (1 <= <length_1054@97:0>)) &&
+                    (<br_length_1554@100:1> = <length_1054@97:0>))
+                   [<br_length_1554@100:0>.(<length_1054@103:0> = (<br_length_1554@100:1> - 1))
+                    [(<length_1054@103:0> = 0).(<<length_1054@103:2>@106:0> = 0)
+                     [true.
+                      ((<f_length_1546@108:0> = <br_length_1554@100:1>) &&
+                       (<f_length_1546@108:2> = <<length_1054@103:2>@106:0>))
+                      [true.(<<f_length_1546@108:1>@110:0> = (1 + <f_length_1546@108:2>))
+                       [true.(<<br_length_1554@100:3>@112:0> = <<f_length_1546@108:1>@110:0>)
+                        [true.(<<length_1054@97:2>@114:0> = <<br_length_1554@100:3>@112:0>)
+                         [true.
+                          ((<f_length_1546@116:0> = <br_length_1554@94:1>) &&
+                           (<f_length_1546@116:2> = <<length_1054@97:2>@114:0>))
+                          [true.(<<f_length_1546@116:1>@118:0> = (1 + <f_length_1546@116:2>))
+                           [true.(<<br_length_1554@94:3>@120:0> = <<f_length_1546@116:1>@118:0>)
+                            [true.(<<length_1054@91:2>@122:0> = <<br_length_1554@94:3>@120:0>)
+                             [true.
+                              ((<f_main_1551@124:0> = <f_main_1550@89:0>) &&
+                               ((<f_main_1551@124:1> = <f_main_1550@89:2>) &&
+                                (<f_main_1551@124:3> = <<length_1054@91:2>@122:0>)))
+                              [(not (<f_main_1551@124:3> = <f_main_1551@124:0>)).(<fail_1556@127:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(5986)[2]
+    horn clauses:
+      P[<fail_1556@127:0>](<fail_1556@127:0>:bool)|- bot
+      
+      P[<f_main_1551@124:3>](<f_main_1551@124:0>:int,<f_main_1551@124:1>:int,<f_main_1551@124:3>:int),
+      ((<f_main_1551@124:3> <> <f_main_1551@124:0>) && <fail_1556@127:0>)
+      |- P[<fail_1556@127:0>](<fail_1556@127:0>:bool)
+      
+      P[<f_main_1550@89:2>](<f_main_1551@124:0>:int,<f_main_1551@124:1>:int),
+      P[<<length_1054@91:2>@122:0>](<f_main_1551@124:1>:int,<f_main_1551@124:3>:int)|- P[<f_main_1551@124:3>](
+      <f_main_1551@124:0>:int,<f_main_1551@124:1>:int,<f_main_1551@124:3>:int)
+      
+      P[<length_1054@91:0>](<length_1054@91:0>:int),
+      P[<<br_length_1554@94:3>@120:0>]((1 <= <length_1054@91:0>):bool,<length_1054@91:0>:int,<<length_1054@91:2>@122:0>:int),
+      (<length_1054@91:0> <> 0) |- P[<<length_1054@91:2>@122:0>](<length_1054@91:0>:int,
+                                                                 <<length_1054@91:2>@122:0>:int)
+      
+      P[<br_length_1554@94:1>](<br_length_1554@94:0>:bool,<br_length_1554@94:1>:int),
+      P[<<f_length_1546@116:1>@118:0>](<br_length_1554@94:1>:int,<<br_length_1554@94:3>@120:0>:int),
+      <br_length_1554@94:0>
+      |- P[<<br_length_1554@94:3>@120:0>](<br_length_1554@94:0>:bool,
+                                          <br_length_1554@94:1>:int,<<br_length_1554@94:3>@120:0>:int)
+      
+      P[<f_length_1546@116:2>](<f_length_1546@116:0>:int,(-1 + <<f_length_1546@116:1>@118:0>):int)|- P[<<f_length_1546@116:1>@118:0>](
+      <f_length_1546@116:0>:int,<<f_length_1546@116:1>@118:0>:int)
+      
+      P[<br_length_1554@94:1>](true:bool,<f_length_1546@116:0>:int),
+      P[<<length_1054@97:2>@114:0>]((-1 + <f_length_1546@116:0>):int,<f_length_1546@116:2>:int)|- P[<f_length_1546@116:2>](
+      <f_length_1546@116:0>:int,<f_length_1546@116:2>:int)
+      
+      P[<length_1054@97:0>](<length_1054@97:0>:int),
+      P[<<br_length_1554@100:3>@112:0>]((1 <= <length_1054@97:0>):bool,<length_1054@97:0>:int,<<length_1054@97:2>@114:0>:int),
+      (<length_1054@97:0> <> 0) |- P[<<length_1054@97:2>@114:0>](<length_1054@97:0>:int,
+                                                                 <<length_1054@97:2>@114:0>:int)
+      
+      P[<br_length_1554@100:1>](<br_length_1554@100:0>:bool,<br_length_1554@100:1>:int),
+      P[<<f_length_1546@108:1>@110:0>](<br_length_1554@100:1>:int,<<br_length_1554@100:3>@112:0>:int),
+      <br_length_1554@100:0>
+      |- P[<<br_length_1554@100:3>@112:0>](<br_length_1554@100:0>:bool,
+                                           <br_length_1554@100:1>:int,
+                                           <<br_length_1554@100:3>@112:0>:int)
+      
+      P[<f_length_1546@108:2>](<f_length_1546@108:0>:int,(-1 + <<f_length_1546@108:1>@110:0>):int)|- P[<<f_length_1546@108:1>@110:0>](
+      <f_length_1546@108:0>:int,<<f_length_1546@108:1>@110:0>:int)
+      
+      P[<br_length_1554@100:1>](true:bool,<f_length_1546@108:0>:int),
+      P[<<length_1054@103:2>@106:0>]((-1 + <f_length_1546@108:0>):int,<f_length_1546@108:2>:int)|- P[<f_length_1546@108:2>](
+      <f_length_1546@108:0>:int,<f_length_1546@108:2>:int)
+      
+      P[<length_1054@103:0>](<length_1054@103:0>:int), ((<length_1054@103:0> = 0) && (<<length_1054@103:2>@106:0> = 0))
+      |- P[<<length_1054@103:2>@106:0>](<length_1054@103:0>:int,<<length_1054@103:2>@106:0>:int)
+      
+      P[<br_length_1554@100:1>](true:bool,(1 + <length_1054@103:0>):int)|- P[<length_1054@103:0>](
+      <length_1054@103:0>:int)
+      
+      P[<length_1054@97:0>](<br_length_1554@100:1>:int),
+      ((<br_length_1554@100:1> <> 0) && (<br_length_1554@100:0> = (1 <= <br_length_1554@100:1>)))
+      |- P[<br_length_1554@100:1>](<br_length_1554@100:0>:bool,<br_length_1554@100:1>:int)
+      
+      P[<br_length_1554@94:1>](true:bool,(1 + <length_1054@97:0>):int)|- P[<length_1054@97:0>](<length_1054@97:0>:int)
+      
+      P[<length_1054@91:0>](<br_length_1554@94:1>:int),
+      ((<br_length_1554@94:1> <> 0) && (<br_length_1554@94:0> = (1 <= <br_length_1554@94:1>)))
+      |- P[<br_length_1554@94:1>](<br_length_1554@94:0>:bool,<br_length_1554@94:1>:int)
+      
+      P[<f_main_1550@89:2>](<f_main_1550@89:0>:int,<length_1054@91:0>:int)|- P[<length_1054@91:0>](
+      <length_1054@91:0>:int)
+      
+      P[<main_1035@69:0>](<f_main_1550@89:0>:int),
+      P[<<make_list_1033@71:1>@87:0>](<f_main_1550@89:0>:int,<f_main_1550@89:2>:int)|- P[<f_main_1550@89:2>](
+      <f_main_1550@89:0>:int,<f_main_1550@89:2>:int)
+      
+      P[<make_list_1033@71:0>](<make_list_1033@71:0>:int),
+      P[<<f_make_list_1549@79:1>@85:0>](<make_list_1033@71:0>:int,<<make_list_1033@71:1>@87:0>:int),
+      (<make_list_1033@71:0> <> 0)
+      |- P[<<make_list_1033@71:1>@87:0>](<make_list_1033@71:0>:int,<<make_list_1033@71:1>@87:0>:int)
+      
+      P[<f_make_list_1549@79:2>](<f_make_list_1549@79:0>:int,<cons_make_list_1088@81:2>:int),
+      P[<<cons_make_list_1088@81:4>@83:0>](<f_make_list_1549@79:0>:int,<f_make_list_1549@79:0>:int,<cons_make_list_1088@81:2>:int,<<f_make_list_1549@79:1>@85:0>:int)|- P[<<f_make_list_1549@79:1>@85:0>](
+      <f_make_list_1549@79:0>:int,<<f_make_list_1549@79:1>@85:0>:int)
+      
+      P[<cons_make_list_1088@81:2>](<cons_make_list_1088@81:0>:int,<cons_make_list_1088@81:1>:int,<cons_make_list_1088@81:2>:int),
+      (<<cons_make_list_1088@81:4>@83:0> = (1 + <cons_make_list_1088@81:2>))
+      |- P[<<cons_make_list_1088@81:4>@83:0>](<cons_make_list_1088@81:0>:int,
+                                              <cons_make_list_1088@81:1>:int,
+                                              <cons_make_list_1088@81:2>:int,
+                                              <<cons_make_list_1088@81:4>@83:0>:int)
+      
+      P[<f_make_list_1549@79:2>](<cons_make_list_1088@81:0>:int,<cons_make_list_1088@81:2>:int),
+      (<cons_make_list_1088@81:0> = <cons_make_list_1088@81:1>)
+      |- P[<cons_make_list_1088@81:2>](<cons_make_list_1088@81:0>:int,
+                                       <cons_make_list_1088@81:1>:int,
+                                       <cons_make_list_1088@81:2>:int)
+      
+      P[<make_list_1033@71:0>](<f_make_list_1549@79:0>:int),
+      P[<<make_list_1033@74:1>@77:0>]((-1 + <f_make_list_1549@79:0>):int,<f_make_list_1549@79:2>:int),
+      (<f_make_list_1549@79:0> <> 0)
+      |- P[<f_make_list_1549@79:2>](<f_make_list_1549@79:0>:int,<f_make_list_1549@79:2>:int)
+      
+      P[<make_list_1033@74:0>](<make_list_1033@74:0>:int),
+      ((<make_list_1033@74:0> = 0) && (<<make_list_1033@74:1>@77:0> = 0))
+      |- P[<<make_list_1033@74:1>@77:0>](<make_list_1033@74:0>:int,<<make_list_1033@74:1>@77:0>:int)
+      
+      P[<make_list_1033@71:0>]((1 + <make_list_1033@74:0>):int), ((1 + <make_list_1033@74:0>) <> 0)
+      |- P[<make_list_1033@74:0>](<make_list_1033@74:0>:int)
+      
+      P[<main_1035@69:0>](<make_list_1033@71:0>:int)|- P[<make_list_1033@71:0>](<make_list_1033@71:0>:int)
+      
+      P[<f_1552@67:0>](<main_1035@69:0>:int)|- P[<main_1035@69:0>](<main_1035@69:0>:int)
+      
+      |- P[<f_1552@67:0>](<f_1552@67:0>:int)
+    call trees:
+      <main_1544@64>
+        <f_1552@67>
+          <main_1035@69>
+            <make_list_1033@71>
+              <make_list_1033@74>
+              </<make_list_1033@74:1>@77>
+              <f_make_list_1549@79>
+                <cons_make_list_1088@81>
+                </<cons_make_list_1088@81:4>@83>
+              </<f_make_list_1549@79:1>@85>
+            </<make_list_1033@71:1>@87>
+            <f_main_1550@89>
+              <length_1054@91>
+                <br_length_1554@94>
+                  <length_1054@97>
+                    <br_length_1554@100>
+                      <length_1054@103>
+                      </<length_1054@103:2>@106>
+                      <f_length_1546@108>
+                      </<f_length_1546@108:1>@110>
+                    </<br_length_1554@100:3>@112>
+                  </<length_1054@97:2>@114>
+                  <f_length_1546@116>
+                  </<f_length_1546@116:1>@118>
+                </<br_length_1554@94:3>@120>
+              </<length_1054@91:2>@122>
+              <f_main_1551@124>
+                <fail_1556@127>
+    inlined horn clauses:
+      P[<fail_1556@127:0>](<fail_1556@127:0>:bool)|- bot
+      
+      P[<<make_list_1033@71:1>@87:0>](<f_main_1551@124:0>:int,<f_main_1551@124:1>:int),
+      P[<<length_1054@91:2>@122:0>](<f_main_1551@124:1>:int,<f_main_1551@124:3>:int),
+      ((<f_main_1551@124:3> <> <f_main_1551@124:0>) && <fail_1556@127:0>)
+      |- P[<fail_1556@127:0>](<fail_1556@127:0>:bool)
+      
+      P[<length_1054@91:0>](<length_1054@91:0>:int),
+      P[<<length_1054@97:2>@114:0>]((-1 + <length_1054@91:0>):int,(-1 + <<length_1054@91:2>@122:0>):int),
+      (<length_1054@91:0> >= 1) |- P[<<length_1054@91:2>@122:0>](<length_1054@91:0>:int,
+                                                                 <<length_1054@91:2>@122:0>:int)
+      
+      P[<length_1054@97:0>](<length_1054@97:0>:int),
+      P[<<length_1054@103:2>@106:0>]((-1 + <length_1054@97:0>):int,(-1 + <<length_1054@97:2>@114:0>):int),
+      (<length_1054@97:0> >= 1) |- P[<<length_1054@97:2>@114:0>](<length_1054@97:0>:int,
+                                                                 <<length_1054@97:2>@114:0>:int)
+      
+      P[<length_1054@103:0>](<length_1054@103:0>:int), ((<length_1054@103:0> = 0) && (<<length_1054@103:2>@106:0> = 0))
+      |- P[<<length_1054@103:2>@106:0>](<length_1054@103:0>:int,<<length_1054@103:2>@106:0>:int)
+      
+      P[<length_1054@97:0>]((1 + <length_1054@103:0>):int), (<length_1054@103:0> >= 0)
+      |- P[<length_1054@103:0>](<length_1054@103:0>:int)
+      
+      P[<length_1054@91:0>]((1 + <length_1054@97:0>):int), (<length_1054@97:0> >= 0)
+      |- P[<length_1054@97:0>](<length_1054@97:0>:int)
+      
+      P[<<make_list_1033@71:1>@87:0>](<f_main_1550@89:0>:int,<length_1054@91:0>:int)|- P[<length_1054@91:0>](
+      <length_1054@91:0>:int)
+      
+      P[<make_list_1033@71:0>](<make_list_1033@71:0>:int),
+      P[<<make_list_1033@74:1>@77:0>]((-1 + <make_list_1033@71:0>):int,(
+                                      -1 + <<make_list_1033@71:1>@87:0>):int), (
+      <make_list_1033@71:0> <> 0)
+      |- P[<<make_list_1033@71:1>@87:0>](<make_list_1033@71:0>:int,<<make_list_1033@71:1>@87:0>:int)
+      
+      P[<make_list_1033@74:0>](<make_list_1033@74:0>:int),
+      ((<make_list_1033@74:0> = 0) && (<<make_list_1033@74:1>@77:0> = 0))
+      |- P[<<make_list_1033@74:1>@77:0>](<make_list_1033@74:0>:int,<<make_list_1033@74:1>@77:0>:int)
+      
+      P[<make_list_1033@71:0>]((1 + <make_list_1033@74:0>):int), ((1 + <make_list_1033@74:0>) <> 0)
+      |- P[<make_list_1033@74:0>](<make_list_1033@74:0>:int)
+      
+      |- P[<make_list_1033@71:0>](<make_list_1033@71:0>:int)
+    begin ParamSubstInfer.infer(9885)[3]
+      
+    end ParamSubstInfer.infer(9885)[3] (0.059991 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(9887)[3]
+      
+    end RefTypeInfer.elim_coeffs(9887)[3] (0.000000 sec.)
+    begin YhornInterface.solve(10258)[3]
+      begin HcSolver.solve_ub(10259)[4]
+        encoded:
+          P[<fail_1556@127:0>](<fail_1556@127:0>:int)|- bot
+          
+          P[<<make_list_1033@71:1>@87:0>](<f_main_1551@124:0>:int,<f_main_1551@124:1>:int),
+          P[<<length_1054@91:2>@122:0>](<f_main_1551@124:1>:int,<f_main_1551@124:3>:int),
+          ((<f_main_1551@124:3> <> <f_main_1551@124:0>) && (<fail_1556@127:0> = 1))
+          |- P[<fail_1556@127:0>](<fail_1556@127:0>:int)
+          
+          P[<length_1054@91:0>](<length_1054@91:0>:int),
+          P[<<length_1054@97:2>@114:0>]((-1 + <length_1054@91:0>):int,(
+                                        -1 + <<length_1054@91:2>@122:0>):int), (
+          <length_1054@91:0> >= 1)
+          |- P[<<length_1054@91:2>@122:0>](<length_1054@91:0>:int,<<length_1054@91:2>@122:0>:int)
+          
+          P[<length_1054@97:0>](<length_1054@97:0>:int),
+          P[<<length_1054@103:2>@106:0>]((-1 + <length_1054@97:0>):int,(
+                                         -1 + <<length_1054@97:2>@114:0>):int), (
+          <length_1054@97:0> >= 1)
+          |- P[<<length_1054@97:2>@114:0>](<length_1054@97:0>:int,<<length_1054@97:2>@114:0>:int)
+          
+          P[<length_1054@103:0>](<length_1054@103:0>:int),
+          ((<length_1054@103:0> = 0) && (<<length_1054@103:2>@106:0> = 0))
+          |- P[<<length_1054@103:2>@106:0>](<length_1054@103:0>:int,<<length_1054@103:2>@106:0>:int)
+          
+          P[<length_1054@97:0>]((1 + <length_1054@103:0>):int), (<length_1054@103:0> >= 0)
+          |- P[<length_1054@103:0>](<length_1054@103:0>:int)
+          
+          P[<length_1054@91:0>]((1 + <length_1054@97:0>):int), (<length_1054@97:0> >= 0)
+          |- P[<length_1054@97:0>](<length_1054@97:0>:int)
+          
+          P[<<make_list_1033@71:1>@87:0>](<f_main_1550@89:0>:int,<length_1054@91:0>:int)|- P[<length_1054@91:0>](
+          <length_1054@91:0>:int)
+          
+          P[<make_list_1033@71:0>](<make_list_1033@71:0>:int),
+          P[<<make_list_1033@74:1>@77:0>]((-1 + <make_list_1033@71:0>):int,(
+                                          -1 + <<make_list_1033@71:1>@87:0>):int), (
+          <make_list_1033@71:0> <> 0)
+          |- P[<<make_list_1033@71:1>@87:0>](<make_list_1033@71:0>:int,
+                                             <<make_list_1033@71:1>@87:0>:int)
+          
+          P[<make_list_1033@74:0>](<make_list_1033@74:0>:int),
+          ((<make_list_1033@74:0> = 0) && (<<make_list_1033@74:1>@77:0> = 0))
+          |- P[<<make_list_1033@74:1>@77:0>](<make_list_1033@74:0>:int,
+                                             <<make_list_1033@74:1>@77:0>:int)
+          
+          P[<make_list_1033@71:0>]((1 + <make_list_1033@74:0>):int), (
+          (1 + <make_list_1033@74:0>) <> 0) |- P[<make_list_1033@74:0>](
+          <make_list_1033@74:0>:int)
+          
+          |- P[<make_list_1033@71:0>](<make_list_1033@71:0>:int)
+        input to Yhorn:
+          P[<fail_1556@127:0>](<fail_1556@127:0>:int)|- bot
+          
+          P[<<make_list_1033@71:1>@87:0>](<f_main_1551@124:0>:int,<f_main_1551@124:1>:int),
+          P[<<length_1054@91:2>@122:0>](<f_main_1551@124:1>:int,<f_main_1551@124:3>:int),
+          ((<f_main_1551@124:3> <> <f_main_1551@124:0>) && (<fail_1556@127:0> = 1))
+          |- P[<fail_1556@127:0>](<fail_1556@127:0>:int)
+          
+          P[<length_1054@91:0>](<length_1054@91:0>:int),
+          P[<<length_1054@97:2>@114:0>](var187:int,var188:int),
+          (((1 + var188) = <<length_1054@91:2>@122:0>) &&
+           (((1 + var187) = <length_1054@91:0>) && (<length_1054@91:0> >= 1)))
+          |- P[<<length_1054@91:2>@122:0>](<length_1054@91:0>:int,<<length_1054@91:2>@122:0>:int)
+          
+          P[<length_1054@97:0>](<length_1054@97:0>:int),
+          P[<<length_1054@103:2>@106:0>](var189:int,var190:int),
+          (((1 + var190) = <<length_1054@97:2>@114:0>) &&
+           (((1 + var189) = <length_1054@97:0>) && (<length_1054@97:0> >= 1)))
+          |- P[<<length_1054@97:2>@114:0>](<length_1054@97:0>:int,<<length_1054@97:2>@114:0>:int)
+          
+          P[<length_1054@103:0>](<length_1054@103:0>:int),
+          ((<<length_1054@103:2>@106:0> = 0) && (<length_1054@103:0> = 0))
+          |- P[<<length_1054@103:2>@106:0>](<length_1054@103:0>:int,<<length_1054@103:2>@106:0>:int)
+          
+          P[<length_1054@97:0>](var191:int), ((var191 = (1 + <length_1054@103:0>)) && (<length_1054@103:0> >= 0))
+          |- P[<length_1054@103:0>](<length_1054@103:0>:int)
+          
+          P[<length_1054@91:0>](var192:int), ((var192 = (1 + <length_1054@97:0>)) && (<length_1054@97:0> >= 0))
+          |- P[<length_1054@97:0>](<length_1054@97:0>:int)
+          
+          P[<<make_list_1033@71:1>@87:0>](<f_main_1550@89:0>:int,<length_1054@91:0>:int)|- P[<length_1054@91:0>](
+          <length_1054@91:0>:int)
+          
+          P[<make_list_1033@71:0>](<make_list_1033@71:0>:int),
+          P[<<make_list_1033@74:1>@77:0>](var193:int,var194:int),
+          (((1 + var194) = <<make_list_1033@71:1>@87:0>) &&
+           (((1 + var193) = <make_list_1033@71:0>) && (<make_list_1033@71:0> <> 0)))
+          |- P[<<make_list_1033@71:1>@87:0>](<make_list_1033@71:0>:int,
+                                             <<make_list_1033@71:1>@87:0>:int)
+          
+          P[<make_list_1033@74:0>](<make_list_1033@74:0>:int),
+          ((<<make_list_1033@74:1>@77:0> = 0) && (<make_list_1033@74:0> = 0))
+          |- P[<<make_list_1033@74:1>@77:0>](<make_list_1033@74:0>:int,
+                                             <<make_list_1033@74:1>@77:0>:int)
+          
+          P[<make_list_1033@71:0>](var195:int),
+          ((var195 = (1 + <make_list_1033@74:0>)) && ((1 + <make_list_1033@74:0>) <> 0))
+          |- P[<make_list_1033@74:0>](<make_list_1033@74:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1556_sep_127_sep_0($480)) -> 1=0.
+(($480-1=0) & ($481-$482<>0)) & (v_sep_length_1054_sep_91_sep_2_sep_122_sep_0($483,$481)) & (v_sep_make_list_1033_sep_71_sep_1_sep_87_sep_0($482,$483)) -> v_sep_fail_1556_sep_127_sep_0($480).
+(($484-1>=0) & (-$484+$485+1=0) & ($486-$487+1=0)) & (v_sep_length_1054_sep_97_sep_2_sep_114_sep_0($485,$486)) & (v_sep_length_1054_sep_91_sep_0($484)) -> v_sep_length_1054_sep_91_sep_2_sep_122_sep_0($484,$487).
+(($488-1>=0) & (-$488+$489+1=0) & ($490-$491+1=0)) & (v_sep_length_1054_sep_103_sep_2_sep_106_sep_0($489,$490)) & (v_sep_length_1054_sep_97_sep_0($488)) -> v_sep_length_1054_sep_97_sep_2_sep_114_sep_0($488,$491).
+(($492=0) & ($493=0)) & (v_sep_length_1054_sep_103_sep_0($492)) -> v_sep_length_1054_sep_103_sep_2_sep_106_sep_0($492,$493).
+(($492>=0) & (-$492+$494-1=0)) & (v_sep_length_1054_sep_97_sep_0($494)) -> v_sep_length_1054_sep_103_sep_0($492).
+(($488>=0) & (-$488+$495-1=0)) & (v_sep_length_1054_sep_91_sep_0($495)) -> v_sep_length_1054_sep_97_sep_0($488).
+(0=0) & (v_sep_make_list_1033_sep_71_sep_1_sep_87_sep_0($496,$484)) -> v_sep_length_1054_sep_91_sep_0($484).
+(($497<>0) & (-$497+$498+1=0) & ($499-$500+1=0)) & (v_sep_make_list_1033_sep_74_sep_1_sep_77_sep_0($498,$499)) & (v_sep_make_list_1033_sep_71_sep_0($497)) -> v_sep_make_list_1033_sep_71_sep_1_sep_87_sep_0($497,$500).
+(($501=0) & ($502=0)) & (v_sep_make_list_1033_sep_74_sep_0($501)) -> v_sep_make_list_1033_sep_74_sep_1_sep_77_sep_0($501,$502).
+(($501+1<>0) & (-$501+$503-1=0)) & (v_sep_make_list_1033_sep_71_sep_0($503)) -> v_sep_make_list_1033_sep_74_sep_0($501).
+0=0 -> v_sep_make_list_1033_sep_71_sep_0($497).
+
+
+v_sep_fail_1556_sep_127_sep_0: X
+v_sep_length_1054_sep_103_sep_0: X
+v_sep_length_1054_sep_103_sep_2_sep_106_sep_0: X
+v_sep_length_1054_sep_91_sep_0: X
+v_sep_length_1054_sep_91_sep_2_sep_122_sep_0: X
+v_sep_length_1054_sep_97_sep_0: X
+v_sep_length_1054_sep_97_sep_2_sep_114_sep_0: X
+v_sep_make_list_1033_sep_71_sep_0: X
+v_sep_make_list_1033_sep_71_sep_1_sep_87_sep_0: X
+v_sep_make_list_1033_sep_74_sep_0: X
+v_sep_make_list_1033_sep_74_sep_1_sep_77_sep_0: X
+.....................
+v_sep_fail_1556_sep_127_sep_0: X
+v_sep_length_1054_sep_103_sep_0: X
+v_sep_length_1054_sep_103_sep_2_sep_106_sep_0: X
+v_sep_length_1054_sep_91_sep_0: X
+v_sep_length_1054_sep_91_sep_2_sep_122_sep_0: X
+v_sep_length_1054_sep_97_sep_0: X
+v_sep_length_1054_sep_97_sep_2_sep_114_sep_0: X
+v_sep_make_list_1033_sep_71_sep_0: X
+v_sep_make_list_1033_sep_71_sep_1_sep_87_sep_0: X
+v_sep_make_list_1033_sep_74_sep_0: X
+v_sep_make_list_1033_sep_74_sep_1_sep_77_sep_0: X
+......
+v_sep_fail_1556_sep_127_sep_0: X
+v_sep_length_1054_sep_103_sep_0: X
+v_sep_length_1054_sep_103_sep_2_sep_106_sep_0: X
+v_sep_length_1054_sep_91_sep_0: X
+v_sep_length_1054_sep_91_sep_2_sep_122_sep_0: X
+v_sep_length_1054_sep_97_sep_0: X
+v_sep_length_1054_sep_97_sep_2_sep_114_sep_0: X
+v_sep_make_list_1033_sep_71_sep_0: X
+v_sep_make_list_1033_sep_71_sep_1_sep_87_sep_0: X
+v_sep_make_list_1033_sep_74_sep_0: X
+v_sep_make_list_1033_sep_74_sep_1_sep_77_sep_0: X
+............
+v_sep_fail_1556_sep_127_sep_0: X
+v_sep_length_1054_sep_103_sep_0: X
+v_sep_length_1054_sep_103_sep_2_sep_106_sep_0: X
+v_sep_length_1054_sep_91_sep_0: X
+v_sep_length_1054_sep_91_sep_2_sep_122_sep_0: X
+v_sep_length_1054_sep_97_sep_0: X
+v_sep_length_1054_sep_97_sep_2_sep_114_sep_0: X
+v_sep_make_list_1033_sep_71_sep_0: X
+v_sep_make_list_1033_sep_71_sep_1_sep_87_sep_0: X
+v_sep_make_list_1033_sep_74_sep_0: X
+v_sep_make_list_1033_sep_74_sep_1_sep_77_sep_0: X
+................
+v_sep_fail_1556_sep_127_sep_0: X
+v_sep_length_1054_sep_103_sep_0: X
+v_sep_length_1054_sep_103_sep_2_sep_106_sep_0: X
+v_sep_length_1054_sep_91_sep_0: X
+v_sep_length_1054_sep_91_sep_2_sep_122_sep_0: X
+v_sep_length_1054_sep_97_sep_0: X
+v_sep_length_1054_sep_97_sep_2_sep_114_sep_0: X
+v_sep_make_list_1033_sep_71_sep_0: X
+v_sep_make_list_1033_sep_71_sep_1_sep_87_sep_0: X
+v_sep_make_list_1033_sep_74_sep_0: X
+v_sep_make_list_1033_sep_74_sep_1_sep_77_sep_0: X
+....................
+v_sep_fail_1556_sep_127_sep_0: X
+v_sep_length_1054_sep_103_sep_0: X
+v_sep_length_1054_sep_103_sep_2_sep_106_sep_0: X
+v_sep_length_1054_sep_91_sep_0: X
+v_sep_length_1054_sep_91_sep_2_sep_122_sep_0: X
+v_sep_length_1054_sep_97_sep_0: X
+v_sep_length_1054_sep_97_sep_2_sep_114_sep_0: X
+v_sep_make_list_1033_sep_71_sep_0: X
+v_sep_make_list_1033_sep_71_sep_1_sep_87_sep_0: X
+v_sep_make_list_1033_sep_74_sep_0: X
+v_sep_make_list_1033_sep_74_sep_1_sep_77_sep_0: X
+.....................(0=0) & (v_sep_fail_1556_sep_127_sep_0($480)) -> 1=0.
+(($480-1=0) & ($481-$482<>0)) & (v_sep_length_1054_sep_91_sep_2_sep_122_sep_0($483,$481)) & (v_sep_make_list_1033_sep_71_sep_1_sep_87_sep_0($482,$483)) -> v_sep_fail_1556_sep_127_sep_0($480).
+(($484-1>=0) & (-$484+$485+1=0) & ($486-$487+1=0)) & (v_sep_length_1054_sep_97_sep_2_sep_114_sep_0($485,$486)) & (v_sep_length_1054_sep_91_sep_0($484)) -> v_sep_length_1054_sep_91_sep_2_sep_122_sep_0($484,$487).
+(($488-1>=0) & (-$488+$489+1=0) & ($490-$491+1=0)) & (v_sep_length_1054_sep_103_sep_2_sep_106_sep_0($489,$490)) & (v_sep_length_1054_sep_97_sep_0($488)) -> v_sep_length_1054_sep_97_sep_2_sep_114_sep_0($488,$491).
+(($492=0) & ($493=0)) & (v_sep_length_1054_sep_103_sep_0($492)) -> v_sep_length_1054_sep_103_sep_2_sep_106_sep_0($492,$493).
+(($492>=0) & (-$492+$494-1=0)) & (v_sep_length_1054_sep_97_sep_0($494)) -> v_sep_length_1054_sep_103_sep_0($492).
+(($488>=0) & (-$488+$495-1=0)) & (v_sep_length_1054_sep_91_sep_0($495)) -> v_sep_length_1054_sep_97_sep_0($488).
+(0=0) & (v_sep_make_list_1033_sep_71_sep_1_sep_87_sep_0($496,$484)) -> v_sep_length_1054_sep_91_sep_0($484).
+(($497<>0) & (-$497+$498+1=0) & ($499-$500+1=0)) & (v_sep_make_list_1033_sep_74_sep_1_sep_77_sep_0($498,$499)) & (v_sep_make_list_1033_sep_71_sep_0($497)) -> v_sep_make_list_1033_sep_71_sep_1_sep_87_sep_0($497,$500).
+(($501=0) & ($502=0)) & (v_sep_make_list_1033_sep_74_sep_0($501)) -> v_sep_make_list_1033_sep_74_sep_1_sep_77_sep_0($501,$502).
+(($501+1<>0) & (-$501+$503-1=0)) & (v_sep_make_list_1033_sep_71_sep_0($503)) -> v_sep_make_list_1033_sep_74_sep_0($501).
+0=0 -> v_sep_make_list_1033_sep_71_sep_0($497).
+
+          |- P[<make_list_1033@71:0>](<make_list_1033@71:0>:int)
+        solution:
+          P[<fail_1556@127:0>]($504:bool) = false
+          P[<length_1054@103:0>]($533:int) = false
+          P[<<length_1054@103:2>@106:0>]($525:int,$527:int) = false
+          P[<length_1054@91:0>]($522:int) = ($522 <= 1)
+          P[<<length_1054@91:2>@122:0>]($507:int,$509:int) = (5 <= $507)
+          P[<length_1054@97:0>]($530:int) = ($530 <= 0)
+          P[<<length_1054@97:2>@114:0>]($517:int,$519:int) = (2 <= $517)
+          P[<make_list_1033@71:0>]($541:int) = true
+          P[<<make_list_1033@71:1>@87:0>]($512:int,$514:int) = ($514 <= 1)
+          P[<make_list_1033@74:0>]($544:int) = true
+          P[<<make_list_1033@74:1>@77:0>]($536:int,$538:int) = ($538 <= 0)
+        
+      end HcSolver.solve_ub(10259)[4] (0.082987 sec.)
+      begin HcSolver.check_validity(10858)[4]
+        input:
+          P[<fail_1556@127:0>](<fail_1556@127:0>:bool)|- bot
+          
+          P[<<make_list_1033@71:1>@87:0>](<f_main_1551@124:0>:int,<f_main_1551@124:1>:int),
+          P[<<length_1054@91:2>@122:0>](<f_main_1551@124:1>:int,<f_main_1551@124:3>:int),
+          ((<f_main_1551@124:3> <> <f_main_1551@124:0>) && <fail_1556@127:0>)
+          |- P[<fail_1556@127:0>](<fail_1556@127:0>:bool)
+          
+          P[<length_1054@91:0>](<length_1054@91:0>:int),
+          P[<<length_1054@97:2>@114:0>]((-1 + <length_1054@91:0>):int,(
+                                        -1 + <<length_1054@91:2>@122:0>):int), (
+          <length_1054@91:0> >= 1)
+          |- P[<<length_1054@91:2>@122:0>](<length_1054@91:0>:int,<<length_1054@91:2>@122:0>:int)
+          
+          P[<length_1054@97:0>](<length_1054@97:0>:int),
+          P[<<length_1054@103:2>@106:0>]((-1 + <length_1054@97:0>):int,(
+                                         -1 + <<length_1054@97:2>@114:0>):int), (
+          <length_1054@97:0> >= 1)
+          |- P[<<length_1054@97:2>@114:0>](<length_1054@97:0>:int,<<length_1054@97:2>@114:0>:int)
+          
+          P[<length_1054@103:0>](<length_1054@103:0>:int),
+          ((<length_1054@103:0> = 0) && (<<length_1054@103:2>@106:0> = 0))
+          |- P[<<length_1054@103:2>@106:0>](<length_1054@103:0>:int,<<length_1054@103:2>@106:0>:int)
+          
+          P[<length_1054@97:0>]((1 + <length_1054@103:0>):int), (<length_1054@103:0> >= 0)
+          |- P[<length_1054@103:0>](<length_1054@103:0>:int)
+          
+          P[<length_1054@91:0>]((1 + <length_1054@97:0>):int), (<length_1054@97:0> >= 0)
+          |- P[<length_1054@97:0>](<length_1054@97:0>:int)
+          
+          P[<<make_list_1033@71:1>@87:0>](<f_main_1550@89:0>:int,<length_1054@91:0>:int)|- P[<length_1054@91:0>](
+          <length_1054@91:0>:int)
+          
+          P[<make_list_1033@71:0>](<make_list_1033@71:0>:int),
+          P[<<make_list_1033@74:1>@77:0>]((-1 + <make_list_1033@71:0>):int,(
+                                          -1 + <<make_list_1033@71:1>@87:0>):int), (
+          <make_list_1033@71:0> <> 0)
+          |- P[<<make_list_1033@71:1>@87:0>](<make_list_1033@71:0>:int,
+                                             <<make_list_1033@71:1>@87:0>:int)
+          
+          P[<make_list_1033@74:0>](<make_list_1033@74:0>:int),
+          ((<make_list_1033@74:0> = 0) && (<<make_list_1033@74:1>@77:0> = 0))
+          |- P[<<make_list_1033@74:1>@77:0>](<make_list_1033@74:0>:int,
+                                             <<make_list_1033@74:1>@77:0>:int)
+          
+          P[<make_list_1033@71:0>]((1 + <make_list_1033@74:0>):int), (
+          (1 + <make_list_1033@74:0>) <> 0) |- P[<make_list_1033@74:0>](
+          <make_list_1033@74:0>:int)
+          
+          |- P[<make_list_1033@71:0>](<make_list_1033@71:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(10858)[4] (0.005999 sec.)
+      solution:
+        P[<fail_1556@127:0>]($504:bool) = false
+        P[<length_1054@103:0>]($533:int) = false
+        P[<<length_1054@103:2>@106:0>]($525:int,$527:int) = false
+        P[<length_1054@91:0>]($522:int) = ($522 <= 1)
+        P[<<length_1054@91:2>@122:0>]($507:int,$509:int) = (5 <= $507)
+        P[<length_1054@97:0>]($530:int) = ($530 <= 0)
+        P[<<length_1054@97:2>@114:0>]($517:int,$519:int) = (2 <= $517)
+        P[<make_list_1033@71:0>]($541:int) = true
+        P[<<make_list_1033@71:1>@87:0>]($512:int,$514:int) = ($514 <= 1)
+        P[<make_list_1033@74:0>]($544:int) = true
+        P[<<make_list_1033@74:1>@77:0>]($536:int,$538:int) = ($538 <= 0)
+    end YhornInterface.solve(10258)[3] (0.088986 sec.)
+    
+  end RefTypeInfer.infer_etrs(5986)[2] (0.180972 sec.)
+  refinement types:
+    main_1544: X
+    f_1552: v1:int -> X
+    main_1035: v1:int -> (v2:unit -> X) -> X
+    make_list_1033: v1:int -> (v2:{v2:int | (v2 <= 1)} -> (v3:int -> (v4:int -> X) -> X) -> X) -> X
+    make_list_1033: v1:int -> (v2:{v2:int | (v2 <= 0)} -> (v3:int -> (v4:int -> X) -> X) -> X) -> X
+    f_make_list_1549: v1:int ->
+                      (v2:int -> (v3:int -> (v4:int -> X) -> X) -> X) -> v8:int -> (v9:int -> (v10:int -> X) -> X) -> X
+    cons_make_list_1088: v1:int ->
+                         v2:int ->
+                         v3:int ->
+                         (v4:int -> (v5:int -> X) -> X) -> (v8:int -> (v9:int -> (v10:int -> X) -> X) -> X) -> X
+    f_main_1550: v1:int -> (v2:unit -> X) -> v4:int -> (v5:int -> (v6:int -> X) -> X) -> X
+    length_1054: v1:{v1:int | (v1 <= 1)} -> (v2:int -> (v3:int -> X) -> X) -> (v6:{v6:int | (5 <= v1)} -> X) -> X
+    br_length_1554: v1:bool -> v2:int -> (v3:int -> (v4:int -> X) -> X) -> (v7:int -> X) -> X
+    length_1054: v1:{v1:int | (v1 <= 0)} -> (v2:int -> (v3:int -> X) -> X) -> (v6:{v6:int | (2 <= v1)} -> X) -> X
+    br_length_1554: v1:bool -> v2:int -> (v3:int -> (v4:int -> X) -> X) -> (v7:int -> X) -> X
+    length_1054: v1:{v1:int | false} -> (v2:int -> (v3:int -> X) -> X) -> (v6:{v6:int | false} -> X) -> X
+    f_length_1546: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_length_1546: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_main_1551: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1556: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1553: var254:int -> var253:unit -> X
+    f_cons_make_list_1548: var265:int ->
+                           var264:int ->
+                           var263:int -> (var262:int -> (var261:int -> X) -> X) -> var258:int -> (var257:int -> X) -> X
+    f_length_1545: var274:int -> (var273:int -> (var272:int -> X) -> X) -> var269:int -> (var268:int -> X) -> X
+    f_make_list_1547: var279:int -> var278:int -> (var277:int -> X) -> X
+  abstraction types:
+    main_1544: X
+    f_1552: v1:int -> X
+    main_1035: v1:int -> (v2:unit -> X) -> X
+    make_list_1033: var280:int ->
+                    (var281:int[var281 -> (var281 <= 1),
+                                var281 -> (var281 <= 0)] -> (var282:int -> (var283:int -> X) -> X) -> X) -> X
+    f_make_list_1549: v1:int ->
+                      (v2:int -> (v3:int -> (v4:int -> X) -> X) -> X) -> v8:int -> (v9:int -> (v10:int -> X) -> X) -> X
+    cons_make_list_1088: v1:int ->
+                         v2:int ->
+                         v3:int ->
+                         (v4:int -> (v5:int -> X) -> X) -> (v8:int -> (v9:int -> (v10:int -> X) -> X) -> X) -> X
+    f_main_1550: v1:int -> (v2:unit -> X) -> v4:int -> (v5:int -> (v6:int -> X) -> X) -> X
+    length_1054: var296:int[var296 -> (var296 <= 1),
+                            var296 -> (var296 <= 0)] ->
+                 (var297:int -> (var298:int -> X) -> X) ->
+                 (var301:int[var301 -> (5 <= var296),
+                             var301 -> (2 <= var296)] -> X) -> X
+    br_length_1554: var304:bool -> var305:int -> (var306:int -> (var307:int -> X) -> X) -> (var310:int -> X) -> X
+    f_length_1546: var313:int -> (var314:int -> X) -> var316:int -> X
+    f_main_1551: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1556: v1:bool -> (v2:unit -> X) -> X
+    f_1553: var254:int -> var253:unit -> X
+    f_cons_make_list_1548: var265:int ->
+                           var264:int ->
+                           var263:int -> (var262:int -> (var261:int -> X) -> X) -> var258:int -> (var257:int -> X) -> X
+    f_length_1545: var274:int -> (var273:int -> (var272:int -> X) -> X) -> var269:int -> (var268:int -> X) -> X
+    f_make_list_1547: var279:int -> var278:int -> (var277:int -> X) -> X
+  
+end AbsTypeInfer.refine(5985)[1] (0.191971 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 0; 0; 0; 0; 1; 0; 1
+
+Program with abstraction types (CEGAR-cycle 3)::
+Main: main_1544
+  main_1544 -> (rand_int f_1552)
+  br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 when b_1555 ->
+      (length_1054 (xs1_1031 - 1) (f_length_1545 xs1_1031 xs2_1031) (f_length_1546 xs1_1031 k_length_1148))
+  br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 when (not b_1555) -> _|_
+  cons_make_list_1088 n_1034 x_1086 xs1_1087 xs2_1087 k_make_list_cons_make_list_1313 ->
+      (k_make_list_cons_make_list_1313 (xs1_1087 + 1) (f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087))
+  f_1552 x_1486 -> (main_1035 x_1486 (f_1553 x_1486))
+  f_1553 x_1486 x_1483 -> end
+  f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 when (
+      i_1085 = 0) -> (k_make_list_cons_make_list_1328 x_1086)
+  f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 when (
+      not (i_1085 = 0)) -> (xs2_1087 (i_1085 - 1) k_make_list_cons_make_list_1328)
+  f_length_1545 xs1_1031 xs2_1031 x_1059 k_length_xs'_1181 -> (xs2_1031 (x_1059 + 1) k_length_xs'_1181)
+  f_length_1546 xs1_1031 k_length_1148 x_1196 -> (k_length_1148 (1 + x_1196))
+  f_main_1550 n_1036 k_main_1412 x1_1418 x2_1418 ->
+      (length_1054 x1_1418 x2_1418 (f_main_1551 n_1036 x1_1418 k_main_1412))
+  f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 when (x_1446 = n_1036) -> (k_main_1412 ())
+  f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 when (not (x_1446 = n_1036)) -> (fail_1556 true k_main_1412)
+  f_make_list_1547 n_1034 x_1092 k_make_list_1266 -> _|_
+  f_make_list_1549 n_1034 k_make_list_1254 x1_1391 x2_1391 ->
+      (cons_make_list_1088 n_1034 n_1034 x1_1391 x2_1391 k_make_list_1254)
+  fail_1556 b k -> {fail} => (k ())
+  length_1054 xs1_1031 xs2_1031 k_length_1148 when (xs1_1031 = 0) -> (k_length_1148 0)
+  length_1054 xs1_1031 xs2_1031 k_length_1148 when (not (xs1_1031 = 0)) ->
+      (br_length_1554 (1 <= xs1_1031) xs1_1031 xs2_1031 k_length_1148)
+  main_1035 n_1036 k_main_1412 -> (make_list_1033 n_1036 (f_main_1550 n_1036 k_main_1412))
+  make_list_1033 n_1034 k_make_list_1254 when (n_1034 = 0) -> (k_make_list_1254 0 (f_make_list_1547 n_1034))
+  make_list_1033 n_1034 k_make_list_1254 when (not (n_1034 = 0)) ->
+      (make_list_1033 (n_1034 - 1) (f_make_list_1549 n_1034 k_make_list_1254))
+Types:
+  main_1544 : X
+  fail_1556 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  length_1054 : (x_1:int[x_1 <= 0; x_1 <= 1; x_1 >= 1] ->
+                 (int -> (int -> X) -> X) -> (x_9:int[x_1 >= 2; x_1 >= 5; x_1 <= -1; x_9 = 0] -> X) -> X)
+  make_list_1033 : (x_1:int ->
+                    (x_3:int[x_3 <= 0; x_3 <= 1; x_3 >= 0; x_3 >= 1; x_1 = 0] -> (int -> (int -> X) -> X) -> X) -> X)
+  
+(3-1) Abstracting ... DONE!
+
+(3-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1544 ... --> 
+  f_1552 ... --> 
+  main_1035 ... --> 
+  make_list_1033 [2/2] ... --> 
+  make_list_1033 [1/2] ... --> 
+  f_make_list_1549 ... --> 
+  cons_make_list_1088 ... --> 
+  f_main_1550 ... --> 
+  length_1054 [2/2] ... --> 
+  br_length_1554 [1/2] ... --> 
+  length_1054 [1/2] ... --> 
+  f_length_1546 ... --> 
+  f_main_1551 [2/2] ... --> 
+  fail_1556 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 0; 0; 0; 0; 1; 0; 0; 0; 1; 0
+
+(3-3) Checking counter-example ... DONE!
+
+(3-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(13909)[1]
+  program:
+    main_1544  | true = ((Random.int 0) f_1552)
+    br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 | b_1555 = (
+    length_1054 (xs1_1031 - 1)
+                (f_length_1545 xs1_1031
+                               xs2_1031)
+                (f_length_1546 xs1_1031
+                               k_length_1148))
+    br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 | (not b_1555) = bot
+    cons_make_list_1088 n_1034 x_1086 xs1_1087 xs2_1087 k_make_list_cons_make_list_1313 | true = (
+    k_make_list_cons_make_list_1313 (xs1_1087 + 1)
+                                    (f_cons_make_list_1548 n_1034
+                                                           x_1086
+                                                           xs1_1087
+                                                           xs2_1087))
+    f_1552 x_1486 | true = (main_1035 x_1486
+                                      (f_1553 x_1486))
+    f_1553 x_1486 x_1483 | true = end
+    f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 | (
+    i_1085 = 0) = (k_make_list_cons_make_list_1328 x_1086)
+    f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 | (
+    not (i_1085 = 0)) = (xs2_1087 (i_1085 - 1)
+                                  k_make_list_cons_make_list_1328)
+    f_length_1545 xs1_1031 xs2_1031 x_1059 k_length_xs'_1181 | true = (
+    xs2_1031 (x_1059 + 1)
+             k_length_xs'_1181)
+    f_length_1546 xs1_1031 k_length_1148 x_1196 | true = (k_length_1148 (
+                                                                    1 + x_1196))
+    f_main_1550 n_1036 k_main_1412 x1_1418 x2_1418 | true = (length_1054
+                                                               x1_1418
+                                                               x2_1418
+                                                               (f_main_1551 n_1036
+                                                                    x1_1418
+                                                                    k_main_1412))
+    f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 | (x_1446 = n_1036) = (
+    k_main_1412 ())
+    f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 | (not (x_1446 = n_1036)) = (
+    fail_1556 true
+              k_main_1412)
+    f_make_list_1547 n_1034 x_1092 k_make_list_1266 | true = bot
+    f_make_list_1549 n_1034 k_make_list_1254 x1_1391 x2_1391 | true = (
+    cons_make_list_1088 n_1034
+                        n_1034
+                        x1_1391
+                        x2_1391
+                        k_make_list_1254)
+    fail_1556 b k | true = (fail ())
+    length_1054 xs1_1031 xs2_1031 k_length_1148 | (xs1_1031 = 0) = (k_length_1148 0)
+    length_1054 xs1_1031 xs2_1031 k_length_1148 | (not (xs1_1031 = 0)) = (
+    br_length_1554 (1 <= xs1_1031)
+                   xs1_1031
+                   xs2_1031
+                   k_length_1148)
+    main_1035 n_1036 k_main_1412 | true = (make_list_1033 n_1036
+                                                          (f_main_1550 n_1036
+                                                                    k_main_1412))
+    make_list_1033 n_1034 k_make_list_1254 | (n_1034 = 0) = (k_make_list_1254 0
+                                                                    (f_make_list_1547 n_1034))
+    make_list_1033 n_1034 k_make_list_1254 | (not (n_1034 = 0)) = (make_list_1033
+                                                                    (
+                                                                    n_1034 - 1)
+                                                                    (
+                                                                    f_make_list_1549 n_1034
+                                                                    k_make_list_1254))
+    main_1544:X
+    br_length_1554:bool -> int -> (int -> (int -> X) -> X) -> (int -> X) -> X
+    cons_make_list_1088:int -> int -> int -> (int -> (int -> X) -> X) -> (int -> (int -> (int -> X) -> X) -> X) -> X
+    f_1552:int -> X
+    f_1553:int -> unit -> X
+    f_cons_make_list_1548:int -> int -> int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    f_length_1545:int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    f_length_1546:int -> (int -> X) -> int -> X
+    f_main_1550:int -> (unit -> X) -> int -> (int -> (int -> X) -> X) -> X
+    f_main_1551:int -> int -> (unit -> X) -> int -> X
+    f_make_list_1547:int -> int -> (int -> X) -> X
+    f_make_list_1549:int -> (int -> (int -> (int -> X) -> X) -> X) -> int -> (int -> (int -> X) -> X) -> X
+    fail_1556:bool -> (unit -> X) -> X
+    length_1054:int -> (int -> (int -> X) -> X) -> (int -> X) -> X
+    main_1035:int -> (unit -> X) -> X
+    make_list_1033:int -> (int -> (int -> (int -> X) -> X) -> X) -> X
+  inlined functions: br_length_1554,cons_make_list_1088,f_1552,f_1553,f_cons_make_list_1548,f_length_1545,f_length_1546,f_main_1550,f_main_1551,f_make_list_1547,f_make_list_1549,main_1035
+  counterexample: 0:0:0:1:0:0:0:0:1:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1552@133:0> = var318)
+     [true.(<main_1035@135:0> = <f_1552@133:0>)
+      [true.(<make_list_1033@137:0> = <main_1035@135:0>)
+       [(not (<make_list_1033@137:0> = 0)).(<make_list_1033@140:0> = (<make_list_1033@137:0> - 1))
+        [(<make_list_1033@140:0> = 0).(<<make_list_1033@140:1>@143:0> = 0)
+         [true.
+          ((<f_make_list_1549@145:0> = <make_list_1033@137:0>) &&
+           (<f_make_list_1549@145:2> = <<make_list_1033@140:1>@143:0>))
+          [true.
+           ((<cons_make_list_1088@147:0> = <f_make_list_1549@145:0>) &&
+            ((<cons_make_list_1088@147:1> = <f_make_list_1549@145:0>) &&
+             (<cons_make_list_1088@147:2> = <f_make_list_1549@145:2>)))
+           [true.(<<cons_make_list_1088@147:4>@149:0> = (<cons_make_list_1088@147:2> + 1))
+            [true.(<<f_make_list_1549@145:1>@151:0> = <<cons_make_list_1088@147:4>@149:0>)
+             [true.(<<make_list_1033@137:1>@153:0> = <<f_make_list_1549@145:1>@151:0>)
+              [true.
+               ((<f_main_1550@155:0> = <main_1035@135:0>) && (<f_main_1550@155:2> = <<make_list_1033@137:1>@153:0>))
+               [true.(<length_1054@157:0> = <f_main_1550@155:2>)
+                [(not (<length_1054@157:0> = 0)).
+                 ((<br_length_1554@160:0> = (1 <= <length_1054@157:0>)) &&
+                  (<br_length_1554@160:1> = <length_1054@157:0>))
+                 [<br_length_1554@160:0>.(<length_1054@163:0> = (<br_length_1554@160:1> - 1))
+                  [(<length_1054@163:0> = 0).(<<length_1054@163:2>@166:0> = 0)
+                   [true.
+                    ((<f_length_1546@168:0> = <br_length_1554@160:1>) &&
+                     (<f_length_1546@168:2> = <<length_1054@163:2>@166:0>))
+                    [true.(<<f_length_1546@168:1>@170:0> = (1 + <f_length_1546@168:2>))
+                     [true.(<<br_length_1554@160:3>@172:0> = <<f_length_1546@168:1>@170:0>)
+                      [true.(<<length_1054@157:2>@174:0> = <<br_length_1554@160:3>@172:0>)
+                       [true.
+                        ((<f_main_1551@176:0> = <f_main_1550@155:0>) &&
+                         ((<f_main_1551@176:1> = <f_main_1550@155:2>) &&
+                          (<f_main_1551@176:3> = <<length_1054@157:2>@174:0>)))
+                        [(not (<f_main_1551@176:3> = <f_main_1551@176:0>)).(<fail_1556@179:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(13910)[2]
+    horn clauses:
+      P[<fail_1556@179:0>](<fail_1556@179:0>:bool)|- bot
+      
+      P[<f_main_1551@176:3>](<f_main_1551@176:0>:int,<f_main_1551@176:1>:int,<f_main_1551@176:3>:int),
+      ((<f_main_1551@176:3> <> <f_main_1551@176:0>) && <fail_1556@179:0>)
+      |- P[<fail_1556@179:0>](<fail_1556@179:0>:bool)
+      
+      P[<f_main_1550@155:2>](<f_main_1551@176:0>:int,<f_main_1551@176:1>:int),
+      P[<<length_1054@157:2>@174:0>](<f_main_1551@176:1>:int,<f_main_1551@176:3>:int)|- P[<f_main_1551@176:3>](
+      <f_main_1551@176:0>:int,<f_main_1551@176:1>:int,<f_main_1551@176:3>:int)
+      
+      P[<length_1054@157:0>](<length_1054@157:0>:int),
+      P[<<br_length_1554@160:3>@172:0>]((1 <= <length_1054@157:0>):bool,<length_1054@157:0>:int,<<length_1054@157:2>@174:0>:int),
+      (<length_1054@157:0> <> 0)
+      |- P[<<length_1054@157:2>@174:0>](<length_1054@157:0>:int,<<length_1054@157:2>@174:0>:int)
+      
+      P[<br_length_1554@160:1>](<br_length_1554@160:0>:bool,<br_length_1554@160:1>:int),
+      P[<<f_length_1546@168:1>@170:0>](<br_length_1554@160:1>:int,<<br_length_1554@160:3>@172:0>:int),
+      <br_length_1554@160:0>
+      |- P[<<br_length_1554@160:3>@172:0>](<br_length_1554@160:0>:bool,
+                                           <br_length_1554@160:1>:int,
+                                           <<br_length_1554@160:3>@172:0>:int)
+      
+      P[<f_length_1546@168:2>](<f_length_1546@168:0>:int,(-1 + <<f_length_1546@168:1>@170:0>):int)|- P[<<f_length_1546@168:1>@170:0>](
+      <f_length_1546@168:0>:int,<<f_length_1546@168:1>@170:0>:int)
+      
+      P[<br_length_1554@160:1>](true:bool,<f_length_1546@168:0>:int),
+      P[<<length_1054@163:2>@166:0>]((-1 + <f_length_1546@168:0>):int,<f_length_1546@168:2>:int)|- P[<f_length_1546@168:2>](
+      <f_length_1546@168:0>:int,<f_length_1546@168:2>:int)
+      
+      P[<length_1054@163:0>](<length_1054@163:0>:int), ((<length_1054@163:0> = 0) && (<<length_1054@163:2>@166:0> = 0))
+      |- P[<<length_1054@163:2>@166:0>](<length_1054@163:0>:int,<<length_1054@163:2>@166:0>:int)
+      
+      P[<br_length_1554@160:1>](true:bool,(1 + <length_1054@163:0>):int)|- P[<length_1054@163:0>](
+      <length_1054@163:0>:int)
+      
+      P[<length_1054@157:0>](<br_length_1554@160:1>:int),
+      ((<br_length_1554@160:1> <> 0) && (<br_length_1554@160:0> = (1 <= <br_length_1554@160:1>)))
+      |- P[<br_length_1554@160:1>](<br_length_1554@160:0>:bool,<br_length_1554@160:1>:int)
+      
+      P[<f_main_1550@155:2>](<f_main_1550@155:0>:int,<length_1054@157:0>:int)|- P[<length_1054@157:0>](
+      <length_1054@157:0>:int)
+      
+      P[<main_1035@135:0>](<f_main_1550@155:0>:int),
+      P[<<make_list_1033@137:1>@153:0>](<f_main_1550@155:0>:int,<f_main_1550@155:2>:int)|- P[<f_main_1550@155:2>](
+      <f_main_1550@155:0>:int,<f_main_1550@155:2>:int)
+      
+      P[<make_list_1033@137:0>](<make_list_1033@137:0>:int),
+      P[<<f_make_list_1549@145:1>@151:0>](<make_list_1033@137:0>:int,<<make_list_1033@137:1>@153:0>:int),
+      (<make_list_1033@137:0> <> 0)
+      |- P[<<make_list_1033@137:1>@153:0>](<make_list_1033@137:0>:int,
+                                           <<make_list_1033@137:1>@153:0>:int)
+      
+      P[<f_make_list_1549@145:2>](<f_make_list_1549@145:0>:int,<cons_make_list_1088@147:2>:int),
+      P[<<cons_make_list_1088@147:4>@149:0>](<f_make_list_1549@145:0>:int,<f_make_list_1549@145:0>:int,<cons_make_list_1088@147:2>:int,<<f_make_list_1549@145:1>@151:0>:int)|- P[<<f_make_list_1549@145:1>@151:0>](
+      <f_make_list_1549@145:0>:int,<<f_make_list_1549@145:1>@151:0>:int)
+      
+      P[<cons_make_list_1088@147:2>](<cons_make_list_1088@147:0>:int,<cons_make_list_1088@147:1>:int,<cons_make_list_1088@147:2>:int),
+      (<<cons_make_list_1088@147:4>@149:0> = (1 + <cons_make_list_1088@147:2>))
+      |- P[<<cons_make_list_1088@147:4>@149:0>](<cons_make_list_1088@147:0>:int,
+                                                <cons_make_list_1088@147:1>:int,
+                                                <cons_make_list_1088@147:2>:int,
+                                                <<cons_make_list_1088@147:4>@149:0>:int)
+      
+      P[<f_make_list_1549@145:2>](<cons_make_list_1088@147:0>:int,<cons_make_list_1088@147:2>:int),
+      (<cons_make_list_1088@147:0> = <cons_make_list_1088@147:1>)
+      |- P[<cons_make_list_1088@147:2>](<cons_make_list_1088@147:0>:int,
+                                        <cons_make_list_1088@147:1>:int,
+                                        <cons_make_list_1088@147:2>:int)
+      
+      P[<make_list_1033@137:0>](<f_make_list_1549@145:0>:int),
+      P[<<make_list_1033@140:1>@143:0>]((-1 + <f_make_list_1549@145:0>):int,<f_make_list_1549@145:2>:int),
+      (<f_make_list_1549@145:0> <> 0)
+      |- P[<f_make_list_1549@145:2>](<f_make_list_1549@145:0>:int,<f_make_list_1549@145:2>:int)
+      
+      P[<make_list_1033@140:0>](<make_list_1033@140:0>:int),
+      ((<make_list_1033@140:0> = 0) && (<<make_list_1033@140:1>@143:0> = 0))
+      |- P[<<make_list_1033@140:1>@143:0>](<make_list_1033@140:0>:int,
+                                           <<make_list_1033@140:1>@143:0>:int)
+      
+      P[<make_list_1033@137:0>]((1 + <make_list_1033@140:0>):int), ((1 + <make_list_1033@140:0>) <> 0)
+      |- P[<make_list_1033@140:0>](<make_list_1033@140:0>:int)
+      
+      P[<main_1035@135:0>](<make_list_1033@137:0>:int)|- P[<make_list_1033@137:0>](<make_list_1033@137:0>:int)
+      
+      P[<f_1552@133:0>](<main_1035@135:0>:int)|- P[<main_1035@135:0>](<main_1035@135:0>:int)
+      
+      |- P[<f_1552@133:0>](<f_1552@133:0>:int)
+    call trees:
+      <main_1544@130>
+        <f_1552@133>
+          <main_1035@135>
+            <make_list_1033@137>
+              <make_list_1033@140>
+              </<make_list_1033@140:1>@143>
+              <f_make_list_1549@145>
+                <cons_make_list_1088@147>
+                </<cons_make_list_1088@147:4>@149>
+              </<f_make_list_1549@145:1>@151>
+            </<make_list_1033@137:1>@153>
+            <f_main_1550@155>
+              <length_1054@157>
+                <br_length_1554@160>
+                  <length_1054@163>
+                  </<length_1054@163:2>@166>
+                  <f_length_1546@168>
+                  </<f_length_1546@168:1>@170>
+                </<br_length_1554@160:3>@172>
+              </<length_1054@157:2>@174>
+              <f_main_1551@176>
+                <fail_1556@179>
+    inlined horn clauses:
+      P[<fail_1556@179:0>](<fail_1556@179:0>:bool)|- bot
+      
+      P[<<make_list_1033@137:1>@153:0>](<f_main_1551@176:0>:int,<f_main_1551@176:1>:int),
+      P[<<length_1054@157:2>@174:0>](<f_main_1551@176:1>:int,<f_main_1551@176:3>:int),
+      ((<f_main_1551@176:3> <> <f_main_1551@176:0>) && <fail_1556@179:0>)
+      |- P[<fail_1556@179:0>](<fail_1556@179:0>:bool)
+      
+      P[<length_1054@157:0>](<length_1054@157:0>:int),
+      P[<<length_1054@163:2>@166:0>]((-1 + <length_1054@157:0>):int,(
+                                     -1 + <<length_1054@157:2>@174:0>):int), (
+      <length_1054@157:0> >= 1)
+      |- P[<<length_1054@157:2>@174:0>](<length_1054@157:0>:int,<<length_1054@157:2>@174:0>:int)
+      
+      P[<length_1054@163:0>](<length_1054@163:0>:int), ((<length_1054@163:0> = 0) && (<<length_1054@163:2>@166:0> = 0))
+      |- P[<<length_1054@163:2>@166:0>](<length_1054@163:0>:int,<<length_1054@163:2>@166:0>:int)
+      
+      P[<length_1054@157:0>]((1 + <length_1054@163:0>):int), (<length_1054@163:0> >= 0)
+      |- P[<length_1054@163:0>](<length_1054@163:0>:int)
+      
+      P[<<make_list_1033@137:1>@153:0>](<f_main_1550@155:0>:int,<length_1054@157:0>:int)|- P[<length_1054@157:0>](
+      <length_1054@157:0>:int)
+      
+      P[<make_list_1033@137:0>](<make_list_1033@137:0>:int),
+      P[<<make_list_1033@140:1>@143:0>]((-1 + <make_list_1033@137:0>):int,(
+                                        -1 + <<make_list_1033@137:1>@153:0>):int), (
+      <make_list_1033@137:0> <> 0)
+      |- P[<<make_list_1033@137:1>@153:0>](<make_list_1033@137:0>:int,
+                                           <<make_list_1033@137:1>@153:0>:int)
+      
+      P[<make_list_1033@140:0>](<make_list_1033@140:0>:int),
+      ((<make_list_1033@140:0> = 0) && (<<make_list_1033@140:1>@143:0> = 0))
+      |- P[<<make_list_1033@140:1>@143:0>](<make_list_1033@140:0>:int,
+                                           <<make_list_1033@140:1>@143:0>:int)
+      
+      P[<make_list_1033@137:0>]((1 + <make_list_1033@140:0>):int), ((1 + <make_list_1033@140:0>) <> 0)
+      |- P[<make_list_1033@140:0>](<make_list_1033@140:0>:int)
+      
+      |- P[<make_list_1033@137:0>](<make_list_1033@137:0>:int)
+    begin ParamSubstInfer.infer(16849)[3]
+      
+    end ParamSubstInfer.infer(16849)[3] (0.287956 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(16851)[3]
+      
+    end RefTypeInfer.elim_coeffs(16851)[3] (0.001000 sec.)
+    begin YhornInterface.solve(17168)[3]
+      begin HcSolver.solve_ub(17169)[4]
+        encoded:
+          P[<fail_1556@179:0>](<fail_1556@179:0>:int)|- bot
+          
+          P[<<make_list_1033@137:1>@153:0>](<f_main_1551@176:0>:int,<f_main_1551@176:1>:int),
+          P[<<length_1054@157:2>@174:0>](<f_main_1551@176:1>:int,<f_main_1551@176:3>:int),
+          ((<f_main_1551@176:3> <> <f_main_1551@176:0>) && (<fail_1556@179:0> = 1))
+          |- P[<fail_1556@179:0>](<fail_1556@179:0>:int)
+          
+          P[<length_1054@157:0>](<length_1054@157:0>:int),
+          P[<<length_1054@163:2>@166:0>]((-1 + <length_1054@157:0>):int,(
+                                         -1 + <<length_1054@157:2>@174:0>):int), (
+          <length_1054@157:0> >= 1)
+          |- P[<<length_1054@157:2>@174:0>](<length_1054@157:0>:int,<<length_1054@157:2>@174:0>:int)
+          
+          P[<length_1054@163:0>](<length_1054@163:0>:int),
+          ((<length_1054@163:0> = 0) && (<<length_1054@163:2>@166:0> = 0))
+          |- P[<<length_1054@163:2>@166:0>](<length_1054@163:0>:int,<<length_1054@163:2>@166:0>:int)
+          
+          P[<length_1054@157:0>]((1 + <length_1054@163:0>):int), (<length_1054@163:0> >= 0)
+          |- P[<length_1054@163:0>](<length_1054@163:0>:int)
+          
+          P[<<make_list_1033@137:1>@153:0>](<f_main_1550@155:0>:int,<length_1054@157:0>:int)|- P[<length_1054@157:0>](
+          <length_1054@157:0>:int)
+          
+          P[<make_list_1033@137:0>](<make_list_1033@137:0>:int),
+          P[<<make_list_1033@140:1>@143:0>]((-1 + <make_list_1033@137:0>):int,(
+                                            -1 + <<make_list_1033@137:1>@153:0>):int), (
+          <make_list_1033@137:0> <> 0)
+          |- P[<<make_list_1033@137:1>@153:0>](<make_list_1033@137:0>:int,
+                                               <<make_list_1033@137:1>@153:0>:int)
+          
+          P[<make_list_1033@140:0>](<make_list_1033@140:0>:int),
+          ((<make_list_1033@140:0> = 0) && (<<make_list_1033@140:1>@143:0> = 0))
+          |- P[<<make_list_1033@140:1>@143:0>](<make_list_1033@140:0>:int,
+                                               <<make_list_1033@140:1>@143:0>:int)
+          
+          P[<make_list_1033@137:0>]((1 + <make_list_1033@140:0>):int), (
+          (1 + <make_list_1033@140:0>) <> 0) |- P[<make_list_1033@140:0>](
+          <make_list_1033@140:0>:int)
+          
+          |- P[<make_list_1033@137:0>](<make_list_1033@137:0>:int)
+        input to Yhorn:
+          P[<fail_1556@179:0>](<fail_1556@179:0>:int)|- bot
+          
+          P[<<make_list_1033@137:1>@153:0>](<f_main_1551@176:0>:int,<f_main_1551@176:1>:int),
+          P[<<length_1054@157:2>@174:0>](<f_main_1551@176:1>:int,<f_main_1551@176:3>:int),
+          ((<f_main_1551@176:3> <> <f_main_1551@176:0>) && (<fail_1556@179:0> = 1))
+          |- P[<fail_1556@179:0>](<fail_1556@179:0>:int)
+          
+          P[<length_1054@157:0>](<length_1054@157:0>:int),
+          P[<<length_1054@163:2>@166:0>](var319:int,var320:int),
+          (((1 + var320) = <<length_1054@157:2>@174:0>) &&
+           (((1 + var319) = <length_1054@157:0>) && (<length_1054@157:0> >= 1)))
+          |- P[<<length_1054@157:2>@174:0>](<length_1054@157:0>:int,<<length_1054@157:2>@174:0>:int)
+          
+          P[<length_1054@163:0>](<length_1054@163:0>:int),
+          ((<<length_1054@163:2>@166:0> = 0) && (<length_1054@163:0> = 0))
+          |- P[<<length_1054@163:2>@166:0>](<length_1054@163:0>:int,<<length_1054@163:2>@166:0>:int)
+          
+          P[<length_1054@157:0>](var321:int), ((var321 = (1 + <length_1054@163:0>)) && (<length_1054@163:0> >= 0))
+          |- P[<length_1054@163:0>](<length_1054@163:0>:int)
+          
+          P[<<make_list_1033@137:1>@153:0>](<f_main_1550@155:0>:int,<length_1054@157:0>:int)|- P[<length_1054@157:0>](
+          <length_1054@157:0>:int)
+          
+          P[<make_list_1033@137:0>](<make_list_1033@137:0>:int),
+          P[<<make_list_1033@140:1>@143:0>](var322:int,var323:int),
+          (((1 + var323) = <<make_list_1033@137:1>@153:0>) &&
+           (((1 + var322) = <make_list_1033@137:0>) && (<make_list_1033@137:0> <> 0)))
+          |- P[<<make_list_1033@137:1>@153:0>](<make_list_1033@137:0>:int,
+                                               <<make_list_1033@137:1>@153:0>:int)
+          
+          P[<make_list_1033@140:0>](<make_list_1033@140:0>:int),
+          ((<<make_list_1033@140:1>@143:0> = 0) && (<make_list_1033@140:0> = 0))
+          |- P[<<make_list_1033@140:1>@143:0>](<make_list_1033@140:0>:int,
+                                               <<make_list_1033@140:1>@143:0>:int)
+          
+          P[<make_list_1033@137:0>](var324:int),
+          ((var324 = (1 + <make_list_1033@140:0>)) && ((1 + <make_list_1033@140:0>) <> 0))
+          |- P[<make_list_1033@140:0>](<make_list_1033@140:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1556_sep_179_sep_0($805)) -> 1=0.
+(($805-1=0) & ($806-$807<>0)) & (v_sep_length_1054_sep_157_sep_2_sep_174_sep_0($808,$806)) & (v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0($807,$808)) -> v_sep_fail_1556_sep_179_sep_0($805).
+(($809-1>=0) & (-$809+$810+1=0) & ($811-$812+1=0)) & (v_sep_length_1054_sep_163_sep_2_sep_166_sep_0($810,$811)) & (v_sep_length_1054_sep_157_sep_0($809)) -> v_sep_length_1054_sep_157_sep_2_sep_174_sep_0($809,$812).
+(($813=0) & ($814=0)) & (v_sep_length_1054_sep_163_sep_0($813)) -> v_sep_length_1054_sep_163_sep_2_sep_166_sep_0($813,$814).
+(($813>=0) & (-$813+$815-1=0)) & (v_sep_length_1054_sep_157_sep_0($815)) -> v_sep_length_1054_sep_163_sep_0($813).
+(0=0) & (v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0($816,$809)) -> v_sep_length_1054_sep_157_sep_0($809).
+(($817<>0) & (-$817+$818+1=0) & ($819-$820+1=0)) & (v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0($818,$819)) & (v_sep_make_list_1033_sep_137_sep_0($817)) -> v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0($817,$820).
+(($821=0) & ($822=0)) & (v_sep_make_list_1033_sep_140_sep_0($821)) -> v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0($821,$822).
+(($821+1<>0) & (-$821+$823-1=0)) & (v_sep_make_list_1033_sep_137_sep_0($823)) -> v_sep_make_list_1033_sep_140_sep_0($821).
+0=0 -> v_sep_make_list_1033_sep_137_sep_0($817).
+
+
+v_sep_fail_1556_sep_179_sep_0: X
+v_sep_length_1054_sep_157_sep_0: X
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: X
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: X
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: X
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: X
+..................Split disj [36] 0.634902
+Reconstrcut: 3 **)
+
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: X
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: X
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: X
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: X
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: X
+.......
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: X
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: X
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: X
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: X
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: X
+.......Split conj [38] 0.647901
+(Reconstrcut: 8 **)
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: X
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: (X) & (X)
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: X
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: X
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: X
+...........
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: X
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: (X) & (X)
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: X
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: X
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: X
+.......Split conj [40] 0.6539
+(Reconstrcut: 18 ***)
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: X
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: (X) & (X)
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: X
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: (X) & (X) & (X)
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: X
+..........................
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: X
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: (X) & (X)
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: X
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: (X) & (X) & (X)
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: X
+.......
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: X
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: (X) & (X)
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: X
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: (X) & (X) & (X)
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: X
+...................Split conj [46] 0.673897
+(Reconstrcut: 12 **)
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: X
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: (X) & (X)
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: (X) & (X) & (X)
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: X
+.............
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: X
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: (X) & (X)
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: (X) & (X) & (X)
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: X
+.......
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: X
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: (X) & (X)
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: (X) & (X) & (X)
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: X
+...................Split conj [48] 0.698892
+(Reconstrcut: 18 ***)
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: (X) & (X) & (X)
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: (X) & (X)
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: (X) & (X) & (X)
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: X
+.................
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: (X) & (X) & (X)
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: (X) & (X)
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: (X) & (X) & (X)
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: X
+.......
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: (X) & (X) & (X)
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: (X) & (X)
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: (X) & (X) & (X)
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: X
+...................Split conj [52] 0.724889
+(Reconstrcut: 33 ******)
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: (X) & (X) & (X)
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: (X) & (X)
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: (X) & (X) & (X)
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+...................................
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: (X) & (X) & (X)
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: (X) & (X)
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: (X) & (X) & (X)
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+.......
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: (X) & (X) & (X)
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: (X) & (X)
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: (X) & (X) & (X)
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+...................
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: (X) & (X) & (X)
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: (X) & (X)
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: (X) & (X) & (X)
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+...........................
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: (X) & (X) & (X)
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: (X) & (X)
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: (X) & (X) & (X)
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+..................................
+v_sep_fail_1556_sep_179_sep_0: (X) | (X)
+v_sep_length_1054_sep_157_sep_0: (X) & (X) & (X)
+v_sep_length_1054_sep_157_sep_2_sep_174_sep_0: (X) & (X)
+v_sep_length_1054_sep_163_sep_0: X
+v_sep_length_1054_sep_163_sep_2_sep_166_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_137_sep_0: X
+v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0: (X) & (X) & (X)
+v_sep_make_list_1033_sep_140_sep_0: X
+v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0: (X) & (X) & (X) & (X) & (X) & (X)
+.....................................(0=0) & (v_sep_fail_1556_sep_179_sep_0($805)) -> 1=0.
+(($805-1=0) & ($806-$807<>0)) & (v_sep_length_1054_sep_157_sep_2_sep_174_sep_0($808,$806)) & (v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0($807,$808)) -> v_sep_fail_1556_sep_179_sep_0($805).
+(($809-1>=0) & (-$809+$810+1=0) & ($811-$812+1=0)) & (v_sep_length_1054_sep_163_sep_2_sep_166_sep_0($810,$811)) & (v_sep_length_1054_sep_157_sep_0($809)) -> v_sep_length_1054_sep_157_sep_2_sep_174_sep_0($809,$812).
+(($813=0) & ($814=0)) & (v_sep_length_1054_sep_163_sep_0($813)) -> v_sep_length_1054_sep_163_sep_2_sep_166_sep_0($813,$814).
+(($813>=0) & (-$813+$815-1=0)) & (v_sep_length_1054_sep_157_sep_0($815)) -> v_sep_length_1054_sep_163_sep_0($813).
+(0=0) & (v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0($816,$809)) -> v_sep_length_1054_sep_157_sep_0($809).
+(($817<>0) & (-$817+$818+1=0) & ($819-$820+1=0)) & (v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0($818,$819)) & (v_sep_make_list_1033_sep_137_sep_0($817)) -> v_sep_make_list_1033_sep_137_sep_1_sep_153_sep_0($817,$820).
+(($821=0) & ($822=0)) & (v_sep_make_list_1033_sep_140_sep_0($821)) -> v_sep_make_list_1033_sep_140_sep_1_sep_143_sep_0($821,$822).
+(($821+1<>0) & (-$821+$823-1=0)) & (v_sep_make_list_1033_sep_137_sep_0($823)) -> v_sep_make_list_1033_sep_140_sep_0($821).
+0=0 -> v_sep_make_list_1033_sep_137_sep_0($817).
+
+          |- P[<make_list_1033@137:0>](<make_list_1033@137:0>:int)
+        solution:
+          P[<fail_1556@179:0>]($824:bool) = false
+          P[<length_1054@157:0>]($842:int) = true
+          P[<<length_1054@157:2>@174:0>]($827:int,$829:int) = ($827 = $829)
+          P[<length_1054@163:0>]($845:int) = true
+          P[<<length_1054@163:2>@166:0>]($837:int,$839:int) = (($839 <= 0) && ($837 <= $839))
+          P[<make_list_1033@137:0>]($853:int) = true
+          P[<<make_list_1033@137:1>@153:0>]($832:int,$834:int) = ($834 = $832)
+          P[<make_list_1033@140:0>]($856:int) = true
+          P[<<make_list_1033@140:1>@143:0>]($848:int,$850:int) = (($848 = $850) && ($850 <= 0))
+        
+      end HcSolver.solve_ub(17169)[4] (0.186971 sec.)
+      begin HcSolver.check_validity(17708)[4]
+        input:
+          P[<fail_1556@179:0>](<fail_1556@179:0>:bool)|- bot
+          
+          P[<<make_list_1033@137:1>@153:0>](<f_main_1551@176:0>:int,<f_main_1551@176:1>:int),
+          P[<<length_1054@157:2>@174:0>](<f_main_1551@176:1>:int,<f_main_1551@176:3>:int),
+          ((<f_main_1551@176:3> <> <f_main_1551@176:0>) && <fail_1556@179:0>)
+          |- P[<fail_1556@179:0>](<fail_1556@179:0>:bool)
+          
+          P[<length_1054@157:0>](<length_1054@157:0>:int),
+          P[<<length_1054@163:2>@166:0>]((-1 + <length_1054@157:0>):int,(
+                                         -1 + <<length_1054@157:2>@174:0>):int), (
+          <length_1054@157:0> >= 1)
+          |- P[<<length_1054@157:2>@174:0>](<length_1054@157:0>:int,<<length_1054@157:2>@174:0>:int)
+          
+          P[<length_1054@163:0>](<length_1054@163:0>:int),
+          ((<length_1054@163:0> = 0) && (<<length_1054@163:2>@166:0> = 0))
+          |- P[<<length_1054@163:2>@166:0>](<length_1054@163:0>:int,<<length_1054@163:2>@166:0>:int)
+          
+          P[<length_1054@157:0>]((1 + <length_1054@163:0>):int), (<length_1054@163:0> >= 0)
+          |- P[<length_1054@163:0>](<length_1054@163:0>:int)
+          
+          P[<<make_list_1033@137:1>@153:0>](<f_main_1550@155:0>:int,<length_1054@157:0>:int)|- P[<length_1054@157:0>](
+          <length_1054@157:0>:int)
+          
+          P[<make_list_1033@137:0>](<make_list_1033@137:0>:int),
+          P[<<make_list_1033@140:1>@143:0>]((-1 + <make_list_1033@137:0>):int,(
+                                            -1 + <<make_list_1033@137:1>@153:0>):int), (
+          <make_list_1033@137:0> <> 0)
+          |- P[<<make_list_1033@137:1>@153:0>](<make_list_1033@137:0>:int,
+                                               <<make_list_1033@137:1>@153:0>:int)
+          
+          P[<make_list_1033@140:0>](<make_list_1033@140:0>:int),
+          ((<make_list_1033@140:0> = 0) && (<<make_list_1033@140:1>@143:0> = 0))
+          |- P[<<make_list_1033@140:1>@143:0>](<make_list_1033@140:0>:int,
+                                               <<make_list_1033@140:1>@143:0>:int)
+          
+          P[<make_list_1033@137:0>]((1 + <make_list_1033@140:0>):int), (
+          (1 + <make_list_1033@140:0>) <> 0) |- P[<make_list_1033@140:0>](
+          <make_list_1033@140:0>:int)
+          
+          |- P[<make_list_1033@137:0>](<make_list_1033@137:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(17708)[4] (0.004000 sec.)
+      solution:
+        P[<fail_1556@179:0>]($824:bool) = false
+        P[<length_1054@157:0>]($842:int) = true
+        P[<<length_1054@157:2>@174:0>]($827:int,$829:int) = ($827 = $829)
+        P[<length_1054@163:0>]($845:int) = true
+        P[<<length_1054@163:2>@166:0>]($837:int,$839:int) = (($839 <= 0) && ($837 <= $839))
+        P[<make_list_1033@137:0>]($853:int) = true
+        P[<<make_list_1033@137:1>@153:0>]($832:int,$834:int) = ($834 = $832)
+        P[<make_list_1033@140:0>]($856:int) = true
+        P[<<make_list_1033@140:1>@143:0>]($848:int,$850:int) = (($848 = $850) && ($850 <= 0))
+    end YhornInterface.solve(17168)[3] (0.190971 sec.)
+    
+  end RefTypeInfer.infer_etrs(13910)[2] (0.500924 sec.)
+  refinement types:
+    main_1544: X
+    f_1552: v1:int -> X
+    main_1035: v1:int -> (v2:unit -> X) -> X
+    make_list_1033: v1:int -> (v2:{v2:int | (v2 = v1)} -> (v3:int -> (v4:int -> X) -> X) -> X) -> X
+    make_list_1033: v1:int -> (v2:{v2:int | ((v1 = v2) && (v2 <= 0))} -> (v3:int -> (v4:int -> X) -> X) -> X) -> X
+    f_make_list_1549: v1:int ->
+                      (v2:int -> (v3:int -> (v4:int -> X) -> X) -> X) -> v8:int -> (v9:int -> (v10:int -> X) -> X) -> X
+    cons_make_list_1088: v1:int ->
+                         v2:int ->
+                         v3:int ->
+                         (v4:int -> (v5:int -> X) -> X) -> (v8:int -> (v9:int -> (v10:int -> X) -> X) -> X) -> X
+    f_main_1550: v1:int -> (v2:unit -> X) -> v4:int -> (v5:int -> (v6:int -> X) -> X) -> X
+    length_1054: v1:int -> (v2:int -> (v3:int -> X) -> X) -> (v6:{v6:int | (v1 = v6)} -> X) -> X
+    br_length_1554: v1:bool -> v2:int -> (v3:int -> (v4:int -> X) -> X) -> (v7:int -> X) -> X
+    length_1054: v1:int -> (v2:int -> (v3:int -> X) -> X) -> (v6:{v6:int | ((v6 <= 0) && (v1 <= v6))} -> X) -> X
+    f_length_1546: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_main_1551: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1556: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1553: var375:int -> var374:unit -> X
+    f_cons_make_list_1548: var386:int ->
+                           var385:int ->
+                           var384:int -> (var383:int -> (var382:int -> X) -> X) -> var379:int -> (var378:int -> X) -> X
+    f_length_1545: var395:int -> (var394:int -> (var393:int -> X) -> X) -> var390:int -> (var389:int -> X) -> X
+    f_make_list_1547: var400:int -> var399:int -> (var398:int -> X) -> X
+  abstraction types:
+    main_1544: X
+    f_1552: v1:int -> X
+    main_1035: v1:int -> (v2:unit -> X) -> X
+    make_list_1033: var401:int ->
+                    (var402:int[var402 -> (var402 = var401),
+                                var402 -> ((var401 = var402) && (var402 <= 0))] ->
+                     (var403:int -> (var404:int -> X) -> X) -> X) -> X
+    f_make_list_1549: v1:int ->
+                      (v2:int -> (v3:int -> (v4:int -> X) -> X) -> X) -> v8:int -> (v9:int -> (v10:int -> X) -> X) -> X
+    cons_make_list_1088: v1:int ->
+                         v2:int ->
+                         v3:int ->
+                         (v4:int -> (v5:int -> X) -> X) -> (v8:int -> (v9:int -> (v10:int -> X) -> X) -> X) -> X
+    f_main_1550: v1:int -> (v2:unit -> X) -> v4:int -> (v5:int -> (v6:int -> X) -> X) -> X
+    length_1054: var409:int ->
+                 (var410:int -> (var411:int -> X) -> X) ->
+                 (var414:int[var414 -> (var409 = var414),
+                             var414 -> ((var414 <= 0) && (var409 <= var414))] -> X) -> X
+    br_length_1554: v1:bool -> v2:int -> (v3:int -> (v4:int -> X) -> X) -> (v7:int -> X) -> X
+    f_length_1546: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_main_1551: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1556: v1:bool -> (v2:unit -> X) -> X
+    f_1553: var375:int -> var374:unit -> X
+    f_cons_make_list_1548: var386:int ->
+                           var385:int ->
+                           var384:int -> (var383:int -> (var382:int -> X) -> X) -> var379:int -> (var378:int -> X) -> X
+    f_length_1545: var395:int -> (var394:int -> (var393:int -> X) -> X) -> var390:int -> (var389:int -> X) -> X
+    f_make_list_1547: var400:int -> var399:int -> (var398:int -> X) -> X
+  
+end AbsTypeInfer.refine(13909)[1] (0.509923 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 0; 0; 0; 0; 1; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 4)::
+Main: main_1544
+  main_1544 -> (rand_int f_1552)
+  br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 when b_1555 ->
+      (length_1054 (xs1_1031 - 1) (f_length_1545 xs1_1031 xs2_1031) (f_length_1546 xs1_1031 k_length_1148))
+  br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 when (not b_1555) -> _|_
+  cons_make_list_1088 n_1034 x_1086 xs1_1087 xs2_1087 k_make_list_cons_make_list_1313 ->
+      (k_make_list_cons_make_list_1313 (xs1_1087 + 1) (f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087))
+  f_1552 x_1486 -> (main_1035 x_1486 (f_1553 x_1486))
+  f_1553 x_1486 x_1483 -> end
+  f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 when (
+      i_1085 = 0) -> (k_make_list_cons_make_list_1328 x_1086)
+  f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 when (
+      not (i_1085 = 0)) -> (xs2_1087 (i_1085 - 1) k_make_list_cons_make_list_1328)
+  f_length_1545 xs1_1031 xs2_1031 x_1059 k_length_xs'_1181 -> (xs2_1031 (x_1059 + 1) k_length_xs'_1181)
+  f_length_1546 xs1_1031 k_length_1148 x_1196 -> (k_length_1148 (1 + x_1196))
+  f_main_1550 n_1036 k_main_1412 x1_1418 x2_1418 ->
+      (length_1054 x1_1418 x2_1418 (f_main_1551 n_1036 x1_1418 k_main_1412))
+  f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 when (x_1446 = n_1036) -> (k_main_1412 ())
+  f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 when (not (x_1446 = n_1036)) -> (fail_1556 true k_main_1412)
+  f_make_list_1547 n_1034 x_1092 k_make_list_1266 -> _|_
+  f_make_list_1549 n_1034 k_make_list_1254 x1_1391 x2_1391 ->
+      (cons_make_list_1088 n_1034 n_1034 x1_1391 x2_1391 k_make_list_1254)
+  fail_1556 b k -> {fail} => (k ())
+  length_1054 xs1_1031 xs2_1031 k_length_1148 when (xs1_1031 = 0) -> (k_length_1148 0)
+  length_1054 xs1_1031 xs2_1031 k_length_1148 when (not (xs1_1031 = 0)) ->
+      (br_length_1554 (1 <= xs1_1031) xs1_1031 xs2_1031 k_length_1148)
+  main_1035 n_1036 k_main_1412 -> (make_list_1033 n_1036 (f_main_1550 n_1036 k_main_1412))
+  make_list_1033 n_1034 k_make_list_1254 when (n_1034 = 0) -> (k_make_list_1254 0 (f_make_list_1547 n_1034))
+  make_list_1033 n_1034 k_make_list_1254 when (not (n_1034 = 0)) ->
+      (make_list_1033 (n_1034 - 1) (f_make_list_1549 n_1034 k_make_list_1254))
+Types:
+  main_1544 : X
+  fail_1556 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  length_1054 : (x_1:int[x_1 <= 0; x_1 <= 1; x_1 >= 1] ->
+                 (int -> (int -> X) -> X) ->
+                 (x_9:int[x_9 <= 0 && x_1 <= x_9; x_1 = x_9; x_1 >= 2; x_1 >= 5; x_1 <= -1; x_9 = 0] -> X) -> X)
+  make_list_1033 : (x_1:int ->
+                    (x_3:int[x_1 = x_3 && x_3 <= 0; x_1 = x_3; x_3 <= 0; x_3 <= 1; x_3 >= 0; x_3 >= 1; x_1 = 0] ->
+                     (int -> (int -> X) -> X) -> X) -> X)
+  
+(4-1) Abstracting ... DONE!
+
+(4-2) Checking HORS ... DONE!
+
+Safe!
+
+Refinement Types:
+  length: ((x_1:(Top list|x_3:x_3 >= 1 && x_3 <= 1|) -> {x_2:int | fst x_1 = x_2 && not (x_2 <= 0 && fst x_1 <= x_2)}) /\
+           (x_5:(Top list|x_7:x_7 >= 1 && x_7 <= 1|) ->
+                {x_6:int | (((fst x_5 = x_6 && fst x_5 < 5) && x_6 <> 0) && fst x_5 < 2) &&
+                           not (x_6 <= 0 && fst x_5 <= x_6)}) /\
+           (x_9:(Top list|x_11:x_11 >= 1 && x_11 > 1|) ->
+                {x_10:int | fst x_9 = x_10 && not (x_10 <= 0 && fst x_9 <= x_10)}) /\
+           (x_13:(Top list|x_18:x_18 >= 1 && x_18 > 1|) ->
+                ({x_14:int | ((fst x_13 = x_14 && fst x_13 >= 5) && fst x_13 >= 2) &&
+                             not (x_14 <= 0 && fst x_13 <= x_14)} \/
+                 {x_15:int | (((fst x_13 = x_15 && fst x_13 < 5) && x_15 <> 0) && fst x_13 >= 2) &&
+                             not (x_15 <= 0 && fst x_13 <= x_15)} \/
+                 {x_16:int | ((fst x_13 = x_16 && fst x_13 >= 5) && fst x_13 < 2) &&
+                             not (x_16 <= 0 && fst x_13 <= x_16)} \/
+                 {x_17:int | (((fst x_13 = x_17 && fst x_13 < 5) && x_17 <> 0) && fst x_13 < 2) &&
+                             not (x_17 <= 0 && fst x_13 <= x_17)})) /\
+           (x_20:(Top list|x_22:x_22 < 1 && x_22 <= 0|) -> {x_21:int | x_21 <= 0 && fst x_20 <= x_21}) /\ 
+           (x_24:(Top list|x_26:x_26 < 1 && x_26 <= 0|) ->
+                {x_25:int | ((fst x_24 < 2 && fst x_24 < 5) && x_25 <= 0) && fst x_24 <= x_25}) /\
+           (x_28:(Top list|x_31:(x_31 <= 1 && x_31 < 1) && x_31 > 0|) ->
+                ({x_29:int | ((fst x_28 < 2 && fst x_28 < 5) && x_29 <= 0) && fst x_28 <= x_29} \/ 
+                 {x_30:int | (((fst x_28 = x_30 && fst x_28 < 5) && x_30 <> 0) && fst x_28 < 2) &&
+                             not (x_30 <= 0 && fst x_28 <= x_30)})) /\
+           (x_33:(Top list|x_39:(x_39 > 1 && x_39 < 1) && x_39 > 0|) ->
+                ({x_34:int | x_34 <= 0 && fst x_33 <= x_34} \/ 
+                 {x_35:int | ((fst x_33 = x_35 && fst x_33 >= 5) && fst x_33 >= 2) &&
+                             not (x_35 <= 0 && fst x_33 <= x_35)} \/
+                 {x_36:int | (((fst x_33 = x_36 && fst x_33 < 5) && x_36 <> 0) && fst x_33 >= 2) &&
+                             not (x_36 <= 0 && fst x_33 <= x_36)} \/
+                 {x_37:int | ((fst x_33 = x_37 && fst x_33 >= 5) && fst x_33 < 2) &&
+                             not (x_37 <= 0 && fst x_33 <= x_37)} \/
+                 {x_38:int | (((fst x_33 = x_38 && fst x_33 < 5) && x_38 <> 0) && fst x_33 < 2) &&
+                             not (x_38 <= 0 && fst x_33 <= x_38)})) /\
+           (x_41:(Top list|x_47:(x_47 > 1 && x_47 < 1) && x_47 > 0|) ->
+                ({x_42:int | ((fst x_41 < 2 && fst x_41 < 5) && x_42 <= 0) && fst x_41 <= x_42} \/ 
+                 {x_43:int | ((fst x_41 = x_43 && fst x_41 >= 5) && fst x_41 >= 2) &&
+                             not (x_43 <= 0 && fst x_41 <= x_43)} \/
+                 {x_44:int | (((fst x_41 = x_44 && fst x_41 < 5) && x_44 <> 0) && fst x_41 >= 2) &&
+                             not (x_44 <= 0 && fst x_41 <= x_44)} \/
+                 {x_45:int | ((fst x_41 = x_45 && fst x_41 >= 5) && fst x_41 < 2) &&
+                             not (x_45 <= 0 && fst x_41 <= x_45)} \/
+                 {x_46:int | (((fst x_41 = x_46 && fst x_41 < 5) && x_46 <> 0) && fst x_41 < 2) &&
+                             not (x_46 <= 0 && fst x_41 <= x_46)})))
+  make_list: ((x_1:int ->
+                   ((Top list|x_2:(x_2 >= 0 && x_1 = x_2) && x_2 <= 0|) \/ 
+                    (Top list|x_4:((((x_1 = x_4 && x_4 >= 0) && x_1 <> 0) && x_4 >= 1) && x_4 > 0) &&
+                                  not (x_1 = x_4 && x_4 <= 0)|))) /\
+              (x_6:int ->
+                   ((Top list|x_7:((x_7 >= 0 && x_7 < 1) && x_6 = x_7) && x_7 <= 0|) \/ 
+                    (Top list|x_9:((((x_6 = x_9 && x_9 <= 1) && x_6 <> 0) && x_9 >= 1) && x_9 > 0) &&
+                                  not (x_6 = x_9 && x_9 <= 0)|) \/
+                    (Top list|x_11:((((x_6 = x_11 && x_11 > 1) && x_6 <> 0) && x_11 >= 1) && x_11 > 0) &&
+                                   not (x_6 = x_11 && x_11 <= 0)|))))
+
+cycles: 4
+total: 4.328 sec
+  abst: 0.540 sec
+  mc: 0.851 sec
+  refine: 0.933 sec
+    exparam: 0.382 sec

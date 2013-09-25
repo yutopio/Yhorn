@@ -1,0 +1,3130 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -gchi length.ml
+
+parsed::
+ let rec length_1030 xs_1031 = (match xs_1031 with
+                                  | [] -> 0
+                                  | _::xs'_1032 -> 1 + length_1030 xs'_1032) 
+ in
+ let rec make_list_1033 n_1034 = if n_1034 = 0 then
+                                   []
+                                 else
+                                   n_1034::make_list_1033 (n_1034 - 1) 
+ in
+ let main_1035 n_1036 =
+   let xs_1037 = make_list_1033 n_1036 
+   in
+     if length_1030 xs_1037 = n_1036 then
+       ()
+     else
+       {fail} () 
+ in
+   ()
+
+set_target::
+ let rec length_1030 xs_1031 = (match xs_1031 with
+                                  | [] -> 0
+                                  | _::xs'_1032 -> 1 + length_1030 xs'_1032) 
+ in
+ let rec make_list_1033 n_1034 = if n_1034 = 0 then
+                                   []
+                                 else
+                                   n_1034::make_list_1033 (n_1034 - 1) 
+ in
+ let main_1035 n_1036 =
+   let xs_1037 = make_list_1033 n_1036 
+   in
+     if length_1030 xs_1037 = n_1036 then
+       ()
+     else
+       {fail} () 
+ in
+ let main_1053 = let arg1_1052 = rand_int () 
+                 in
+                   main_1035 arg1_1052 
+ in
+   ()
+
+copy_poly::
+ let rec length_1054 (xs_1031:int list) = (match xs_1031 with
+                                             | [] -> 0
+                                             | _::xs'_1032 -> 1 + length_1054 xs'_1032) 
+ in
+ let rec make_list_1033 (n_1034:int) = if n_1034 = 0 then
+                                         []
+                                       else
+                                         n_1034::make_list_1033 (n_1034 - 1) 
+ in
+ let main_1035 (n_1036:int) =
+   let xs_1037 = make_list_1033 n_1036 
+   in
+     if length_1054 xs_1037 = n_1036 then
+       ()
+     else
+       {fail} () 
+ in
+ let main_1053 = let arg1_1052 = rand_int () 
+                 in
+                   main_1035 arg1_1052 
+ in
+   ()
+
+abst_list::
+ let rec length_1054 (xs_1031:(int * (int -> int))) =
+   if fst xs_1031 = 0 then
+     0
+   else
+     if 1 <= fst xs_1031 then
+       let xs'_1032 = (fst xs_1031 - 1, fun x_1059 -> (snd xs_1031) (x_1059 + 1)) 
+       in
+         1 + length_1054 xs'_1032
+     else
+       _|_ 
+ in
+ let rec make_list_1033 (n_1034:int) =
+   if n_1034 = 0 then
+     (0, fun x_1092 -> _|_)
+   else
+     let cons_make_list_1088 (x_1086:int) (xs_1087:(int * (int -> int))) =
+       (fst xs_1087 + 1, fun i_1085 -> (if i_1085 = 0 then
+                                          x_1086
+                                        else
+                                          (snd xs_1087) (i_1085 - 1))) 
+     in
+       cons_make_list_1088 n_1034 (make_list_1033 (n_1034 - 1)) 
+ in
+ let main_1035 (n_1036:int) =
+   let xs_1037 = make_list_1033 n_1036 
+   in
+     if length_1054 xs_1037 = n_1036 then
+       ()
+     else
+       {fail} () 
+ in
+ let main_1053 = let arg1_1052 = rand_int () 
+                 in
+                   main_1035 arg1_1052 
+ in
+   ()
+
+CPS::
+ let rec length_1054 (xs_1031:(int * (int -> ((int -> X) -> X)))) (k_length_1148:(
+   int -> X)) =
+   if fst xs_1031 = 0 then
+     k_length_1148 0
+   else
+     if 1 <= fst xs_1031 then
+       length_1054
+         (fst xs_1031 - 1, fun x_1059 -> fun k_length_xs'_1181 -> (snd xs_1031) (x_1059 + 1) k_length_xs'_1181)
+         (fun x_1196 -> k_length_1148 (1 + x_1196))
+     else
+       _|_ 
+ in
+ let rec make_list_1033 (n_1034:int) (k_make_list_1254:((int * (int -> ((int -> X) -> X))) -> X)) =
+   if n_1034 = 0 then
+     k_make_list_1254 (0, fun x_1092 -> fun k_make_list_1266 -> _|_)
+   else
+     let cons_make_list_1088
+       (x_1086:int) (xs_1087:(int * (int -> ((int -> X) -> X)))) (k_make_list_cons_make_list_1313:(
+       (int * (int -> ((int -> X) -> X))) -> X)) =
+       k_make_list_cons_make_list_1313
+         (fst xs_1087 + 1,
+         fun i_1085 ->
+           fun k_make_list_cons_make_list_1328 ->
+             (if i_1085 = 0 then
+                k_make_list_cons_make_list_1328 x_1086
+              else
+                (snd xs_1087) (i_1085 - 1) k_make_list_cons_make_list_1328)) 
+     in
+       make_list_1033 (n_1034 - 1) (fun x_1391 -> cons_make_list_1088 n_1034 x_1391 k_make_list_1254) 
+ in
+ let main_1035 (n_1036:int) (k_main_1412:(unit -> X)) =
+   make_list_1033 n_1036
+     (fun x_1418 ->
+        length_1054 x_1418 (fun x_1446 -> (if x_1446 = n_1036 then
+                                             k_main_1412 ()
+                                           else
+                                             {|fail|} () k_main_1412))) 
+ in
+   rand_int_cps () (fun x_1486 -> main_1035 x_1486 (fun x_1483 -> end))
+
+remove_pair::
+ let rec length_1054 (xs1_1031:int) (xs2_1031:(int -> ((int -> X) -> X))) (k_length_1148:(
+   int -> X)) =
+   if xs1_1031 = 0 then
+     k_length_1148 0
+   else
+     if 1 <= xs1_1031 then
+       length_1054 (xs1_1031 - 1) (fun x_1059 -> fun k_length_xs'_1181 -> xs2_1031 (x_1059 + 1) k_length_xs'_1181)
+         (fun x_1196 -> k_length_1148 (1 + x_1196))
+     else
+       _|_ 
+ in
+ let rec make_list_1033 (n_1034:int) (k_make_list_1254:(int -> ((int -> ((int -> X) -> X)) -> X))) =
+   if n_1034 = 0 then
+     k_make_list_1254 0 (fun x_1092 -> fun k_make_list_1266 -> _|_)
+   else
+     let cons_make_list_1088
+       (x_1086:int) (xs1_1087:int) (xs2_1087:(int -> ((int -> X) -> X))) (k_make_list_cons_make_list_1313:(
+       int -> ((int -> ((int -> X) -> X)) -> X))) =
+       k_make_list_cons_make_list_1313 (xs1_1087 + 1)
+         (fun i_1085 ->
+            fun k_make_list_cons_make_list_1328 ->
+              (if i_1085 = 0 then
+                 k_make_list_cons_make_list_1328 x_1086
+               else
+                 xs2_1087 (i_1085 - 1) k_make_list_cons_make_list_1328)) 
+     in
+       make_list_1033 (n_1034 - 1)
+         (fun x1_1391 -> fun x2_1391 -> cons_make_list_1088 n_1034 x1_1391 x2_1391 k_make_list_1254) 
+ in
+ let main_1035 (n_1036:int) (k_main_1412:(unit -> X)) =
+   make_list_1033 n_1036
+     (fun x1_1418 ->
+        fun x2_1418 ->
+          length_1054 x1_1418 x2_1418
+            (fun x_1446 -> (if x_1446 = n_1036 then
+                              k_main_1412 ()
+                            else
+                              {|fail|} () k_main_1412))) 
+ in
+   rand_int_cps () (fun x_1486 -> main_1035 x_1486 (fun x_1483 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1544
+  main_1544 -> (rand_int f_1552)
+  br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 when b_1555 ->
+      (length_1054 (xs1_1031 - 1) (f_length_1545 xs1_1031 xs2_1031) (f_length_1546 xs1_1031 k_length_1148))
+  br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 when (not b_1555) -> _|_
+  cons_make_list_1088 n_1034 x_1086 xs1_1087 xs2_1087 k_make_list_cons_make_list_1313 ->
+      (k_make_list_cons_make_list_1313 (xs1_1087 + 1) (f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087))
+  f_1552 x_1486 -> (main_1035 x_1486 (f_1553 x_1486))
+  f_1553 x_1486 x_1483 -> end
+  f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 when (
+      i_1085 = 0) -> (k_make_list_cons_make_list_1328 x_1086)
+  f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 when (
+      not (i_1085 = 0)) -> (xs2_1087 (i_1085 - 1) k_make_list_cons_make_list_1328)
+  f_length_1545 xs1_1031 xs2_1031 x_1059 k_length_xs'_1181 -> (xs2_1031 (x_1059 + 1) k_length_xs'_1181)
+  f_length_1546 xs1_1031 k_length_1148 x_1196 -> (k_length_1148 (1 + x_1196))
+  f_main_1550 n_1036 k_main_1412 x1_1418 x2_1418 ->
+      (length_1054 x1_1418 x2_1418 (f_main_1551 n_1036 x1_1418 k_main_1412))
+  f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 when (x_1446 = n_1036) -> (k_main_1412 ())
+  f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 when (not (x_1446 = n_1036)) -> (fail_1556 true k_main_1412)
+  f_make_list_1547 n_1034 x_1092 k_make_list_1266 -> _|_
+  f_make_list_1549 n_1034 k_make_list_1254 x1_1391 x2_1391 ->
+      (cons_make_list_1088 n_1034 n_1034 x1_1391 x2_1391 k_make_list_1254)
+  fail_1556 b k -> {fail} => (k ())
+  length_1054 xs1_1031 xs2_1031 k_length_1148 when (xs1_1031 = 0) -> (k_length_1148 0)
+  length_1054 xs1_1031 xs2_1031 k_length_1148 when (not (xs1_1031 = 0)) ->
+      (br_length_1554 (1 <= xs1_1031) xs1_1031 xs2_1031 k_length_1148)
+  main_1035 n_1036 k_main_1412 -> (make_list_1033 n_1036 (f_main_1550 n_1036 k_main_1412))
+  make_list_1033 n_1034 k_make_list_1254 when (n_1034 = 0) -> (k_make_list_1254 0 (f_make_list_1547 n_1034))
+  make_list_1033 n_1034 k_make_list_1254 when (not (n_1034 = 0)) ->
+      (make_list_1033 (n_1034 - 1) (f_make_list_1549 n_1034 k_make_list_1254))
+Types:
+  main_1544 : X
+  fail_1556 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  length_1054 : (int -> (int -> (int -> X) -> X) -> (int -> X) -> X)
+  make_list_1033 : (int -> (int -> (int -> (int -> X) -> X) -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1544 ... --> 
+  f_1552 ... --> 
+  main_1035 ... --> 
+  make_list_1033 [1/2] ... --> 
+  f_main_1550 ... --> 
+  length_1054 [1/2] ... --> 
+  f_main_1551 [2/2] ... --> 
+  fail_1556 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(173)[1]
+  program:
+    main_1544  | true = ((Random.int 0) f_1552)
+    br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 | b_1555 = (
+    length_1054 (xs1_1031 - 1)
+                (f_length_1545 xs1_1031
+                               xs2_1031)
+                (f_length_1546 xs1_1031
+                               k_length_1148))
+    br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 | (not b_1555) = bot
+    cons_make_list_1088 n_1034 x_1086 xs1_1087 xs2_1087 k_make_list_cons_make_list_1313 | true = (
+    k_make_list_cons_make_list_1313 (xs1_1087 + 1)
+                                    (f_cons_make_list_1548 n_1034
+                                                           x_1086
+                                                           xs1_1087
+                                                           xs2_1087))
+    f_1552 x_1486 | true = (main_1035 x_1486
+                                      (f_1553 x_1486))
+    f_1553 x_1486 x_1483 | true = end
+    f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 | (
+    i_1085 = 0) = (k_make_list_cons_make_list_1328 x_1086)
+    f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 | (
+    not (i_1085 = 0)) = (xs2_1087 (i_1085 - 1)
+                                  k_make_list_cons_make_list_1328)
+    f_length_1545 xs1_1031 xs2_1031 x_1059 k_length_xs'_1181 | true = (
+    xs2_1031 (x_1059 + 1)
+             k_length_xs'_1181)
+    f_length_1546 xs1_1031 k_length_1148 x_1196 | true = (k_length_1148 (
+                                                                    1 + x_1196))
+    f_main_1550 n_1036 k_main_1412 x1_1418 x2_1418 | true = (length_1054
+                                                               x1_1418
+                                                               x2_1418
+                                                               (f_main_1551 n_1036
+                                                                    x1_1418
+                                                                    k_main_1412))
+    f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 | (x_1446 = n_1036) = (
+    k_main_1412 ())
+    f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 | (not (x_1446 = n_1036)) = (
+    fail_1556 true
+              k_main_1412)
+    f_make_list_1547 n_1034 x_1092 k_make_list_1266 | true = bot
+    f_make_list_1549 n_1034 k_make_list_1254 x1_1391 x2_1391 | true = (
+    cons_make_list_1088 n_1034
+                        n_1034
+                        x1_1391
+                        x2_1391
+                        k_make_list_1254)
+    fail_1556 b k | true = (fail ())
+    length_1054 xs1_1031 xs2_1031 k_length_1148 | (xs1_1031 = 0) = (k_length_1148 0)
+    length_1054 xs1_1031 xs2_1031 k_length_1148 | (not (xs1_1031 = 0)) = (
+    br_length_1554 (1 <= xs1_1031)
+                   xs1_1031
+                   xs2_1031
+                   k_length_1148)
+    main_1035 n_1036 k_main_1412 | true = (make_list_1033 n_1036
+                                                          (f_main_1550 n_1036
+                                                                    k_main_1412))
+    make_list_1033 n_1034 k_make_list_1254 | (n_1034 = 0) = (k_make_list_1254 0
+                                                                    (f_make_list_1547 n_1034))
+    make_list_1033 n_1034 k_make_list_1254 | (not (n_1034 = 0)) = (make_list_1033
+                                                                    (
+                                                                    n_1034 - 1)
+                                                                    (
+                                                                    f_make_list_1549 n_1034
+                                                                    k_make_list_1254))
+    main_1544:X
+    br_length_1554:bool -> int -> (int -> (int -> X) -> X) -> (int -> X) -> X
+    cons_make_list_1088:int -> int -> int -> (int -> (int -> X) -> X) -> (int -> (int -> (int -> X) -> X) -> X) -> X
+    f_1552:int -> X
+    f_1553:int -> unit -> X
+    f_cons_make_list_1548:int -> int -> int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    f_length_1545:int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    f_length_1546:int -> (int -> X) -> int -> X
+    f_main_1550:int -> (unit -> X) -> int -> (int -> (int -> X) -> X) -> X
+    f_main_1551:int -> int -> (unit -> X) -> int -> X
+    f_make_list_1547:int -> int -> (int -> X) -> X
+    f_make_list_1549:int -> (int -> (int -> (int -> X) -> X) -> X) -> int -> (int -> (int -> X) -> X) -> X
+    fail_1556:bool -> (unit -> X) -> X
+    length_1054:int -> (int -> (int -> X) -> X) -> (int -> X) -> X
+    main_1035:int -> (unit -> X) -> X
+    make_list_1033:int -> (int -> (int -> (int -> X) -> X) -> X) -> X
+  inlined functions: br_length_1554,cons_make_list_1088,f_1552,f_1553,f_cons_make_list_1548,f_length_1545,f_length_1546,f_main_1550,f_main_1551,f_make_list_1547,f_make_list_1549,main_1035
+  counterexample: 0:0:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1552@4:0> = var2)
+     [true.(<main_1035@6:0> = <f_1552@4:0>)
+      [true.(<make_list_1033@8:0> = <main_1035@6:0>)
+       [(<make_list_1033@8:0> = 0).(<<make_list_1033@8:1>@11:0> = 0)
+        [true.((<f_main_1550@13:0> = <main_1035@6:0>) && (<f_main_1550@13:2> = <<make_list_1033@8:1>@11:0>))
+         [true.(<length_1054@15:0> = <f_main_1550@13:2>)
+          [(<length_1054@15:0> = 0).(<<length_1054@15:2>@18:0> = 0)
+           [true.
+            ((<f_main_1551@20:0> = <f_main_1550@13:0>) &&
+             ((<f_main_1551@20:1> = <f_main_1550@13:2>) && (<f_main_1551@20:3> = <<length_1054@15:2>@18:0>)))
+            [(not (<f_main_1551@20:3> = <f_main_1551@20:0>)).(<fail_1556@23:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(174)[2]
+    horn clauses:
+      P[<fail_1556@23:0>](<fail_1556@23:0>:bool)|- bot
+      
+      P[<f_main_1551@20:3>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int,<f_main_1551@20:3>:int),
+      ((<f_main_1551@20:3> <> <f_main_1551@20:0>) && <fail_1556@23:0>) |- P[<fail_1556@23:0>](
+      <fail_1556@23:0>:bool)
+      
+      P[<f_main_1550@13:2>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int),
+      P[<<length_1054@15:2>@18:0>](<f_main_1551@20:1>:int,<f_main_1551@20:3>:int)|- P[<f_main_1551@20:3>](
+      <f_main_1551@20:0>:int,<f_main_1551@20:1>:int,<f_main_1551@20:3>:int)
+      
+      P[<length_1054@15:0>](<length_1054@15:0>:int), ((<length_1054@15:0> = 0) && (<<length_1054@15:2>@18:0> = 0))
+      |- P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int)
+      
+      P[<f_main_1550@13:2>](<f_main_1550@13:0>:int,<length_1054@15:0>:int)|- P[<length_1054@15:0>](
+      <length_1054@15:0>:int)
+      
+      P[<main_1035@6:0>](<f_main_1550@13:0>:int),
+      P[<<make_list_1033@8:1>@11:0>](<f_main_1550@13:0>:int,<f_main_1550@13:2>:int)|- P[<f_main_1550@13:2>](
+      <f_main_1550@13:0>:int,<f_main_1550@13:2>:int)
+      
+      P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+      ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+      |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int)
+      
+      P[<main_1035@6:0>](<make_list_1033@8:0>:int)|- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+      
+      P[<f_1552@4:0>](<main_1035@6:0>:int)|- P[<main_1035@6:0>](<main_1035@6:0>:int)
+      
+      |- P[<f_1552@4:0>](<f_1552@4:0>:int)
+    call trees:
+      <main_1544@1>
+        <f_1552@4>
+          <main_1035@6>
+            <make_list_1033@8>
+            </<make_list_1033@8:1>@11>
+            <f_main_1550@13>
+              <length_1054@15>
+              </<length_1054@15:2>@18>
+              <f_main_1551@20>
+                <fail_1556@23>
+    inlined horn clauses:
+      P[<fail_1556@23:0>](<fail_1556@23:0>:bool)|- bot
+      
+      P[<<make_list_1033@8:1>@11:0>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int),
+      P[<<length_1054@15:2>@18:0>](<f_main_1551@20:1>:int,<f_main_1551@20:3>:int),
+      ((<f_main_1551@20:3> <> <f_main_1551@20:0>) && <fail_1556@23:0>) |- P[<fail_1556@23:0>](
+      <fail_1556@23:0>:bool)
+      
+      P[<length_1054@15:0>](<length_1054@15:0>:int), ((<length_1054@15:0> = 0) && (<<length_1054@15:2>@18:0> = 0))
+      |- P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int)
+      
+      P[<<make_list_1033@8:1>@11:0>](<f_main_1550@13:0>:int,<length_1054@15:0>:int)|- P[<length_1054@15:0>](
+      <length_1054@15:0>:int)
+      
+      P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+      ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+      |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int)
+      
+      |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+    begin ParamSubstInfer.infer(1250)[3]
+      
+    end ParamSubstInfer.infer(1250)[3] (0.009999 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(1252)[3]
+      
+    end RefTypeInfer.elim_coeffs(1252)[3] (0.000000 sec.)
+    begin GenHcSolver.solve(1461)[3]
+      Horn clauses:
+        P[<fail_1556@23:0>](<fail_1556@23:0>:bool)|- bot
+        
+        P[<<make_list_1033@8:1>@11:0>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int),
+        P[<<length_1054@15:2>@18:0>](<f_main_1551@20:1>:int,<f_main_1551@20:3>:int),
+        ((<f_main_1551@20:3> <> <f_main_1551@20:0>) && <fail_1556@23:0>) |- P[<fail_1556@23:0>](
+        <fail_1556@23:0>:bool)
+        
+        P[<length_1054@15:0>](<length_1054@15:0>:int), ((<length_1054@15:0> = 0) && (<<length_1054@15:2>@18:0> = 0))
+        |- P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int)
+        
+        P[<<make_list_1033@8:1>@11:0>](<f_main_1550@13:0>:int,<length_1054@15:0>:int)|- P[<length_1054@15:0>](
+        <length_1054@15:0>:int)
+        
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+        ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+        |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int)
+        
+        |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+      lower bounds:
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int) = true
+        P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int) =
+        ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+        P[<length_1054@15:0>](<length_1054@15:0>:int) = (<length_1054@15:0> = 0)
+        P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int) =
+        ((<<length_1054@15:2>@18:0> = 0) && (<length_1054@15:0> = 0))
+        P[<fail_1556@23:0>](<fail_1556@23:0>:bool) = false
+      upper bounds:
+        P[<fail_1556@23:0>](var4:bool) = true
+      begin GenHcSolver.classify_pids(2547)[4]
+        output:
+          [<fail_1556@23:0>]
+      end GenHcSolver.classify_pids(2547)[4] (0.000000 sec.)
+      lb:false
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(2550)[4]
+        lb:false
+        nub:false
+        lb':false
+        nub':false
+        begin InterpProver.interpolate(2551)[5]
+          begin InterpProver.interpolate_fresh(2552)[6]
+            begin InterpProver.interpolate_log(2553)[7]
+              input1: false
+              input2: false
+              begin InterpProver.interpolate_check(2554)[8]
+                begin InterpProver.interpolate_simplify(2555)[9]
+                  begin InterpProver.interpolate_quick(2568)[10]
+                    
+                  end InterpProver.interpolate_quick(2568)[10] (0.000000 sec.)
+                  begin minimizing # of disjunctions(2572)[10]
+                    input: false
+                    output: false
+                  end minimizing # of disjunctions(2572)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(2555)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(2554)[8] (0.000000 sec.)
+              output: false
+            end InterpProver.interpolate_log(2553)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(2552)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(2551)[5] (0.000000 sec.)
+        output:
+          P[<fail_1556@23:0>](<fail_1556@23:0>:bool) = false
+      end ApronInterface.convex_hull_interpolate(2550)[4] (0.000000 sec.)
+      Horn clauses:
+        P[<<make_list_1033@8:1>@11:0>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int),
+        P[<<length_1054@15:2>@18:0>](<f_main_1551@20:1>:int,<f_main_1551@20:3>:int),
+        (<f_main_1551@20:3> <> <f_main_1551@20:0>) |- bot
+        
+        P[<length_1054@15:0>](<length_1054@15:0>:int), ((<length_1054@15:0> = 0) && (<<length_1054@15:2>@18:0> = 0))
+        |- P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int)
+        
+        P[<<make_list_1033@8:1>@11:0>](<f_main_1550@13:0>:int,<length_1054@15:0>:int)|- P[<length_1054@15:0>](
+        <length_1054@15:0>:int)
+        
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+        ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+        |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int)
+        
+        |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+      lower bounds:
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int) = true
+        P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int) =
+        ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+        P[<length_1054@15:0>](<length_1054@15:0>:int) = (<length_1054@15:0> = 0)
+        P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int) =
+        ((<<length_1054@15:2>@18:0> = 0) && (<length_1054@15:0> = 0))
+      upper bounds:
+        P[<<length_1054@15:2>@18:0>](var5:int,var6:int) = ((var5 <> 0) || (var6 = 0))
+      begin GenHcSolver.classify_pids(3937)[4]
+        output:
+          [<<length_1054@15:2>@18:0>]
+      end GenHcSolver.classify_pids(3937)[4] (0.000000 sec.)
+      lb:((<<length_1054@15:2>@18:0> = 0) && (<length_1054@15:0> = 0))
+      nub:(not ((<length_1054@15:0> <> 0) || (<<length_1054@15:2>@18:0> = 0)))
+      begin ApronInterface.convex_hull_interpolate(3940)[4]
+        lb:((<<length_1054@15:2>@18:0> = 0) && (<length_1054@15:0> = 0))
+        nub:(not ((<length_1054@15:0> <> 0) || (<<length_1054@15:2>@18:0> = 0)))
+        lb':((<<length_1054@15:2>@18:0> = 0) && (<length_1054@15:0> = 0))
+        nub':(not ((<length_1054@15:0> <> 0) || (<<length_1054@15:2>@18:0> = 0)))
+        begin InterpProver.interpolate(3941)[5]
+          begin InterpProver.interpolate_fresh(3942)[6]
+            begin InterpProver.interpolate_log(3943)[7]
+              input1: ((<<length_1054@15:2>@18:0> = 0) && (<length_1054@15:0> = 0))
+              input2: (not ((<length_1054@15:0> <> 0) || (<<length_1054@15:2>@18:0> = 0)))
+              begin InterpProver.interpolate_check(3944)[8]
+                begin InterpProver.interpolate_simplify(3945)[9]
+                  begin InterpProver.interpolate_quick(3982)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(3991)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(3992)[12]
+                        begin CsisatInterface.interpolate_csisat_log(3993)[13]
+                          input1: (0 = v_sep_length_1054_sep_15_sep_0 & 0 = v_sep_length_1054_sep_15_sep_2_sep_18_sep_0)
+                          input2: (not 0 = v_sep_length_1054_sep_15_sep_2_sep_18_sep_0 & 0 = v_sep_length_1054_sep_15_sep_0)
+                          begin CsisatInterface.interpolate_csisat_raw(3994)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(3994)[14] (0.000000 sec.)
+                          output: 0 = v_sep_length_1054_sep_15_sep_2_sep_18_sep_0
+                          
+                        end CsisatInterface.interpolate_csisat_log(3993)[13] (0.000000 sec.)
+                        after simplification: 0 = v_sep_length_1054_sep_15_sep_2_sep_18_sep_0
+                        after dnf conversion: ((0 = v_sep_length_1054_sep_15_sep_2_sep_18_sep_0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(3992)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(3991)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(3982)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(3945)[9] (0.001000 sec.)
+                
+              end InterpProver.interpolate_check(3944)[8] (0.002000 sec.)
+              output: (0 = <<length_1054@15:2>@18:0>)
+            end InterpProver.interpolate_log(3943)[7] (0.002000 sec.)
+            
+          end InterpProver.interpolate_fresh(3942)[6] (0.002000 sec.)
+          
+        end InterpProver.interpolate(3941)[5] (0.002000 sec.)
+        output:
+          P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int) =
+          (0 = <<length_1054@15:2>@18:0>)
+      end ApronInterface.convex_hull_interpolate(3940)[4] (0.002000 sec.)
+      Horn clauses:
+        P[<<make_list_1033@8:1>@11:0>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int), (0 <> <f_main_1551@20:0>) |- bot
+        
+        P[<<make_list_1033@8:1>@11:0>](<f_main_1550@13:0>:int,<length_1054@15:0>:int)|- P[<length_1054@15:0>](
+        <length_1054@15:0>:int)
+        
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+        ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+        |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int)
+        
+        |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+      lower bounds:
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int) = true
+        P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int) =
+        ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+        P[<length_1054@15:0>](<length_1054@15:0>:int) = (<length_1054@15:0> = 0)
+      upper bounds:
+        P[<length_1054@15:0>](var7:int) = true
+      begin GenHcSolver.classify_pids(4889)[4]
+        output:
+          [<length_1054@15:0>]
+      end GenHcSolver.classify_pids(4889)[4] (0.000000 sec.)
+      lb:(<length_1054@15:0> = 0)
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(4892)[4]
+        lb:(<length_1054@15:0> = 0)
+        nub:false
+        lb':(<length_1054@15:0> = 0)
+        nub':false
+        begin InterpProver.interpolate(4893)[5]
+          begin InterpProver.interpolate_fresh(4894)[6]
+            begin InterpProver.interpolate_log(4895)[7]
+              input1: (<length_1054@15:0> = 0)
+              input2: false
+              begin InterpProver.interpolate_check(4896)[8]
+                begin InterpProver.interpolate_simplify(4897)[9]
+                  begin InterpProver.interpolate_quick(4916)[10]
+                    
+                  end InterpProver.interpolate_quick(4916)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(4897)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(4896)[8] (0.000000 sec.)
+              output: true
+            end InterpProver.interpolate_log(4895)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(4894)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(4893)[5] (0.000000 sec.)
+        output:
+          P[<length_1054@15:0>](<length_1054@15:0>:int) = true
+      end ApronInterface.convex_hull_interpolate(4892)[4] (0.001000 sec.)
+      Horn clauses:
+        P[<<make_list_1033@8:1>@11:0>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int), (0 <> <f_main_1551@20:0>) |- bot
+        
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+        ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+        |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int)
+        
+        |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+      lower bounds:
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int) = true
+        P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int) =
+        ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+      upper bounds:
+        P[<<make_list_1033@8:1>@11:0>](var8:int,var9:int) = (0 = var8)
+      begin GenHcSolver.classify_pids(5614)[4]
+        output:
+          [<<make_list_1033@8:1>@11:0>]
+      end GenHcSolver.classify_pids(5614)[4] (0.000000 sec.)
+      lb:((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+      nub:(not (0 = <make_list_1033@8:0>))
+      begin ApronInterface.convex_hull_interpolate(5617)[4]
+        lb:((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+        nub:(not (0 = <make_list_1033@8:0>))
+        lb':((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+        nub':(not (0 = <make_list_1033@8:0>))
+        begin InterpProver.interpolate(5618)[5]
+          begin InterpProver.interpolate_fresh(5619)[6]
+            begin InterpProver.interpolate_log(5620)[7]
+              input1: ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+              input2: (not (0 = <make_list_1033@8:0>))
+              begin InterpProver.interpolate_check(5621)[8]
+                begin InterpProver.interpolate_simplify(5622)[9]
+                  begin InterpProver.interpolate_quick(5652)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(5661)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(5662)[12]
+                        begin CsisatInterface.interpolate_csisat_log(5663)[13]
+                          input1: 0 = v_sep_make_list_1033_sep_8_sep_0
+                          input2: not 0 = v_sep_make_list_1033_sep_8_sep_0
+                          begin CsisatInterface.interpolate_csisat_raw(5664)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(5664)[14] (0.000000 sec.)
+                          output: 0 = v_sep_make_list_1033_sep_8_sep_0
+                          
+                        end CsisatInterface.interpolate_csisat_log(5663)[13] (0.000000 sec.)
+                        after simplification: 0 = v_sep_make_list_1033_sep_8_sep_0
+                        after dnf conversion: ((0 = v_sep_make_list_1033_sep_8_sep_0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(5662)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(5661)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(5652)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(5622)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(5621)[8] (0.000999 sec.)
+              output: (0 = <make_list_1033@8:0>)
+            end InterpProver.interpolate_log(5620)[7] (0.000999 sec.)
+            
+          end InterpProver.interpolate_fresh(5619)[6] (0.000999 sec.)
+          
+        end InterpProver.interpolate(5618)[5] (0.000999 sec.)
+        output:
+          P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int) =
+          (0 = <make_list_1033@8:0>)
+      end ApronInterface.convex_hull_interpolate(5617)[4] (0.000999 sec.)
+      Horn clauses:
+        |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+      lower bounds:
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int) = true
+      upper bounds:
+        P[<make_list_1033@8:0>](var10:int) = true
+      begin GenHcSolver.classify_pids(5942)[4]
+        output:
+          [<make_list_1033@8:0>]
+      end GenHcSolver.classify_pids(5942)[4] (0.000000 sec.)
+      lb:true
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(5945)[4]
+        lb:true
+        nub:false
+        lb':true
+        nub':false
+        begin InterpProver.interpolate(5946)[5]
+          begin InterpProver.interpolate_fresh(5947)[6]
+            begin InterpProver.interpolate_log(5948)[7]
+              input1: true
+              input2: false
+              begin InterpProver.interpolate_check(5949)[8]
+                begin InterpProver.interpolate_simplify(5950)[9]
+                  begin InterpProver.interpolate_quick(5963)[10]
+                    
+                  end InterpProver.interpolate_quick(5963)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(5950)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(5949)[8] (0.000000 sec.)
+              output: true
+            end InterpProver.interpolate_log(5948)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(5947)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(5946)[5] (0.001000 sec.)
+        output:
+          P[<make_list_1033@8:0>](<make_list_1033@8:0>:int) = true
+      end ApronInterface.convex_hull_interpolate(5945)[4] (0.001000 sec.)
+      begin HcSolver.check_validity(6018)[4]
+        input:
+          P[<fail_1556@23:0>](<fail_1556@23:0>:bool)|- bot
+          
+          P[<<make_list_1033@8:1>@11:0>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int),
+          P[<<length_1054@15:2>@18:0>](<f_main_1551@20:1>:int,<f_main_1551@20:3>:int),
+          ((<f_main_1551@20:3> <> <f_main_1551@20:0>) && <fail_1556@23:0>)
+          |- P[<fail_1556@23:0>](<fail_1556@23:0>:bool)
+          
+          P[<length_1054@15:0>](<length_1054@15:0>:int), ((<length_1054@15:0> = 0) && (<<length_1054@15:2>@18:0> = 0))
+          |- P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int)
+          
+          P[<<make_list_1033@8:1>@11:0>](<f_main_1550@13:0>:int,<length_1054@15:0>:int)|- P[<length_1054@15:0>](
+          <length_1054@15:0>:int)
+          
+          P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+          ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+          |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,
+                                            <<make_list_1033@8:1>@11:0>:int)
+          
+          |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(6018)[4] (0.002000 sec.)
+      solution:
+        P[<fail_1556@23:0>](<fail_1556@23:0>:bool) = false
+        P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int) =
+        (0 = <<length_1054@15:2>@18:0>)
+        P[<length_1054@15:0>](<length_1054@15:0>:int) = true
+        P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int) =
+        (0 = <make_list_1033@8:0>)
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int) = true
+    end GenHcSolver.solve(1461)[3] (0.027996 sec.)
+    begin GenHcSolver.solve(6341)[3]
+      Horn clauses:
+        P[<fail_1556@23:0>](<fail_1556@23:0>:bool)|- bot
+        
+        P[<<make_list_1033@8:1>@11:0>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int),
+        P[<<length_1054@15:2>@18:0>](<f_main_1551@20:1>:int,<f_main_1551@20:3>:int),
+        ((<f_main_1551@20:3> <> <f_main_1551@20:0>) && <fail_1556@23:0>) |- P[<fail_1556@23:0>](
+        <fail_1556@23:0>:bool)
+        
+        P[<length_1054@15:0>](<length_1054@15:0>:int), ((<length_1054@15:0> = 0) && (<<length_1054@15:2>@18:0> = 0))
+        |- P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int)
+        
+        P[<<make_list_1033@8:1>@11:0>](<f_main_1550@13:0>:int,<length_1054@15:0>:int)|- P[<length_1054@15:0>](
+        <length_1054@15:0>:int)
+        
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+        ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+        |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int)
+        
+        |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+      lower bounds:
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int) = true
+        P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int) =
+        ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+        P[<length_1054@15:0>](<length_1054@15:0>:int) = (<length_1054@15:0> = 0)
+        P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int) =
+        ((<<length_1054@15:2>@18:0> = 0) && (<length_1054@15:0> = 0))
+        P[<fail_1556@23:0>](<fail_1556@23:0>:bool) = false
+      upper bounds:
+        P[<fail_1556@23:0>](var12:bool) = true
+      begin GenHcSolver.classify_pids(7427)[4]
+        output:
+          [<fail_1556@23:0>]
+      end GenHcSolver.classify_pids(7427)[4] (0.000000 sec.)
+      lb:false
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(7430)[4]
+        lb:false
+        nub:false
+        begin ExtFormula.Formula.case_analysis_boolean(7433)[5]
+          ts: false
+          
+        end ExtFormula.Formula.case_analysis_boolean(7433)[5] (0.001000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(7438)[5]
+          ts: false
+          
+        end ExtFormula.Formula.case_analysis_boolean(7438)[5] (0.000000 sec.)
+        lb':(-1 >= 0)
+        nub':(-1 >= 0)
+        begin InterpProver.interpolate(7441)[5]
+          begin InterpProver.interpolate_fresh(7442)[6]
+            begin InterpProver.interpolate_log(7443)[7]
+              input1: (-1 >= 0)
+              input2: (-1 >= 0)
+              begin InterpProver.interpolate_check(7444)[8]
+                begin InterpProver.interpolate_simplify(7445)[9]
+                  begin InterpProver.interpolate_quick(7460)[10]
+                    
+                  end InterpProver.interpolate_quick(7460)[10] (0.000000 sec.)
+                  begin minimizing # of disjunctions(7464)[10]
+                    input: false
+                    output: false
+                  end minimizing # of disjunctions(7464)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(7445)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(7444)[8] (0.001000 sec.)
+              output: false
+            end InterpProver.interpolate_log(7443)[7] (0.001000 sec.)
+            
+          end InterpProver.interpolate_fresh(7442)[6] (0.001000 sec.)
+          
+        end InterpProver.interpolate(7441)[5] (0.001000 sec.)
+        output:
+          P[<fail_1556@23:0>](<fail_1556@23:0>:bool) = false
+      end ApronInterface.convex_hull_interpolate(7430)[4] (0.002000 sec.)
+      Horn clauses:
+        P[<<make_list_1033@8:1>@11:0>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int),
+        P[<<length_1054@15:2>@18:0>](<f_main_1551@20:1>:int,<f_main_1551@20:3>:int),
+        (<f_main_1551@20:3> <> <f_main_1551@20:0>) |- bot
+        
+        P[<length_1054@15:0>](<length_1054@15:0>:int), ((<length_1054@15:0> = 0) && (<<length_1054@15:2>@18:0> = 0))
+        |- P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int)
+        
+        P[<<make_list_1033@8:1>@11:0>](<f_main_1550@13:0>:int,<length_1054@15:0>:int)|- P[<length_1054@15:0>](
+        <length_1054@15:0>:int)
+        
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+        ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+        |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int)
+        
+        |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+      lower bounds:
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int) = true
+        P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int) =
+        ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+        P[<length_1054@15:0>](<length_1054@15:0>:int) = (<length_1054@15:0> = 0)
+        P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int) =
+        ((<<length_1054@15:2>@18:0> = 0) && (<length_1054@15:0> = 0))
+      upper bounds:
+        P[<<length_1054@15:2>@18:0>](var13:int,var14:int) = ((var13 <> 0) || (var14 = 0))
+      begin GenHcSolver.classify_pids(8836)[4]
+        output:
+          [<<length_1054@15:2>@18:0>]
+      end GenHcSolver.classify_pids(8836)[4] (0.000000 sec.)
+      lb:((<<length_1054@15:2>@18:0> = 0) && (<length_1054@15:0> = 0))
+      nub:(not ((<length_1054@15:0> <> 0) || (<<length_1054@15:2>@18:0> = 0)))
+      begin ApronInterface.convex_hull_interpolate(8839)[4]
+        lb:((<<length_1054@15:2>@18:0> = 0) && (<length_1054@15:0> = 0))
+        nub:(not ((<length_1054@15:0> <> 0) || (<<length_1054@15:2>@18:0> = 0)))
+        begin ExtFormula.Formula.case_analysis_boolean(8847)[5]
+          ts: ((<<length_1054@15:2>@18:0> = 0) && (<length_1054@15:0> = 0))
+          
+        end ExtFormula.Formula.case_analysis_boolean(8847)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(8861)[5]
+          ts: ((<length_1054@15:0> = 0) && (<<length_1054@15:2>@18:0> <> 0))
+          
+        end ExtFormula.Formula.case_analysis_boolean(8861)[5] (0.000000 sec.)
+        lb':((<<length_1054@15:2>@18:0> = 0) && (<length_1054@15:0> = 0))
+        nub':(<length_1054@15:0> = 0)
+        begin InterpProver.interpolate(8866)[5]
+          begin InterpProver.interpolate_fresh(8867)[6]
+            begin InterpProver.interpolate_log(8868)[7]
+              input1: ((<<length_1054@15:2>@18:0> = 0) && (<length_1054@15:0> = 0))
+              input2: (<length_1054@15:0> = 0)
+              begin InterpProver.interpolate_check(8869)[8]
+                begin InterpProver.interpolate_simplify(8870)[9]
+                  begin InterpProver.interpolate_quick(8900)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(8909)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(8910)[12]
+                        begin CsisatInterface.interpolate_csisat_log(8911)[13]
+                          input1: 0 = v_sep_length_1054_sep_15_sep_0
+                          input2: 0 = v_sep_length_1054_sep_15_sep_0
+                          begin CsisatInterface.interpolate_csisat_raw(8912)[14]
+                            csisat error: NelsonOppen: not a conjunction
+                            
+                          end CsisatInterface.interpolate_csisat_raw(8912)[14] (0.000000 sec.)
+                          
+                        end CsisatInterface.interpolate_csisat_log(8911)[13] (0.000000 sec.)
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(8910)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(8909)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(8900)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(8870)[9] (0.001000 sec.)
+                
+              end InterpProver.interpolate_check(8869)[8] (0.001000 sec.)
+              there is no interpolant
+            end InterpProver.interpolate_log(8868)[7] (0.001000 sec.)
+            
+          end InterpProver.interpolate_fresh(8867)[6] (0.001000 sec.)
+          
+        end InterpProver.interpolate(8866)[5] (0.001000 sec.)
+        begin InterpProver.interpolate(8921)[5]
+          begin InterpProver.interpolate_fresh(8922)[6]
+            begin InterpProver.interpolate_log(8923)[7]
+              input1: ((<<length_1054@15:2>@18:0> = 0) && (<length_1054@15:0> = 0))
+              input2: (not ((<length_1054@15:0> <> 0) || (<<length_1054@15:2>@18:0> = 0)))
+              begin InterpProver.interpolate_check(8924)[8]
+                begin InterpProver.interpolate_simplify(8925)[9]
+                  begin InterpProver.interpolate_quick(8962)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(8971)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(8972)[12]
+                        begin CsisatInterface.interpolate_csisat_log(8973)[13]
+                          input1: (0 = v_sep_length_1054_sep_15_sep_0 & 0 = v_sep_length_1054_sep_15_sep_2_sep_18_sep_0)
+                          input2: (not 0 = v_sep_length_1054_sep_15_sep_2_sep_18_sep_0 & 0 = v_sep_length_1054_sep_15_sep_0)
+                          begin CsisatInterface.interpolate_csisat_raw(8974)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(8974)[14] (0.000000 sec.)
+                          output: 0 = v_sep_length_1054_sep_15_sep_2_sep_18_sep_0
+                          
+                        end CsisatInterface.interpolate_csisat_log(8973)[13] (0.000000 sec.)
+                        after simplification: 0 = v_sep_length_1054_sep_15_sep_2_sep_18_sep_0
+                        after dnf conversion: ((0 = v_sep_length_1054_sep_15_sep_2_sep_18_sep_0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(8972)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(8971)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(8962)[10] (0.001000 sec.)
+                  
+                end InterpProver.interpolate_simplify(8925)[9] (0.001000 sec.)
+                
+              end InterpProver.interpolate_check(8924)[8] (0.001000 sec.)
+              output: (0 = <<length_1054@15:2>@18:0>)
+            end InterpProver.interpolate_log(8923)[7] (0.001000 sec.)
+            
+          end InterpProver.interpolate_fresh(8922)[6] (0.001000 sec.)
+          
+        end InterpProver.interpolate(8921)[5] (0.001000 sec.)
+        output:
+          P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int) =
+          (0 = <<length_1054@15:2>@18:0>)
+      end ApronInterface.convex_hull_interpolate(8839)[4] (0.002000 sec.)
+      Horn clauses:
+        P[<<make_list_1033@8:1>@11:0>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int), (0 <> <f_main_1551@20:0>) |- bot
+        
+        P[<<make_list_1033@8:1>@11:0>](<f_main_1550@13:0>:int,<length_1054@15:0>:int)|- P[<length_1054@15:0>](
+        <length_1054@15:0>:int)
+        
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+        ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+        |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int)
+        
+        |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+      lower bounds:
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int) = true
+        P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int) =
+        ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+        P[<length_1054@15:0>](<length_1054@15:0>:int) = (<length_1054@15:0> = 0)
+      upper bounds:
+        P[<length_1054@15:0>](var15:int) = true
+      begin GenHcSolver.classify_pids(9869)[4]
+        output:
+          [<length_1054@15:0>]
+      end GenHcSolver.classify_pids(9869)[4] (0.000000 sec.)
+      lb:(<length_1054@15:0> = 0)
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(9872)[4]
+        lb:(<length_1054@15:0> = 0)
+        nub:false
+        begin ExtFormula.Formula.case_analysis_boolean(9876)[5]
+          ts: (<length_1054@15:0> = 0)
+          
+        end ExtFormula.Formula.case_analysis_boolean(9876)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(9882)[5]
+          ts: false
+          
+        end ExtFormula.Formula.case_analysis_boolean(9882)[5] (0.000000 sec.)
+        lb':(<length_1054@15:0> = 0)
+        nub':(-1 >= 0)
+        begin InterpProver.interpolate(9885)[5]
+          begin InterpProver.interpolate_fresh(9886)[6]
+            begin InterpProver.interpolate_log(9887)[7]
+              input1: (<length_1054@15:0> = 0)
+              input2: (-1 >= 0)
+              begin InterpProver.interpolate_check(9888)[8]
+                begin InterpProver.interpolate_simplify(9889)[9]
+                  begin InterpProver.interpolate_quick(9909)[10]
+                    
+                  end InterpProver.interpolate_quick(9909)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(9889)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(9888)[8] (0.000000 sec.)
+              output: true
+            end InterpProver.interpolate_log(9887)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(9886)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(9885)[5] (0.000000 sec.)
+        output:
+          P[<length_1054@15:0>](<length_1054@15:0>:int) = true
+      end ApronInterface.convex_hull_interpolate(9872)[4] (0.000000 sec.)
+      Horn clauses:
+        P[<<make_list_1033@8:1>@11:0>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int), (0 <> <f_main_1551@20:0>) |- bot
+        
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+        ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+        |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int)
+        
+        |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+      lower bounds:
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int) = true
+        P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int) =
+        ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+      upper bounds:
+        P[<<make_list_1033@8:1>@11:0>](var16:int,var17:int) = (0 = var16)
+      begin GenHcSolver.classify_pids(10609)[4]
+        output:
+          [<<make_list_1033@8:1>@11:0>]
+      end GenHcSolver.classify_pids(10609)[4] (0.000000 sec.)
+      lb:((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+      nub:(not (0 = <make_list_1033@8:0>))
+      begin ApronInterface.convex_hull_interpolate(10612)[4]
+        lb:((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+        nub:(not (0 = <make_list_1033@8:0>))
+        begin ExtFormula.Formula.case_analysis_boolean(10620)[5]
+          ts: ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+          
+        end ExtFormula.Formula.case_analysis_boolean(10620)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(10628)[5]
+          ts: (0 <> <make_list_1033@8:0>)
+          
+        end ExtFormula.Formula.case_analysis_boolean(10628)[5] (0.000000 sec.)
+        lb':((<<make_list_1033@8:1>@11:0> = 0) && (<make_list_1033@8:0> = 0))
+        nub':true
+        begin InterpProver.interpolate(10632)[5]
+          begin InterpProver.interpolate_fresh(10633)[6]
+            begin InterpProver.interpolate_log(10634)[7]
+              input1: ((<<make_list_1033@8:1>@11:0> = 0) && (<make_list_1033@8:0> = 0))
+              input2: true
+              begin InterpProver.interpolate_check(10635)[8]
+                begin InterpProver.interpolate_simplify(10636)[9]
+                  begin InterpProver.interpolate_quick(10663)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(10666)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(10667)[12]
+                        begin CsisatInterface.interpolate_csisat_log(10668)[13]
+                          input1: true
+                          input2: true
+                          begin CsisatInterface.interpolate_csisat_raw(10669)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(10669)[14] (0.000000 sec.)
+                          
+                        end CsisatInterface.interpolate_csisat_log(10668)[13] (0.000000 sec.)
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(10667)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(10666)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(10663)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(10636)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(10635)[8] (0.001000 sec.)
+              there is no interpolant
+            end InterpProver.interpolate_log(10634)[7] (0.001000 sec.)
+            
+          end InterpProver.interpolate_fresh(10633)[6] (0.001000 sec.)
+          
+        end InterpProver.interpolate(10632)[5] (0.001000 sec.)
+        begin InterpProver.interpolate(10677)[5]
+          begin InterpProver.interpolate_fresh(10678)[6]
+            begin InterpProver.interpolate_log(10679)[7]
+              input1: ((<<make_list_1033@8:1>@11:0> = 0) && (<make_list_1033@8:0> = 0))
+              input2: (not (0 = <make_list_1033@8:0>))
+              begin InterpProver.interpolate_check(10680)[8]
+                begin InterpProver.interpolate_simplify(10681)[9]
+                  begin InterpProver.interpolate_quick(10711)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(10720)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(10721)[12]
+                        begin CsisatInterface.interpolate_csisat_log(10722)[13]
+                          input1: 0 = v_sep_make_list_1033_sep_8_sep_0
+                          input2: not 0 = v_sep_make_list_1033_sep_8_sep_0
+                          begin CsisatInterface.interpolate_csisat_raw(10723)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(10723)[14] (0.000000 sec.)
+                          output: 0 = v_sep_make_list_1033_sep_8_sep_0
+                          
+                        end CsisatInterface.interpolate_csisat_log(10722)[13] (0.000000 sec.)
+                        after simplification: 0 = v_sep_make_list_1033_sep_8_sep_0
+                        after dnf conversion: ((0 = v_sep_make_list_1033_sep_8_sep_0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(10721)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(10720)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(10711)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(10681)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(10680)[8] (0.000000 sec.)
+              output: (0 = <make_list_1033@8:0>)
+            end InterpProver.interpolate_log(10679)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(10678)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(10677)[5] (0.000000 sec.)
+        output:
+          P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int) =
+          (0 = <make_list_1033@8:0>)
+      end ApronInterface.convex_hull_interpolate(10612)[4] (0.001000 sec.)
+      Horn clauses:
+        |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+      lower bounds:
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int) = true
+      upper bounds:
+        P[<make_list_1033@8:0>](var18:int) = true
+      begin GenHcSolver.classify_pids(11001)[4]
+        output:
+          [<make_list_1033@8:0>]
+      end GenHcSolver.classify_pids(11001)[4] (0.000000 sec.)
+      lb:true
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(11004)[4]
+        lb:true
+        nub:false
+        begin ExtFormula.Formula.case_analysis_boolean(11007)[5]
+          ts: true
+          
+        end ExtFormula.Formula.case_analysis_boolean(11007)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(11012)[5]
+          ts: false
+          
+        end ExtFormula.Formula.case_analysis_boolean(11012)[5] (0.000000 sec.)
+        lb':true
+        nub':(-1 >= 0)
+        begin InterpProver.interpolate(11015)[5]
+          begin InterpProver.interpolate_fresh(11016)[6]
+            begin InterpProver.interpolate_log(11017)[7]
+              input1: true
+              input2: (-1 >= 0)
+              begin InterpProver.interpolate_check(11018)[8]
+                begin InterpProver.interpolate_simplify(11019)[9]
+                  begin InterpProver.interpolate_quick(11033)[10]
+                    
+                  end InterpProver.interpolate_quick(11033)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(11019)[9] (0.001000 sec.)
+                
+              end InterpProver.interpolate_check(11018)[8] (0.001000 sec.)
+              output: true
+            end InterpProver.interpolate_log(11017)[7] (0.001000 sec.)
+            
+          end InterpProver.interpolate_fresh(11016)[6] (0.001000 sec.)
+          
+        end InterpProver.interpolate(11015)[5] (0.001000 sec.)
+        output:
+          P[<make_list_1033@8:0>](<make_list_1033@8:0>:int) = true
+      end ApronInterface.convex_hull_interpolate(11004)[4] (0.001000 sec.)
+      begin HcSolver.check_validity(11090)[4]
+        input:
+          P[<fail_1556@23:0>](<fail_1556@23:0>:bool)|- bot
+          
+          P[<<make_list_1033@8:1>@11:0>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int),
+          P[<<length_1054@15:2>@18:0>](<f_main_1551@20:1>:int,<f_main_1551@20:3>:int),
+          ((<f_main_1551@20:3> <> <f_main_1551@20:0>) && <fail_1556@23:0>)
+          |- P[<fail_1556@23:0>](<fail_1556@23:0>:bool)
+          
+          P[<length_1054@15:0>](<length_1054@15:0>:int), ((<length_1054@15:0> = 0) && (<<length_1054@15:2>@18:0> = 0))
+          |- P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int)
+          
+          P[<<make_list_1033@8:1>@11:0>](<f_main_1550@13:0>:int,<length_1054@15:0>:int)|- P[<length_1054@15:0>](
+          <length_1054@15:0>:int)
+          
+          P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+          ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+          |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,
+                                            <<make_list_1033@8:1>@11:0>:int)
+          
+          |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(11090)[4] (0.001000 sec.)
+      solution:
+        P[<fail_1556@23:0>](<fail_1556@23:0>:bool) = false
+        P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int) =
+        (0 = <<length_1054@15:2>@18:0>)
+        P[<length_1054@15:0>](<length_1054@15:0>:int) = true
+        P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,<<make_list_1033@8:1>@11:0>:int) =
+        (0 = <make_list_1033@8:0>)
+        P[<make_list_1033@8:0>](<make_list_1033@8:0>:int) = true
+    end GenHcSolver.solve(6341)[3] (0.028996 sec.)
+    begin YhornInterface.solve(11413)[3]
+      begin HcSolver.solve_ub(11414)[4]
+        encoded:
+          P[<fail_1556@23:0>](<fail_1556@23:0>:int)|- bot
+          
+          P[<<make_list_1033@8:1>@11:0>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int),
+          P[<<length_1054@15:2>@18:0>](<f_main_1551@20:1>:int,<f_main_1551@20:3>:int),
+          ((<f_main_1551@20:3> <> <f_main_1551@20:0>) && (<fail_1556@23:0> = 1))
+          |- P[<fail_1556@23:0>](<fail_1556@23:0>:int)
+          
+          P[<length_1054@15:0>](<length_1054@15:0>:int), ((<length_1054@15:0> = 0) && (<<length_1054@15:2>@18:0> = 0))
+          |- P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int)
+          
+          P[<<make_list_1033@8:1>@11:0>](<f_main_1550@13:0>:int,<length_1054@15:0>:int)|- P[<length_1054@15:0>](
+          <length_1054@15:0>:int)
+          
+          P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+          ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+          |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,
+                                            <<make_list_1033@8:1>@11:0>:int)
+          
+          |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+        input to Yhorn:
+          P[<fail_1556@23:0>](<fail_1556@23:0>:int)|- bot
+          
+          P[<<make_list_1033@8:1>@11:0>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int),
+          P[<<length_1054@15:2>@18:0>](<f_main_1551@20:1>:int,<f_main_1551@20:3>:int),
+          ((<f_main_1551@20:3> <> <f_main_1551@20:0>) && (<fail_1556@23:0> = 1))
+          |- P[<fail_1556@23:0>](<fail_1556@23:0>:int)
+          
+          P[<length_1054@15:0>](<length_1054@15:0>:int), ((<<length_1054@15:2>@18:0> = 0) && (<length_1054@15:0> = 0))
+          |- P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int)
+          
+          P[<<make_list_1033@8:1>@11:0>](<f_main_1550@13:0>:int,<length_1054@15:0>:int)|- P[<length_1054@15:0>](
+          <length_1054@15:0>:int)
+          
+          P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+          ((<<make_list_1033@8:1>@11:0> = 0) && (<make_list_1033@8:0> = 0))
+          |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,
+                                            <<make_list_1033@8:1>@11:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1556_sep_23_sep_0($10)) -> 1=0.
+(($10-1=0) & ($11-$12<>0)) & (v_sep_length_1054_sep_15_sep_2_sep_18_sep_0($13,$11)) & (v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0($12,$13)) -> v_sep_fail_1556_sep_23_sep_0($10).
+(($14=0) & ($15=0)) & (v_sep_length_1054_sep_15_sep_0($14)) -> v_sep_length_1054_sep_15_sep_2_sep_18_sep_0($14,$15).
+(0=0) & (v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0($16,$14)) -> v_sep_length_1054_sep_15_sep_0($14).
+(($17=0) & ($18=0)) & (v_sep_make_list_1033_sep_8_sep_0($17)) -> v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0($17,$18).
+0=0 -> v_sep_make_list_1033_sep_8_sep_0($17).
+
+
+v_sep_fail_1556_sep_23_sep_0: X
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: X
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: X
+.........Split disj [20] 0.274958
+Reconstrcut: 3 **)
+
+v_sep_fail_1556_sep_23_sep_0: (X) | (X)
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: X
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: X
+.......
+v_sep_fail_1556_sep_23_sep_0: (X) | (X)
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: X
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: X
+.......Split conj [22] 0.279956
+(Reconstrcut: 8 **)
+v_sep_fail_1556_sep_23_sep_0: (X) | (X)
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: X
+.........
+v_sep_fail_1556_sep_23_sep_0: (X) | (X)
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: X
+.......Split conj [24] 0.284955
+(Reconstrcut: 14 ***)
+v_sep_fail_1556_sep_23_sep_0: (X) | (X)
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: (X) & (X) & (X)
+.............
+v_sep_fail_1556_sep_23_sep_0: (X) | (X)
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: (X) & (X) & (X)
+.......
+v_sep_fail_1556_sep_23_sep_0: (X) | (X)
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: (X) & (X) & (X)
+...........
+v_sep_fail_1556_sep_23_sep_0: (X) | (X)
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: (X) & (X) & (X)
+............
+v_sep_fail_1556_sep_23_sep_0: (X) | (X)
+v_sep_length_1054_sep_15_sep_0: X
+v_sep_length_1054_sep_15_sep_2_sep_18_sep_0: (X) & (X)
+v_sep_make_list_1033_sep_8_sep_0: X
+v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0: (X) & (X) & (X)
+.............(0=0) & (v_sep_fail_1556_sep_23_sep_0($10)) -> 1=0.
+(($10-1=0) & ($11-$12<>0)) & (v_sep_length_1054_sep_15_sep_2_sep_18_sep_0($13,$11)) & (v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0($12,$13)) -> v_sep_fail_1556_sep_23_sep_0($10).
+(($14=0) & ($15=0)) & (v_sep_length_1054_sep_15_sep_0($14)) -> v_sep_length_1054_sep_15_sep_2_sep_18_sep_0($14,$15).
+(0=0) & (v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0($16,$14)) -> v_sep_length_1054_sep_15_sep_0($14).
+(($17=0) & ($18=0)) & (v_sep_make_list_1033_sep_8_sep_0($17)) -> v_sep_make_list_1033_sep_8_sep_1_sep_11_sep_0($17,$18).
+0=0 -> v_sep_make_list_1033_sep_8_sep_0($17).
+
+          |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+        solution:
+          P[<fail_1556@23:0>]($19:bool) = false
+          P[<length_1054@15:0>]($32:int) = true
+          P[<<length_1054@15:2>@18:0>]($22:int,$24:int) = ($24 = 0)
+          P[<make_list_1033@8:0>]($35:int) = true
+          P[<<make_list_1033@8:1>@11:0>]($27:int,$29:int) = ($27 = 0)
+        
+      end HcSolver.solve_ub(11414)[4] (0.036994 sec.)
+      begin HcSolver.check_validity(11563)[4]
+        input:
+          P[<fail_1556@23:0>](<fail_1556@23:0>:bool)|- bot
+          
+          P[<<make_list_1033@8:1>@11:0>](<f_main_1551@20:0>:int,<f_main_1551@20:1>:int),
+          P[<<length_1054@15:2>@18:0>](<f_main_1551@20:1>:int,<f_main_1551@20:3>:int),
+          ((<f_main_1551@20:3> <> <f_main_1551@20:0>) && <fail_1556@23:0>)
+          |- P[<fail_1556@23:0>](<fail_1556@23:0>:bool)
+          
+          P[<length_1054@15:0>](<length_1054@15:0>:int), ((<length_1054@15:0> = 0) && (<<length_1054@15:2>@18:0> = 0))
+          |- P[<<length_1054@15:2>@18:0>](<length_1054@15:0>:int,<<length_1054@15:2>@18:0>:int)
+          
+          P[<<make_list_1033@8:1>@11:0>](<f_main_1550@13:0>:int,<length_1054@15:0>:int)|- P[<length_1054@15:0>](
+          <length_1054@15:0>:int)
+          
+          P[<make_list_1033@8:0>](<make_list_1033@8:0>:int),
+          ((<make_list_1033@8:0> = 0) && (<<make_list_1033@8:1>@11:0> = 0))
+          |- P[<<make_list_1033@8:1>@11:0>](<make_list_1033@8:0>:int,
+                                            <<make_list_1033@8:1>@11:0>:int)
+          
+          |- P[<make_list_1033@8:0>](<make_list_1033@8:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(11563)[4] (0.002000 sec.)
+      solution:
+        P[<fail_1556@23:0>]($19:bool) = false
+        P[<length_1054@15:0>]($32:int) = true
+        P[<<length_1054@15:2>@18:0>]($22:int,$24:int) = ($24 = 0)
+        P[<make_list_1033@8:0>]($35:int) = true
+        P[<<make_list_1033@8:1>@11:0>]($27:int,$29:int) = ($27 = 0)
+    end YhornInterface.solve(11413)[3] (0.038994 sec.)
+    
+  end RefTypeInfer.infer_etrs(174)[2] (0.113983 sec.)
+  refinement types:
+    main_1544: X
+    f_1552: v1:int -> X
+    main_1035: v1:int -> (v2:unit -> X) -> X
+    make_list_1033: v1:int -> (v2:{v2:int | (0 = v1)} -> (v3:int -> (v4:int -> X) -> X) -> X) -> X
+    f_main_1550: v1:int -> (v2:unit -> X) -> v4:int -> (v5:int -> (v6:int -> X) -> X) -> X
+    length_1054: v1:int -> (v2:int -> (v3:int -> X) -> X) -> (v6:{v6:int | (0 = v6)} -> X) -> X
+    f_main_1551: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1556: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    br_length_1554: var47:bool -> var46:int -> (var45:int -> (var44:int -> X) -> X) -> (var41:int -> X) -> X
+    cons_make_list_1088: var61:int ->
+                         var60:int ->
+                         var59:int ->
+                         (var58:int -> (var57:int -> X) -> X) ->
+                         (var54:int -> (var53:int -> (var52:int -> X) -> X) -> X) -> X
+    f_1553: var64:int -> var63:unit -> X
+    f_cons_make_list_1548: var75:int ->
+                           var74:int ->
+                           var73:int -> (var72:int -> (var71:int -> X) -> X) -> var68:int -> (var67:int -> X) -> X
+    f_length_1545: var84:int -> (var83:int -> (var82:int -> X) -> X) -> var79:int -> (var78:int -> X) -> X
+    f_length_1546: var89:int -> (var88:int -> X) -> var86:int -> X
+    f_make_list_1547: var94:int -> var93:int -> (var92:int -> X) -> X
+    f_make_list_1549: var107:int ->
+                      (var106:int -> (var105:int -> (var104:int -> X) -> X) -> X) ->
+                      var100:int -> (var99:int -> (var98:int -> X) -> X) -> X
+  abstraction types:
+    main_1544: X
+    f_1552: v1:int -> X
+    main_1035: v1:int -> (v2:unit -> X) -> X
+    make_list_1033: v1:int -> (v2:int[v2 -> (0 = v1)] -> (v3:int -> (v4:int -> X) -> X) -> X) -> X
+    f_main_1550: v1:int -> (v2:unit -> X) -> v4:int -> (v5:int -> (v6:int -> X) -> X) -> X
+    length_1054: v1:int -> (v2:int -> (v3:int -> X) -> X) -> (v6:int[v6 -> (
+                                                                    0 = v6)] -> X) -> X
+    f_main_1551: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1556: v1:bool -> (v2:unit -> X) -> X
+    br_length_1554: var47:bool -> var46:int -> (var45:int -> (var44:int -> X) -> X) -> (var41:int -> X) -> X
+    cons_make_list_1088: var61:int ->
+                         var60:int ->
+                         var59:int ->
+                         (var58:int -> (var57:int -> X) -> X) ->
+                         (var54:int -> (var53:int -> (var52:int -> X) -> X) -> X) -> X
+    f_1553: var64:int -> var63:unit -> X
+    f_cons_make_list_1548: var75:int ->
+                           var74:int ->
+                           var73:int -> (var72:int -> (var71:int -> X) -> X) -> var68:int -> (var67:int -> X) -> X
+    f_length_1545: var84:int -> (var83:int -> (var82:int -> X) -> X) -> var79:int -> (var78:int -> X) -> X
+    f_length_1546: var89:int -> (var88:int -> X) -> var86:int -> X
+    f_make_list_1547: var94:int -> var93:int -> (var92:int -> X) -> X
+    f_make_list_1549: var107:int ->
+                      (var106:int -> (var105:int -> (var104:int -> X) -> X) -> X) ->
+                      var100:int -> (var99:int -> (var98:int -> X) -> X) -> X
+  
+end AbsTypeInfer.refine(173)[1] (0.117982 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1544
+  main_1544 -> (rand_int f_1552)
+  br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 when b_1555 ->
+      (length_1054 (xs1_1031 - 1) (f_length_1545 xs1_1031 xs2_1031) (f_length_1546 xs1_1031 k_length_1148))
+  br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 when (not b_1555) -> _|_
+  cons_make_list_1088 n_1034 x_1086 xs1_1087 xs2_1087 k_make_list_cons_make_list_1313 ->
+      (k_make_list_cons_make_list_1313 (xs1_1087 + 1) (f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087))
+  f_1552 x_1486 -> (main_1035 x_1486 (f_1553 x_1486))
+  f_1553 x_1486 x_1483 -> end
+  f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 when (
+      i_1085 = 0) -> (k_make_list_cons_make_list_1328 x_1086)
+  f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 when (
+      not (i_1085 = 0)) -> (xs2_1087 (i_1085 - 1) k_make_list_cons_make_list_1328)
+  f_length_1545 xs1_1031 xs2_1031 x_1059 k_length_xs'_1181 -> (xs2_1031 (x_1059 + 1) k_length_xs'_1181)
+  f_length_1546 xs1_1031 k_length_1148 x_1196 -> (k_length_1148 (1 + x_1196))
+  f_main_1550 n_1036 k_main_1412 x1_1418 x2_1418 ->
+      (length_1054 x1_1418 x2_1418 (f_main_1551 n_1036 x1_1418 k_main_1412))
+  f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 when (x_1446 = n_1036) -> (k_main_1412 ())
+  f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 when (not (x_1446 = n_1036)) -> (fail_1556 true k_main_1412)
+  f_make_list_1547 n_1034 x_1092 k_make_list_1266 -> _|_
+  f_make_list_1549 n_1034 k_make_list_1254 x1_1391 x2_1391 ->
+      (cons_make_list_1088 n_1034 n_1034 x1_1391 x2_1391 k_make_list_1254)
+  fail_1556 b k -> {fail} => (k ())
+  length_1054 xs1_1031 xs2_1031 k_length_1148 when (xs1_1031 = 0) -> (k_length_1148 0)
+  length_1054 xs1_1031 xs2_1031 k_length_1148 when (not (xs1_1031 = 0)) ->
+      (br_length_1554 (1 <= xs1_1031) xs1_1031 xs2_1031 k_length_1148)
+  main_1035 n_1036 k_main_1412 -> (make_list_1033 n_1036 (f_main_1550 n_1036 k_main_1412))
+  make_list_1033 n_1034 k_make_list_1254 when (n_1034 = 0) -> (k_make_list_1254 0 (f_make_list_1547 n_1034))
+  make_list_1033 n_1034 k_make_list_1254 when (not (n_1034 = 0)) ->
+      (make_list_1033 (n_1034 - 1) (f_make_list_1549 n_1034 k_make_list_1254))
+Types:
+  main_1544 : X
+  fail_1556 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  length_1054 : (int -> (int -> (int -> X) -> X) -> (x_9:int[x_9 = 0] -> X) -> X)
+  make_list_1033 : (x_1:int -> (int[x_1 = 0] -> (int -> (int -> X) -> X) -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1544 ... --> 
+  f_1552 ... --> 
+  main_1035 ... --> 
+  make_list_1033 [2/2] ... --> 
+  make_list_1033 [1/2] ... --> 
+  f_make_list_1549 ... --> 
+  cons_make_list_1088 ... --> 
+  f_main_1550 ... --> 
+  length_1054 [1/2] ... --> 
+  f_main_1551 [2/2] ... --> 
+  fail_1556 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 0; 0; 0; 0; 0; 1; 0
+
+(1-3) Checking counter-example ... DONE!
+
+(1-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(12197)[1]
+  program:
+    main_1544  | true = ((Random.int 0) f_1552)
+    br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 | b_1555 = (
+    length_1054 (xs1_1031 - 1)
+                (f_length_1545 xs1_1031
+                               xs2_1031)
+                (f_length_1546 xs1_1031
+                               k_length_1148))
+    br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 | (not b_1555) = bot
+    cons_make_list_1088 n_1034 x_1086 xs1_1087 xs2_1087 k_make_list_cons_make_list_1313 | true = (
+    k_make_list_cons_make_list_1313 (xs1_1087 + 1)
+                                    (f_cons_make_list_1548 n_1034
+                                                           x_1086
+                                                           xs1_1087
+                                                           xs2_1087))
+    f_1552 x_1486 | true = (main_1035 x_1486
+                                      (f_1553 x_1486))
+    f_1553 x_1486 x_1483 | true = end
+    f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 | (
+    i_1085 = 0) = (k_make_list_cons_make_list_1328 x_1086)
+    f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 | (
+    not (i_1085 = 0)) = (xs2_1087 (i_1085 - 1)
+                                  k_make_list_cons_make_list_1328)
+    f_length_1545 xs1_1031 xs2_1031 x_1059 k_length_xs'_1181 | true = (
+    xs2_1031 (x_1059 + 1)
+             k_length_xs'_1181)
+    f_length_1546 xs1_1031 k_length_1148 x_1196 | true = (k_length_1148 (
+                                                                    1 + x_1196))
+    f_main_1550 n_1036 k_main_1412 x1_1418 x2_1418 | true = (length_1054
+                                                               x1_1418
+                                                               x2_1418
+                                                               (f_main_1551 n_1036
+                                                                    x1_1418
+                                                                    k_main_1412))
+    f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 | (x_1446 = n_1036) = (
+    k_main_1412 ())
+    f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 | (not (x_1446 = n_1036)) = (
+    fail_1556 true
+              k_main_1412)
+    f_make_list_1547 n_1034 x_1092 k_make_list_1266 | true = bot
+    f_make_list_1549 n_1034 k_make_list_1254 x1_1391 x2_1391 | true = (
+    cons_make_list_1088 n_1034
+                        n_1034
+                        x1_1391
+                        x2_1391
+                        k_make_list_1254)
+    fail_1556 b k | true = (fail ())
+    length_1054 xs1_1031 xs2_1031 k_length_1148 | (xs1_1031 = 0) = (k_length_1148 0)
+    length_1054 xs1_1031 xs2_1031 k_length_1148 | (not (xs1_1031 = 0)) = (
+    br_length_1554 (1 <= xs1_1031)
+                   xs1_1031
+                   xs2_1031
+                   k_length_1148)
+    main_1035 n_1036 k_main_1412 | true = (make_list_1033 n_1036
+                                                          (f_main_1550 n_1036
+                                                                    k_main_1412))
+    make_list_1033 n_1034 k_make_list_1254 | (n_1034 = 0) = (k_make_list_1254 0
+                                                                    (f_make_list_1547 n_1034))
+    make_list_1033 n_1034 k_make_list_1254 | (not (n_1034 = 0)) = (make_list_1033
+                                                                    (
+                                                                    n_1034 - 1)
+                                                                    (
+                                                                    f_make_list_1549 n_1034
+                                                                    k_make_list_1254))
+    main_1544:X
+    br_length_1554:bool -> int -> (int -> (int -> X) -> X) -> (int -> X) -> X
+    cons_make_list_1088:int -> int -> int -> (int -> (int -> X) -> X) -> (int -> (int -> (int -> X) -> X) -> X) -> X
+    f_1552:int -> X
+    f_1553:int -> unit -> X
+    f_cons_make_list_1548:int -> int -> int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    f_length_1545:int -> (int -> (int -> X) -> X) -> int -> (int -> X) -> X
+    f_length_1546:int -> (int -> X) -> int -> X
+    f_main_1550:int -> (unit -> X) -> int -> (int -> (int -> X) -> X) -> X
+    f_main_1551:int -> int -> (unit -> X) -> int -> X
+    f_make_list_1547:int -> int -> (int -> X) -> X
+    f_make_list_1549:int -> (int -> (int -> (int -> X) -> X) -> X) -> int -> (int -> (int -> X) -> X) -> X
+    fail_1556:bool -> (unit -> X) -> X
+    length_1054:int -> (int -> (int -> X) -> X) -> (int -> X) -> X
+    main_1035:int -> (unit -> X) -> X
+    make_list_1033:int -> (int -> (int -> (int -> X) -> X) -> X) -> X
+  inlined functions: br_length_1554,cons_make_list_1088,f_1552,f_1553,f_cons_make_list_1548,f_length_1545,f_length_1546,f_main_1550,f_main_1551,f_make_list_1547,f_make_list_1549,main_1035
+  counterexample: 0:0:0:1:0:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1552@29:0> = var108)
+     [true.(<main_1035@31:0> = <f_1552@29:0>)
+      [true.(<make_list_1033@33:0> = <main_1035@31:0>)
+       [(not (<make_list_1033@33:0> = 0)).(<make_list_1033@36:0> = (<make_list_1033@33:0> - 1))
+        [(<make_list_1033@36:0> = 0).(<<make_list_1033@36:1>@39:0> = 0)
+         [true.
+          ((<f_make_list_1549@41:0> = <make_list_1033@33:0>) &&
+           (<f_make_list_1549@41:2> = <<make_list_1033@36:1>@39:0>))
+          [true.
+           ((<cons_make_list_1088@43:0> = <f_make_list_1549@41:0>) &&
+            ((<cons_make_list_1088@43:1> = <f_make_list_1549@41:0>) &&
+             (<cons_make_list_1088@43:2> = <f_make_list_1549@41:2>)))
+           [true.(<<cons_make_list_1088@43:4>@45:0> = (<cons_make_list_1088@43:2> + 1))
+            [true.(<<f_make_list_1549@41:1>@47:0> = <<cons_make_list_1088@43:4>@45:0>)
+             [true.(<<make_list_1033@33:1>@49:0> = <<f_make_list_1549@41:1>@47:0>)
+              [true.((<f_main_1550@51:0> = <main_1035@31:0>) && (<f_main_1550@51:2> = <<make_list_1033@33:1>@49:0>))
+               [true.(<length_1054@53:0> = <f_main_1550@51:2>)
+                [(<length_1054@53:0> = 0).(<<length_1054@53:2>@56:0> = 0)
+                 [true.
+                  ((<f_main_1551@58:0> = <f_main_1550@51:0>) &&
+                   ((<f_main_1551@58:1> = <f_main_1550@51:2>) && (<f_main_1551@58:3> = <<length_1054@53:2>@56:0>)))
+                  [(not (<f_main_1551@58:3> = <f_main_1551@58:0>)).(<fail_1556@61:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(12198)[2]
+    horn clauses:
+      P[<fail_1556@61:0>](<fail_1556@61:0>:bool)|- bot
+      
+      P[<f_main_1551@58:3>](<f_main_1551@58:0>:int,<f_main_1551@58:1>:int,<f_main_1551@58:3>:int),
+      ((<f_main_1551@58:3> <> <f_main_1551@58:0>) && <fail_1556@61:0>) |- P[<fail_1556@61:0>](
+      <fail_1556@61:0>:bool)
+      
+      P[<f_main_1550@51:2>](<f_main_1551@58:0>:int,<f_main_1551@58:1>:int),
+      P[<<length_1054@53:2>@56:0>](<f_main_1551@58:1>:int,<f_main_1551@58:3>:int)|- P[<f_main_1551@58:3>](
+      <f_main_1551@58:0>:int,<f_main_1551@58:1>:int,<f_main_1551@58:3>:int)
+      
+      P[<length_1054@53:0>](<length_1054@53:0>:int), ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+      |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+      
+      P[<f_main_1550@51:2>](<f_main_1550@51:0>:int,<length_1054@53:0>:int)|- P[<length_1054@53:0>](
+      <length_1054@53:0>:int)
+      
+      P[<main_1035@31:0>](<f_main_1550@51:0>:int),
+      P[<<make_list_1033@33:1>@49:0>](<f_main_1550@51:0>:int,<f_main_1550@51:2>:int)|- P[<f_main_1550@51:2>](
+      <f_main_1550@51:0>:int,<f_main_1550@51:2>:int)
+      
+      P[<make_list_1033@33:0>](<make_list_1033@33:0>:int),
+      P[<<f_make_list_1549@41:1>@47:0>](<make_list_1033@33:0>:int,<<make_list_1033@33:1>@49:0>:int),
+      (<make_list_1033@33:0> <> 0)
+      |- P[<<make_list_1033@33:1>@49:0>](<make_list_1033@33:0>:int,<<make_list_1033@33:1>@49:0>:int)
+      
+      P[<f_make_list_1549@41:2>](<f_make_list_1549@41:0>:int,<cons_make_list_1088@43:2>:int),
+      P[<<cons_make_list_1088@43:4>@45:0>](<f_make_list_1549@41:0>:int,<f_make_list_1549@41:0>:int,<cons_make_list_1088@43:2>:int,<<f_make_list_1549@41:1>@47:0>:int)|- P[<<f_make_list_1549@41:1>@47:0>](
+      <f_make_list_1549@41:0>:int,<<f_make_list_1549@41:1>@47:0>:int)
+      
+      P[<cons_make_list_1088@43:2>](<cons_make_list_1088@43:0>:int,<cons_make_list_1088@43:1>:int,<cons_make_list_1088@43:2>:int),
+      (<<cons_make_list_1088@43:4>@45:0> = (1 + <cons_make_list_1088@43:2>))
+      |- P[<<cons_make_list_1088@43:4>@45:0>](<cons_make_list_1088@43:0>:int,
+                                              <cons_make_list_1088@43:1>:int,
+                                              <cons_make_list_1088@43:2>:int,
+                                              <<cons_make_list_1088@43:4>@45:0>:int)
+      
+      P[<f_make_list_1549@41:2>](<cons_make_list_1088@43:0>:int,<cons_make_list_1088@43:2>:int),
+      (<cons_make_list_1088@43:0> = <cons_make_list_1088@43:1>)
+      |- P[<cons_make_list_1088@43:2>](<cons_make_list_1088@43:0>:int,
+                                       <cons_make_list_1088@43:1>:int,
+                                       <cons_make_list_1088@43:2>:int)
+      
+      P[<make_list_1033@33:0>](<f_make_list_1549@41:0>:int),
+      P[<<make_list_1033@36:1>@39:0>]((-1 + <f_make_list_1549@41:0>):int,<f_make_list_1549@41:2>:int),
+      (<f_make_list_1549@41:0> <> 0)
+      |- P[<f_make_list_1549@41:2>](<f_make_list_1549@41:0>:int,<f_make_list_1549@41:2>:int)
+      
+      P[<make_list_1033@36:0>](<make_list_1033@36:0>:int),
+      ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+      |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int)
+      
+      P[<make_list_1033@33:0>]((1 + <make_list_1033@36:0>):int), ((1 + <make_list_1033@36:0>) <> 0)
+      |- P[<make_list_1033@36:0>](<make_list_1033@36:0>:int)
+      
+      P[<main_1035@31:0>](<make_list_1033@33:0>:int)|- P[<make_list_1033@33:0>](<make_list_1033@33:0>:int)
+      
+      P[<f_1552@29:0>](<main_1035@31:0>:int)|- P[<main_1035@31:0>](<main_1035@31:0>:int)
+      
+      |- P[<f_1552@29:0>](<f_1552@29:0>:int)
+    call trees:
+      <main_1544@26>
+        <f_1552@29>
+          <main_1035@31>
+            <make_list_1033@33>
+              <make_list_1033@36>
+              </<make_list_1033@36:1>@39>
+              <f_make_list_1549@41>
+                <cons_make_list_1088@43>
+                </<cons_make_list_1088@43:4>@45>
+              </<f_make_list_1549@41:1>@47>
+            </<make_list_1033@33:1>@49>
+            <f_main_1550@51>
+              <length_1054@53>
+              </<length_1054@53:2>@56>
+              <f_main_1551@58>
+                <fail_1556@61>
+    inlined horn clauses:
+      P[<fail_1556@61:0>](<fail_1556@61:0>:bool)|- bot
+      
+      P[<<make_list_1033@33:1>@49:0>](<f_main_1551@58:0>:int,<f_main_1551@58:1>:int),
+      P[<<length_1054@53:2>@56:0>](<f_main_1551@58:1>:int,<f_main_1551@58:3>:int),
+      ((<f_main_1551@58:3> <> <f_main_1551@58:0>) && <fail_1556@61:0>) |- P[<fail_1556@61:0>](
+      <fail_1556@61:0>:bool)
+      
+      P[<length_1054@53:0>](<length_1054@53:0>:int), ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+      |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+      
+      P[<<make_list_1033@33:1>@49:0>](<f_main_1550@51:0>:int,<length_1054@53:0>:int)|- P[<length_1054@53:0>](
+      <length_1054@53:0>:int)
+      
+      P[<make_list_1033@33:0>](<make_list_1033@33:0>:int),
+      P[<<make_list_1033@36:1>@39:0>]((-1 + <make_list_1033@33:0>):int,(
+                                      -1 + <<make_list_1033@33:1>@49:0>):int), (
+      <make_list_1033@33:0> <> 0)
+      |- P[<<make_list_1033@33:1>@49:0>](<make_list_1033@33:0>:int,<<make_list_1033@33:1>@49:0>:int)
+      
+      P[<make_list_1033@36:0>](<make_list_1033@36:0>:int),
+      ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+      |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int)
+      
+      P[<make_list_1033@33:0>]((1 + <make_list_1033@36:0>):int), ((1 + <make_list_1033@36:0>) <> 0)
+      |- P[<make_list_1033@36:0>](<make_list_1033@36:0>:int)
+      
+      |- P[<make_list_1033@33:0>](<make_list_1033@33:0>:int)
+    begin ParamSubstInfer.infer(14177)[3]
+      
+    end ParamSubstInfer.infer(14177)[3] (0.022996 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(14179)[3]
+      
+    end RefTypeInfer.elim_coeffs(14179)[3] (0.000000 sec.)
+    begin GenHcSolver.solve(14442)[3]
+      Horn clauses:
+        P[<fail_1556@61:0>](<fail_1556@61:0>:bool)|- bot
+        
+        P[<<make_list_1033@33:1>@49:0>](<f_main_1551@58:0>:int,<f_main_1551@58:1>:int),
+        P[<<length_1054@53:2>@56:0>](<f_main_1551@58:1>:int,<f_main_1551@58:3>:int),
+        ((<f_main_1551@58:3> <> <f_main_1551@58:0>) && <fail_1556@61:0>) |- P[<fail_1556@61:0>](
+        <fail_1556@61:0>:bool)
+        
+        P[<length_1054@53:0>](<length_1054@53:0>:int), ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+        |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+        
+        P[<<make_list_1033@33:1>@49:0>](<f_main_1550@51:0>:int,<length_1054@53:0>:int)|- P[<length_1054@53:0>](
+        <length_1054@53:0>:int)
+        
+        P[<make_list_1033@33:0>](<make_list_1033@33:0>:int),
+        P[<<make_list_1033@36:1>@39:0>]((-1 + <make_list_1033@33:0>):int,(
+                                        -1 + <<make_list_1033@33:1>@49:0>):int), (
+        <make_list_1033@33:0> <> 0)
+        |- P[<<make_list_1033@33:1>@49:0>](<make_list_1033@33:0>:int,
+                                           <<make_list_1033@33:1>@49:0>:int)
+        
+        P[<make_list_1033@36:0>](<make_list_1033@36:0>:int),
+        ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+        |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,
+                                           <<make_list_1033@36:1>@39:0>:int)
+        
+        P[<make_list_1033@33:0>]((1 + <make_list_1033@36:0>):int), ((1 + <make_list_1033@36:0>) <> 0)
+        |- P[<make_list_1033@36:0>](<make_list_1033@36:0>:int)
+        
+        |- P[<make_list_1033@33:0>](<make_list_1033@33:0>:int)
+      lower bounds:
+        P[<make_list_1033@33:0>](<make_list_1033@33:0>:int) = true
+        P[<make_list_1033@36:0>](<make_list_1033@36:0>:int) = ((1 + <make_list_1033@36:0>) <> 0)
+        P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int) =
+        ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+        P[<<make_list_1033@33:1>@49:0>](<make_list_1033@33:0>:int,<<make_list_1033@33:1>@49:0>:int) =
+        ((<make_list_1033@33:0> = 1) && (<<make_list_1033@33:1>@49:0> = 1))
+        P[<length_1054@53:0>](<length_1054@53:0>:int) = (<length_1054@53:0> = 1)
+        P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int) = false
+        P[<fail_1556@61:0>](<fail_1556@61:0>:bool) = false
+      upper bounds:
+        P[<<make_list_1033@33:1>@49:0>](var117:int,var118:int) = ((var118 <> 0) || (0 = var117))
+        P[<<make_list_1033@36:1>@39:0>](var112:int,var113:int) = (((1 + var113) <> 0) || ((1 + var112) = 0))
+      begin GenHcSolver.classify_pids(17649)[4]
+        output:
+          [<<make_list_1033@36:1>@39:0>;<<make_list_1033@33:1>@49:0>]
+      end GenHcSolver.classify_pids(17649)[4] (0.000000 sec.)
+      begin ApronInterface.convex_hull_interpolate(17696)[4]
+        lb:(((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0)) ||
+            ((<make_list_1033@36:0> = 1) && (<<make_list_1033@36:1>@39:0> = 1)))
+        nub:((not (((1 + <<make_list_1033@36:1>@39:0>) <> 0) || ((1 + <make_list_1033@36:0>) = 0))) ||
+             (not ((<<make_list_1033@36:1>@39:0> <> 0) || (0 = <make_list_1033@36:0>))))
+        lb':(((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0)) ||
+             ((<make_list_1033@36:0> = 1) && (<<make_list_1033@36:1>@39:0> = 1)))
+        nub':((not (((1 + <<make_list_1033@36:1>@39:0>) <> 0) || ((1 + <make_list_1033@36:0>) = 0))) ||
+              (not ((<<make_list_1033@36:1>@39:0> <> 0) || (0 = <make_list_1033@36:0>))))
+        begin InterpProver.interpolate(17697)[5]
+          begin InterpProver.interpolate_fresh(17698)[6]
+            begin InterpProver.interpolate_log(17699)[7]
+              input1: (((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0)) ||
+                       ((<make_list_1033@36:0> = 1) && (<<make_list_1033@36:1>@39:0> = 1)))
+              input2: ((not (((1 + <<make_list_1033@36:1>@39:0>) <> 0) || ((1 + <make_list_1033@36:0>) = 0))) ||
+                       (not ((<<make_list_1033@36:1>@39:0> <> 0) || (0 = <make_list_1033@36:0>))))
+              begin InterpProver.interpolate_check(17700)[8]
+                begin InterpProver.interpolate_simplify(17701)[9]
+                  begin InterpProver.interpolate_quick(17784)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(17793)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(17794)[12]
+                        begin CsisatInterface.interpolate_csisat_log(17795)[13]
+                          input1: ((0 = v_sep_make_list_1033_sep_36_sep_0 & 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0) | (1 = v_sep_make_list_1033_sep_36_sep_0 & 1 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0))
+                          input2: ((not 0 = v_sep_make_list_1033_sep_36_sep_0 & 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0) | (not 0 = (1 + v_sep_make_list_1033_sep_36_sep_0) & -1 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0))
+                          begin CsisatInterface.interpolate_csisat_raw(17796)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(17796)[14] (0.002999 sec.)
+                          output: ((((not 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 | -2*v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= 0) & 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0) | not 0 = v_sep_make_list_1033_sep_36_sep_0 | -1*v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= -1) & ((not 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 & -1*v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= -1) | 0 = v_sep_make_list_1033_sep_36_sep_0))
+                          
+                        end CsisatInterface.interpolate_csisat_log(17795)[13] (0.002999 sec.)
+                        after simplification: ((((not 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 | -2*v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= 0) & 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0) | not 0 = v_sep_make_list_1033_sep_36_sep_0 | -1*v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= -1) & ((not 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 & -1*v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= -1) | 0 = v_sep_make_list_1033_sep_36_sep_0))
+                        after dnf conversion: ((-2*v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= 0 & 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 & not 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 & -1*v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= -1) | (-2*v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= 0 & 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 & 0 = v_sep_make_list_1033_sep_36_sep_0) | (not 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 & 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 & not 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 & -1*v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= -1) | (not 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 & 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 & 0 = v_sep_make_list_1033_sep_36_sep_0) | (not 0 = v_sep_make_list_1033_sep_36_sep_0 & not 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 & -1*v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= -1) | (not 0 = v_sep_make_list_1033_sep_36_sep_0 & 0 = v_sep_make_list_1033_sep_36_sep_0) | (-1*v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= -1 & not 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 & -1*v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= -1) | (-1*v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= -1 & 0 = v_sep_make_list_1033_sep_36_sep_0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(17794)[12] (0.002999 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(17793)[11] (0.002999 sec.)
+                    
+                  end InterpProver.interpolate_quick(17784)[10] (0.003999 sec.)
+                  begin minimizing # of disjunctions(17936)[10]
+                    input: ((1 <= <<make_list_1033@36:1>@39:0>) ||
+                            ((<<make_list_1033@36:1>@39:0> = 0) && (<make_list_1033@36:0> = 0)))
+                    output: (((<<make_list_1033@36:1>@39:0> = 0) && (<make_list_1033@36:0> = 0)) ||
+                             (1 <= <<make_list_1033@36:1>@39:0>))
+                  end minimizing # of disjunctions(17936)[10] (0.000000 sec.)
+                  begin minimizing # of conjunctions(17960)[10]
+                    input: ((<<make_list_1033@36:1>@39:0> = 0) && (<make_list_1033@36:0> = 0))
+                    output: ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+                  end minimizing # of conjunctions(17960)[10] (0.001000 sec.)
+                  
+                end InterpProver.interpolate_simplify(17701)[9] (0.006999 sec.)
+                
+              end InterpProver.interpolate_check(17700)[8] (0.007999 sec.)
+              output: (((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0)) ||
+                       (1 <= <<make_list_1033@36:1>@39:0>))
+            end InterpProver.interpolate_log(17699)[7] (0.007999 sec.)
+            
+          end InterpProver.interpolate_fresh(17698)[6] (0.007999 sec.)
+          
+        end InterpProver.interpolate(17697)[5] (0.007999 sec.)
+        output:
+          P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int) =
+          (((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0)) || (1 <= <<make_list_1033@36:1>@39:0>))
+          P[<<make_list_1033@33:1>@49:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int) =
+          (((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0)) || (1 <= <<make_list_1033@36:1>@39:0>))
+      end ApronInterface.convex_hull_interpolate(17696)[4] (0.007999 sec.)
+      Horn clauses:
+        P[<fail_1556@61:0>](<fail_1556@61:0>:bool)|- bot
+        
+        P[<<length_1054@53:2>@56:0>](<f_main_1551@58:1>:int,<f_main_1551@58:3>:int),
+        ((<f_main_1551@58:3> <> <f_main_1551@58:0>) &&
+         (<fail_1556@61:0> && ((1 <= <f_main_1551@58:1>) || ((<f_main_1551@58:0> = 0) && (<f_main_1551@58:1> = 0)))))
+        |- P[<fail_1556@61:0>](<fail_1556@61:0>:bool)
+        
+        P[<length_1054@53:0>](<length_1054@53:0>:int), ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+        |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+        
+         (0 <= <length_1054@53:0>) |- P[<length_1054@53:0>](<length_1054@53:0>:int)
+        
+        P[<make_list_1033@33:0>]((1 + <make_list_1033@36:0>):int), ((1 + <make_list_1033@36:0>) <> 0)
+        |- P[<make_list_1033@36:0>](<make_list_1033@36:0>:int)
+        
+        |- P[<make_list_1033@33:0>](<make_list_1033@33:0>:int)
+      lower bounds:
+        P[<length_1054@53:0>](<length_1054@53:0>:int) = (0 <= <length_1054@53:0>)
+        P[<make_list_1033@33:0>](<make_list_1033@33:0>:int) = true
+        P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int) =
+        ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+        P[<make_list_1033@36:0>](<make_list_1033@36:0>:int) = ((1 + <make_list_1033@36:0>) <> 0)
+        P[<fail_1556@61:0>](<fail_1556@61:0>:bool) = false
+      upper bounds:
+        P[<make_list_1033@36:0>](var120:int) = true
+        P[<make_list_1033@33:0>](var119:int) = true
+      begin GenHcSolver.classify_pids(23067)[4]
+        output:
+          [<make_list_1033@33:0>;<make_list_1033@36:0>]
+      end GenHcSolver.classify_pids(23067)[4] (0.000000 sec.)
+      begin ApronInterface.convex_hull_interpolate(23078)[4]
+        lb:true
+        nub:false
+        lb':true
+        nub':false
+        begin InterpProver.interpolate(23079)[5]
+          begin InterpProver.interpolate_fresh(23080)[6]
+            begin InterpProver.interpolate_log(23081)[7]
+              input1: true
+              input2: false
+              begin InterpProver.interpolate_check(23082)[8]
+                begin InterpProver.interpolate_simplify(23083)[9]
+                  begin InterpProver.interpolate_quick(23096)[10]
+                    
+                  end InterpProver.interpolate_quick(23096)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(23083)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(23082)[8] (0.000000 sec.)
+              output: true
+            end InterpProver.interpolate_log(23081)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(23080)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(23079)[5] (0.000000 sec.)
+        output:
+          P[<make_list_1033@33:0>](<make_list_1033@33:0>:int) = true
+          P[<make_list_1033@36:0>](<make_list_1033@33:0>:int) = true
+      end ApronInterface.convex_hull_interpolate(23078)[4] (0.000000 sec.)
+      Horn clauses:
+        P[<fail_1556@61:0>](<fail_1556@61:0>:bool)|- bot
+        
+        P[<<length_1054@53:2>@56:0>](<f_main_1551@58:1>:int,<f_main_1551@58:3>:int),
+        ((<f_main_1551@58:3> <> <f_main_1551@58:0>) &&
+         (<fail_1556@61:0> && ((1 <= <f_main_1551@58:1>) || ((<f_main_1551@58:0> = 0) && (<f_main_1551@58:1> = 0)))))
+        |- P[<fail_1556@61:0>](<fail_1556@61:0>:bool)
+        
+        P[<length_1054@53:0>](<length_1054@53:0>:int), ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+        |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+        
+         (0 <= <length_1054@53:0>) |- P[<length_1054@53:0>](<length_1054@53:0>:int)
+      lower bounds:
+        P[<length_1054@53:0>](<length_1054@53:0>:int) = (0 <= <length_1054@53:0>)
+        P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int) =
+        ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+        P[<fail_1556@61:0>](<fail_1556@61:0>:bool) = false
+      upper bounds:
+        P[<fail_1556@61:0>](var122:bool) = true
+      begin GenHcSolver.classify_pids(25957)[4]
+        output:
+          [<fail_1556@61:0>]
+      end GenHcSolver.classify_pids(25957)[4] (0.000000 sec.)
+      lb:false
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(25960)[4]
+        lb:false
+        nub:false
+        lb':false
+        nub':false
+        begin InterpProver.interpolate(25961)[5]
+          begin InterpProver.interpolate_fresh(25962)[6]
+            begin InterpProver.interpolate_log(25963)[7]
+              input1: false
+              input2: false
+              begin InterpProver.interpolate_check(25964)[8]
+                begin InterpProver.interpolate_simplify(25965)[9]
+                  begin InterpProver.interpolate_quick(25978)[10]
+                    
+                  end InterpProver.interpolate_quick(25978)[10] (0.000000 sec.)
+                  begin minimizing # of disjunctions(25982)[10]
+                    input: false
+                    output: false
+                  end minimizing # of disjunctions(25982)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(25965)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(25964)[8] (0.000000 sec.)
+              output: false
+            end InterpProver.interpolate_log(25963)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(25962)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(25961)[5] (0.000000 sec.)
+        output:
+          P[<fail_1556@61:0>](<fail_1556@61:0>:bool) = false
+      end ApronInterface.convex_hull_interpolate(25960)[4] (0.000000 sec.)
+      Horn clauses:
+        P[<<length_1054@53:2>@56:0>](<f_main_1551@58:1>:int,<f_main_1551@58:3>:int),
+        ((<f_main_1551@58:3> <> <f_main_1551@58:0>) &&
+         ((1 <= <f_main_1551@58:1>) || ((<f_main_1551@58:0> = 0) && (<f_main_1551@58:1> = 0)))) |- bot
+        
+        P[<length_1054@53:0>](<length_1054@53:0>:int), ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+        |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+        
+         (0 <= <length_1054@53:0>) |- P[<length_1054@53:0>](<length_1054@53:0>:int)
+      lower bounds:
+        P[<length_1054@53:0>](<length_1054@53:0>:int) = (0 <= <length_1054@53:0>)
+        P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int) =
+        ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+      upper bounds:
+        P[<<length_1054@53:2>@56:0>](var123:int,var124:int) =
+        ((var124 = <f_main_1551@58:0>) || ((1 > var123) && ((<f_main_1551@58:0> <> 0) || (var123 <> 0))))
+      begin GenHcSolver.classify_pids(28118)[4]
+        output:
+          [<<length_1054@53:2>@56:0>]
+      end GenHcSolver.classify_pids(28118)[4] (0.000000 sec.)
+      lb:((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+      nub:(not
+             ((<<length_1054@53:2>@56:0> = var126) ||
+              ((1 > <length_1054@53:0>) && ((var126 <> 0) || (<length_1054@53:0> <> 0)))))
+      begin ApronInterface.convex_hull_interpolate(28121)[4]
+        lb:((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+        nub:(not
+               ((<<length_1054@53:2>@56:0> = var126) ||
+                ((1 > <length_1054@53:0>) && ((var126 <> 0) || (<length_1054@53:0> <> 0)))))
+        lb':((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+        nub':(not
+                ((<<length_1054@53:2>@56:0> = var126) ||
+                 ((1 > <length_1054@53:0>) && ((var126 <> 0) || (<length_1054@53:0> <> 0)))))
+        begin InterpProver.interpolate(28122)[5]
+          begin InterpProver.interpolate_fresh(28123)[6]
+            begin InterpProver.interpolate_log(28124)[7]
+              input1: ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+              input2: (not
+                         ((<<length_1054@53:2>@56:0> = var127) ||
+                          ((1 > <length_1054@53:0>) && ((var127 <> 0) || (<length_1054@53:0> <> 0)))))
+              begin InterpProver.interpolate_check(28125)[8]
+                begin InterpProver.interpolate_simplify(28126)[9]
+                  begin InterpProver.interpolate_quick(28207)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(28216)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(28217)[12]
+                        begin CsisatInterface.interpolate_csisat_log(28218)[13]
+                          input1: (0 = v_sep_length_1054_sep_53_sep_0 & 0 = v_sep_length_1054_sep_53_sep_2_sep_56_sep_0)
+                          input2: (((0 = v_sep_length_1054_sep_53_sep_0 & 0 = v_sep_var127) | 1 <= v_sep_length_1054_sep_53_sep_0) & not v_sep_length_1054_sep_53_sep_2_sep_56_sep_0 = v_sep_var127)
+                          begin CsisatInterface.interpolate_csisat_raw(28219)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(28219)[14] (0.001000 sec.)
+                          output: (((0 = v_sep_length_1054_sep_53_sep_2_sep_56_sep_0 & 2*v_sep_length_1054_sep_53_sep_0 <= 0) | not 0 = v_sep_length_1054_sep_53_sep_0) & 0 = v_sep_length_1054_sep_53_sep_0)
+                          
+                        end CsisatInterface.interpolate_csisat_log(28218)[13] (0.001000 sec.)
+                        after simplification: (((0 = v_sep_length_1054_sep_53_sep_2_sep_56_sep_0 & 2*v_sep_length_1054_sep_53_sep_0 <= 0) | not 0 = v_sep_length_1054_sep_53_sep_0) & 0 = v_sep_length_1054_sep_53_sep_0)
+                        after dnf conversion: ((0 = v_sep_length_1054_sep_53_sep_2_sep_56_sep_0 & 2*v_sep_length_1054_sep_53_sep_0 <= 0 & 0 = v_sep_length_1054_sep_53_sep_0) | (not 0 = v_sep_length_1054_sep_53_sep_0 & 0 = v_sep_length_1054_sep_53_sep_0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(28217)[12] (0.002000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(28216)[11] (0.002000 sec.)
+                    
+                  end InterpProver.interpolate_quick(28207)[10] (0.002000 sec.)
+                  begin minimizing # of conjunctions(28238)[10]
+                    input: ((<<length_1054@53:2>@56:0> = 0) && (<length_1054@53:0> = 0))
+                    output: ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+                  end minimizing # of conjunctions(28238)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(28126)[9] (0.002000 sec.)
+                
+              end InterpProver.interpolate_check(28125)[8] (0.002999 sec.)
+              output: ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+            end InterpProver.interpolate_log(28124)[7] (0.003999 sec.)
+            
+          end InterpProver.interpolate_fresh(28123)[6] (0.003999 sec.)
+          
+        end InterpProver.interpolate(28122)[5] (0.003999 sec.)
+        output:
+          P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int) =
+          ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+      end ApronInterface.convex_hull_interpolate(28121)[4] (0.003999 sec.)
+      Horn clauses:
+         (0 <= <length_1054@53:0>) |- P[<length_1054@53:0>](<length_1054@53:0>:int)
+      lower bounds:
+        P[<length_1054@53:0>](<length_1054@53:0>:int) = (0 <= <length_1054@53:0>)
+      upper bounds:
+        P[<length_1054@53:0>](var128:int) = true
+      begin GenHcSolver.classify_pids(28767)[4]
+        output:
+          [<length_1054@53:0>]
+      end GenHcSolver.classify_pids(28767)[4] (0.000000 sec.)
+      lb:(0 <= <length_1054@53:0>)
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(28770)[4]
+        lb:(0 <= <length_1054@53:0>)
+        nub:false
+        lb':(0 <= <length_1054@53:0>)
+        nub':false
+        begin InterpProver.interpolate(28771)[5]
+          begin InterpProver.interpolate_fresh(28772)[6]
+            begin InterpProver.interpolate_log(28773)[7]
+              input1: (0 <= <length_1054@53:0>)
+              input2: false
+              begin InterpProver.interpolate_check(28774)[8]
+                begin InterpProver.interpolate_simplify(28775)[9]
+                  begin InterpProver.interpolate_quick(28790)[10]
+                    
+                  end InterpProver.interpolate_quick(28790)[10] (0.001000 sec.)
+                  
+                end InterpProver.interpolate_simplify(28775)[9] (0.001000 sec.)
+                
+              end InterpProver.interpolate_check(28774)[8] (0.001000 sec.)
+              output: true
+            end InterpProver.interpolate_log(28773)[7] (0.001000 sec.)
+            
+          end InterpProver.interpolate_fresh(28772)[6] (0.001000 sec.)
+          
+        end InterpProver.interpolate(28771)[5] (0.001000 sec.)
+        output:
+          P[<length_1054@53:0>](<length_1054@53:0>:int) = true
+      end ApronInterface.convex_hull_interpolate(28770)[4] (0.001000 sec.)
+      begin HcSolver.check_validity(28857)[4]
+        input:
+          P[<fail_1556@61:0>](<fail_1556@61:0>:bool)|- bot
+          
+          P[<<make_list_1033@33:1>@49:0>](<f_main_1551@58:0>:int,<f_main_1551@58:1>:int),
+          P[<<length_1054@53:2>@56:0>](<f_main_1551@58:1>:int,<f_main_1551@58:3>:int),
+          ((<f_main_1551@58:3> <> <f_main_1551@58:0>) && <fail_1556@61:0>)
+          |- P[<fail_1556@61:0>](<fail_1556@61:0>:bool)
+          
+          P[<length_1054@53:0>](<length_1054@53:0>:int), ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+          |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+          
+          P[<<make_list_1033@33:1>@49:0>](<f_main_1550@51:0>:int,<length_1054@53:0>:int)|- P[<length_1054@53:0>](
+          <length_1054@53:0>:int)
+          
+          P[<make_list_1033@33:0>](<make_list_1033@33:0>:int),
+          P[<<make_list_1033@36:1>@39:0>]((-1 + <make_list_1033@33:0>):int,(
+                                          -1 + <<make_list_1033@33:1>@49:0>):int), (
+          <make_list_1033@33:0> <> 0)
+          |- P[<<make_list_1033@33:1>@49:0>](<make_list_1033@33:0>:int,
+                                             <<make_list_1033@33:1>@49:0>:int)
+          
+          P[<make_list_1033@36:0>](<make_list_1033@36:0>:int),
+          ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+          |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,
+                                             <<make_list_1033@36:1>@39:0>:int)
+          
+          P[<make_list_1033@33:0>]((1 + <make_list_1033@36:0>):int), (
+          (1 + <make_list_1033@36:0>) <> 0) |- P[<make_list_1033@36:0>](
+          <make_list_1033@36:0>:int)
+          
+          |- P[<make_list_1033@33:0>](<make_list_1033@33:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(28857)[4] (0.004000 sec.)
+      solution:
+        P[<fail_1556@61:0>](<fail_1556@61:0>:bool) = false
+        P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int) =
+        ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+        P[<length_1054@53:0>](<length_1054@53:0>:int) = true
+        P[<<make_list_1033@33:1>@49:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int) =
+        (((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0)) || (1 <= <<make_list_1033@36:1>@39:0>))
+        P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int) =
+        (((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0)) || (1 <= <<make_list_1033@36:1>@39:0>))
+        P[<make_list_1033@36:0>](<make_list_1033@33:0>:int) = true
+        P[<make_list_1033@33:0>](<make_list_1033@33:0>:int) = true
+    end GenHcSolver.solve(14442)[3] (0.091986 sec.)
+    begin GenHcSolver.solve(29827)[3]
+      Horn clauses:
+        P[<fail_1556@61:0>](<fail_1556@61:0>:bool)|- bot
+        
+        P[<<make_list_1033@33:1>@49:0>](<f_main_1551@58:0>:int,<f_main_1551@58:1>:int),
+        P[<<length_1054@53:2>@56:0>](<f_main_1551@58:1>:int,<f_main_1551@58:3>:int),
+        ((<f_main_1551@58:3> <> <f_main_1551@58:0>) && <fail_1556@61:0>) |- P[<fail_1556@61:0>](
+        <fail_1556@61:0>:bool)
+        
+        P[<length_1054@53:0>](<length_1054@53:0>:int), ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+        |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+        
+        P[<<make_list_1033@33:1>@49:0>](<f_main_1550@51:0>:int,<length_1054@53:0>:int)|- P[<length_1054@53:0>](
+        <length_1054@53:0>:int)
+        
+        P[<make_list_1033@33:0>](<make_list_1033@33:0>:int),
+        P[<<make_list_1033@36:1>@39:0>]((-1 + <make_list_1033@33:0>):int,(
+                                        -1 + <<make_list_1033@33:1>@49:0>):int), (
+        <make_list_1033@33:0> <> 0)
+        |- P[<<make_list_1033@33:1>@49:0>](<make_list_1033@33:0>:int,
+                                           <<make_list_1033@33:1>@49:0>:int)
+        
+        P[<make_list_1033@36:0>](<make_list_1033@36:0>:int),
+        ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+        |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,
+                                           <<make_list_1033@36:1>@39:0>:int)
+        
+        P[<make_list_1033@33:0>]((1 + <make_list_1033@36:0>):int), ((1 + <make_list_1033@36:0>) <> 0)
+        |- P[<make_list_1033@36:0>](<make_list_1033@36:0>:int)
+        
+        |- P[<make_list_1033@33:0>](<make_list_1033@33:0>:int)
+      lower bounds:
+        P[<make_list_1033@33:0>](<make_list_1033@33:0>:int) = true
+        P[<make_list_1033@36:0>](<make_list_1033@36:0>:int) = ((1 + <make_list_1033@36:0>) <> 0)
+        P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int) =
+        ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+        P[<<make_list_1033@33:1>@49:0>](<make_list_1033@33:0>:int,<<make_list_1033@33:1>@49:0>:int) =
+        ((<make_list_1033@33:0> = 1) && (<<make_list_1033@33:1>@49:0> = 1))
+        P[<length_1054@53:0>](<length_1054@53:0>:int) = (<length_1054@53:0> = 1)
+        P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int) = false
+        P[<fail_1556@61:0>](<fail_1556@61:0>:bool) = false
+      upper bounds:
+        P[<<make_list_1033@33:1>@49:0>](var137:int,var138:int) = ((var138 <> 0) || (0 = var137))
+        P[<<make_list_1033@36:1>@39:0>](var132:int,var133:int) = (((1 + var133) <> 0) || ((1 + var132) = 0))
+      begin GenHcSolver.classify_pids(33034)[4]
+        output:
+          [<<make_list_1033@36:1>@39:0>;<<make_list_1033@33:1>@49:0>]
+      end GenHcSolver.classify_pids(33034)[4] (0.000000 sec.)
+      begin ApronInterface.convex_hull_interpolate(33081)[4]
+        lb:(((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0)) ||
+            ((<make_list_1033@36:0> = 1) && (<<make_list_1033@36:1>@39:0> = 1)))
+        nub:((not (((1 + <<make_list_1033@36:1>@39:0>) <> 0) || ((1 + <make_list_1033@36:0>) = 0))) ||
+             (not ((<<make_list_1033@36:1>@39:0> <> 0) || (0 = <make_list_1033@36:0>))))
+        begin ExtFormula.Formula.case_analysis_boolean(33099)[5]
+          ts: (((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0)) ||
+               ((<make_list_1033@36:0> = 1) && (<<make_list_1033@36:1>@39:0> = 1)))
+          
+        end ExtFormula.Formula.case_analysis_boolean(33099)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(33130)[5]
+          ts: (((<<make_list_1033@36:1>@39:0> = -1) && ((1 + <make_list_1033@36:0>) <> 0)) ||
+               ((<<make_list_1033@36:1>@39:0> = 0) && (0 <> <make_list_1033@36:0>)))
+          
+        end ExtFormula.Formula.case_analysis_boolean(33130)[5] (0.000000 sec.)
+        lb':(((<<make_list_1033@36:1>@39:0> + (-1 * <make_list_1033@36:0>)) = 0) &&
+             (((1 + (-1 * <make_list_1033@36:0>)) >= 0) && (<make_list_1033@36:0> >= 0)))
+        nub':(((-1 * <<make_list_1033@36:1>@39:0>) >= 0) && ((1 + <<make_list_1033@36:1>@39:0>) >= 0))
+        begin InterpProver.interpolate(33139)[5]
+          begin InterpProver.interpolate_fresh(33140)[6]
+            begin InterpProver.interpolate_log(33141)[7]
+              input1: (((<<make_list_1033@36:1>@39:0> + (-1 * <make_list_1033@36:0>)) = 0) &&
+                       (((1 + (-1 * <make_list_1033@36:0>)) >= 0) && (<make_list_1033@36:0> >= 0)))
+              input2: (((-1 * <<make_list_1033@36:1>@39:0>) >= 0) && ((1 + <<make_list_1033@36:1>@39:0>) >= 0))
+              begin InterpProver.interpolate_check(33142)[8]
+                begin InterpProver.interpolate_simplify(33143)[9]
+                  begin InterpProver.interpolate_quick(33220)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(33229)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(33230)[12]
+                        begin CsisatInterface.interpolate_csisat_log(33231)[13]
+                          input1: (0 <= v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 & v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= 1)
+                          input2: (0 <= (1 + v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0) & v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= 0)
+                          begin CsisatInterface.interpolate_csisat_raw(33232)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(33232)[14] (0.000000 sec.)
+                          
+                        end CsisatInterface.interpolate_csisat_log(33231)[13] (0.000000 sec.)
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(33230)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(33229)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(33220)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(33143)[9] (0.001000 sec.)
+                
+              end InterpProver.interpolate_check(33142)[8] (0.002000 sec.)
+              there is no interpolant
+            end InterpProver.interpolate_log(33141)[7] (0.002000 sec.)
+            
+          end InterpProver.interpolate_fresh(33140)[6] (0.002000 sec.)
+          
+        end InterpProver.interpolate(33139)[5] (0.002000 sec.)
+        begin InterpProver.interpolate(33247)[5]
+          begin InterpProver.interpolate_fresh(33248)[6]
+            begin InterpProver.interpolate_log(33249)[7]
+              input1: (((<<make_list_1033@36:1>@39:0> + (-1 * <make_list_1033@36:0>)) = 0) &&
+                       (((1 + (-1 * <make_list_1033@36:0>)) >= 0) && (<make_list_1033@36:0> >= 0)))
+              input2: (not ((<<make_list_1033@36:1>@39:0> <> 0) || (0 = <make_list_1033@36:0>)))
+              begin InterpProver.interpolate_check(33250)[8]
+                begin InterpProver.interpolate_simplify(33251)[9]
+                  begin InterpProver.interpolate_quick(33336)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(33345)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(33346)[12]
+                        begin CsisatInterface.interpolate_csisat_log(33347)[13]
+                          input1: (v_sep_make_list_1033_sep_36_sep_0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 & 0 <= v_sep_make_list_1033_sep_36_sep_0 & v_sep_make_list_1033_sep_36_sep_0 <= 1)
+                          input2: (not 0 = v_sep_make_list_1033_sep_36_sep_0 & 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0)
+                          begin CsisatInterface.interpolate_csisat_raw(33348)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(33348)[14] (0.000000 sec.)
+                          output: v_sep_make_list_1033_sep_36_sep_0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0
+                          
+                        end CsisatInterface.interpolate_csisat_log(33347)[13] (0.000000 sec.)
+                        after simplification: v_sep_make_list_1033_sep_36_sep_0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0
+                        after dnf conversion: ((v_sep_make_list_1033_sep_36_sep_0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(33346)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(33345)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(33336)[10] (0.000999 sec.)
+                  
+                end InterpProver.interpolate_simplify(33251)[9] (0.000999 sec.)
+                
+              end InterpProver.interpolate_check(33250)[8] (0.000999 sec.)
+              output: (<make_list_1033@36:0> = <<make_list_1033@36:1>@39:0>)
+            end InterpProver.interpolate_log(33249)[7] (0.000999 sec.)
+            
+          end InterpProver.interpolate_fresh(33248)[6] (0.000999 sec.)
+          
+        end InterpProver.interpolate(33247)[5] (0.000999 sec.)
+        begin InterpProver.interpolate(33376)[5]
+          begin InterpProver.interpolate_fresh(33377)[6]
+            begin InterpProver.interpolate_log(33378)[7]
+              input1: (((<<make_list_1033@36:1>@39:0> + (-1 * <make_list_1033@36:0>)) = 0) &&
+                       (((1 + (-1 * <make_list_1033@36:0>)) >= 0) && (<make_list_1033@36:0> >= 0)))
+              input2: (not (((1 + <<make_list_1033@36:1>@39:0>) <> 0) || ((1 + <make_list_1033@36:0>) = 0)))
+              begin InterpProver.interpolate_check(33379)[8]
+                begin InterpProver.interpolate_simplify(33380)[9]
+                  begin InterpProver.interpolate_quick(33475)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(33484)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(33485)[12]
+                        begin CsisatInterface.interpolate_csisat_log(33486)[13]
+                          input1: (v_sep_make_list_1033_sep_36_sep_0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 & 0 <= v_sep_make_list_1033_sep_36_sep_0 & v_sep_make_list_1033_sep_36_sep_0 <= 1)
+                          input2: (not 0 = (1 + v_sep_make_list_1033_sep_36_sep_0) & -1 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0)
+                          begin CsisatInterface.interpolate_csisat_raw(33487)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(33487)[14] (0.000000 sec.)
+                          output: -2*v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= 0
+                          
+                        end CsisatInterface.interpolate_csisat_log(33486)[13] (0.000000 sec.)
+                        after simplification: -2*v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= 0
+                        after dnf conversion: ((-2*v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0 <= 0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(33485)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(33484)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(33475)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(33380)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(33379)[8] (0.001000 sec.)
+              output: (0 <= <<make_list_1033@36:1>@39:0>)
+            end InterpProver.interpolate_log(33378)[7] (0.002000 sec.)
+            
+          end InterpProver.interpolate_fresh(33377)[6] (0.002000 sec.)
+          
+        end InterpProver.interpolate(33376)[5] (0.002000 sec.)
+        output:
+          P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int) =
+          (0 <= <<make_list_1033@36:1>@39:0>)
+          P[<<make_list_1033@33:1>@49:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int) =
+          (<make_list_1033@36:0> = <<make_list_1033@36:1>@39:0>)
+      end ApronInterface.convex_hull_interpolate(33081)[4] (0.004999 sec.)
+      Horn clauses:
+        P[<fail_1556@61:0>](<fail_1556@61:0>:bool)|- bot
+        
+        P[<<length_1054@53:2>@56:0>](<f_main_1551@58:0>:int,<f_main_1551@58:3>:int),
+        ((<f_main_1551@58:3> <> <f_main_1551@58:0>) && <fail_1556@61:0>) |- P[<fail_1556@61:0>](
+        <fail_1556@61:0>:bool)
+        
+        P[<length_1054@53:0>](<length_1054@53:0>:int), ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+        |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+        
+        |- P[<length_1054@53:0>](<length_1054@53:0>:int)
+        
+        P[<make_list_1033@33:0>](<make_list_1033@33:0>:int),
+        P[<<make_list_1033@36:1>@39:0>]((-1 + <make_list_1033@33:0>):int,(
+                                        -1 + <<make_list_1033@33:1>@49:0>):int),
+        ((<make_list_1033@33:0> <> 0) && (<make_list_1033@33:0> <> <<make_list_1033@33:1>@49:0>)) |- bot
+        
+        P[<make_list_1033@36:0>](<make_list_1033@36:0>:int),
+        ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+        |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,
+                                           <<make_list_1033@36:1>@39:0>:int)
+        
+        P[<make_list_1033@33:0>]((1 + <make_list_1033@36:0>):int), ((1 + <make_list_1033@36:0>) <> 0)
+        |- P[<make_list_1033@36:0>](<make_list_1033@36:0>:int)
+        
+        |- P[<make_list_1033@33:0>](<make_list_1033@33:0>:int)
+      lower bounds:
+        P[<length_1054@53:0>](<length_1054@53:0>:int) = true
+        P[<make_list_1033@33:0>](<make_list_1033@33:0>:int) = true
+        P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int) =
+        ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+        P[<make_list_1033@36:0>](<make_list_1033@36:0>:int) = ((1 + <make_list_1033@36:0>) <> 0)
+        P[<fail_1556@61:0>](<fail_1556@61:0>:bool) = false
+        P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int) =
+        ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+      upper bounds:
+        P[<make_list_1033@36:0>](var140:int) = true
+        P[<make_list_1033@33:0>](var139:int) = true
+      begin GenHcSolver.classify_pids(36993)[4]
+        output:
+          [<make_list_1033@33:0>;<make_list_1033@36:0>]
+      end GenHcSolver.classify_pids(36993)[4] (0.000000 sec.)
+      begin ApronInterface.convex_hull_interpolate(37004)[4]
+        lb:true
+        nub:false
+        begin ExtFormula.Formula.case_analysis_boolean(37007)[5]
+          ts: true
+          
+        end ExtFormula.Formula.case_analysis_boolean(37007)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(37012)[5]
+          ts: false
+          
+        end ExtFormula.Formula.case_analysis_boolean(37012)[5] (0.000000 sec.)
+        lb':true
+        nub':(-1 >= 0)
+        begin InterpProver.interpolate(37015)[5]
+          begin InterpProver.interpolate_fresh(37016)[6]
+            begin InterpProver.interpolate_log(37017)[7]
+              input1: true
+              input2: (-1 >= 0)
+              begin InterpProver.interpolate_check(37018)[8]
+                begin InterpProver.interpolate_simplify(37019)[9]
+                  begin InterpProver.interpolate_quick(37033)[10]
+                    
+                  end InterpProver.interpolate_quick(37033)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(37019)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(37018)[8] (0.000000 sec.)
+              output: true
+            end InterpProver.interpolate_log(37017)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(37016)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(37015)[5] (0.000000 sec.)
+        output:
+          P[<make_list_1033@33:0>](<make_list_1033@33:0>:int) = true
+          P[<make_list_1033@36:0>](<make_list_1033@33:0>:int) = true
+      end ApronInterface.convex_hull_interpolate(37004)[4] (0.000000 sec.)
+      Horn clauses:
+        P[<fail_1556@61:0>](<fail_1556@61:0>:bool)|- bot
+        
+        P[<<length_1054@53:2>@56:0>](<f_main_1551@58:0>:int,<f_main_1551@58:3>:int),
+        ((<f_main_1551@58:3> <> <f_main_1551@58:0>) && <fail_1556@61:0>) |- P[<fail_1556@61:0>](
+        <fail_1556@61:0>:bool)
+        
+        P[<length_1054@53:0>](<length_1054@53:0>:int), ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+        |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+        
+        |- P[<length_1054@53:0>](<length_1054@53:0>:int)
+        
+        P[<<make_list_1033@36:1>@39:0>]((-1 + <make_list_1033@33:0>):int,(
+                                        -1 + <<make_list_1033@33:1>@49:0>):int),
+        ((<make_list_1033@33:0> <> 0) && (<make_list_1033@33:0> <> <<make_list_1033@33:1>@49:0>)) |- bot
+        
+         ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+        |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,
+                                           <<make_list_1033@36:1>@39:0>:int)
+      lower bounds:
+        P[<length_1054@53:0>](<length_1054@53:0>:int) = true
+        P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int) =
+        ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+        P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int) =
+        ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+        P[<fail_1556@61:0>](<fail_1556@61:0>:bool) = false
+      upper bounds:
+        P[<fail_1556@61:0>](var142:bool) = true
+      begin GenHcSolver.classify_pids(39232)[4]
+        output:
+          [<fail_1556@61:0>]
+      end GenHcSolver.classify_pids(39232)[4] (0.000000 sec.)
+      lb:false
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(39235)[4]
+        lb:false
+        nub:false
+        begin ExtFormula.Formula.case_analysis_boolean(39238)[5]
+          ts: false
+          
+        end ExtFormula.Formula.case_analysis_boolean(39238)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(39243)[5]
+          ts: false
+          
+        end ExtFormula.Formula.case_analysis_boolean(39243)[5] (0.000000 sec.)
+        lb':(-1 >= 0)
+        nub':(-1 >= 0)
+        begin InterpProver.interpolate(39246)[5]
+          begin InterpProver.interpolate_fresh(39247)[6]
+            begin InterpProver.interpolate_log(39248)[7]
+              input1: (-1 >= 0)
+              input2: (-1 >= 0)
+              begin InterpProver.interpolate_check(39249)[8]
+                begin InterpProver.interpolate_simplify(39250)[9]
+                  begin InterpProver.interpolate_quick(39265)[10]
+                    
+                  end InterpProver.interpolate_quick(39265)[10] (0.000000 sec.)
+                  begin minimizing # of disjunctions(39269)[10]
+                    input: false
+                    output: false
+                  end minimizing # of disjunctions(39269)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(39250)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(39249)[8] (0.000000 sec.)
+              output: false
+            end InterpProver.interpolate_log(39248)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(39247)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(39246)[5] (0.000000 sec.)
+        output:
+          P[<fail_1556@61:0>](<fail_1556@61:0>:bool) = false
+      end ApronInterface.convex_hull_interpolate(39235)[4] (0.000000 sec.)
+      Horn clauses:
+        P[<<length_1054@53:2>@56:0>](<f_main_1551@58:0>:int,<f_main_1551@58:3>:int),
+        (<f_main_1551@58:3> <> <f_main_1551@58:0>) |- bot
+        
+        P[<length_1054@53:0>](<length_1054@53:0>:int), ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+        |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+        
+        |- P[<length_1054@53:0>](<length_1054@53:0>:int)
+        
+        P[<<make_list_1033@36:1>@39:0>]((-1 + <make_list_1033@33:0>):int,(
+                                        -1 + <<make_list_1033@33:1>@49:0>):int),
+        ((<make_list_1033@33:0> <> 0) && (<make_list_1033@33:0> <> <<make_list_1033@33:1>@49:0>)) |- bot
+        
+         ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+        |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,
+                                           <<make_list_1033@36:1>@39:0>:int)
+      lower bounds:
+        P[<length_1054@53:0>](<length_1054@53:0>:int) = true
+        P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int) =
+        ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+        P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int) =
+        ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+      upper bounds:
+        P[<<length_1054@53:2>@56:0>](var143:int,var144:int) = (var144 = var143)
+      begin GenHcSolver.classify_pids(40611)[4]
+        output:
+          [<<length_1054@53:2>@56:0>]
+      end GenHcSolver.classify_pids(40611)[4] (0.000000 sec.)
+      lb:((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+      nub:(not (<<length_1054@53:2>@56:0> = <length_1054@53:0>))
+      begin ApronInterface.convex_hull_interpolate(40614)[4]
+        lb:((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+        nub:(not (<<length_1054@53:2>@56:0> = <length_1054@53:0>))
+        begin ExtFormula.Formula.case_analysis_boolean(40622)[5]
+          ts: ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+          
+        end ExtFormula.Formula.case_analysis_boolean(40622)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(40631)[5]
+          ts: (<<length_1054@53:2>@56:0> <> <length_1054@53:0>)
+          
+        end ExtFormula.Formula.case_analysis_boolean(40631)[5] (0.000000 sec.)
+        lb':((<<length_1054@53:2>@56:0> = 0) && (<length_1054@53:0> = 0))
+        nub':true
+        begin InterpProver.interpolate(40636)[5]
+          begin InterpProver.interpolate_fresh(40637)[6]
+            begin InterpProver.interpolate_log(40638)[7]
+              input1: ((<<length_1054@53:2>@56:0> = 0) && (<length_1054@53:0> = 0))
+              input2: true
+              begin InterpProver.interpolate_check(40639)[8]
+                begin InterpProver.interpolate_simplify(40640)[9]
+                  begin InterpProver.interpolate_quick(40667)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(40670)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(40671)[12]
+                        begin CsisatInterface.interpolate_csisat_log(40672)[13]
+                          input1: true
+                          input2: true
+                          begin CsisatInterface.interpolate_csisat_raw(40673)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(40673)[14] (0.000000 sec.)
+                          
+                        end CsisatInterface.interpolate_csisat_log(40672)[13] (0.000000 sec.)
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(40671)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(40670)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(40667)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(40640)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(40639)[8] (0.000999 sec.)
+              there is no interpolant
+            end InterpProver.interpolate_log(40638)[7] (0.000999 sec.)
+            
+          end InterpProver.interpolate_fresh(40637)[6] (0.000999 sec.)
+          
+        end InterpProver.interpolate(40636)[5] (0.000999 sec.)
+        begin InterpProver.interpolate(40681)[5]
+          begin InterpProver.interpolate_fresh(40682)[6]
+            begin InterpProver.interpolate_log(40683)[7]
+              input1: ((<<length_1054@53:2>@56:0> = 0) && (<length_1054@53:0> = 0))
+              input2: (not (<<length_1054@53:2>@56:0> = <length_1054@53:0>))
+              begin InterpProver.interpolate_check(40684)[8]
+                begin InterpProver.interpolate_simplify(40685)[9]
+                  begin InterpProver.interpolate_quick(40712)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(40721)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(40722)[12]
+                        begin CsisatInterface.interpolate_csisat_log(40723)[13]
+                          input1: (0 = v_sep_length_1054_sep_53_sep_0 & 0 = v_sep_length_1054_sep_53_sep_2_sep_56_sep_0)
+                          input2: not v_sep_length_1054_sep_53_sep_0 = v_sep_length_1054_sep_53_sep_2_sep_56_sep_0
+                          begin CsisatInterface.interpolate_csisat_raw(40724)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(40724)[14] (0.000000 sec.)
+                          output: v_sep_length_1054_sep_53_sep_0 = v_sep_length_1054_sep_53_sep_2_sep_56_sep_0
+                          
+                        end CsisatInterface.interpolate_csisat_log(40723)[13] (0.000000 sec.)
+                        after simplification: v_sep_length_1054_sep_53_sep_0 = v_sep_length_1054_sep_53_sep_2_sep_56_sep_0
+                        after dnf conversion: ((v_sep_length_1054_sep_53_sep_0 = v_sep_length_1054_sep_53_sep_2_sep_56_sep_0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(40722)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(40721)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(40712)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(40685)[9] (0.001000 sec.)
+                
+              end InterpProver.interpolate_check(40684)[8] (0.001000 sec.)
+              output: (<length_1054@53:0> = <<length_1054@53:2>@56:0>)
+            end InterpProver.interpolate_log(40683)[7] (0.001000 sec.)
+            
+          end InterpProver.interpolate_fresh(40682)[6] (0.001000 sec.)
+          
+        end InterpProver.interpolate(40681)[5] (0.001000 sec.)
+        output:
+          P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int) =
+          (<length_1054@53:0> = <<length_1054@53:2>@56:0>)
+      end ApronInterface.convex_hull_interpolate(40614)[4] (0.001999 sec.)
+      Horn clauses:
+        |- P[<length_1054@53:0>](<length_1054@53:0>:int)
+        
+        P[<<make_list_1033@36:1>@39:0>]((-1 + <make_list_1033@33:0>):int,(
+                                        -1 + <<make_list_1033@33:1>@49:0>):int),
+        ((<make_list_1033@33:0> <> 0) && (<make_list_1033@33:0> <> <<make_list_1033@33:1>@49:0>)) |- bot
+        
+         ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+        |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,
+                                           <<make_list_1033@36:1>@39:0>:int)
+      lower bounds:
+        P[<length_1054@53:0>](<length_1054@53:0>:int) = true
+        P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int) =
+        ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+      upper bounds:
+        P[<length_1054@53:0>](var145:int) = true
+      begin GenHcSolver.classify_pids(41550)[4]
+        output:
+          [<length_1054@53:0>]
+      end GenHcSolver.classify_pids(41550)[4] (0.000000 sec.)
+      lb:true
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(41553)[4]
+        lb:true
+        nub:false
+        begin ExtFormula.Formula.case_analysis_boolean(41556)[5]
+          ts: true
+          
+        end ExtFormula.Formula.case_analysis_boolean(41556)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(41561)[5]
+          ts: false
+          
+        end ExtFormula.Formula.case_analysis_boolean(41561)[5] (0.000000 sec.)
+        lb':true
+        nub':(-1 >= 0)
+        begin InterpProver.interpolate(41564)[5]
+          begin InterpProver.interpolate_fresh(41565)[6]
+            begin InterpProver.interpolate_log(41566)[7]
+              input1: true
+              input2: (-1 >= 0)
+              begin InterpProver.interpolate_check(41567)[8]
+                begin InterpProver.interpolate_simplify(41568)[9]
+                  begin InterpProver.interpolate_quick(41582)[10]
+                    
+                  end InterpProver.interpolate_quick(41582)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(41568)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(41567)[8] (0.000000 sec.)
+              output: true
+            end InterpProver.interpolate_log(41566)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(41565)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(41564)[5] (0.000000 sec.)
+        output:
+          P[<length_1054@53:0>](<length_1054@53:0>:int) = true
+      end ApronInterface.convex_hull_interpolate(41553)[4] (0.001000 sec.)
+      Horn clauses:
+        P[<<make_list_1033@36:1>@39:0>]((-1 + <make_list_1033@33:0>):int,(
+                                        -1 + <<make_list_1033@33:1>@49:0>):int),
+        ((<make_list_1033@33:0> <> 0) && (<make_list_1033@33:0> <> <<make_list_1033@33:1>@49:0>)) |- bot
+        
+         ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+        |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,
+                                           <<make_list_1033@36:1>@39:0>:int)
+      lower bounds:
+        P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int) =
+        ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+      upper bounds:
+        P[<<make_list_1033@36:1>@39:0>](var146:int,var147:int) = ((var146 = var147) || ((1 + var146) = 0))
+      begin GenHcSolver.classify_pids(42583)[4]
+        output:
+          [<<make_list_1033@36:1>@39:0>]
+      end GenHcSolver.classify_pids(42583)[4] (0.000000 sec.)
+      lb:((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+      nub:(not ((<make_list_1033@36:0> = <<make_list_1033@36:1>@39:0>) || ((1 + <make_list_1033@36:0>) = 0)))
+      begin ApronInterface.convex_hull_interpolate(42586)[4]
+        lb:((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+        nub:(not ((<make_list_1033@36:0> = <<make_list_1033@36:1>@39:0>) || ((1 + <make_list_1033@36:0>) = 0)))
+        begin ExtFormula.Formula.case_analysis_boolean(42594)[5]
+          ts: ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+          
+        end ExtFormula.Formula.case_analysis_boolean(42594)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(42616)[5]
+          ts: ((<make_list_1033@36:0> <> <<make_list_1033@36:1>@39:0>) && ((1 + <make_list_1033@36:0>) <> 0))
+          
+        end ExtFormula.Formula.case_analysis_boolean(42616)[5] (0.000000 sec.)
+        lb':((<<make_list_1033@36:1>@39:0> = 0) && (<make_list_1033@36:0> = 0))
+        nub':true
+        begin InterpProver.interpolate(42623)[5]
+          begin InterpProver.interpolate_fresh(42624)[6]
+            begin InterpProver.interpolate_log(42625)[7]
+              input1: ((<<make_list_1033@36:1>@39:0> = 0) && (<make_list_1033@36:0> = 0))
+              input2: true
+              begin InterpProver.interpolate_check(42626)[8]
+                begin InterpProver.interpolate_simplify(42627)[9]
+                  begin InterpProver.interpolate_quick(42654)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(42657)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(42658)[12]
+                        begin CsisatInterface.interpolate_csisat_log(42659)[13]
+                          input1: true
+                          input2: true
+                          begin CsisatInterface.interpolate_csisat_raw(42660)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(42660)[14] (0.000000 sec.)
+                          
+                        end CsisatInterface.interpolate_csisat_log(42659)[13] (0.000000 sec.)
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(42658)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(42657)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(42654)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(42627)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(42626)[8] (0.001000 sec.)
+              there is no interpolant
+            end InterpProver.interpolate_log(42625)[7] (0.001000 sec.)
+            
+          end InterpProver.interpolate_fresh(42624)[6] (0.001000 sec.)
+          
+        end InterpProver.interpolate(42623)[5] (0.001000 sec.)
+        begin InterpProver.interpolate(42668)[5]
+          begin InterpProver.interpolate_fresh(42669)[6]
+            begin InterpProver.interpolate_log(42670)[7]
+              input1: ((<<make_list_1033@36:1>@39:0> = 0) && (<make_list_1033@36:0> = 0))
+              input2: (not
+                         ((<make_list_1033@36:0> = <<make_list_1033@36:1>@39:0>) || ((1 + <make_list_1033@36:0>) = 0)))
+              begin InterpProver.interpolate_check(42671)[8]
+                begin InterpProver.interpolate_simplify(42672)[9]
+                  begin InterpProver.interpolate_quick(42725)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(42734)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(42735)[12]
+                        begin CsisatInterface.interpolate_csisat_log(42736)[13]
+                          input1: (0 = v_sep_make_list_1033_sep_36_sep_0 & 0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0)
+                          input2: (not 0 = (1 + v_sep_make_list_1033_sep_36_sep_0) & not v_sep_make_list_1033_sep_36_sep_0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0)
+                          begin CsisatInterface.interpolate_csisat_raw(42737)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(42737)[14] (0.000000 sec.)
+                          output: v_sep_make_list_1033_sep_36_sep_0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0
+                          
+                        end CsisatInterface.interpolate_csisat_log(42736)[13] (0.000000 sec.)
+                        after simplification: v_sep_make_list_1033_sep_36_sep_0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0
+                        after dnf conversion: ((v_sep_make_list_1033_sep_36_sep_0 = v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(42735)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(42734)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(42725)[10] (0.001000 sec.)
+                  
+                end InterpProver.interpolate_simplify(42672)[9] (0.001000 sec.)
+                
+              end InterpProver.interpolate_check(42671)[8] (0.002000 sec.)
+              output: (<make_list_1033@36:0> = <<make_list_1033@36:1>@39:0>)
+            end InterpProver.interpolate_log(42670)[7] (0.002000 sec.)
+            
+          end InterpProver.interpolate_fresh(42669)[6] (0.002000 sec.)
+          
+        end InterpProver.interpolate(42668)[5] (0.002000 sec.)
+        output:
+          P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int) =
+          (<make_list_1033@36:0> = <<make_list_1033@36:1>@39:0>)
+      end ApronInterface.convex_hull_interpolate(42586)[4] (0.003000 sec.)
+      begin HcSolver.check_validity(42890)[4]
+        input:
+          P[<fail_1556@61:0>](<fail_1556@61:0>:bool)|- bot
+          
+          P[<<make_list_1033@33:1>@49:0>](<f_main_1551@58:0>:int,<f_main_1551@58:1>:int),
+          P[<<length_1054@53:2>@56:0>](<f_main_1551@58:1>:int,<f_main_1551@58:3>:int),
+          ((<f_main_1551@58:3> <> <f_main_1551@58:0>) && <fail_1556@61:0>)
+          |- P[<fail_1556@61:0>](<fail_1556@61:0>:bool)
+          
+          P[<length_1054@53:0>](<length_1054@53:0>:int), ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+          |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+          
+          P[<<make_list_1033@33:1>@49:0>](<f_main_1550@51:0>:int,<length_1054@53:0>:int)|- P[<length_1054@53:0>](
+          <length_1054@53:0>:int)
+          
+          P[<make_list_1033@33:0>](<make_list_1033@33:0>:int),
+          P[<<make_list_1033@36:1>@39:0>]((-1 + <make_list_1033@33:0>):int,(
+                                          -1 + <<make_list_1033@33:1>@49:0>):int), (
+          <make_list_1033@33:0> <> 0)
+          |- P[<<make_list_1033@33:1>@49:0>](<make_list_1033@33:0>:int,
+                                             <<make_list_1033@33:1>@49:0>:int)
+          
+          P[<make_list_1033@36:0>](<make_list_1033@36:0>:int),
+          ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+          |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,
+                                             <<make_list_1033@36:1>@39:0>:int)
+          
+          P[<make_list_1033@33:0>]((1 + <make_list_1033@36:0>):int), (
+          (1 + <make_list_1033@36:0>) <> 0) |- P[<make_list_1033@36:0>](
+          <make_list_1033@36:0>:int)
+          
+          |- P[<make_list_1033@33:0>](<make_list_1033@33:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(42890)[4] (0.002999 sec.)
+      solution:
+        P[<fail_1556@61:0>](<fail_1556@61:0>:bool) = false
+        P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int) =
+        (<length_1054@53:0> = <<length_1054@53:2>@56:0>)
+        P[<length_1054@53:0>](<length_1054@53:0>:int) = true
+        P[<<make_list_1033@33:1>@49:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int) =
+        (<make_list_1033@36:0> = <<make_list_1033@36:1>@39:0>)
+        P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,<<make_list_1033@36:1>@39:0>:int) =
+        (<make_list_1033@36:0> = <<make_list_1033@36:1>@39:0>)
+        P[<make_list_1033@36:0>](<make_list_1033@33:0>:int) = true
+        P[<make_list_1033@33:0>](<make_list_1033@33:0>:int) = true
+    end GenHcSolver.solve(29827)[3] (0.061990 sec.)
+    begin YhornInterface.solve(43377)[3]
+      begin HcSolver.solve_ub(43378)[4]
+        encoded:
+          P[<fail_1556@61:0>](<fail_1556@61:0>:int)|- bot
+          
+          P[<<make_list_1033@33:1>@49:0>](<f_main_1551@58:0>:int,<f_main_1551@58:1>:int),
+          P[<<length_1054@53:2>@56:0>](<f_main_1551@58:1>:int,<f_main_1551@58:3>:int),
+          ((<f_main_1551@58:3> <> <f_main_1551@58:0>) && (<fail_1556@61:0> = 1))
+          |- P[<fail_1556@61:0>](<fail_1556@61:0>:int)
+          
+          P[<length_1054@53:0>](<length_1054@53:0>:int), ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+          |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+          
+          P[<<make_list_1033@33:1>@49:0>](<f_main_1550@51:0>:int,<length_1054@53:0>:int)|- P[<length_1054@53:0>](
+          <length_1054@53:0>:int)
+          
+          P[<make_list_1033@33:0>](<make_list_1033@33:0>:int),
+          P[<<make_list_1033@36:1>@39:0>]((-1 + <make_list_1033@33:0>):int,(
+                                          -1 + <<make_list_1033@33:1>@49:0>):int), (
+          <make_list_1033@33:0> <> 0)
+          |- P[<<make_list_1033@33:1>@49:0>](<make_list_1033@33:0>:int,
+                                             <<make_list_1033@33:1>@49:0>:int)
+          
+          P[<make_list_1033@36:0>](<make_list_1033@36:0>:int),
+          ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+          |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,
+                                             <<make_list_1033@36:1>@39:0>:int)
+          
+          P[<make_list_1033@33:0>]((1 + <make_list_1033@36:0>):int), (
+          (1 + <make_list_1033@36:0>) <> 0) |- P[<make_list_1033@36:0>](
+          <make_list_1033@36:0>:int)
+          
+          |- P[<make_list_1033@33:0>](<make_list_1033@33:0>:int)
+        input to Yhorn:
+          P[<fail_1556@61:0>](<fail_1556@61:0>:int)|- bot
+          
+          P[<<make_list_1033@33:1>@49:0>](<f_main_1551@58:0>:int,<f_main_1551@58:1>:int),
+          P[<<length_1054@53:2>@56:0>](<f_main_1551@58:1>:int,<f_main_1551@58:3>:int),
+          ((<f_main_1551@58:3> <> <f_main_1551@58:0>) && (<fail_1556@61:0> = 1))
+          |- P[<fail_1556@61:0>](<fail_1556@61:0>:int)
+          
+          P[<length_1054@53:0>](<length_1054@53:0>:int), ((<<length_1054@53:2>@56:0> = 0) && (<length_1054@53:0> = 0))
+          |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+          
+          P[<<make_list_1033@33:1>@49:0>](<f_main_1550@51:0>:int,<length_1054@53:0>:int)|- P[<length_1054@53:0>](
+          <length_1054@53:0>:int)
+          
+          P[<make_list_1033@33:0>](<make_list_1033@33:0>:int),
+          P[<<make_list_1033@36:1>@39:0>](var148:int,var149:int),
+          (((1 + var149) = <<make_list_1033@33:1>@49:0>) &&
+           (((1 + var148) = <make_list_1033@33:0>) && (<make_list_1033@33:0> <> 0)))
+          |- P[<<make_list_1033@33:1>@49:0>](<make_list_1033@33:0>:int,
+                                             <<make_list_1033@33:1>@49:0>:int)
+          
+          P[<make_list_1033@36:0>](<make_list_1033@36:0>:int),
+          ((<<make_list_1033@36:1>@39:0> = 0) && (<make_list_1033@36:0> = 0))
+          |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,
+                                             <<make_list_1033@36:1>@39:0>:int)
+          
+          P[<make_list_1033@33:0>](var150:int),
+          ((var150 = (1 + <make_list_1033@36:0>)) && ((1 + <make_list_1033@36:0>) <> 0))
+          |- P[<make_list_1033@36:0>](<make_list_1033@36:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1556_sep_61_sep_0($270)) -> 1=0.
+(($270-1=0) & ($271-$272<>0)) & (v_sep_length_1054_sep_53_sep_2_sep_56_sep_0($273,$271)) & (v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0($272,$273)) -> v_sep_fail_1556_sep_61_sep_0($270).
+(($274=0) & ($275=0)) & (v_sep_length_1054_sep_53_sep_0($274)) -> v_sep_length_1054_sep_53_sep_2_sep_56_sep_0($274,$275).
+(0=0) & (v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0($276,$274)) -> v_sep_length_1054_sep_53_sep_0($274).
+(($277<>0) & (-$277+$278+1=0) & ($279-$280+1=0)) & (v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0($278,$279)) & (v_sep_make_list_1033_sep_33_sep_0($277)) -> v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0($277,$280).
+(($281=0) & ($282=0)) & (v_sep_make_list_1033_sep_36_sep_0($281)) -> v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0($281,$282).
+(($281+1<>0) & (-$281+$283-1=0)) & (v_sep_make_list_1033_sep_33_sep_0($283)) -> v_sep_make_list_1033_sep_36_sep_0($281).
+0=0 -> v_sep_make_list_1033_sep_33_sep_0($277).
+
+
+v_sep_fail_1556_sep_61_sep_0: X
+v_sep_length_1054_sep_53_sep_0: X
+v_sep_length_1054_sep_53_sep_2_sep_56_sep_0: X
+v_sep_make_list_1033_sep_33_sep_0: X
+v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0: X
+v_sep_make_list_1033_sep_36_sep_0: X
+v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0: X
+...............
+v_sep_fail_1556_sep_61_sep_0: X
+v_sep_length_1054_sep_53_sep_0: X
+v_sep_length_1054_sep_53_sep_2_sep_56_sep_0: X
+v_sep_make_list_1033_sep_33_sep_0: X
+v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0: X
+v_sep_make_list_1033_sep_36_sep_0: X
+v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0: X
+......
+v_sep_fail_1556_sep_61_sep_0: X
+v_sep_length_1054_sep_53_sep_0: X
+v_sep_length_1054_sep_53_sep_2_sep_56_sep_0: X
+v_sep_make_list_1033_sep_33_sep_0: X
+v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0: X
+v_sep_make_list_1033_sep_36_sep_0: X
+v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0: X
+...........
+v_sep_fail_1556_sep_61_sep_0: X
+v_sep_length_1054_sep_53_sep_0: X
+v_sep_length_1054_sep_53_sep_2_sep_56_sep_0: X
+v_sep_make_list_1033_sep_33_sep_0: X
+v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0: X
+v_sep_make_list_1033_sep_36_sep_0: X
+v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0: X
+.............
+v_sep_fail_1556_sep_61_sep_0: X
+v_sep_length_1054_sep_53_sep_0: X
+v_sep_length_1054_sep_53_sep_2_sep_56_sep_0: X
+v_sep_make_list_1033_sep_33_sep_0: X
+v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0: X
+v_sep_make_list_1033_sep_36_sep_0: X
+v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0: X
+...............(0=0) & (v_sep_fail_1556_sep_61_sep_0($270)) -> 1=0.
+(($270-1=0) & ($271-$272<>0)) & (v_sep_length_1054_sep_53_sep_2_sep_56_sep_0($273,$271)) & (v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0($272,$273)) -> v_sep_fail_1556_sep_61_sep_0($270).
+(($274=0) & ($275=0)) & (v_sep_length_1054_sep_53_sep_0($274)) -> v_sep_length_1054_sep_53_sep_2_sep_56_sep_0($274,$275).
+(0=0) & (v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0($276,$274)) -> v_sep_length_1054_sep_53_sep_0($274).
+(($277<>0) & (-$277+$278+1=0) & ($279-$280+1=0)) & (v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0($278,$279)) & (v_sep_make_list_1033_sep_33_sep_0($277)) -> v_sep_make_list_1033_sep_33_sep_1_sep_49_sep_0($277,$280).
+(($281=0) & ($282=0)) & (v_sep_make_list_1033_sep_36_sep_0($281)) -> v_sep_make_list_1033_sep_36_sep_1_sep_39_sep_0($281,$282).
+(($281+1<>0) & (-$281+$283-1=0)) & (v_sep_make_list_1033_sep_33_sep_0($283)) -> v_sep_make_list_1033_sep_36_sep_0($281).
+0=0 -> v_sep_make_list_1033_sep_33_sep_0($277).
+
+          |- P[<make_list_1033@33:0>](<make_list_1033@33:0>:int)
+        solution:
+          P[<fail_1556@61:0>]($284:bool) = false
+          P[<length_1054@53:0>]($297:int) = (1 <= $297)
+          P[<<length_1054@53:2>@56:0>]($287:int,$289:int) = ((1 + $287) <= 0)
+          P[<make_list_1033@33:0>]($305:int) = true
+          P[<<make_list_1033@33:1>@49:0>]($292:int,$294:int) = (1 <= $294)
+          P[<make_list_1033@36:0>]($308:int) = true
+          P[<<make_list_1033@36:1>@39:0>]($300:int,$302:int) = (0 <= $302)
+        
+      end HcSolver.solve_ub(43378)[4] (0.040994 sec.)
+      begin HcSolver.check_validity(43672)[4]
+        input:
+          P[<fail_1556@61:0>](<fail_1556@61:0>:bool)|- bot
+          
+          P[<<make_list_1033@33:1>@49:0>](<f_main_1551@58:0>:int,<f_main_1551@58:1>:int),
+          P[<<length_1054@53:2>@56:0>](<f_main_1551@58:1>:int,<f_main_1551@58:3>:int),
+          ((<f_main_1551@58:3> <> <f_main_1551@58:0>) && <fail_1556@61:0>)
+          |- P[<fail_1556@61:0>](<fail_1556@61:0>:bool)
+          
+          P[<length_1054@53:0>](<length_1054@53:0>:int), ((<length_1054@53:0> = 0) && (<<length_1054@53:2>@56:0> = 0))
+          |- P[<<length_1054@53:2>@56:0>](<length_1054@53:0>:int,<<length_1054@53:2>@56:0>:int)
+          
+          P[<<make_list_1033@33:1>@49:0>](<f_main_1550@51:0>:int,<length_1054@53:0>:int)|- P[<length_1054@53:0>](
+          <length_1054@53:0>:int)
+          
+          P[<make_list_1033@33:0>](<make_list_1033@33:0>:int),
+          P[<<make_list_1033@36:1>@39:0>]((-1 + <make_list_1033@33:0>):int,(
+                                          -1 + <<make_list_1033@33:1>@49:0>):int), (
+          <make_list_1033@33:0> <> 0)
+          |- P[<<make_list_1033@33:1>@49:0>](<make_list_1033@33:0>:int,
+                                             <<make_list_1033@33:1>@49:0>:int)
+          
+          P[<make_list_1033@36:0>](<make_list_1033@36:0>:int),
+          ((<make_list_1033@36:0> = 0) && (<<make_list_1033@36:1>@39:0> = 0))
+          |- P[<<make_list_1033@36:1>@39:0>](<make_list_1033@36:0>:int,
+                                             <<make_list_1033@36:1>@39:0>:int)
+          
+          P[<make_list_1033@33:0>]((1 + <make_list_1033@36:0>):int), (
+          (1 + <make_list_1033@36:0>) <> 0) |- P[<make_list_1033@36:0>](
+          <make_list_1033@36:0>:int)
+          
+          |- P[<make_list_1033@33:0>](<make_list_1033@33:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(43672)[4] (0.002999 sec.)
+      solution:
+        P[<fail_1556@61:0>]($284:bool) = false
+        P[<length_1054@53:0>]($297:int) = (1 <= $297)
+        P[<<length_1054@53:2>@56:0>]($287:int,$289:int) = ((1 + $287) <= 0)
+        P[<make_list_1033@33:0>]($305:int) = true
+        P[<<make_list_1033@33:1>@49:0>]($292:int,$294:int) = (1 <= $294)
+        P[<make_list_1033@36:0>]($308:int) = true
+        P[<<make_list_1033@36:1>@39:0>]($300:int,$302:int) = (0 <= $302)
+    end YhornInterface.solve(43377)[3] (0.044993 sec.)
+    
+  end RefTypeInfer.infer_etrs(12198)[2] (0.231964 sec.)
+  refinement types:
+    main_1544: X
+    f_1552: v1:int -> X
+    main_1035: v1:int -> (v2:unit -> X) -> X
+    make_list_1033: v1:int -> (v2:{v2:int | (v1 = v2)} -> (v3:int -> (v4:int -> X) -> X) -> X) -> X
+    make_list_1033: v1:int -> (v2:{v2:int | (v1 = v2)} -> (v3:int -> (v4:int -> X) -> X) -> X) -> X
+    f_make_list_1549: v1:int ->
+                      (v2:int -> (v3:int -> (v4:int -> X) -> X) -> X) -> v8:int -> (v9:int -> (v10:int -> X) -> X) -> X
+    cons_make_list_1088: v1:int ->
+                         v2:int ->
+                         v3:int ->
+                         (v4:int -> (v5:int -> X) -> X) -> (v8:int -> (v9:int -> (v10:int -> X) -> X) -> X) -> X
+    f_main_1550: v1:int -> (v2:unit -> X) -> v4:int -> (v5:int -> (v6:int -> X) -> X) -> X
+    length_1054: v1:int -> (v2:int -> (v3:int -> X) -> X) -> (v6:{v6:int | (v1 = v6)} -> X) -> X
+    f_main_1551: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1556: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    br_length_1554: var199:bool -> var198:int -> (var197:int -> (var196:int -> X) -> X) -> (var193:int -> X) -> X
+    f_1553: var202:int -> var201:unit -> X
+    f_cons_make_list_1548: var213:int ->
+                           var212:int ->
+                           var211:int -> (var210:int -> (var209:int -> X) -> X) -> var206:int -> (var205:int -> X) -> X
+    f_length_1545: var222:int -> (var221:int -> (var220:int -> X) -> X) -> var217:int -> (var216:int -> X) -> X
+    f_length_1546: var227:int -> (var226:int -> X) -> var224:int -> X
+    f_make_list_1547: var232:int -> var231:int -> (var230:int -> X) -> X
+  abstraction types:
+    main_1544: X
+    f_1552: v1:int -> X
+    main_1035: v1:int -> (v2:unit -> X) -> X
+    make_list_1033: var233:int ->
+                    (var234:int[var234 -> (var233 = var234)] -> (var235:int -> (var236:int -> X) -> X) -> X) -> X
+    f_make_list_1549: v1:int ->
+                      (v2:int -> (v3:int -> (v4:int -> X) -> X) -> X) -> v8:int -> (v9:int -> (v10:int -> X) -> X) -> X
+    cons_make_list_1088: v1:int ->
+                         v2:int ->
+                         v3:int ->
+                         (v4:int -> (v5:int -> X) -> X) -> (v8:int -> (v9:int -> (v10:int -> X) -> X) -> X) -> X
+    f_main_1550: v1:int -> (v2:unit -> X) -> v4:int -> (v5:int -> (v6:int -> X) -> X) -> X
+    length_1054: v1:int -> (v2:int -> (v3:int -> X) -> X) -> (v6:int[v6 -> (
+                                                                    v1 = v6)] -> X) -> X
+    f_main_1551: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1556: v1:bool -> (v2:unit -> X) -> X
+    br_length_1554: var199:bool -> var198:int -> (var197:int -> (var196:int -> X) -> X) -> (var193:int -> X) -> X
+    f_1553: var202:int -> var201:unit -> X
+    f_cons_make_list_1548: var213:int ->
+                           var212:int ->
+                           var211:int -> (var210:int -> (var209:int -> X) -> X) -> var206:int -> (var205:int -> X) -> X
+    f_length_1545: var222:int -> (var221:int -> (var220:int -> X) -> X) -> var217:int -> (var216:int -> X) -> X
+    f_length_1546: var227:int -> (var226:int -> X) -> var224:int -> X
+    f_make_list_1547: var232:int -> var231:int -> (var230:int -> X) -> X
+  
+end AbsTypeInfer.refine(12197)[1] (0.236963 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 0; 0; 0; 0; 0
+
+Program with abstraction types (CEGAR-cycle 2)::
+Main: main_1544
+  main_1544 -> (rand_int f_1552)
+  br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 when b_1555 ->
+      (length_1054 (xs1_1031 - 1) (f_length_1545 xs1_1031 xs2_1031) (f_length_1546 xs1_1031 k_length_1148))
+  br_length_1554 b_1555 xs1_1031 xs2_1031 k_length_1148 when (not b_1555) -> _|_
+  cons_make_list_1088 n_1034 x_1086 xs1_1087 xs2_1087 k_make_list_cons_make_list_1313 ->
+      (k_make_list_cons_make_list_1313 (xs1_1087 + 1) (f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087))
+  f_1552 x_1486 -> (main_1035 x_1486 (f_1553 x_1486))
+  f_1553 x_1486 x_1483 -> end
+  f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 when (
+      i_1085 = 0) -> (k_make_list_cons_make_list_1328 x_1086)
+  f_cons_make_list_1548 n_1034 x_1086 xs1_1087 xs2_1087 i_1085 k_make_list_cons_make_list_1328 when (
+      not (i_1085 = 0)) -> (xs2_1087 (i_1085 - 1) k_make_list_cons_make_list_1328)
+  f_length_1545 xs1_1031 xs2_1031 x_1059 k_length_xs'_1181 -> (xs2_1031 (x_1059 + 1) k_length_xs'_1181)
+  f_length_1546 xs1_1031 k_length_1148 x_1196 -> (k_length_1148 (1 + x_1196))
+  f_main_1550 n_1036 k_main_1412 x1_1418 x2_1418 ->
+      (length_1054 x1_1418 x2_1418 (f_main_1551 n_1036 x1_1418 k_main_1412))
+  f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 when (x_1446 = n_1036) -> (k_main_1412 ())
+  f_main_1551 n_1036 x1_1418 k_main_1412 x_1446 when (not (x_1446 = n_1036)) -> (fail_1556 true k_main_1412)
+  f_make_list_1547 n_1034 x_1092 k_make_list_1266 -> _|_
+  f_make_list_1549 n_1034 k_make_list_1254 x1_1391 x2_1391 ->
+      (cons_make_list_1088 n_1034 n_1034 x1_1391 x2_1391 k_make_list_1254)
+  fail_1556 b k -> {fail} => (k ())
+  length_1054 xs1_1031 xs2_1031 k_length_1148 when (xs1_1031 = 0) -> (k_length_1148 0)
+  length_1054 xs1_1031 xs2_1031 k_length_1148 when (not (xs1_1031 = 0)) ->
+      (br_length_1554 (1 <= xs1_1031) xs1_1031 xs2_1031 k_length_1148)
+  main_1035 n_1036 k_main_1412 -> (make_list_1033 n_1036 (f_main_1550 n_1036 k_main_1412))
+  make_list_1033 n_1034 k_make_list_1254 when (n_1034 = 0) -> (k_make_list_1254 0 (f_make_list_1547 n_1034))
+  make_list_1033 n_1034 k_make_list_1254 when (not (n_1034 = 0)) ->
+      (make_list_1033 (n_1034 - 1) (f_make_list_1549 n_1034 k_make_list_1254))
+Types:
+  main_1544 : X
+  fail_1556 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  length_1054 : (x_1:int -> (int -> (int -> X) -> X) -> (x_9:int[x_1 = x_9; x_9 = 0] -> X) -> X)
+  make_list_1033 : (x_1:int -> (x_3:int[x_1 = x_3; x_1 = 0] -> (int -> (int -> X) -> X) -> X) -> X)
+  
+(2-1) Abstracting ... DONE!
+
+(2-2) Checking HORS ... DONE!
+
+Safe!
+
+Refinement Types:
+  length: (x_1:(Top list) -> {x_2:int | fst x_1 = x_2})
+  make_list: (x_1:int -> (Top list|x_2:x_1 = x_2|))
+
+cycles: 2
+total: 0.667 sec
+  abst: 0.014 sec
+  mc: 0.026 sec
+  refine: 0.414 sec
+    exparam: 0.033 sec

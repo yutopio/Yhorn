@@ -1,0 +1,898 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -gchi dotprod2.ml
+
+parsed::
+ let update_1030 a_1031 i_1032 x_1033 j_1034 = if j_1034 = i_1032 then
+                                                 x_1033
+                                               else
+                                                 a_1031 j_1034 
+ in
+ let rec dotprod_1035 v1_1036 v2_1037 n_1038 i_1039 sum_1040 =
+   if i_1039 > n_1038 then
+     sum_1040
+   else
+     let u_1129 = if 0 <= i_1039 && i_1039 <= n_1038 then
+                    ()
+                  else
+                    {fail} () 
+     in
+       dotprod_1035 v1_1036 v2_1037 n_1038 (i_1039 + 1) (sum_1040 + (v1_1036 i_1039 * v2_1037 i_1039)) 
+ in
+ let main_1041 i_1042 n_1043 =
+   let v1_1044 i_1045 = 0 
+   in
+   let v2_1046 i_1047 = 0 
+   in
+   let u_1155 = dotprod_1035 v1_1044 v2_1046 n_1043 0 0 
+   in
+     () 
+ in
+   ()
+
+set_target::
+ let update_1030 a_1031 i_1032 x_1033 j_1034 = if j_1034 = i_1032 then
+                                                 x_1033
+                                               else
+                                                 a_1031 j_1034 
+ in
+ let rec dotprod_1035 v1_1036 v2_1037 n_1038 i_1039 sum_1040 =
+   if i_1039 > n_1038 then
+     sum_1040
+   else
+     let u_1129 = if 0 <= i_1039 && i_1039 <= n_1038 then
+                    ()
+                  else
+                    {fail} () 
+     in
+       dotprod_1035 v1_1036 v2_1037 n_1038 (i_1039 + 1) (sum_1040 + (v1_1036 i_1039 * v2_1037 i_1039)) 
+ in
+ let main_1041 i_1042 n_1043 =
+   let v1_1044 i_1045 = 0 
+   in
+   let v2_1046 i_1047 = 0 
+   in
+   let u_1155 = dotprod_1035 v1_1044 v2_1046 n_1043 0 0 
+   in
+     () 
+ in
+ let main_1158 = let arg1_1156 = () 
+                 in
+                 let arg2_1157 = rand_int () 
+                 in
+                   main_1041 arg1_1156 arg2_1157 
+ in
+   ()
+
+copy_poly::
+ let update_1030 (a_1031:(unit -> unit)) (i_1032:unit) (x_1033:unit) (j_1034:unit) =
+   if j_1034 = i_1032 then
+     x_1033
+   else
+     a_1031 j_1034 
+ in
+ let rec dotprod_1035 (v1_1036:(int -> int)) (v2_1037:(int -> int)) (n_1038:int) (i_1039:int) (sum_1040:int) =
+   if i_1039 > n_1038 then
+     sum_1040
+   else
+     let u_1129 = if 0 <= i_1039 && i_1039 <= n_1038 then
+                    ()
+                  else
+                    {fail} () 
+     in
+       dotprod_1035 v1_1036 v2_1037 n_1038 (i_1039 + 1) (sum_1040 + (v1_1036 i_1039 * v2_1037 i_1039)) 
+ in
+ let main_1041 (i_1042:unit) (n_1043:int) =
+   let v1_1160 (i_1045:int) = 0 
+   in
+   let v2_1159 (i_1047:int) = 0 
+   in
+   let u_1155 = dotprod_1035 v1_1160 v2_1159 n_1043 0 0 
+   in
+     () 
+ in
+ let main_1158 = let arg1_1156 = () 
+                 in
+                 let arg2_1157 = rand_int () 
+                 in
+                   main_1041 arg1_1156 arg2_1157 
+ in
+   ()
+
+CPS::
+ let update_1030
+   (a_1031:(unit -> ((unit -> X) -> X))) (i_1032:unit) (x_1033:unit) (j_1034:unit) (k_update_1206:(
+   unit -> X)) = if j_1034 = i_1032 then
+                   k_update_1206 x_1033
+                 else
+                   a_1031 j_1034 k_update_1206 
+ in
+ let rec dotprod_1035
+   (v1_1036:(int -> ((int -> X) -> X))) (v2_1037:(int -> ((int -> X) -> X))) (n_1038:int) (i_1039:int) (sum_1040:int) (k_dotprod_1270:(
+   int -> X)) =
+   if i_1039 > n_1038 then
+     k_dotprod_1270 sum_1040
+   else
+     let k_dotprod_u_1287 (x_1273:unit) =
+       v1_1036 i_1039
+         (fun x_1314 ->
+            v2_1037 i_1039
+              (fun x_1315 ->
+                 dotprod_1035 v1_1036 v2_1037 n_1038 (i_1039 + 1) (sum_1040 + (x_1314 * x_1315)) k_dotprod_1270)) 
+     in
+     let k_dotprod_u_1276 (b_1288:bool) = if b_1288 then
+                                            k_dotprod_u_1287 ()
+                                          else
+                                            {|fail|} () k_dotprod_u_1287 
+     in
+       if 0 <= i_1039 then
+         k_dotprod_u_1276 (i_1039 <= n_1038)
+       else
+         k_dotprod_u_1276 false 
+ in
+ let main_1041 (i_1042:unit) (n_1043:int) (k_main_1363:(unit -> X)) =
+   let v1_1160 (i_1045:int) (k_main_v1_1377:(int -> X)) = k_main_v1_1377 0 
+   in
+   let v2_1159 (i_1047:int) (k_main_v2_1391:(int -> X)) = k_main_v2_1391 0 
+   in
+     dotprod_1035 v1_1160 v2_1159 n_1043 0 0 (fun x_1394 -> k_main_1363 ()) 
+ in
+   rand_int_cps () (fun x_1429 -> main_1041 () x_1429 (fun x_1423 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1455
+  main_1455 -> (rand_int f_1459)
+  br_dotprod_1461 b_1462 v1_1036 v2_1037 n_1038 i_1039 sum_1040 k_dotprod_1270 when b_1462 ->
+      (k_dotprod_u_1276 i_1039 n_1038 sum_1040 k_dotprod_1270 v1_1036 v2_1037 (i_1039 <= n_1038))
+  br_dotprod_1461 b_1462 v1_1036 v2_1037 n_1038 i_1039 sum_1040 k_dotprod_1270 when (
+      not b_1462) -> (k_dotprod_u_1276 i_1039 n_1038 sum_1040 k_dotprod_1270 v1_1036 v2_1037 false)
+  dotprod_1035 v1_1036 v2_1037 n_1038 i_1039 sum_1040 k_dotprod_1270 when (
+      i_1039 > n_1038) -> (k_dotprod_1270 sum_1040)
+  dotprod_1035 v1_1036 v2_1037 n_1038 i_1039 sum_1040 k_dotprod_1270 when (
+      not (i_1039 > n_1038)) -> (br_dotprod_1461 (0 <= i_1039) v1_1036 v2_1037 n_1038 i_1039 sum_1040 k_dotprod_1270)
+  f_1459 x_1429 -> (main_1041 () x_1429 (f_1460 x_1429))
+  f_1460 x_1429 x_1423 -> end
+  f_k_dotprod_u_1456 i_1039 n_1038 sum_1040 x_1273 k_dotprod_1270 v1_1036 v2_1037 x_1314 ->
+      (v2_1037 i_1039 (f_k_dotprod_u_1457 i_1039 n_1038 sum_1040 x_1273 x_1314 k_dotprod_1270 v1_1036 v2_1037))
+  f_k_dotprod_u_1457 i_1039 n_1038 sum_1040 x_1273 x_1314 k_dotprod_1270 v1_1036 v2_1037 x_1315 ->
+      (dotprod_1035 v1_1036 v2_1037 n_1038 (i_1039 + 1) (sum_1040 + (x_1314 * x_1315)) k_dotprod_1270)
+  f_main_1458 i_1042 n_1043 k_main_1363 x_1394 -> (k_main_1363 ())
+  fail_1463 b k -> {fail} => (k ())
+  k_dotprod_u_1276 i_1039 n_1038 sum_1040 k_dotprod_1270 v1_1036 v2_1037 b_1288 when b_1288 ->
+      (k_dotprod_u_1287 i_1039 n_1038 sum_1040 k_dotprod_1270 v1_1036 v2_1037 ())
+  k_dotprod_u_1276 i_1039 n_1038 sum_1040 k_dotprod_1270 v1_1036 v2_1037 b_1288 when (
+      not b_1288) -> (fail_1463 true (k_dotprod_u_1287 i_1039 n_1038 sum_1040 k_dotprod_1270 v1_1036 v2_1037))
+  k_dotprod_u_1287 i_1039 n_1038 sum_1040 k_dotprod_1270 v1_1036 v2_1037 x_1273 ->
+      (v1_1036 i_1039 (f_k_dotprod_u_1456 i_1039 n_1038 sum_1040 x_1273 k_dotprod_1270 v1_1036 v2_1037))
+  main_1041 i_1042 n_1043 k_main_1363 ->
+      (dotprod_1035 (v1_1160 i_1042 n_1043) (v2_1159 i_1042 n_1043) n_1043 0 0 (f_main_1458 i_1042 n_1043 k_main_1363))
+  update_1030 a_1031 i_1032 x_1033 j_1034 k_update_1206 when (= j_1034 i_1032) -> (k_update_1206 x_1033)
+  update_1030 a_1031 i_1032 x_1033 j_1034 k_update_1206 when (not (= j_1034 i_1032)) -> (a_1031 j_1034 k_update_1206)
+  v1_1160 i_1042 n_1043 i_1045 k_main_v1_1377 -> (k_main_v1_1377 0)
+  v2_1159 i_1042 n_1043 i_1047 k_main_v2_1391 -> (k_main_v2_1391 0)
+Types:
+  main_1455 : X
+  dotprod_1035 : ((int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> int -> int -> (int -> X) -> X)
+  fail_1463 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1455 ... --> 
+  f_1459 ... --> 
+  main_1041 ... --> 
+  dotprod_1035 [2/2] ... --> 
+  br_dotprod_1461 [2/2] ... --> 
+  k_dotprod_u_1276 [2/2] ... --> 
+  fail_1463 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 1; 1; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(108)[1]
+  program:
+    main_1455  | true = ((Random.int 0) f_1459)
+    br_dotprod_1461 b_1462 v1_1036 v2_1037 n_1038 i_1039 sum_1040 k_dotprod_1270 | b_1462 = (
+    k_dotprod_u_1276 i_1039
+                     n_1038
+                     sum_1040
+                     k_dotprod_1270
+                     v1_1036
+                     v2_1037
+                     (i_1039 <= n_1038))
+    br_dotprod_1461 b_1462 v1_1036 v2_1037 n_1038 i_1039 sum_1040 k_dotprod_1270 | (
+    not b_1462) = (k_dotprod_u_1276 i_1039
+                                    n_1038
+                                    sum_1040
+                                    k_dotprod_1270
+                                    v1_1036
+                                    v2_1037
+                                    false)
+    dotprod_1035 v1_1036 v2_1037 n_1038 i_1039 sum_1040 k_dotprod_1270 | (
+    i_1039 > n_1038) = (k_dotprod_1270 sum_1040)
+    dotprod_1035 v1_1036 v2_1037 n_1038 i_1039 sum_1040 k_dotprod_1270 | (
+    not (i_1039 > n_1038)) = (br_dotprod_1461 (0 <= i_1039)
+                                              v1_1036
+                                              v2_1037
+                                              n_1038
+                                              i_1039
+                                              sum_1040
+                                              k_dotprod_1270)
+    f_1459 x_1429 | true = (main_1041 ()
+                                      x_1429
+                                      (f_1460 x_1429))
+    f_1460 x_1429 x_1423 | true = end
+    f_k_dotprod_u_1456 i_1039 n_1038 sum_1040 x_1273 k_dotprod_1270 v1_1036 v2_1037 x_1314 | true = (
+    v2_1037 i_1039
+            (f_k_dotprod_u_1457 i_1039
+                                n_1038
+                                sum_1040
+                                x_1273
+                                x_1314
+                                k_dotprod_1270
+                                v1_1036
+                                v2_1037))
+    f_k_dotprod_u_1457 i_1039 n_1038 sum_1040 x_1273 x_1314 k_dotprod_1270 v1_1036 v2_1037 x_1315 | true = (
+    dotprod_1035 v1_1036
+                 v2_1037
+                 n_1038
+                 (i_1039 + 1)
+                 (sum_1040 + (x_1314 * x_1315))
+                 k_dotprod_1270)
+    f_main_1458 i_1042 n_1043 k_main_1363 x_1394 | true = (k_main_1363 ())
+    fail_1463 b k | true = (fail ())
+    k_dotprod_u_1276 i_1039 n_1038 sum_1040 k_dotprod_1270 v1_1036 v2_1037 b_1288 | b_1288 = (
+    k_dotprod_u_1287 i_1039
+                     n_1038
+                     sum_1040
+                     k_dotprod_1270
+                     v1_1036
+                     v2_1037
+                     ())
+    k_dotprod_u_1276 i_1039 n_1038 sum_1040 k_dotprod_1270 v1_1036 v2_1037 b_1288 | (
+    not b_1288) = (fail_1463 true
+                             (k_dotprod_u_1287 i_1039
+                                               n_1038
+                                               sum_1040
+                                               k_dotprod_1270
+                                               v1_1036
+                                               v2_1037))
+    k_dotprod_u_1287 i_1039 n_1038 sum_1040 k_dotprod_1270 v1_1036 v2_1037 x_1273 | true = (
+    v1_1036 i_1039
+            (f_k_dotprod_u_1456 i_1039
+                                n_1038
+                                sum_1040
+                                x_1273
+                                k_dotprod_1270
+                                v1_1036
+                                v2_1037))
+    main_1041 i_1042 n_1043 k_main_1363 | true = (dotprod_1035
+                                                    (v1_1160 i_1042
+                                                             n_1043)
+                                                    (v2_1159 i_1042
+                                                             n_1043)
+                                                    n_1043
+                                                    0
+                                                    0
+                                                    (f_main_1458 i_1042
+                                                                 n_1043
+                                                                 k_main_1363))
+    update_1030 a_1031 i_1032 x_1033 j_1034 k_update_1206 | (j_1034 = i_1032) = (
+    k_update_1206 x_1033)
+    update_1030 a_1031 i_1032 x_1033 j_1034 k_update_1206 | (not (j_1034 = i_1032)) = (
+    a_1031 j_1034
+           k_update_1206)
+    v1_1160 i_1042 n_1043 i_1045 k_main_v1_1377 | true = (k_main_v1_1377 0)
+    v2_1159 i_1042 n_1043 i_1047 k_main_v2_1391 | true = (k_main_v2_1391 0)
+    main_1455:X
+    br_dotprod_1461:bool ->
+                    (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> int -> int -> (int -> X) -> X
+    dotprod_1035:(int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> int -> int -> (int -> X) -> X
+    f_1459:int -> X
+    f_1460:int -> unit -> X
+    f_k_dotprod_u_1456:int ->
+                       int ->
+                       int -> unit -> (int -> X) -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> X
+    f_k_dotprod_u_1457:int ->
+                       int ->
+                       int ->
+                       unit -> int -> (int -> X) -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> int -> X
+    f_main_1458:unit -> int -> (unit -> X) -> int -> X
+    fail_1463:bool -> (unit -> X) -> X
+    k_dotprod_u_1276:int ->
+                     int -> int -> (int -> X) -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> bool -> X
+    k_dotprod_u_1287:int ->
+                     int -> int -> (int -> X) -> (int -> (int -> X) -> X) -> (int -> (int -> X) -> X) -> unit -> X
+    main_1041:unit -> int -> (unit -> X) -> X
+    update_1030:(unit -> (unit -> X) -> X) -> unit -> unit -> unit -> (unit -> X) -> X
+    v1_1160:unit -> int -> int -> (int -> X) -> X
+    v2_1159:unit -> int -> int -> (int -> X) -> X
+  inlined functions: br_dotprod_1461,f_1459,f_1460,f_k_dotprod_u_1456,f_k_dotprod_u_1457,f_main_1458,k_dotprod_u_1276,k_dotprod_u_1287,main_1041,update_1030,v1_1160,v2_1159
+  counterexample: 0:0:0:1:1:1:0
+  error traces:
+    [true.nop(<f_1459@4:0> = var2)
+     [true.((<main_1041@6:0> = ()) && (<main_1041@6:1> = <f_1459@4:0>))
+      [true.((<dotprod_1035@8:2> = <main_1041@6:1>) && ((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0)))
+       [(not (<dotprod_1035@8:3> > <dotprod_1035@8:2>)).
+        ((<br_dotprod_1461@11:0> = (0 <= <dotprod_1035@8:3>)) &&
+         ((<br_dotprod_1461@11:3> = <dotprod_1035@8:2>) &&
+          ((<br_dotprod_1461@11:4> = <dotprod_1035@8:3>) && (<br_dotprod_1461@11:5> = <dotprod_1035@8:4>))))
+        [(not <br_dotprod_1461@11:0>).
+         ((<k_dotprod_u_1276@14:0> = <br_dotprod_1461@11:4>) &&
+          ((<k_dotprod_u_1276@14:1> = <br_dotprod_1461@11:3>) &&
+           ((<k_dotprod_u_1276@14:2> = <br_dotprod_1461@11:5>) && (<k_dotprod_u_1276@14:6> = false))))
+         [(not <k_dotprod_u_1276@14:6>).(<fail_1463@17:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(109)[2]
+    horn clauses:
+      P[<fail_1463@17:0>](<fail_1463@17:0>:bool)|- bot
+      
+      P[<k_dotprod_u_1276@14:6>](<k_dotprod_u_1276@14:0>:int,<k_dotprod_u_1276@14:1>:int,<k_dotprod_u_1276@14:2>:int,false:bool),
+      <fail_1463@17:0> |- P[<fail_1463@17:0>](<fail_1463@17:0>:bool)
+      
+      P[<br_dotprod_1461@11:5>](false:bool,<k_dotprod_u_1276@14:1>:int,<k_dotprod_u_1276@14:0>:int,<k_dotprod_u_1276@14:2>:int),
+      (not <k_dotprod_u_1276@14:6>)
+      |- P[<k_dotprod_u_1276@14:6>](<k_dotprod_u_1276@14:0>:int,<k_dotprod_u_1276@14:1>:int,
+                                    <k_dotprod_u_1276@14:2>:int,<k_dotprod_u_1276@14:6>:bool)
+      
+      P[<dotprod_1035@8:4>](<br_dotprod_1461@11:3>:int,<br_dotprod_1461@11:4>:int,<br_dotprod_1461@11:5>:int),
+      ((<br_dotprod_1461@11:4> <= <br_dotprod_1461@11:3>) && (<br_dotprod_1461@11:0> = (0 <= <br_dotprod_1461@11:4>)))
+      |- P[<br_dotprod_1461@11:5>](<br_dotprod_1461@11:0>:bool,<br_dotprod_1461@11:3>:int,
+                                   <br_dotprod_1461@11:4>:int,<br_dotprod_1461@11:5>:int)
+      
+      P[<main_1041@6:1>](<main_1041@6:0>:unit,<dotprod_1035@8:2>:int),
+      ((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+      |- P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,
+                               <dotprod_1035@8:4>:int)
+      
+      P[<f_1459@4:0>](<main_1041@6:1>:int)|- P[<main_1041@6:1>](<main_1041@6:0>:unit,
+                                                                <main_1041@6:1>:int)
+      
+      |- P[<f_1459@4:0>](<f_1459@4:0>:int)
+    call trees:
+      <main_1455@1>
+        <f_1459@4>
+          <main_1041@6>
+            <dotprod_1035@8>
+              <br_dotprod_1461@11>
+                <k_dotprod_u_1276@14>
+                  <fail_1463@17>
+    inlined horn clauses:
+      P[<fail_1463@17:0>](<fail_1463@17:0>:bool)|- bot
+      
+      P[<dotprod_1035@8:4>](<k_dotprod_u_1276@14:1>:int,<k_dotprod_u_1276@14:0>:int,<k_dotprod_u_1276@14:2>:int),
+      ((<k_dotprod_u_1276@14:0> <= <k_dotprod_u_1276@14:1>) && ((0 > <k_dotprod_u_1276@14:0>) && <fail_1463@17:0>))
+      |- P[<fail_1463@17:0>](<fail_1463@17:0>:bool)
+      
+       ((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+      |- P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,
+                               <dotprod_1035@8:4>:int)
+    begin ParamSubstInfer.infer(1219)[3]
+      
+    end ParamSubstInfer.infer(1219)[3] (0.015997 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(1221)[3]
+      
+    end RefTypeInfer.elim_coeffs(1221)[3] (0.000000 sec.)
+    begin GenHcSolver.solve(1398)[3]
+      Horn clauses:
+        P[<fail_1463@17:0>](<fail_1463@17:0>:bool)|- bot
+        
+        P[<dotprod_1035@8:4>](<k_dotprod_u_1276@14:1>:int,<k_dotprod_u_1276@14:0>:int,<k_dotprod_u_1276@14:2>:int),
+        ((<k_dotprod_u_1276@14:0> <= <k_dotprod_u_1276@14:1>) && ((0 > <k_dotprod_u_1276@14:0>) && <fail_1463@17:0>))
+        |- P[<fail_1463@17:0>](<fail_1463@17:0>:bool)
+        
+         ((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+        |- P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,
+                                 <dotprod_1035@8:4>:int)
+      lower bounds:
+        P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,<dotprod_1035@8:4>:int) =
+        ((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+        P[<fail_1463@17:0>](<fail_1463@17:0>:bool) = false
+      upper bounds:
+        P[<fail_1463@17:0>](var4:bool) = true
+      begin GenHcSolver.classify_pids(2012)[4]
+        output:
+          [<fail_1463@17:0>]
+      end GenHcSolver.classify_pids(2012)[4] (0.000000 sec.)
+      lb:false
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(2015)[4]
+        lb:false
+        nub:false
+        lb':false
+        nub':false
+        begin InterpProver.interpolate(2016)[5]
+          begin InterpProver.interpolate_fresh(2017)[6]
+            begin InterpProver.interpolate_log(2018)[7]
+              input1: false
+              input2: false
+              begin InterpProver.interpolate_check(2019)[8]
+                begin InterpProver.interpolate_simplify(2020)[9]
+                  begin InterpProver.interpolate_quick(2033)[10]
+                    
+                  end InterpProver.interpolate_quick(2033)[10] (0.000000 sec.)
+                  begin minimizing # of disjunctions(2037)[10]
+                    input: false
+                    output: false
+                  end minimizing # of disjunctions(2037)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(2020)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(2019)[8] (0.000000 sec.)
+              output: false
+            end InterpProver.interpolate_log(2018)[7] (0.000000 sec.)
+            
+          end InterpProver.interpolate_fresh(2017)[6] (0.000000 sec.)
+          
+        end InterpProver.interpolate(2016)[5] (0.000000 sec.)
+        output:
+          P[<fail_1463@17:0>](<fail_1463@17:0>:bool) = false
+      end ApronInterface.convex_hull_interpolate(2015)[4] (0.000000 sec.)
+      Horn clauses:
+        P[<dotprod_1035@8:4>](<k_dotprod_u_1276@14:1>:int,<k_dotprod_u_1276@14:0>:int,<k_dotprod_u_1276@14:2>:int),
+        ((0 > <k_dotprod_u_1276@14:0>) && (<k_dotprod_u_1276@14:0> <= <k_dotprod_u_1276@14:1>)) |- bot
+        
+         ((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+        |- P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,
+                                 <dotprod_1035@8:4>:int)
+      lower bounds:
+        P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,<dotprod_1035@8:4>:int) =
+        ((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+      upper bounds:
+        P[<dotprod_1035@8:4>](var5:int,var6:int,var7:int) = ((0 <= var6) || (var6 > var5))
+      begin GenHcSolver.classify_pids(3019)[4]
+        output:
+          [<dotprod_1035@8:4>]
+      end GenHcSolver.classify_pids(3019)[4] (0.000000 sec.)
+      lb:((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+      nub:(not ((0 <= <dotprod_1035@8:3>) || (<dotprod_1035@8:3> > <dotprod_1035@8:2>)))
+      begin ApronInterface.convex_hull_interpolate(3022)[4]
+        lb:((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+        nub:(not ((0 <= <dotprod_1035@8:3>) || (<dotprod_1035@8:3> > <dotprod_1035@8:2>)))
+        lb':((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+        nub':(not ((0 <= <dotprod_1035@8:3>) || (<dotprod_1035@8:3> > <dotprod_1035@8:2>)))
+        begin InterpProver.interpolate(3023)[5]
+          begin InterpProver.interpolate_fresh(3024)[6]
+            begin InterpProver.interpolate_log(3025)[7]
+              input1: ((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+              input2: (not ((0 <= <dotprod_1035@8:3>) || (<dotprod_1035@8:3> > <dotprod_1035@8:2>)))
+              begin InterpProver.interpolate_check(3026)[8]
+                begin InterpProver.interpolate_simplify(3027)[9]
+                  begin InterpProver.interpolate_quick(3079)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(3088)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(3089)[12]
+                        begin CsisatInterface.interpolate_csisat_log(3090)[13]
+                          input1: 0 = v_sep_dotprod_1035_sep_8_sep_3
+                          input2: (v_sep_dotprod_1035_sep_8_sep_3 <= v_sep_dotprod_1035_sep_8_sep_2 & (1 + v_sep_dotprod_1035_sep_8_sep_3) <= 0)
+                          begin CsisatInterface.interpolate_csisat_raw(3091)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(3091)[14] (0.000000 sec.)
+                          output: -2*v_sep_dotprod_1035_sep_8_sep_3 <= 0
+                          
+                        end CsisatInterface.interpolate_csisat_log(3090)[13] (0.000000 sec.)
+                        after simplification: -2*v_sep_dotprod_1035_sep_8_sep_3 <= 0
+                        after dnf conversion: ((-2*v_sep_dotprod_1035_sep_8_sep_3 <= 0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(3089)[12] (0.000000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(3088)[11] (0.000000 sec.)
+                    
+                  end InterpProver.interpolate_quick(3079)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(3027)[9] (0.001000 sec.)
+                
+              end InterpProver.interpolate_check(3026)[8] (0.002000 sec.)
+              output: (0 <= <dotprod_1035@8:3>)
+            end InterpProver.interpolate_log(3025)[7] (0.002000 sec.)
+            
+          end InterpProver.interpolate_fresh(3024)[6] (0.002000 sec.)
+          
+        end InterpProver.interpolate(3023)[5] (0.002000 sec.)
+        output:
+          P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,<dotprod_1035@8:4>:int) =
+          (0 <= <dotprod_1035@8:3>)
+      end ApronInterface.convex_hull_interpolate(3022)[4] (0.002000 sec.)
+      begin HcSolver.check_validity(3244)[4]
+        input:
+          P[<fail_1463@17:0>](<fail_1463@17:0>:bool)|- bot
+          
+          P[<dotprod_1035@8:4>](<k_dotprod_u_1276@14:1>:int,<k_dotprod_u_1276@14:0>:int,<k_dotprod_u_1276@14:2>:int),
+          ((<k_dotprod_u_1276@14:0> <= <k_dotprod_u_1276@14:1>) && ((0 > <k_dotprod_u_1276@14:0>) && <fail_1463@17:0>))
+          |- P[<fail_1463@17:0>](<fail_1463@17:0>:bool)
+          
+           ((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+          |- P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,
+                                   <dotprod_1035@8:4>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(3244)[4] (0.000999 sec.)
+      solution:
+        P[<fail_1463@17:0>](<fail_1463@17:0>:bool) = false
+        P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,<dotprod_1035@8:4>:int) =
+        (0 <= <dotprod_1035@8:3>)
+    end GenHcSolver.solve(1398)[3] (0.008998 sec.)
+    begin GenHcSolver.solve(3401)[3]
+      Horn clauses:
+        P[<fail_1463@17:0>](<fail_1463@17:0>:bool)|- bot
+        
+        P[<dotprod_1035@8:4>](<k_dotprod_u_1276@14:1>:int,<k_dotprod_u_1276@14:0>:int,<k_dotprod_u_1276@14:2>:int),
+        ((<k_dotprod_u_1276@14:0> <= <k_dotprod_u_1276@14:1>) && ((0 > <k_dotprod_u_1276@14:0>) && <fail_1463@17:0>))
+        |- P[<fail_1463@17:0>](<fail_1463@17:0>:bool)
+        
+         ((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+        |- P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,
+                                 <dotprod_1035@8:4>:int)
+      lower bounds:
+        P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,<dotprod_1035@8:4>:int) =
+        ((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+        P[<fail_1463@17:0>](<fail_1463@17:0>:bool) = false
+      upper bounds:
+        P[<fail_1463@17:0>](var9:bool) = true
+      begin GenHcSolver.classify_pids(4015)[4]
+        output:
+          [<fail_1463@17:0>]
+      end GenHcSolver.classify_pids(4015)[4] (0.000000 sec.)
+      lb:false
+      nub:false
+      begin ApronInterface.convex_hull_interpolate(4018)[4]
+        lb:false
+        nub:false
+        begin ExtFormula.Formula.case_analysis_boolean(4021)[5]
+          ts: false
+          
+        end ExtFormula.Formula.case_analysis_boolean(4021)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(4026)[5]
+          ts: false
+          
+        end ExtFormula.Formula.case_analysis_boolean(4026)[5] (0.000000 sec.)
+        lb':(-1 >= 0)
+        nub':(-1 >= 0)
+        begin InterpProver.interpolate(4029)[5]
+          begin InterpProver.interpolate_fresh(4030)[6]
+            begin InterpProver.interpolate_log(4031)[7]
+              input1: (-1 >= 0)
+              input2: (-1 >= 0)
+              begin InterpProver.interpolate_check(4032)[8]
+                begin InterpProver.interpolate_simplify(4033)[9]
+                  begin InterpProver.interpolate_quick(4048)[10]
+                    
+                  end InterpProver.interpolate_quick(4048)[10] (0.000000 sec.)
+                  begin minimizing # of disjunctions(4052)[10]
+                    input: false
+                    output: false
+                  end minimizing # of disjunctions(4052)[10] (0.000000 sec.)
+                  
+                end InterpProver.interpolate_simplify(4033)[9] (0.000000 sec.)
+                
+              end InterpProver.interpolate_check(4032)[8] (0.001000 sec.)
+              output: false
+            end InterpProver.interpolate_log(4031)[7] (0.001000 sec.)
+            
+          end InterpProver.interpolate_fresh(4030)[6] (0.001000 sec.)
+          
+        end InterpProver.interpolate(4029)[5] (0.001000 sec.)
+        output:
+          P[<fail_1463@17:0>](<fail_1463@17:0>:bool) = false
+      end ApronInterface.convex_hull_interpolate(4018)[4] (0.001000 sec.)
+      Horn clauses:
+        P[<dotprod_1035@8:4>](<k_dotprod_u_1276@14:1>:int,<k_dotprod_u_1276@14:0>:int,<k_dotprod_u_1276@14:2>:int),
+        ((0 > <k_dotprod_u_1276@14:0>) && (<k_dotprod_u_1276@14:0> <= <k_dotprod_u_1276@14:1>)) |- bot
+        
+         ((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+        |- P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,
+                                 <dotprod_1035@8:4>:int)
+      lower bounds:
+        P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,<dotprod_1035@8:4>:int) =
+        ((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+      upper bounds:
+        P[<dotprod_1035@8:4>](var10:int,var11:int,var12:int) = ((0 <= var11) || (var11 > var10))
+      begin GenHcSolver.classify_pids(5041)[4]
+        output:
+          [<dotprod_1035@8:4>]
+      end GenHcSolver.classify_pids(5041)[4] (0.000000 sec.)
+      lb:((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+      nub:(not ((0 <= <dotprod_1035@8:3>) || (<dotprod_1035@8:3> > <dotprod_1035@8:2>)))
+      begin ApronInterface.convex_hull_interpolate(5044)[4]
+        lb:((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+        nub:(not ((0 <= <dotprod_1035@8:3>) || (<dotprod_1035@8:3> > <dotprod_1035@8:2>)))
+        begin ExtFormula.Formula.case_analysis_boolean(5052)[5]
+          ts: ((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+          
+        end ExtFormula.Formula.case_analysis_boolean(5052)[5] (0.000000 sec.)
+        begin ExtFormula.Formula.case_analysis_boolean(5071)[5]
+          ts: ((0 > <dotprod_1035@8:3>) && (<dotprod_1035@8:3> <= <dotprod_1035@8:2>))
+          
+        end ExtFormula.Formula.case_analysis_boolean(5071)[5] (0.000000 sec.)
+        lb':((<dotprod_1035@8:4> = 0) && (<dotprod_1035@8:3> = 0))
+        nub':(((-1 + (-1 * <dotprod_1035@8:3>)) >= 0) && (((-1 * <dotprod_1035@8:3>) + <dotprod_1035@8:2>) >= 0))
+        begin InterpProver.interpolate(5077)[5]
+          begin InterpProver.interpolate_fresh(5078)[6]
+            begin InterpProver.interpolate_log(5079)[7]
+              input1: ((<dotprod_1035@8:4> = 0) && (<dotprod_1035@8:3> = 0))
+              input2: (((-1 + (-1 * <dotprod_1035@8:3>)) >= 0) &&
+                       (((-1 * <dotprod_1035@8:3>) + <dotprod_1035@8:2>) >= 0))
+              begin InterpProver.interpolate_check(5080)[8]
+                begin InterpProver.interpolate_simplify(5081)[9]
+                  begin InterpProver.interpolate_quick(5139)[10]
+                    begin CsisatInterface.interpolate_csisat_wrap(5148)[11]
+                      begin CsisatInterface.interpolate_csisat_post_process(5149)[12]
+                        begin CsisatInterface.interpolate_csisat_log(5150)[13]
+                          input1: 0 = v_sep_dotprod_1035_sep_8_sep_3
+                          input2: (v_sep_dotprod_1035_sep_8_sep_3 <= v_sep_dotprod_1035_sep_8_sep_2 & (1 + v_sep_dotprod_1035_sep_8_sep_3) <= 0)
+                          begin CsisatInterface.interpolate_csisat_raw(5151)[14]
+                            
+                          end CsisatInterface.interpolate_csisat_raw(5151)[14] (0.000000 sec.)
+                          output: -2*v_sep_dotprod_1035_sep_8_sep_3 <= 0
+                          
+                        end CsisatInterface.interpolate_csisat_log(5150)[13] (0.000000 sec.)
+                        after simplification: -2*v_sep_dotprod_1035_sep_8_sep_3 <= 0
+                        after dnf conversion: ((-2*v_sep_dotprod_1035_sep_8_sep_3 <= 0))
+                        
+                      end CsisatInterface.interpolate_csisat_post_process(5149)[12] (0.001000 sec.)
+                      
+                    end CsisatInterface.interpolate_csisat_wrap(5148)[11] (0.001000 sec.)
+                    
+                  end InterpProver.interpolate_quick(5139)[10] (0.001000 sec.)
+                  
+                end InterpProver.interpolate_simplify(5081)[9] (0.001000 sec.)
+                
+              end InterpProver.interpolate_check(5080)[8] (0.001000 sec.)
+              output: (0 <= <dotprod_1035@8:3>)
+            end InterpProver.interpolate_log(5079)[7] (0.001000 sec.)
+            
+          end InterpProver.interpolate_fresh(5078)[6] (0.001000 sec.)
+          
+        end InterpProver.interpolate(5077)[5] (0.001000 sec.)
+        output:
+          P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,<dotprod_1035@8:4>:int) =
+          (0 <= <dotprod_1035@8:3>)
+      end ApronInterface.convex_hull_interpolate(5044)[4] (0.002000 sec.)
+      begin HcSolver.check_validity(5306)[4]
+        input:
+          P[<fail_1463@17:0>](<fail_1463@17:0>:bool)|- bot
+          
+          P[<dotprod_1035@8:4>](<k_dotprod_u_1276@14:1>:int,<k_dotprod_u_1276@14:0>:int,<k_dotprod_u_1276@14:2>:int),
+          ((<k_dotprod_u_1276@14:0> <= <k_dotprod_u_1276@14:1>) && ((0 > <k_dotprod_u_1276@14:0>) && <fail_1463@17:0>))
+          |- P[<fail_1463@17:0>](<fail_1463@17:0>:bool)
+          
+           ((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+          |- P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,
+                                   <dotprod_1035@8:4>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(5306)[4] (0.000000 sec.)
+      solution:
+        P[<fail_1463@17:0>](<fail_1463@17:0>:bool) = false
+        P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,<dotprod_1035@8:4>:int) =
+        (0 <= <dotprod_1035@8:3>)
+    end GenHcSolver.solve(3401)[3] (0.012999 sec.)
+    begin YhornInterface.solve(5463)[3]
+      begin HcSolver.solve_ub(5464)[4]
+        encoded:
+          P[<fail_1463@17:0>](<fail_1463@17:0>:int)|- bot
+          
+          P[<dotprod_1035@8:4>](<k_dotprod_u_1276@14:1>:int,<k_dotprod_u_1276@14:0>:int,<k_dotprod_u_1276@14:2>:int),
+          ((<k_dotprod_u_1276@14:0> <= <k_dotprod_u_1276@14:1>) &&
+           ((0 > <k_dotprod_u_1276@14:0>) && (<fail_1463@17:0> = 1))) |- P[<fail_1463@17:0>](
+          <fail_1463@17:0>:int)
+          
+           ((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+          |- P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,
+                                   <dotprod_1035@8:4>:int)
+        input to Yhorn:
+          P[<fail_1463@17:0>](<fail_1463@17:0>:int)|- bot
+          
+          P[<dotprod_1035@8:4>](<k_dotprod_u_1276@14:1>:int,<k_dotprod_u_1276@14:0>:int,<k_dotprod_u_1276@14:2>:int),
+          ((0 > <k_dotprod_u_1276@14:0>) &&
+           ((<k_dotprod_u_1276@14:0> <= <k_dotprod_u_1276@14:1>) && (<fail_1463@17:0> = 1)))
+          |- P[<fail_1463@17:0>](<fail_1463@17:0>:int)
+          
+           ((<dotprod_1035@8:4> = 0) && (<dotprod_1035@8:3> = 0))
+          |- P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,
+                                   <dotprod_1035@8:4>:int)Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1463_sep_17_sep_0($8)) -> 1=0.
+(($8-1=0) & ($9-$10<=0) & (-$9>0)) & (v_sep_dotprod_1035_sep_8_sep_4($10,$9,$11)) -> v_sep_fail_1463_sep_17_sep_0($8).
+($12=0) & ($13=0) -> v_sep_dotprod_1035_sep_8_sep_4($14,$12,$13).
+
+
+v_sep_dotprod_1035_sep_8_sep_4: X
+v_sep_fail_1463_sep_17_sep_0: X
+...
+v_sep_dotprod_1035_sep_8_sep_4: X
+v_sep_fail_1463_sep_17_sep_0: X
+...
+v_sep_dotprod_1035_sep_8_sep_4: X
+v_sep_fail_1463_sep_17_sep_0: X
+...(0=0) & (v_sep_fail_1463_sep_17_sep_0($8)) -> 1=0.
+(($8-1=0) & ($9-$10<=0) & (-$9>0)) & (v_sep_dotprod_1035_sep_8_sep_4($10,$9,$11)) -> v_sep_fail_1463_sep_17_sep_0($8).
+($12=0) & ($13=0) -> v_sep_dotprod_1035_sep_8_sep_4($14,$12,$13).
+
+        solution:
+          P[<dotprod_1035@8:4>]($18:int,$20:int,$22:int) = (0 <= $20)
+          P[<fail_1463@17:0>]($15:bool) = false
+        
+      end HcSolver.solve_ub(5464)[4] (0.007998 sec.)
+      begin HcSolver.check_validity(5585)[4]
+        input:
+          P[<fail_1463@17:0>](<fail_1463@17:0>:bool)|- bot
+          
+          P[<dotprod_1035@8:4>](<k_dotprod_u_1276@14:1>:int,<k_dotprod_u_1276@14:0>:int,<k_dotprod_u_1276@14:2>:int),
+          ((<k_dotprod_u_1276@14:0> <= <k_dotprod_u_1276@14:1>) && ((0 > <k_dotprod_u_1276@14:0>) && <fail_1463@17:0>))
+          |- P[<fail_1463@17:0>](<fail_1463@17:0>:bool)
+          
+           ((<dotprod_1035@8:3> = 0) && (<dotprod_1035@8:4> = 0))
+          |- P[<dotprod_1035@8:4>](<dotprod_1035@8:2>:int,<dotprod_1035@8:3>:int,
+                                   <dotprod_1035@8:4>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(5585)[4] (0.001000 sec.)
+      solution:
+        P[<dotprod_1035@8:4>]($18:int,$20:int,$22:int) = (0 <= $20)
+        P[<fail_1463@17:0>]($15:bool) = false
+    end YhornInterface.solve(5463)[3] (0.008998 sec.)
+    
+  end RefTypeInfer.infer_etrs(109)[2] (0.054991 sec.)
+  refinement types:
+    main_1455: X
+    f_1459: v1:int -> X
+    main_1041: v1:unit -> v2:int -> (v3:unit -> X) -> X
+    dotprod_1035: (v1:int -> (v2:int -> X) -> X) ->
+                  (v5:int -> (v6:int -> X) -> X) ->
+                  v9:int -> v10:int -> v11:{v11:int | (0 <= v10)} -> (v12:int -> X) -> X
+    br_dotprod_1461: v1:bool ->
+                     (v2:int -> (v3:int -> X) -> X) ->
+                     (v6:int -> (v7:int -> X) -> X) -> v10:int -> v11:int -> v12:int -> (v13:int -> X) -> X
+    k_dotprod_u_1276: v1:int ->
+                      v2:int ->
+                      v3:int ->
+                      (v4:int -> X) ->
+                      (v6:int -> (v7:int -> X) -> X) -> (v10:int -> (v11:int -> X) -> X) -> v14:bool -> X
+    fail_1463: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1460: var49:int -> var48:unit -> X
+    f_k_dotprod_u_1456: var65:int ->
+                        var64:int ->
+                        var63:int ->
+                        var62:unit ->
+                        (var61:int -> X) ->
+                        (var59:int -> (var58:int -> X) -> X) -> (var55:int -> (var54:int -> X) -> X) -> var51:int -> X
+    f_k_dotprod_u_1457: var82:int ->
+                        var81:int ->
+                        var80:int ->
+                        var79:unit ->
+                        var78:int ->
+                        (var77:int -> X) ->
+                        (var75:int -> (var74:int -> X) -> X) -> (var71:int -> (var70:int -> X) -> X) -> var67:int -> X
+    f_main_1458: var88:unit -> var87:int -> (var86:unit -> X) -> var84:int -> X
+    k_dotprod_u_1287: var103:int ->
+                      var102:int ->
+                      var101:int ->
+                      (var100:int -> X) ->
+                      (var98:int -> (var97:int -> X) -> X) -> (var94:int -> (var93:int -> X) -> X) -> var90:unit -> X
+    update_1030: (var113:unit -> (var112:unit -> X) -> X) ->
+                 var109:unit -> var108:unit -> var107:unit -> (var106:unit -> X) -> X
+    v1_1160: var119:unit -> var118:int -> var117:int -> (var116:int -> X) -> X
+    v2_1159: var125:unit -> var124:int -> var123:int -> (var122:int -> X) -> X
+  abstraction types:
+    main_1455: X
+    f_1459: v1:int -> X
+    main_1041: v1:unit -> v2:int -> (v3:unit -> X) -> X
+    dotprod_1035: (v1:int -> (v2:int -> X) -> X) ->
+                  (v5:int -> (v6:int -> X) -> X) ->
+                  v9:int -> v10:int -> v11:int[v11 -> (0 <= v10)] -> (v12:int -> X) -> X
+    br_dotprod_1461: v1:bool ->
+                     (v2:int -> (v3:int -> X) -> X) ->
+                     (v6:int -> (v7:int -> X) -> X) -> v10:int -> v11:int -> v12:int -> (v13:int -> X) -> X
+    k_dotprod_u_1276: v1:int ->
+                      v2:int ->
+                      v3:int ->
+                      (v4:int -> X) ->
+                      (v6:int -> (v7:int -> X) -> X) -> (v10:int -> (v11:int -> X) -> X) -> v14:bool -> X
+    fail_1463: v1:bool -> (v2:unit -> X) -> X
+    f_1460: var49:int -> var48:unit -> X
+    f_k_dotprod_u_1456: var65:int ->
+                        var64:int ->
+                        var63:int ->
+                        var62:unit ->
+                        (var61:int -> X) ->
+                        (var59:int -> (var58:int -> X) -> X) -> (var55:int -> (var54:int -> X) -> X) -> var51:int -> X
+    f_k_dotprod_u_1457: var82:int ->
+                        var81:int ->
+                        var80:int ->
+                        var79:unit ->
+                        var78:int ->
+                        (var77:int -> X) ->
+                        (var75:int -> (var74:int -> X) -> X) -> (var71:int -> (var70:int -> X) -> X) -> var67:int -> X
+    f_main_1458: var88:unit -> var87:int -> (var86:unit -> X) -> var84:int -> X
+    k_dotprod_u_1287: var103:int ->
+                      var102:int ->
+                      var101:int ->
+                      (var100:int -> X) ->
+                      (var98:int -> (var97:int -> X) -> X) -> (var94:int -> (var93:int -> X) -> X) -> var90:unit -> X
+    update_1030: (var113:unit -> (var112:unit -> X) -> X) ->
+                 var109:unit -> var108:unit -> var107:unit -> (var106:unit -> X) -> X
+    v1_1160: var119:unit -> var118:int -> var117:int -> (var116:int -> X) -> X
+    v2_1159: var125:unit -> var124:int -> var123:int -> (var122:int -> X) -> X
+  
+end AbsTypeInfer.refine(108)[1] (0.058990 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 1
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1455
+  main_1455 -> (rand_int f_1459)
+  br_dotprod_1461 b_1462 v1_1036 v2_1037 n_1038 i_1039 sum_1040 k_dotprod_1270 when b_1462 ->
+      (k_dotprod_u_1276 i_1039 n_1038 sum_1040 k_dotprod_1270 v1_1036 v2_1037 (i_1039 <= n_1038))
+  br_dotprod_1461 b_1462 v1_1036 v2_1037 n_1038 i_1039 sum_1040 k_dotprod_1270 when (
+      not b_1462) -> (k_dotprod_u_1276 i_1039 n_1038 sum_1040 k_dotprod_1270 v1_1036 v2_1037 false)
+  dotprod_1035 v1_1036 v2_1037 n_1038 i_1039 sum_1040 k_dotprod_1270 when (
+      i_1039 > n_1038) -> (k_dotprod_1270 sum_1040)
+  dotprod_1035 v1_1036 v2_1037 n_1038 i_1039 sum_1040 k_dotprod_1270 when (
+      not (i_1039 > n_1038)) -> (br_dotprod_1461 (0 <= i_1039) v1_1036 v2_1037 n_1038 i_1039 sum_1040 k_dotprod_1270)
+  f_1459 x_1429 -> (main_1041 () x_1429 (f_1460 x_1429))
+  f_1460 x_1429 x_1423 -> end
+  f_k_dotprod_u_1456 i_1039 n_1038 sum_1040 x_1273 k_dotprod_1270 v1_1036 v2_1037 x_1314 ->
+      (v2_1037 i_1039 (f_k_dotprod_u_1457 i_1039 n_1038 sum_1040 x_1273 x_1314 k_dotprod_1270 v1_1036 v2_1037))
+  f_k_dotprod_u_1457 i_1039 n_1038 sum_1040 x_1273 x_1314 k_dotprod_1270 v1_1036 v2_1037 x_1315 ->
+      (dotprod_1035 v1_1036 v2_1037 n_1038 (i_1039 + 1) (sum_1040 + (x_1314 * x_1315)) k_dotprod_1270)
+  f_main_1458 i_1042 n_1043 k_main_1363 x_1394 -> (k_main_1363 ())
+  fail_1463 b k -> {fail} => (k ())
+  k_dotprod_u_1276 i_1039 n_1038 sum_1040 k_dotprod_1270 v1_1036 v2_1037 b_1288 when b_1288 ->
+      (k_dotprod_u_1287 i_1039 n_1038 sum_1040 k_dotprod_1270 v1_1036 v2_1037 ())
+  k_dotprod_u_1276 i_1039 n_1038 sum_1040 k_dotprod_1270 v1_1036 v2_1037 b_1288 when (
+      not b_1288) -> (fail_1463 true (k_dotprod_u_1287 i_1039 n_1038 sum_1040 k_dotprod_1270 v1_1036 v2_1037))
+  k_dotprod_u_1287 i_1039 n_1038 sum_1040 k_dotprod_1270 v1_1036 v2_1037 x_1273 ->
+      (v1_1036 i_1039 (f_k_dotprod_u_1456 i_1039 n_1038 sum_1040 x_1273 k_dotprod_1270 v1_1036 v2_1037))
+  main_1041 i_1042 n_1043 k_main_1363 ->
+      (dotprod_1035 (v1_1160 i_1042 n_1043) (v2_1159 i_1042 n_1043) n_1043 0 0 (f_main_1458 i_1042 n_1043 k_main_1363))
+  update_1030 a_1031 i_1032 x_1033 j_1034 k_update_1206 when (= j_1034 i_1032) -> (k_update_1206 x_1033)
+  update_1030 a_1031 i_1032 x_1033 j_1034 k_update_1206 when (not (= j_1034 i_1032)) -> (a_1031 j_1034 k_update_1206)
+  v1_1160 i_1042 n_1043 i_1045 k_main_v1_1377 -> (k_main_v1_1377 0)
+  v2_1159 i_1042 n_1043 i_1047 k_main_v2_1391 -> (k_main_v2_1391 0)
+Types:
+  main_1455 : X
+  dotprod_1035 : ((int -> (int -> X) -> X) ->
+                  (int -> (int -> X) -> X) -> int -> x_14:int -> int[x_14 >= 0] -> (int -> X) -> X)
+  fail_1463 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Safe!
+
+Refinement Types:
+  dotprod: ((int -> int) -> ((int -> int) -> (int -> (x_4:int -> ({x_5:int | x_4 >= 0} -> int)))))
+
+cycles: 1
+total: 0.313 sec
+  abst: 0.008 sec
+  mc: 0.004 sec
+  refine: 0.077 sec
+    exparam: 0.016 sec

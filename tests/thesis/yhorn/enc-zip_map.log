@@ -1,0 +1,3634 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn enc-zip_map.ml
+
+parsed::
+ let rec loop_1030 x_1031 = loop_1030 x_1031 
+ in
+ let rec zip_1032 x_1033 y_1034 =
+   if x_1033 = 0 then
+     if y_1034 = 0 then
+       0
+     else
+       loop_1030 ()
+   else
+     if y_1034 = 0 then
+       loop_1030 ()
+     else
+       1 + zip_1032 (x_1033 - 1) (y_1034 - 1) 
+ in
+ let rec map_1035 x_1036 = if x_1036 = 0 then
+                             0
+                           else
+                             1 + map_1035 (x_1036 - 1) 
+ in
+ let main_1037 n_1038 = if map_1035 (zip_1032 n_1038 n_1038) >= n_1038 then
+                          ()
+                        else
+                          {fail} () 
+ in
+   ()
+
+set_target::
+ let rec loop_1030 x_1031 = loop_1030 x_1031 
+ in
+ let rec zip_1032 x_1033 y_1034 =
+   if x_1033 = 0 then
+     if y_1034 = 0 then
+       0
+     else
+       loop_1030 ()
+   else
+     if y_1034 = 0 then
+       loop_1030 ()
+     else
+       1 + zip_1032 (x_1033 - 1) (y_1034 - 1) 
+ in
+ let rec map_1035 x_1036 = if x_1036 = 0 then
+                             0
+                           else
+                             1 + map_1035 (x_1036 - 1) 
+ in
+ let main_1037 n_1038 = if map_1035 (zip_1032 n_1038 n_1038) >= n_1038 then
+                          ()
+                        else
+                          {fail} () 
+ in
+ let main_1078 = let arg1_1077 = rand_int () 
+                 in
+                   main_1037 arg1_1077 
+ in
+   ()
+
+copy_poly::
+ let rec loop_1079 (x_1031:unit) = loop_1079 x_1031 
+ in
+ let rec zip_1032 (x_1033:int) (y_1034:int) =
+   if x_1033 = 0 then
+     if y_1034 = 0 then
+       0
+     else
+       loop_1079 ()
+   else
+     if y_1034 = 0 then
+       loop_1079 ()
+     else
+       1 + zip_1032 (x_1033 - 1) (y_1034 - 1) 
+ in
+ let rec map_1035 (x_1036:int) = if x_1036 = 0 then
+                                   0
+                                 else
+                                   1 + map_1035 (x_1036 - 1) 
+ in
+ let main_1037 (n_1038:int) = if map_1035 (zip_1032 n_1038 n_1038) >= n_1038 then
+                                ()
+                              else
+                                {fail} () 
+ in
+ let main_1078 = let arg1_1077 = rand_int () 
+                 in
+                   main_1037 arg1_1077 
+ in
+   ()
+
+CPS::
+ let rec loop_1079 (x_1031:unit) (k_loop_1105:(int -> X)) = loop_1079 x_1031 k_loop_1105 
+ in
+ let rec zip_1032 (x_1033:int) (y_1034:int) (k_zip_1132:(int -> X)) =
+   if x_1033 = 0 then
+     if y_1034 = 0 then
+       k_zip_1132 0
+     else
+       loop_1079 () k_zip_1132
+   else
+     if y_1034 = 0 then
+       loop_1079 () k_zip_1132
+     else
+       zip_1032 (x_1033 - 1) (y_1034 - 1) (fun x_1160 -> k_zip_1132 (1 + x_1160)) 
+ in
+ let rec map_1035 (x_1036:int) (k_map_1193:(int -> X)) =
+   if x_1036 = 0 then
+     k_map_1193 0
+   else
+     map_1035 (x_1036 - 1) (fun x_1197 -> k_map_1193 (1 + x_1197)) 
+ in
+ let main_1037 (n_1038:int) (k_main_1225:(unit -> X)) =
+   zip_1032 n_1038 n_1038
+     (fun x_1250 ->
+        map_1035 x_1250 (fun x_1228 -> (if x_1228 >= n_1038 then
+                                          k_main_1225 ()
+                                        else
+                                          {|fail|} () k_main_1225))) 
+ in
+   rand_int_cps () (fun x_1267 -> main_1037 x_1267 (fun x_1264 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1292
+  main_1292 -> (rand_int f_1297)
+  br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 when b_1300 -> (k_zip_1132 0)
+  br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 when (not b_1300) -> (loop_1079 () k_zip_1132)
+  br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 when b_1302 -> (loop_1079 () k_zip_1132)
+  br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 when (not b_1302) ->
+      (zip_1032 (x_1033 - 1) (y_1034 - 1) (f_zip_1293 x_1033 y_1034 k_zip_1132))
+  f_1297 x_1267 -> (main_1037 x_1267 (f_1298 x_1267))
+  f_1298 x_1267 x_1264 -> end
+  f_main_1295 n_1038 k_main_1225 x_1250 -> (map_1035 x_1250 (f_main_1296 n_1038 x_1250 k_main_1225))
+  f_main_1296 n_1038 x_1250 k_main_1225 x_1228 when (x_1228 >= n_1038) -> (k_main_1225 ())
+  f_main_1296 n_1038 x_1250 k_main_1225 x_1228 when (not (x_1228 >= n_1038)) -> (fail_1303 true k_main_1225)
+  f_map_1294 x_1036 k_map_1193 x_1197 -> (k_map_1193 (1 + x_1197))
+  f_zip_1293 x_1033 y_1034 k_zip_1132 x_1160 -> (k_zip_1132 (1 + x_1160))
+  fail_1303 b k -> {fail} => (k ())
+  loop_1079 x_1031 k_loop_1105 -> (loop_1079 x_1031 k_loop_1105)
+  main_1037 n_1038 k_main_1225 -> (zip_1032 n_1038 n_1038 (f_main_1295 n_1038 k_main_1225))
+  map_1035 x_1036 k_map_1193 when (x_1036 = 0) -> (k_map_1193 0)
+  map_1035 x_1036 k_map_1193 when (not (x_1036 = 0)) -> (map_1035 (x_1036 - 1) (f_map_1294 x_1036 k_map_1193))
+  zip_1032 x_1033 y_1034 k_zip_1132 when (x_1033 = 0) -> (br_zip_1299 (y_1034 = 0) x_1033 y_1034 k_zip_1132)
+  zip_1032 x_1033 y_1034 k_zip_1132 when (not (x_1033 = 0)) -> (br_zip_1301 (y_1034 = 0) x_1033 y_1034 k_zip_1132)
+Types:
+  main_1292 : X
+  fail_1303 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  loop_1079 : (unit -> (int -> X) -> X)
+  map_1035 : (int -> (int -> X) -> X)
+  zip_1032 : (int -> int -> (int -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1292 ... --> 
+  f_1297 ... --> 
+  main_1037 ... --> 
+  zip_1032 [1/2] ... --> 
+  br_zip_1299 [1/2] ... --> 
+  f_main_1295 ... --> 
+  map_1035 [1/2] ... --> 
+  f_main_1296 [2/2] ... --> 
+  fail_1303 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(176)[1]
+  program:
+    main_1292  | true = ((Random.int 0) f_1297)
+    br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 | b_1300 = (k_zip_1132 0)
+    br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 | (not b_1300) = (loop_1079 ()
+                                                                    k_zip_1132)
+    br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 | b_1302 = (loop_1079 ()
+                                                                    k_zip_1132)
+    br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 | (not b_1302) = (zip_1032
+                                                                    (
+                                                                    x_1033 - 1)
+                                                                    (
+                                                                    y_1034 - 1)
+                                                                    (
+                                                                    f_zip_1293 x_1033
+                                                                    y_1034
+                                                                    k_zip_1132))
+    f_1297 x_1267 | true = (main_1037 x_1267
+                                      (f_1298 x_1267))
+    f_1298 x_1267 x_1264 | true = end
+    f_main_1295 n_1038 k_main_1225 x_1250 | true = (map_1035 x_1250
+                                                             (f_main_1296 n_1038
+                                                                    x_1250
+                                                                    k_main_1225))
+    f_main_1296 n_1038 x_1250 k_main_1225 x_1228 | (x_1228 >= n_1038) = (
+    k_main_1225 ())
+    f_main_1296 n_1038 x_1250 k_main_1225 x_1228 | (not (x_1228 >= n_1038)) = (
+    fail_1303 true
+              k_main_1225)
+    f_map_1294 x_1036 k_map_1193 x_1197 | true = (k_map_1193 (1 + x_1197))
+    f_zip_1293 x_1033 y_1034 k_zip_1132 x_1160 | true = (k_zip_1132 (
+                                                                    1 + x_1160))
+    fail_1303 b k | true = (fail ())
+    loop_1079 x_1031 k_loop_1105 | true = (loop_1079 x_1031
+                                                     k_loop_1105)
+    main_1037 n_1038 k_main_1225 | true = (zip_1032 n_1038
+                                                    n_1038
+                                                    (f_main_1295 n_1038
+                                                                 k_main_1225))
+    map_1035 x_1036 k_map_1193 | (x_1036 = 0) = (k_map_1193 0)
+    map_1035 x_1036 k_map_1193 | (not (x_1036 = 0)) = (map_1035 (x_1036 - 1)
+                                                                (f_map_1294 x_1036
+                                                                    k_map_1193))
+    zip_1032 x_1033 y_1034 k_zip_1132 | (x_1033 = 0) = (br_zip_1299 (
+                                                                    y_1034 = 0)
+                                                                    x_1033
+                                                                    y_1034
+                                                                    k_zip_1132)
+    zip_1032 x_1033 y_1034 k_zip_1132 | (not (x_1033 = 0)) = (br_zip_1301 (
+                                                                    y_1034 = 0)
+                                                                    x_1033
+                                                                    y_1034
+                                                                    k_zip_1132)
+    main_1292:X
+    br_zip_1299:bool -> int -> int -> (int -> X) -> X
+    br_zip_1301:bool -> int -> int -> (int -> X) -> X
+    f_1297:int -> X
+    f_1298:int -> unit -> X
+    f_main_1295:int -> (unit -> X) -> int -> X
+    f_main_1296:int -> int -> (unit -> X) -> int -> X
+    f_map_1294:int -> (int -> X) -> int -> X
+    f_zip_1293:int -> int -> (int -> X) -> int -> X
+    fail_1303:bool -> (unit -> X) -> X
+    loop_1079:unit -> (int -> X) -> X
+    main_1037:int -> (unit -> X) -> X
+    map_1035:int -> (int -> X) -> X
+    zip_1032:int -> int -> (int -> X) -> X
+  inlined functions: br_zip_1299,br_zip_1301,f_1297,f_1298,f_main_1295,f_main_1296,f_map_1294,f_zip_1293,main_1037
+  counterexample: 0:0:0:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1297@4:0> = var2)
+     [true.(<main_1037@6:0> = <f_1297@4:0>)
+      [true.((<zip_1032@8:0> = <main_1037@6:0>) && (<zip_1032@8:1> = <main_1037@6:0>))
+       [(<zip_1032@8:0> = 0).
+        ((<br_zip_1299@11:0> = (<zip_1032@8:1> = 0)) &&
+         ((<br_zip_1299@11:1> = <zip_1032@8:0>) && (<br_zip_1299@11:2> = <zip_1032@8:1>)))
+        [<br_zip_1299@11:0>.(<<br_zip_1299@11:3>@14:0> = 0)
+         [true.(<<zip_1032@8:2>@16:0> = <<br_zip_1299@11:3>@14:0>)
+          [true.((<f_main_1295@18:0> = <main_1037@6:0>) && (<f_main_1295@18:2> = <<zip_1032@8:2>@16:0>))
+           [true.(<map_1035@20:0> = <f_main_1295@18:2>)
+            [(<map_1035@20:0> = 0).(<<map_1035@20:1>@23:0> = 0)
+             [true.
+              ((<f_main_1296@25:0> = <f_main_1295@18:0>) &&
+               ((<f_main_1296@25:1> = <f_main_1295@18:2>) && (<f_main_1296@25:3> = <<map_1035@20:1>@23:0>)))
+              [(not (<f_main_1296@25:3> >= <f_main_1296@25:0>)).(<fail_1303@28:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(177)[2]
+    horn clauses:
+      P[<fail_1303@28:0>](<fail_1303@28:0>:bool)|- bot
+      
+      P[<f_main_1296@25:3>](<f_main_1296@25:0>:int,<f_main_1296@25:1>:int,<f_main_1296@25:3>:int),
+      ((<f_main_1296@25:3> < <f_main_1296@25:0>) && <fail_1303@28:0>) |- P[<fail_1303@28:0>](
+      <fail_1303@28:0>:bool)
+      
+      P[<f_main_1295@18:2>](<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+      P[<<map_1035@20:1>@23:0>](<f_main_1296@25:1>:int,<f_main_1296@25:3>:int)|- P[<f_main_1296@25:3>](
+      <f_main_1296@25:0>:int,<f_main_1296@25:1>:int,<f_main_1296@25:3>:int)
+      
+      P[<map_1035@20:0>](<map_1035@20:0>:int), ((<map_1035@20:0> = 0) && (<<map_1035@20:1>@23:0> = 0))
+      |- P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int)
+      
+      P[<f_main_1295@18:2>](<f_main_1295@18:0>:int,<map_1035@20:0>:int)|- P[<map_1035@20:0>](<map_1035@20:0>:int)
+      
+      P[<main_1037@6:0>](<f_main_1295@18:0>:int),
+      P[<<zip_1032@8:2>@16:0>](<f_main_1295@18:0>:int,<f_main_1295@18:0>:int,<f_main_1295@18:2>:int)|- P[<f_main_1295@18:2>](
+      <f_main_1295@18:0>:int,<f_main_1295@18:2>:int)
+      
+      P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+      P[<<br_zip_1299@11:3>@14:0>]((<zip_1032@8:1> = 0):bool,<zip_1032@8:0>:int,<zip_1032@8:1>:int,<<zip_1032@8:2>@16:0>:int),
+      (<zip_1032@8:0> = 0) |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,
+                                                       <zip_1032@8:1>:int,
+                                                       <<zip_1032@8:2>@16:0>:int)
+      
+      P[<br_zip_1299@11:2>](<br_zip_1299@11:0>:bool,<br_zip_1299@11:1>:int,<br_zip_1299@11:2>:int),
+      ((<<br_zip_1299@11:3>@14:0> = 0) && <br_zip_1299@11:0>)
+      |- P[<<br_zip_1299@11:3>@14:0>](<br_zip_1299@11:0>:bool,<br_zip_1299@11:1>:int,
+                                      <br_zip_1299@11:2>:int,<<br_zip_1299@11:3>@14:0>:int)
+      
+      P[<zip_1032@8:1>](<br_zip_1299@11:1>:int,<br_zip_1299@11:2>:int),
+      ((<br_zip_1299@11:1> = 0) && (<br_zip_1299@11:0> = (<br_zip_1299@11:2> = 0)))
+      |- P[<br_zip_1299@11:2>](<br_zip_1299@11:0>:bool,<br_zip_1299@11:1>:int,
+                               <br_zip_1299@11:2>:int)
+      
+      P[<main_1037@6:0>](<zip_1032@8:1>:int), (<zip_1032@8:1> = <zip_1032@8:0>)
+      |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int)
+      
+      P[<f_1297@4:0>](<main_1037@6:0>:int)|- P[<main_1037@6:0>](<main_1037@6:0>:int)
+      
+      |- P[<f_1297@4:0>](<f_1297@4:0>:int)
+    call trees:
+      <main_1292@1>
+        <f_1297@4>
+          <main_1037@6>
+            <zip_1032@8>
+              <br_zip_1299@11>
+              </<br_zip_1299@11:3>@14>
+            </<zip_1032@8:2>@16>
+            <f_main_1295@18>
+              <map_1035@20>
+              </<map_1035@20:1>@23>
+              <f_main_1296@25>
+                <fail_1303@28>
+    inlined horn clauses:
+      P[<fail_1303@28:0>](<fail_1303@28:0>:bool)|- bot
+      
+      P[<<zip_1032@8:2>@16:0>](<f_main_1296@25:0>:int,<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+      P[<<map_1035@20:1>@23:0>](<f_main_1296@25:1>:int,<f_main_1296@25:3>:int),
+      ((<f_main_1296@25:3> < <f_main_1296@25:0>) && <fail_1303@28:0>) |- P[<fail_1303@28:0>](
+      <fail_1303@28:0>:bool)
+      
+      P[<map_1035@20:0>](<map_1035@20:0>:int), ((<map_1035@20:0> = 0) && (<<map_1035@20:1>@23:0> = 0))
+      |- P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int)
+      
+      P[<<zip_1032@8:2>@16:0>](<f_main_1295@18:0>:int,<f_main_1295@18:0>:int,<map_1035@20:0>:int)|- P[<map_1035@20:0>](
+      <map_1035@20:0>:int)
+      
+      P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+      ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+      |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,
+                                  <<zip_1032@8:2>@16:0>:int)
+      
+       (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                              <zip_1032@8:1>:int)
+    begin ParamSubstInfer.infer(1727)[3]
+      
+    end ParamSubstInfer.infer(1727)[3] (0.010998 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(1729)[3]
+      
+    end RefTypeInfer.elim_coeffs(1729)[3] (0.000000 sec.)
+    begin YhornInterface.solve(1970)[3]
+      begin HcSolver.solve_ub(1971)[4]
+        encoded:
+          P[<fail_1303@28:0>](<fail_1303@28:0>:int)|- bot
+          
+          P[<<zip_1032@8:2>@16:0>](<f_main_1296@25:0>:int,<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+          P[<<map_1035@20:1>@23:0>](<f_main_1296@25:1>:int,<f_main_1296@25:3>:int),
+          ((<f_main_1296@25:3> < <f_main_1296@25:0>) && (<fail_1303@28:0> = 1))
+          |- P[<fail_1303@28:0>](<fail_1303@28:0>:int)
+          
+          P[<map_1035@20:0>](<map_1035@20:0>:int), ((<map_1035@20:0> = 0) && (<<map_1035@20:1>@23:0> = 0))
+          |- P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int)
+          
+          P[<<zip_1032@8:2>@16:0>](<f_main_1295@18:0>:int,<f_main_1295@18:0>:int,<map_1035@20:0>:int)|- P[<map_1035@20:0>](
+          <map_1035@20:0>:int)
+          
+          P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+          ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+          |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,
+                                      <<zip_1032@8:2>@16:0>:int)
+          
+           (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                                  <zip_1032@8:1>:int)
+        input to Yhorn:
+          P[<fail_1303@28:0>](<fail_1303@28:0>:int)|- bot
+          
+          P[<<zip_1032@8:2>@16:0>](<f_main_1296@25:0>:int,<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+          P[<<map_1035@20:1>@23:0>](<f_main_1296@25:1>:int,<f_main_1296@25:3>:int),
+          ((<f_main_1296@25:3> < <f_main_1296@25:0>) && (<fail_1303@28:0> = 1))
+          |- P[<fail_1303@28:0>](<fail_1303@28:0>:int)
+          
+          P[<map_1035@20:0>](<map_1035@20:0>:int), ((<<map_1035@20:1>@23:0> = 0) && (<map_1035@20:0> = 0))
+          |- P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int)
+          
+          P[<<zip_1032@8:2>@16:0>](<f_main_1295@18:0>:int,<f_main_1295@18:0>:int,<map_1035@20:0>:int)|- P[<map_1035@20:0>](
+          <map_1035@20:0>:int)
+          
+          P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+          ((<zip_1032@8:1> = 0) && ((<zip_1032@8:0> = 0) && (<<zip_1032@8:2>@16:0> = 0)))
+          |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,
+                                      <<zip_1032@8:2>@16:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1303_sep_28_sep_0($11)) -> 1=0.
+(($11-1=0) & ($12-$13<0)) & (v_sep_map_1035_sep_20_sep_1_sep_23_sep_0($14,$12)) & (v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0($13,$13,$14)) -> v_sep_fail_1303_sep_28_sep_0($11).
+(($15=0) & ($16=0)) & (v_sep_map_1035_sep_20_sep_0($15)) -> v_sep_map_1035_sep_20_sep_1_sep_23_sep_0($15,$16).
+(0=0) & (v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0($17,$17,$15)) -> v_sep_map_1035_sep_20_sep_0($15).
+(($18=0) & ($19=0) & ($20=0)) & (v_sep_zip_1032_sep_8_sep_1($19,$20)) -> v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0($19,$20,$18).
+-$19+$20=0 -> v_sep_zip_1032_sep_8_sep_1($19,$20).
+
+
+v_sep_fail_1303_sep_28_sep_0: X
+v_sep_map_1035_sep_20_sep_0: X
+v_sep_map_1035_sep_20_sep_1_sep_23_sep_0: X
+v_sep_zip_1032_sep_8_sep_1: X
+v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0: X
+.......
+v_sep_fail_1303_sep_28_sep_0: X
+v_sep_map_1035_sep_20_sep_0: X
+v_sep_map_1035_sep_20_sep_1_sep_23_sep_0: X
+v_sep_zip_1032_sep_8_sep_1: X
+v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0: X
+....
+v_sep_fail_1303_sep_28_sep_0: X
+v_sep_map_1035_sep_20_sep_0: X
+v_sep_map_1035_sep_20_sep_1_sep_23_sep_0: X
+v_sep_zip_1032_sep_8_sep_1: X
+v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0: X
+......
+v_sep_fail_1303_sep_28_sep_0: X
+v_sep_map_1035_sep_20_sep_0: X
+v_sep_map_1035_sep_20_sep_1_sep_23_sep_0: X
+v_sep_zip_1032_sep_8_sep_1: X
+v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0: X
+.......Split conj [18] 0.148977
+(Reconstrcut: 9 **)
+v_sep_fail_1303_sep_28_sep_0: X
+v_sep_map_1035_sep_20_sep_0: X
+v_sep_map_1035_sep_20_sep_1_sep_23_sep_0: X
+v_sep_zip_1032_sep_8_sep_1: X
+v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0: (X) & (X)
+........
+v_sep_fail_1303_sep_28_sep_0: X
+v_sep_map_1035_sep_20_sep_0: X
+v_sep_map_1035_sep_20_sep_1_sep_23_sep_0: X
+v_sep_zip_1032_sep_8_sep_1: X
+v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0: (X) & (X)
+....
+v_sep_fail_1303_sep_28_sep_0: X
+v_sep_map_1035_sep_20_sep_0: X
+v_sep_map_1035_sep_20_sep_1_sep_23_sep_0: X
+v_sep_zip_1032_sep_8_sep_1: X
+v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0: (X) & (X)
+......
+v_sep_fail_1303_sep_28_sep_0: X
+v_sep_map_1035_sep_20_sep_0: X
+v_sep_map_1035_sep_20_sep_1_sep_23_sep_0: X
+v_sep_zip_1032_sep_8_sep_1: X
+v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0: (X) & (X)
+.......
+v_sep_fail_1303_sep_28_sep_0: X
+v_sep_map_1035_sep_20_sep_0: X
+v_sep_map_1035_sep_20_sep_1_sep_23_sep_0: X
+v_sep_zip_1032_sep_8_sep_1: X
+v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0: (X) & (X)
+........(0=0) & (v_sep_fail_1303_sep_28_sep_0($11)) -> 1=0.
+(($11-1=0) & ($12-$13<0)) & (v_sep_map_1035_sep_20_sep_1_sep_23_sep_0($14,$12)) & (v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0($13,$13,$14)) -> v_sep_fail_1303_sep_28_sep_0($11).
+(($15=0) & ($16=0)) & (v_sep_map_1035_sep_20_sep_0($15)) -> v_sep_map_1035_sep_20_sep_1_sep_23_sep_0($15,$16).
+(0=0) & (v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0($17,$17,$15)) -> v_sep_map_1035_sep_20_sep_0($15).
+(($18=0) & ($19=0) & ($20=0)) & (v_sep_zip_1032_sep_8_sep_1($19,$20)) -> v_sep_zip_1032_sep_8_sep_2_sep_16_sep_0($19,$20,$18).
+-$19+$20=0 -> v_sep_zip_1032_sep_8_sep_1($19,$20).
+
+           (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                                  <zip_1032@8:1>:int)
+        solution:
+          P[<fail_1303@28:0>]($21:bool) = false
+          P[<map_1035@20:0>]($36:int) = true
+          P[<<map_1035@20:1>@23:0>]($24:int,$26:int) = (0 <= $26)
+          P[<zip_1032@8:1>]($39:int,$41:int) = true
+          P[<<zip_1032@8:2>@16:0>]($29:int,$31:int,$33:int) = ($29 <= 0)
+        
+      end HcSolver.solve_ub(1971)[4] (0.020997 sec.)
+      begin HcSolver.check_validity(2136)[4]
+        input:
+          P[<fail_1303@28:0>](<fail_1303@28:0>:bool)|- bot
+          
+          P[<<zip_1032@8:2>@16:0>](<f_main_1296@25:0>:int,<f_main_1296@25:0>:int,<f_main_1296@25:1>:int),
+          P[<<map_1035@20:1>@23:0>](<f_main_1296@25:1>:int,<f_main_1296@25:3>:int),
+          ((<f_main_1296@25:3> < <f_main_1296@25:0>) && <fail_1303@28:0>) |- P[<fail_1303@28:0>](
+          <fail_1303@28:0>:bool)
+          
+          P[<map_1035@20:0>](<map_1035@20:0>:int), ((<map_1035@20:0> = 0) && (<<map_1035@20:1>@23:0> = 0))
+          |- P[<<map_1035@20:1>@23:0>](<map_1035@20:0>:int,<<map_1035@20:1>@23:0>:int)
+          
+          P[<<zip_1032@8:2>@16:0>](<f_main_1295@18:0>:int,<f_main_1295@18:0>:int,<map_1035@20:0>:int)|- P[<map_1035@20:0>](
+          <map_1035@20:0>:int)
+          
+          P[<zip_1032@8:1>](<zip_1032@8:0>:int,<zip_1032@8:1>:int),
+          ((<<zip_1032@8:2>@16:0> = 0) && ((<zip_1032@8:0> = 0) && (<zip_1032@8:1> = 0)))
+          |- P[<<zip_1032@8:2>@16:0>](<zip_1032@8:0>:int,<zip_1032@8:1>:int,
+                                      <<zip_1032@8:2>@16:0>:int)
+          
+           (<zip_1032@8:1> = <zip_1032@8:0>) |- P[<zip_1032@8:1>](<zip_1032@8:0>:int,
+                                                                  <zip_1032@8:1>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(2136)[4] (0.001999 sec.)
+      solution:
+        P[<fail_1303@28:0>]($21:bool) = false
+        P[<map_1035@20:0>]($36:int) = true
+        P[<<map_1035@20:1>@23:0>]($24:int,$26:int) = (0 <= $26)
+        P[<zip_1032@8:1>]($39:int,$41:int) = true
+        P[<<zip_1032@8:2>@16:0>]($29:int,$31:int,$33:int) = ($29 <= 0)
+    end YhornInterface.solve(1970)[3] (0.022996 sec.)
+    
+  end RefTypeInfer.infer_etrs(177)[2] (0.039993 sec.)
+  refinement types:
+    main_1292: X
+    f_1297: v1:int -> X
+    main_1037: v1:int -> (v2:unit -> X) -> X
+    zip_1032: v1:int -> v2:int -> (v3:{v3:int | (v1 <= 0)} -> X) -> X
+    br_zip_1299: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    f_main_1295: v1:int -> (v2:unit -> X) -> v4:int -> X
+    map_1035: v1:int -> (v2:{v2:int | (0 <= v2)} -> X) -> X
+    f_main_1296: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1303: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    br_zip_1301: var16:bool -> var15:int -> var14:int -> (var13:int -> X) -> X
+    f_1298: var19:int -> var18:unit -> X
+    f_map_1294: var24:int -> (var23:int -> X) -> var21:int -> X
+    f_zip_1293: var30:int -> var29:int -> (var28:int -> X) -> var26:int -> X
+    loop_1079: var34:unit -> (var33:int -> X) -> X
+  abstraction types:
+    main_1292: X
+    f_1297: v1:int -> X
+    main_1037: v1:int -> (v2:unit -> X) -> X
+    zip_1032: v1:int -> v2:int -> (v3:int[v3 -> (v1 <= 0)] -> X) -> X
+    br_zip_1299: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    f_main_1295: v1:int -> (v2:unit -> X) -> v4:int -> X
+    map_1035: v1:int -> (v2:int[v2 -> (0 <= v2)] -> X) -> X
+    f_main_1296: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1303: v1:bool -> (v2:unit -> X) -> X
+    br_zip_1301: var16:bool -> var15:int -> var14:int -> (var13:int -> X) -> X
+    f_1298: var19:int -> var18:unit -> X
+    f_map_1294: var24:int -> (var23:int -> X) -> var21:int -> X
+    f_zip_1293: var30:int -> var29:int -> (var28:int -> X) -> var26:int -> X
+    loop_1079: var34:unit -> (var33:int -> X) -> X
+  
+end AbsTypeInfer.refine(176)[1] (0.043993 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1292
+  main_1292 -> (rand_int f_1297)
+  br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 when b_1300 -> (k_zip_1132 0)
+  br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 when (not b_1300) -> (loop_1079 () k_zip_1132)
+  br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 when b_1302 -> (loop_1079 () k_zip_1132)
+  br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 when (not b_1302) ->
+      (zip_1032 (x_1033 - 1) (y_1034 - 1) (f_zip_1293 x_1033 y_1034 k_zip_1132))
+  f_1297 x_1267 -> (main_1037 x_1267 (f_1298 x_1267))
+  f_1298 x_1267 x_1264 -> end
+  f_main_1295 n_1038 k_main_1225 x_1250 -> (map_1035 x_1250 (f_main_1296 n_1038 x_1250 k_main_1225))
+  f_main_1296 n_1038 x_1250 k_main_1225 x_1228 when (x_1228 >= n_1038) -> (k_main_1225 ())
+  f_main_1296 n_1038 x_1250 k_main_1225 x_1228 when (not (x_1228 >= n_1038)) -> (fail_1303 true k_main_1225)
+  f_map_1294 x_1036 k_map_1193 x_1197 -> (k_map_1193 (1 + x_1197))
+  f_zip_1293 x_1033 y_1034 k_zip_1132 x_1160 -> (k_zip_1132 (1 + x_1160))
+  fail_1303 b k -> {fail} => (k ())
+  loop_1079 x_1031 k_loop_1105 -> (loop_1079 x_1031 k_loop_1105)
+  main_1037 n_1038 k_main_1225 -> (zip_1032 n_1038 n_1038 (f_main_1295 n_1038 k_main_1225))
+  map_1035 x_1036 k_map_1193 when (x_1036 = 0) -> (k_map_1193 0)
+  map_1035 x_1036 k_map_1193 when (not (x_1036 = 0)) -> (map_1035 (x_1036 - 1) (f_map_1294 x_1036 k_map_1193))
+  zip_1032 x_1033 y_1034 k_zip_1132 when (x_1033 = 0) -> (br_zip_1299 (y_1034 = 0) x_1033 y_1034 k_zip_1132)
+  zip_1032 x_1033 y_1034 k_zip_1132 when (not (x_1033 = 0)) -> (br_zip_1301 (y_1034 = 0) x_1033 y_1034 k_zip_1132)
+Types:
+  main_1292 : X
+  fail_1303 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  loop_1079 : (unit -> (int -> X) -> X)
+  map_1035 : (int -> (x_3:int[x_3 >= 0] -> X) -> X)
+  zip_1032 : (x_1:int -> int -> (int[x_1 <= 0] -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1292 ... --> 
+  f_1297 ... --> 
+  main_1037 ... --> 
+  zip_1032 [2/2] ... --> 
+  br_zip_1301 [2/2] ... --> 
+  zip_1032 [1/2] ... --> 
+  br_zip_1299 [1/2] ... --> 
+  f_zip_1293 ... --> 
+  f_main_1295 ... --> 
+  map_1035 [1/2] ... --> 
+  f_main_1296 [2/2] ... --> 
+  fail_1303 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 1; 0; 0; 0; 0; 0; 1; 0
+
+(1-3) Checking counter-example ... DONE!
+
+(1-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(2934)[1]
+  program:
+    main_1292  | true = ((Random.int 0) f_1297)
+    br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 | b_1300 = (k_zip_1132 0)
+    br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 | (not b_1300) = (loop_1079 ()
+                                                                    k_zip_1132)
+    br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 | b_1302 = (loop_1079 ()
+                                                                    k_zip_1132)
+    br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 | (not b_1302) = (zip_1032
+                                                                    (
+                                                                    x_1033 - 1)
+                                                                    (
+                                                                    y_1034 - 1)
+                                                                    (
+                                                                    f_zip_1293 x_1033
+                                                                    y_1034
+                                                                    k_zip_1132))
+    f_1297 x_1267 | true = (main_1037 x_1267
+                                      (f_1298 x_1267))
+    f_1298 x_1267 x_1264 | true = end
+    f_main_1295 n_1038 k_main_1225 x_1250 | true = (map_1035 x_1250
+                                                             (f_main_1296 n_1038
+                                                                    x_1250
+                                                                    k_main_1225))
+    f_main_1296 n_1038 x_1250 k_main_1225 x_1228 | (x_1228 >= n_1038) = (
+    k_main_1225 ())
+    f_main_1296 n_1038 x_1250 k_main_1225 x_1228 | (not (x_1228 >= n_1038)) = (
+    fail_1303 true
+              k_main_1225)
+    f_map_1294 x_1036 k_map_1193 x_1197 | true = (k_map_1193 (1 + x_1197))
+    f_zip_1293 x_1033 y_1034 k_zip_1132 x_1160 | true = (k_zip_1132 (
+                                                                    1 + x_1160))
+    fail_1303 b k | true = (fail ())
+    loop_1079 x_1031 k_loop_1105 | true = (loop_1079 x_1031
+                                                     k_loop_1105)
+    main_1037 n_1038 k_main_1225 | true = (zip_1032 n_1038
+                                                    n_1038
+                                                    (f_main_1295 n_1038
+                                                                 k_main_1225))
+    map_1035 x_1036 k_map_1193 | (x_1036 = 0) = (k_map_1193 0)
+    map_1035 x_1036 k_map_1193 | (not (x_1036 = 0)) = (map_1035 (x_1036 - 1)
+                                                                (f_map_1294 x_1036
+                                                                    k_map_1193))
+    zip_1032 x_1033 y_1034 k_zip_1132 | (x_1033 = 0) = (br_zip_1299 (
+                                                                    y_1034 = 0)
+                                                                    x_1033
+                                                                    y_1034
+                                                                    k_zip_1132)
+    zip_1032 x_1033 y_1034 k_zip_1132 | (not (x_1033 = 0)) = (br_zip_1301 (
+                                                                    y_1034 = 0)
+                                                                    x_1033
+                                                                    y_1034
+                                                                    k_zip_1132)
+    main_1292:X
+    br_zip_1299:bool -> int -> int -> (int -> X) -> X
+    br_zip_1301:bool -> int -> int -> (int -> X) -> X
+    f_1297:int -> X
+    f_1298:int -> unit -> X
+    f_main_1295:int -> (unit -> X) -> int -> X
+    f_main_1296:int -> int -> (unit -> X) -> int -> X
+    f_map_1294:int -> (int -> X) -> int -> X
+    f_zip_1293:int -> int -> (int -> X) -> int -> X
+    fail_1303:bool -> (unit -> X) -> X
+    loop_1079:unit -> (int -> X) -> X
+    main_1037:int -> (unit -> X) -> X
+    map_1035:int -> (int -> X) -> X
+    zip_1032:int -> int -> (int -> X) -> X
+  inlined functions: br_zip_1299,br_zip_1301,f_1297,f_1298,f_main_1295,f_main_1296,f_map_1294,f_zip_1293,main_1037
+  counterexample: 0:0:0:1:1:0:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1297@34:0> = var35)
+     [true.(<main_1037@36:0> = <f_1297@34:0>)
+      [true.((<zip_1032@38:0> = <main_1037@36:0>) && (<zip_1032@38:1> = <main_1037@36:0>))
+       [(not (<zip_1032@38:0> = 0)).
+        ((<br_zip_1301@41:0> = (<zip_1032@38:1> = 0)) &&
+         ((<br_zip_1301@41:1> = <zip_1032@38:0>) && (<br_zip_1301@41:2> = <zip_1032@38:1>)))
+        [(not <br_zip_1301@41:0>).
+         ((<zip_1032@44:0> = (<br_zip_1301@41:1> - 1)) && (<zip_1032@44:1> = (<br_zip_1301@41:2> - 1)))
+         [(<zip_1032@44:0> = 0).
+          ((<br_zip_1299@47:0> = (<zip_1032@44:1> = 0)) &&
+           ((<br_zip_1299@47:1> = <zip_1032@44:0>) && (<br_zip_1299@47:2> = <zip_1032@44:1>)))
+          [<br_zip_1299@47:0>.(<<br_zip_1299@47:3>@50:0> = 0)
+           [true.(<<zip_1032@44:2>@52:0> = <<br_zip_1299@47:3>@50:0>)
+            [true.
+             ((<f_zip_1293@54:0> = <br_zip_1301@41:1>) &&
+              ((<f_zip_1293@54:1> = <br_zip_1301@41:2>) && (<f_zip_1293@54:3> = <<zip_1032@44:2>@52:0>)))
+             [true.(<<f_zip_1293@54:2>@56:0> = (1 + <f_zip_1293@54:3>))
+              [true.(<<br_zip_1301@41:3>@58:0> = <<f_zip_1293@54:2>@56:0>)
+               [true.(<<zip_1032@38:2>@60:0> = <<br_zip_1301@41:3>@58:0>)
+                [true.((<f_main_1295@62:0> = <main_1037@36:0>) && (<f_main_1295@62:2> = <<zip_1032@38:2>@60:0>))
+                 [true.(<map_1035@64:0> = <f_main_1295@62:2>)
+                  [(<map_1035@64:0> = 0).(<<map_1035@64:1>@67:0> = 0)
+                   [true.
+                    ((<f_main_1296@69:0> = <f_main_1295@62:0>) &&
+                     ((<f_main_1296@69:1> = <f_main_1295@62:2>) && (<f_main_1296@69:3> = <<map_1035@64:1>@67:0>)))
+                    [(not (<f_main_1296@69:3> >= <f_main_1296@69:0>)).(<fail_1303@72:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(2935)[2]
+    horn clauses:
+      P[<fail_1303@72:0>](<fail_1303@72:0>:bool)|- bot
+      
+      P[<f_main_1296@69:3>](<f_main_1296@69:0>:int,<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+      ((<f_main_1296@69:3> < <f_main_1296@69:0>) && <fail_1303@72:0>) |- P[<fail_1303@72:0>](
+      <fail_1303@72:0>:bool)
+      
+      P[<f_main_1295@62:2>](<f_main_1296@69:0>:int,<f_main_1296@69:1>:int),
+      P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int)|- P[<f_main_1296@69:3>](
+      <f_main_1296@69:0>:int,<f_main_1296@69:1>:int,<f_main_1296@69:3>:int)
+      
+      P[<map_1035@64:0>](<map_1035@64:0>:int), ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+      |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+      
+      P[<f_main_1295@62:2>](<f_main_1295@62:0>:int,<map_1035@64:0>:int)|- P[<map_1035@64:0>](<map_1035@64:0>:int)
+      
+      P[<main_1037@36:0>](<f_main_1295@62:0>:int),
+      P[<<zip_1032@38:2>@60:0>](<f_main_1295@62:0>:int,<f_main_1295@62:0>:int,<f_main_1295@62:2>:int)|- P[<f_main_1295@62:2>](
+      <f_main_1295@62:0>:int,<f_main_1295@62:2>:int)
+      
+      P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int),
+      P[<<br_zip_1301@41:3>@58:0>]((<zip_1032@38:1> = 0):bool,<zip_1032@38:0>:int,<zip_1032@38:1>:int,<<zip_1032@38:2>@60:0>:int),
+      (<zip_1032@38:0> <> 0)
+      |- P[<<zip_1032@38:2>@60:0>](<zip_1032@38:0>:int,<zip_1032@38:1>:int,
+                                   <<zip_1032@38:2>@60:0>:int)
+      
+      P[<br_zip_1301@41:2>](<br_zip_1301@41:0>:bool,<br_zip_1301@41:1>:int,<br_zip_1301@41:2>:int),
+      P[<<f_zip_1293@54:2>@56:0>](<br_zip_1301@41:1>:int,<br_zip_1301@41:2>:int,<<br_zip_1301@41:3>@58:0>:int),
+      (not <br_zip_1301@41:0>)
+      |- P[<<br_zip_1301@41:3>@58:0>](<br_zip_1301@41:0>:bool,<br_zip_1301@41:1>:int,
+                                      <br_zip_1301@41:2>:int,<<br_zip_1301@41:3>@58:0>:int)
+      
+      P[<f_zip_1293@54:3>](<f_zip_1293@54:0>:int,<f_zip_1293@54:1>:int,(
+                           -1 + <<f_zip_1293@54:2>@56:0>):int)|- P[<<f_zip_1293@54:2>@56:0>](
+      <f_zip_1293@54:0>:int,<f_zip_1293@54:1>:int,<<f_zip_1293@54:2>@56:0>:int)
+      
+      P[<br_zip_1301@41:2>](false:bool,<f_zip_1293@54:0>:int,<f_zip_1293@54:1>:int),
+      P[<<zip_1032@44:2>@52:0>]((-1 + <f_zip_1293@54:0>):int,(-1 + <f_zip_1293@54:1>):int,<f_zip_1293@54:3>:int)|- P[<f_zip_1293@54:3>](
+      <f_zip_1293@54:0>:int,<f_zip_1293@54:1>:int,<f_zip_1293@54:3>:int)
+      
+      P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int),
+      P[<<br_zip_1299@47:3>@50:0>]((<zip_1032@44:1> = 0):bool,<zip_1032@44:0>:int,<zip_1032@44:1>:int,<<zip_1032@44:2>@52:0>:int),
+      (<zip_1032@44:0> = 0)
+      |- P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,
+                                   <<zip_1032@44:2>@52:0>:int)
+      
+      P[<br_zip_1299@47:2>](<br_zip_1299@47:0>:bool,<br_zip_1299@47:1>:int,<br_zip_1299@47:2>:int),
+      ((<<br_zip_1299@47:3>@50:0> = 0) && <br_zip_1299@47:0>)
+      |- P[<<br_zip_1299@47:3>@50:0>](<br_zip_1299@47:0>:bool,<br_zip_1299@47:1>:int,
+                                      <br_zip_1299@47:2>:int,<<br_zip_1299@47:3>@50:0>:int)
+      
+      P[<zip_1032@44:1>](<br_zip_1299@47:1>:int,<br_zip_1299@47:2>:int),
+      ((<br_zip_1299@47:1> = 0) && (<br_zip_1299@47:0> = (<br_zip_1299@47:2> = 0)))
+      |- P[<br_zip_1299@47:2>](<br_zip_1299@47:0>:bool,<br_zip_1299@47:1>:int,
+                               <br_zip_1299@47:2>:int)
+      
+      P[<br_zip_1301@41:2>](false:bool,(1 + <zip_1032@44:0>):int,(1 + <zip_1032@44:1>):int)|- P[<zip_1032@44:1>](
+      <zip_1032@44:0>:int,<zip_1032@44:1>:int)
+      
+      P[<zip_1032@38:1>](<br_zip_1301@41:1>:int,<br_zip_1301@41:2>:int),
+      ((<br_zip_1301@41:1> <> 0) && (<br_zip_1301@41:0> = (<br_zip_1301@41:2> = 0)))
+      |- P[<br_zip_1301@41:2>](<br_zip_1301@41:0>:bool,<br_zip_1301@41:1>:int,
+                               <br_zip_1301@41:2>:int)
+      
+      P[<main_1037@36:0>](<zip_1032@38:1>:int), (<zip_1032@38:1> = <zip_1032@38:0>)
+      |- P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int)
+      
+      P[<f_1297@34:0>](<main_1037@36:0>:int)|- P[<main_1037@36:0>](<main_1037@36:0>:int)
+      
+      |- P[<f_1297@34:0>](<f_1297@34:0>:int)
+    call trees:
+      <main_1292@31>
+        <f_1297@34>
+          <main_1037@36>
+            <zip_1032@38>
+              <br_zip_1301@41>
+                <zip_1032@44>
+                  <br_zip_1299@47>
+                  </<br_zip_1299@47:3>@50>
+                </<zip_1032@44:2>@52>
+                <f_zip_1293@54>
+                </<f_zip_1293@54:2>@56>
+              </<br_zip_1301@41:3>@58>
+            </<zip_1032@38:2>@60>
+            <f_main_1295@62>
+              <map_1035@64>
+              </<map_1035@64:1>@67>
+              <f_main_1296@69>
+                <fail_1303@72>
+    inlined horn clauses:
+      P[<fail_1303@72:0>](<fail_1303@72:0>:bool)|- bot
+      
+      P[<<zip_1032@38:2>@60:0>](<f_main_1296@69:0>:int,<f_main_1296@69:0>:int,<f_main_1296@69:1>:int),
+      P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+      ((<f_main_1296@69:3> < <f_main_1296@69:0>) && <fail_1303@72:0>) |- P[<fail_1303@72:0>](
+      <fail_1303@72:0>:bool)
+      
+      P[<map_1035@64:0>](<map_1035@64:0>:int), ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+      |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+      
+      P[<<zip_1032@38:2>@60:0>](<f_main_1295@62:0>:int,<f_main_1295@62:0>:int,<map_1035@64:0>:int)|- P[<map_1035@64:0>](
+      <map_1035@64:0>:int)
+      
+      P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int),
+      P[<<zip_1032@44:2>@52:0>]((-1 + <zip_1032@38:0>):int,(-1 + <zip_1032@38:1>):int,(
+                                -1 + <<zip_1032@38:2>@60:0>):int), ((<zip_1032@38:0> <> 0) && (<zip_1032@38:1> <> 0))
+      |- P[<<zip_1032@38:2>@60:0>](<zip_1032@38:0>:int,<zip_1032@38:1>:int,
+                                   <<zip_1032@38:2>@60:0>:int)
+      
+      P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int),
+      ((<<zip_1032@44:2>@52:0> = 0) && ((<zip_1032@44:0> = 0) && (<zip_1032@44:1> = 0)))
+      |- P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,
+                                   <<zip_1032@44:2>@52:0>:int)
+      
+      P[<zip_1032@38:1>]((1 + <zip_1032@44:0>):int,(1 + <zip_1032@44:1>):int),
+      (((1 + <zip_1032@44:0>) <> 0) && ((1 + <zip_1032@44:1>) <> 0))
+      |- P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int)
+      
+       (<zip_1032@38:1> = <zip_1032@38:0>) |- P[<zip_1032@38:1>](<zip_1032@38:0>:int,
+                                                                 <zip_1032@38:1>:int)
+    begin ParamSubstInfer.infer(5852)[3]
+      
+    end ParamSubstInfer.infer(5852)[3] (0.028996 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(5854)[3]
+      
+    end RefTypeInfer.elim_coeffs(5854)[3] (0.001999 sec.)
+    begin YhornInterface.solve(6237)[3]
+      begin HcSolver.solve_ub(6238)[4]
+        encoded:
+          P[<fail_1303@72:0>](<fail_1303@72:0>:int)|- bot
+          
+          P[<<zip_1032@38:2>@60:0>](<f_main_1296@69:0>:int,<f_main_1296@69:0>:int,<f_main_1296@69:1>:int),
+          P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+          ((<f_main_1296@69:3> < <f_main_1296@69:0>) && (<fail_1303@72:0> = 1))
+          |- P[<fail_1303@72:0>](<fail_1303@72:0>:int)
+          
+          P[<map_1035@64:0>](<map_1035@64:0>:int), ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+          |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+          
+          P[<<zip_1032@38:2>@60:0>](<f_main_1295@62:0>:int,<f_main_1295@62:0>:int,<map_1035@64:0>:int)|- P[<map_1035@64:0>](
+          <map_1035@64:0>:int)
+          
+          P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int),
+          P[<<zip_1032@44:2>@52:0>]((-1 + <zip_1032@38:0>):int,(-1 + <zip_1032@38:1>):int,(
+                                    -1 + <<zip_1032@38:2>@60:0>):int),
+          ((<zip_1032@38:0> <> 0) && (<zip_1032@38:1> <> 0))
+          |- P[<<zip_1032@38:2>@60:0>](<zip_1032@38:0>:int,<zip_1032@38:1>:int,
+                                       <<zip_1032@38:2>@60:0>:int)
+          
+          P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int),
+          ((<<zip_1032@44:2>@52:0> = 0) && ((<zip_1032@44:0> = 0) && (<zip_1032@44:1> = 0)))
+          |- P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,
+                                       <<zip_1032@44:2>@52:0>:int)
+          
+          P[<zip_1032@38:1>]((1 + <zip_1032@44:0>):int,(1 + <zip_1032@44:1>):int),
+          (((1 + <zip_1032@44:0>) <> 0) && ((1 + <zip_1032@44:1>) <> 0))
+          |- P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int)
+          
+           (<zip_1032@38:1> = <zip_1032@38:0>) |- P[<zip_1032@38:1>](<zip_1032@38:0>:int,
+                                                                    <zip_1032@38:1>:int)
+        input to Yhorn:
+          P[<fail_1303@72:0>](<fail_1303@72:0>:int)|- bot
+          
+          P[<<zip_1032@38:2>@60:0>](<f_main_1296@69:0>:int,<f_main_1296@69:0>:int,<f_main_1296@69:1>:int),
+          P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+          ((<f_main_1296@69:3> < <f_main_1296@69:0>) && (<fail_1303@72:0> = 1))
+          |- P[<fail_1303@72:0>](<fail_1303@72:0>:int)
+          
+          P[<map_1035@64:0>](<map_1035@64:0>:int), ((<<map_1035@64:1>@67:0> = 0) && (<map_1035@64:0> = 0))
+          |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+          
+          P[<<zip_1032@38:2>@60:0>](<f_main_1295@62:0>:int,<f_main_1295@62:0>:int,<map_1035@64:0>:int)|- P[<map_1035@64:0>](
+          <map_1035@64:0>:int)
+          
+          P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int),
+          P[<<zip_1032@44:2>@52:0>](var36:int,var37:int,var38:int),
+          (((1 + var38) = <<zip_1032@38:2>@60:0>) &&
+           (((1 + var37) = <zip_1032@38:1>) &&
+            (((1 + var36) = <zip_1032@38:0>) && ((<zip_1032@38:1> <> 0) && (<zip_1032@38:0> <> 0)))))
+          |- P[<<zip_1032@38:2>@60:0>](<zip_1032@38:0>:int,<zip_1032@38:1>:int,
+                                       <<zip_1032@38:2>@60:0>:int)
+          
+          P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int),
+          ((<zip_1032@44:1> = 0) && ((<zip_1032@44:0> = 0) && (<<zip_1032@44:2>@52:0> = 0)))
+          |- P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,
+                                       <<zip_1032@44:2>@52:0>:int)
+          
+          P[<zip_1032@38:1>](var39:int,var40:int),
+          ((var40 = (1 + <zip_1032@44:1>)) &&
+           ((var39 = (1 + <zip_1032@44:0>)) && (((1 + <zip_1032@44:1>) <> 0) && ((1 + <zip_1032@44:0>) <> 0))))
+          |- P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1303_sep_72_sep_0($221)) -> 1=0.
+(($221-1=0) & ($222-$223<0)) & (v_sep_map_1035_sep_64_sep_1_sep_67_sep_0($224,$222)) & (v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0($223,$223,$224)) -> v_sep_fail_1303_sep_72_sep_0($221).
+(($225=0) & ($226=0)) & (v_sep_map_1035_sep_64_sep_0($225)) -> v_sep_map_1035_sep_64_sep_1_sep_67_sep_0($225,$226).
+(0=0) & (v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0($227,$227,$225)) -> v_sep_map_1035_sep_64_sep_0($225).
+(($228<>0) & ($229<>0) & (-$228+$230+1=0) & (-$229+$231+1=0) & ($232-$233+1=0)) & (v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0($230,$231,$232)) & (v_sep_zip_1032_sep_38_sep_1($228,$229)) -> v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0($228,$229,$233).
+(($234=0) & ($235=0) & ($236=0)) & (v_sep_zip_1032_sep_44_sep_1($235,$236)) -> v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0($235,$236,$234).
+(($235+1<>0) & ($236+1<>0) & (-$235+$237-1=0) & (-$236+$238-1=0)) & (v_sep_zip_1032_sep_38_sep_1($237,$238)) -> v_sep_zip_1032_sep_44_sep_1($235,$236).
+-$228+$229=0 -> v_sep_zip_1032_sep_38_sep_1($228,$229).
+
+
+v_sep_fail_1303_sep_72_sep_0: X
+v_sep_map_1035_sep_64_sep_0: X
+v_sep_map_1035_sep_64_sep_1_sep_67_sep_0: X
+v_sep_zip_1032_sep_38_sep_1: X
+v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0: X
+v_sep_zip_1032_sep_44_sep_1: X
+v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0: X
+...................
+v_sep_fail_1303_sep_72_sep_0: X
+v_sep_map_1035_sep_64_sep_0: X
+v_sep_map_1035_sep_64_sep_1_sep_67_sep_0: X
+v_sep_zip_1032_sep_38_sep_1: X
+v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0: X
+v_sep_zip_1032_sep_44_sep_1: X
+v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0: X
+....
+v_sep_fail_1303_sep_72_sep_0: X
+v_sep_map_1035_sep_64_sep_0: X
+v_sep_map_1035_sep_64_sep_1_sep_67_sep_0: X
+v_sep_zip_1032_sep_38_sep_1: X
+v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0: X
+v_sep_zip_1032_sep_44_sep_1: X
+v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0: X
+.............
+v_sep_fail_1303_sep_72_sep_0: X
+v_sep_map_1035_sep_64_sep_0: X
+v_sep_map_1035_sep_64_sep_1_sep_67_sep_0: X
+v_sep_zip_1032_sep_38_sep_1: X
+v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0: X
+v_sep_zip_1032_sep_44_sep_1: X
+v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0: X
+...............
+v_sep_fail_1303_sep_72_sep_0: X
+v_sep_map_1035_sep_64_sep_0: X
+v_sep_map_1035_sep_64_sep_1_sep_67_sep_0: X
+v_sep_zip_1032_sep_38_sep_1: X
+v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0: X
+v_sep_zip_1032_sep_44_sep_1: X
+v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0: X
+...................(0=0) & (v_sep_fail_1303_sep_72_sep_0($221)) -> 1=0.
+(($221-1=0) & ($222-$223<0)) & (v_sep_map_1035_sep_64_sep_1_sep_67_sep_0($224,$222)) & (v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0($223,$223,$224)) -> v_sep_fail_1303_sep_72_sep_0($221).
+(($225=0) & ($226=0)) & (v_sep_map_1035_sep_64_sep_0($225)) -> v_sep_map_1035_sep_64_sep_1_sep_67_sep_0($225,$226).
+(0=0) & (v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0($227,$227,$225)) -> v_sep_map_1035_sep_64_sep_0($225).
+(($228<>0) & ($229<>0) & (-$228+$230+1=0) & (-$229+$231+1=0) & ($232-$233+1=0)) & (v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0($230,$231,$232)) & (v_sep_zip_1032_sep_38_sep_1($228,$229)) -> v_sep_zip_1032_sep_38_sep_2_sep_60_sep_0($228,$229,$233).
+(($234=0) & ($235=0) & ($236=0)) & (v_sep_zip_1032_sep_44_sep_1($235,$236)) -> v_sep_zip_1032_sep_44_sep_2_sep_52_sep_0($235,$236,$234).
+(($235+1<>0) & ($236+1<>0) & (-$235+$237-1=0) & (-$236+$238-1=0)) & (v_sep_zip_1032_sep_38_sep_1($237,$238)) -> v_sep_zip_1032_sep_44_sep_1($235,$236).
+-$228+$229=0 -> v_sep_zip_1032_sep_38_sep_1($228,$229).
+
+           (<zip_1032@38:1> = <zip_1032@38:0>) |- P[<zip_1032@38:1>](<zip_1032@38:0>:int,
+                                                                    <zip_1032@38:1>:int)
+        solution:
+          P[<fail_1303@72:0>]($239:bool) = false
+          P[<map_1035@64:0>]($254:int) = (1 <= $254)
+          P[<<map_1035@64:1>@67:0>]($242:int,$244:int) = ((1 + $242) <= 0)
+          P[<zip_1032@38:1>]($264:int,$266:int) = true
+          P[<<zip_1032@38:2>@60:0>]($247:int,$249:int,$251:int) = (1 <= $251)
+          P[<zip_1032@44:1>]($269:int,$271:int) = true
+          P[<<zip_1032@44:2>@52:0>]($257:int,$259:int,$261:int) = (0 <= $261)
+        
+      end HcSolver.solve_ub(6238)[4] (0.047993 sec.)
+      begin HcSolver.check_validity(6784)[4]
+        input:
+          P[<fail_1303@72:0>](<fail_1303@72:0>:bool)|- bot
+          
+          P[<<zip_1032@38:2>@60:0>](<f_main_1296@69:0>:int,<f_main_1296@69:0>:int,<f_main_1296@69:1>:int),
+          P[<<map_1035@64:1>@67:0>](<f_main_1296@69:1>:int,<f_main_1296@69:3>:int),
+          ((<f_main_1296@69:3> < <f_main_1296@69:0>) && <fail_1303@72:0>) |- P[<fail_1303@72:0>](
+          <fail_1303@72:0>:bool)
+          
+          P[<map_1035@64:0>](<map_1035@64:0>:int), ((<map_1035@64:0> = 0) && (<<map_1035@64:1>@67:0> = 0))
+          |- P[<<map_1035@64:1>@67:0>](<map_1035@64:0>:int,<<map_1035@64:1>@67:0>:int)
+          
+          P[<<zip_1032@38:2>@60:0>](<f_main_1295@62:0>:int,<f_main_1295@62:0>:int,<map_1035@64:0>:int)|- P[<map_1035@64:0>](
+          <map_1035@64:0>:int)
+          
+          P[<zip_1032@38:1>](<zip_1032@38:0>:int,<zip_1032@38:1>:int),
+          P[<<zip_1032@44:2>@52:0>]((-1 + <zip_1032@38:0>):int,(-1 + <zip_1032@38:1>):int,(
+                                    -1 + <<zip_1032@38:2>@60:0>):int),
+          ((<zip_1032@38:0> <> 0) && (<zip_1032@38:1> <> 0))
+          |- P[<<zip_1032@38:2>@60:0>](<zip_1032@38:0>:int,<zip_1032@38:1>:int,
+                                       <<zip_1032@38:2>@60:0>:int)
+          
+          P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int),
+          ((<<zip_1032@44:2>@52:0> = 0) && ((<zip_1032@44:0> = 0) && (<zip_1032@44:1> = 0)))
+          |- P[<<zip_1032@44:2>@52:0>](<zip_1032@44:0>:int,<zip_1032@44:1>:int,
+                                       <<zip_1032@44:2>@52:0>:int)
+          
+          P[<zip_1032@38:1>]((1 + <zip_1032@44:0>):int,(1 + <zip_1032@44:1>):int),
+          (((1 + <zip_1032@44:0>) <> 0) && ((1 + <zip_1032@44:1>) <> 0))
+          |- P[<zip_1032@44:1>](<zip_1032@44:0>:int,<zip_1032@44:1>:int)
+          
+           (<zip_1032@38:1> = <zip_1032@38:0>) |- P[<zip_1032@38:1>](<zip_1032@38:0>:int,
+                                                                    <zip_1032@38:1>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(6784)[4] (0.003999 sec.)
+      solution:
+        P[<fail_1303@72:0>]($239:bool) = false
+        P[<map_1035@64:0>]($254:int) = (1 <= $254)
+        P[<<map_1035@64:1>@67:0>]($242:int,$244:int) = ((1 + $242) <= 0)
+        P[<zip_1032@38:1>]($264:int,$266:int) = true
+        P[<<zip_1032@38:2>@60:0>]($247:int,$249:int,$251:int) = (1 <= $251)
+        P[<zip_1032@44:1>]($269:int,$271:int) = true
+        P[<<zip_1032@44:2>@52:0>]($257:int,$259:int,$261:int) = (0 <= $261)
+    end YhornInterface.solve(6237)[3] (0.051992 sec.)
+    
+  end RefTypeInfer.infer_etrs(2935)[2] (0.093986 sec.)
+  refinement types:
+    main_1292: X
+    f_1297: v1:int -> X
+    main_1037: v1:int -> (v2:unit -> X) -> X
+    zip_1032: v1:int -> v2:int -> (v3:{v3:int | (1 <= v3)} -> X) -> X
+    br_zip_1301: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    zip_1032: v1:int -> v2:int -> (v3:{v3:int | (0 <= v3)} -> X) -> X
+    br_zip_1299: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    f_zip_1293: v1:int -> v2:int -> (v3:int -> X) -> v5:int -> X
+    f_main_1295: v1:int -> (v2:unit -> X) -> v4:int -> X
+    map_1035: v1:{v1:int | (1 <= v1)} -> (v2:{v2:int | ((1 + v1) <= 0)} -> X) -> X
+    f_main_1296: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1303: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1298: var51:int -> var50:unit -> X
+    f_map_1294: var56:int -> (var55:int -> X) -> var53:int -> X
+    loop_1079: var60:unit -> (var59:int -> X) -> X
+  abstraction types:
+    main_1292: X
+    f_1297: v1:int -> X
+    main_1037: v1:int -> (v2:unit -> X) -> X
+    zip_1032: var61:int -> var62:int -> (var63:int[var63 -> (1 <= var63),
+                                                   var63 -> (0 <= var63)] -> X) -> X
+    br_zip_1301: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    br_zip_1299: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    f_zip_1293: v1:int -> v2:int -> (v3:int -> X) -> v5:int -> X
+    f_main_1295: v1:int -> (v2:unit -> X) -> v4:int -> X
+    map_1035: v1:int[v1 -> (1 <= v1)] -> (v2:int[v2 -> ((1 + v1) <= 0)] -> X) -> X
+    f_main_1296: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1303: v1:bool -> (v2:unit -> X) -> X
+    f_1298: var51:int -> var50:unit -> X
+    f_map_1294: var56:int -> (var55:int -> X) -> var53:int -> X
+    loop_1079: var60:unit -> (var59:int -> X) -> X
+  
+end AbsTypeInfer.refine(2934)[1] (0.100985 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 1; 0; 0; 0; 0; 0
+
+Program with abstraction types (CEGAR-cycle 2)::
+Main: main_1292
+  main_1292 -> (rand_int f_1297)
+  br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 when b_1300 -> (k_zip_1132 0)
+  br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 when (not b_1300) -> (loop_1079 () k_zip_1132)
+  br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 when b_1302 -> (loop_1079 () k_zip_1132)
+  br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 when (not b_1302) ->
+      (zip_1032 (x_1033 - 1) (y_1034 - 1) (f_zip_1293 x_1033 y_1034 k_zip_1132))
+  f_1297 x_1267 -> (main_1037 x_1267 (f_1298 x_1267))
+  f_1298 x_1267 x_1264 -> end
+  f_main_1295 n_1038 k_main_1225 x_1250 -> (map_1035 x_1250 (f_main_1296 n_1038 x_1250 k_main_1225))
+  f_main_1296 n_1038 x_1250 k_main_1225 x_1228 when (x_1228 >= n_1038) -> (k_main_1225 ())
+  f_main_1296 n_1038 x_1250 k_main_1225 x_1228 when (not (x_1228 >= n_1038)) -> (fail_1303 true k_main_1225)
+  f_map_1294 x_1036 k_map_1193 x_1197 -> (k_map_1193 (1 + x_1197))
+  f_zip_1293 x_1033 y_1034 k_zip_1132 x_1160 -> (k_zip_1132 (1 + x_1160))
+  fail_1303 b k -> {fail} => (k ())
+  loop_1079 x_1031 k_loop_1105 -> (loop_1079 x_1031 k_loop_1105)
+  main_1037 n_1038 k_main_1225 -> (zip_1032 n_1038 n_1038 (f_main_1295 n_1038 k_main_1225))
+  map_1035 x_1036 k_map_1193 when (x_1036 = 0) -> (k_map_1193 0)
+  map_1035 x_1036 k_map_1193 when (not (x_1036 = 0)) -> (map_1035 (x_1036 - 1) (f_map_1294 x_1036 k_map_1193))
+  zip_1032 x_1033 y_1034 k_zip_1132 when (x_1033 = 0) -> (br_zip_1299 (y_1034 = 0) x_1033 y_1034 k_zip_1132)
+  zip_1032 x_1033 y_1034 k_zip_1132 when (not (x_1033 = 0)) -> (br_zip_1301 (y_1034 = 0) x_1033 y_1034 k_zip_1132)
+Types:
+  main_1292 : X
+  fail_1303 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  loop_1079 : (unit -> (int -> X) -> X)
+  map_1035 : (x_1:int[x_1 >= 1] -> (x_3:int[x_1 <= -1; x_3 >= 0] -> X) -> X)
+  zip_1032 : (x_1:int -> int -> (x_4:int[x_4 >= 0; x_4 >= 1; x_1 <= 0] -> X) -> X)
+  
+(2-1) Abstracting ... DONE!
+
+(2-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1292 ... --> 
+  f_1297 ... --> 
+  main_1037 ... --> 
+  zip_1032 [2/2] ... --> 
+  br_zip_1301 [2/2] ... --> 
+  zip_1032 [1/2] ... --> 
+  br_zip_1299 [1/2] ... --> 
+  f_zip_1293 ... --> 
+  f_main_1295 ... --> 
+  map_1035 [2/2] ... --> 
+  map_1035 [1/2] ... --> 
+  f_map_1294 ... --> 
+  f_main_1296 [2/2] ... --> 
+  fail_1303 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 1; 0; 0; 0; 0; 1; 0; 0; 1; 0
+
+(2-3) Checking counter-example ... DONE!
+
+(2-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(8323)[1]
+  program:
+    main_1292  | true = ((Random.int 0) f_1297)
+    br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 | b_1300 = (k_zip_1132 0)
+    br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 | (not b_1300) = (loop_1079 ()
+                                                                    k_zip_1132)
+    br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 | b_1302 = (loop_1079 ()
+                                                                    k_zip_1132)
+    br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 | (not b_1302) = (zip_1032
+                                                                    (
+                                                                    x_1033 - 1)
+                                                                    (
+                                                                    y_1034 - 1)
+                                                                    (
+                                                                    f_zip_1293 x_1033
+                                                                    y_1034
+                                                                    k_zip_1132))
+    f_1297 x_1267 | true = (main_1037 x_1267
+                                      (f_1298 x_1267))
+    f_1298 x_1267 x_1264 | true = end
+    f_main_1295 n_1038 k_main_1225 x_1250 | true = (map_1035 x_1250
+                                                             (f_main_1296 n_1038
+                                                                    x_1250
+                                                                    k_main_1225))
+    f_main_1296 n_1038 x_1250 k_main_1225 x_1228 | (x_1228 >= n_1038) = (
+    k_main_1225 ())
+    f_main_1296 n_1038 x_1250 k_main_1225 x_1228 | (not (x_1228 >= n_1038)) = (
+    fail_1303 true
+              k_main_1225)
+    f_map_1294 x_1036 k_map_1193 x_1197 | true = (k_map_1193 (1 + x_1197))
+    f_zip_1293 x_1033 y_1034 k_zip_1132 x_1160 | true = (k_zip_1132 (
+                                                                    1 + x_1160))
+    fail_1303 b k | true = (fail ())
+    loop_1079 x_1031 k_loop_1105 | true = (loop_1079 x_1031
+                                                     k_loop_1105)
+    main_1037 n_1038 k_main_1225 | true = (zip_1032 n_1038
+                                                    n_1038
+                                                    (f_main_1295 n_1038
+                                                                 k_main_1225))
+    map_1035 x_1036 k_map_1193 | (x_1036 = 0) = (k_map_1193 0)
+    map_1035 x_1036 k_map_1193 | (not (x_1036 = 0)) = (map_1035 (x_1036 - 1)
+                                                                (f_map_1294 x_1036
+                                                                    k_map_1193))
+    zip_1032 x_1033 y_1034 k_zip_1132 | (x_1033 = 0) = (br_zip_1299 (
+                                                                    y_1034 = 0)
+                                                                    x_1033
+                                                                    y_1034
+                                                                    k_zip_1132)
+    zip_1032 x_1033 y_1034 k_zip_1132 | (not (x_1033 = 0)) = (br_zip_1301 (
+                                                                    y_1034 = 0)
+                                                                    x_1033
+                                                                    y_1034
+                                                                    k_zip_1132)
+    main_1292:X
+    br_zip_1299:bool -> int -> int -> (int -> X) -> X
+    br_zip_1301:bool -> int -> int -> (int -> X) -> X
+    f_1297:int -> X
+    f_1298:int -> unit -> X
+    f_main_1295:int -> (unit -> X) -> int -> X
+    f_main_1296:int -> int -> (unit -> X) -> int -> X
+    f_map_1294:int -> (int -> X) -> int -> X
+    f_zip_1293:int -> int -> (int -> X) -> int -> X
+    fail_1303:bool -> (unit -> X) -> X
+    loop_1079:unit -> (int -> X) -> X
+    main_1037:int -> (unit -> X) -> X
+    map_1035:int -> (int -> X) -> X
+    zip_1032:int -> int -> (int -> X) -> X
+  inlined functions: br_zip_1299,br_zip_1301,f_1297,f_1298,f_main_1295,f_main_1296,f_map_1294,f_zip_1293,main_1037
+  counterexample: 0:0:0:1:1:0:0:0:0:1:0:0:1:0
+  error traces:
+    [true.nop(<f_1297@78:0> = var66)
+     [true.(<main_1037@80:0> = <f_1297@78:0>)
+      [true.((<zip_1032@82:0> = <main_1037@80:0>) && (<zip_1032@82:1> = <main_1037@80:0>))
+       [(not (<zip_1032@82:0> = 0)).
+        ((<br_zip_1301@85:0> = (<zip_1032@82:1> = 0)) &&
+         ((<br_zip_1301@85:1> = <zip_1032@82:0>) && (<br_zip_1301@85:2> = <zip_1032@82:1>)))
+        [(not <br_zip_1301@85:0>).
+         ((<zip_1032@88:0> = (<br_zip_1301@85:1> - 1)) && (<zip_1032@88:1> = (<br_zip_1301@85:2> - 1)))
+         [(<zip_1032@88:0> = 0).
+          ((<br_zip_1299@91:0> = (<zip_1032@88:1> = 0)) &&
+           ((<br_zip_1299@91:1> = <zip_1032@88:0>) && (<br_zip_1299@91:2> = <zip_1032@88:1>)))
+          [<br_zip_1299@91:0>.(<<br_zip_1299@91:3>@94:0> = 0)
+           [true.(<<zip_1032@88:2>@96:0> = <<br_zip_1299@91:3>@94:0>)
+            [true.
+             ((<f_zip_1293@98:0> = <br_zip_1301@85:1>) &&
+              ((<f_zip_1293@98:1> = <br_zip_1301@85:2>) && (<f_zip_1293@98:3> = <<zip_1032@88:2>@96:0>)))
+             [true.(<<f_zip_1293@98:2>@100:0> = (1 + <f_zip_1293@98:3>))
+              [true.(<<br_zip_1301@85:3>@102:0> = <<f_zip_1293@98:2>@100:0>)
+               [true.(<<zip_1032@82:2>@104:0> = <<br_zip_1301@85:3>@102:0>)
+                [true.((<f_main_1295@106:0> = <main_1037@80:0>) && (<f_main_1295@106:2> = <<zip_1032@82:2>@104:0>))
+                 [true.(<map_1035@108:0> = <f_main_1295@106:2>)
+                  [(not (<map_1035@108:0> = 0)).(<map_1035@111:0> = (<map_1035@108:0> - 1))
+                   [(<map_1035@111:0> = 0).(<<map_1035@111:1>@114:0> = 0)
+                    [true.((<f_map_1294@116:0> = <map_1035@108:0>) && (<f_map_1294@116:2> = <<map_1035@111:1>@114:0>))
+                     [true.(<<f_map_1294@116:1>@118:0> = (1 + <f_map_1294@116:2>))
+                      [true.(<<map_1035@108:1>@120:0> = <<f_map_1294@116:1>@118:0>)
+                       [true.
+                        ((<f_main_1296@122:0> = <f_main_1295@106:0>) &&
+                         ((<f_main_1296@122:1> = <f_main_1295@106:2>) &&
+                          (<f_main_1296@122:3> = <<map_1035@108:1>@120:0>)))
+                        [(not (<f_main_1296@122:3> >= <f_main_1296@122:0>)).(<fail_1303@125:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(8324)[2]
+    horn clauses:
+      P[<fail_1303@125:0>](<fail_1303@125:0>:bool)|- bot
+      
+      P[<f_main_1296@122:3>](<f_main_1296@122:0>:int,<f_main_1296@122:1>:int,<f_main_1296@122:3>:int),
+      ((<f_main_1296@122:3> < <f_main_1296@122:0>) && <fail_1303@125:0>)
+      |- P[<fail_1303@125:0>](<fail_1303@125:0>:bool)
+      
+      P[<f_main_1295@106:2>](<f_main_1296@122:0>:int,<f_main_1296@122:1>:int),
+      P[<<map_1035@108:1>@120:0>](<f_main_1296@122:1>:int,<f_main_1296@122:3>:int)|- P[<f_main_1296@122:3>](
+      <f_main_1296@122:0>:int,<f_main_1296@122:1>:int,<f_main_1296@122:3>:int)
+      
+      P[<map_1035@108:0>](<map_1035@108:0>:int),
+      P[<<f_map_1294@116:1>@118:0>](<map_1035@108:0>:int,<<map_1035@108:1>@120:0>:int), (
+      <map_1035@108:0> <> 0) |- P[<<map_1035@108:1>@120:0>](<map_1035@108:0>:int,
+                                                            <<map_1035@108:1>@120:0>:int)
+      
+      P[<f_map_1294@116:2>](<f_map_1294@116:0>:int,(-1 + <<f_map_1294@116:1>@118:0>):int)|- P[<<f_map_1294@116:1>@118:0>](
+      <f_map_1294@116:0>:int,<<f_map_1294@116:1>@118:0>:int)
+      
+      P[<map_1035@108:0>](<f_map_1294@116:0>:int),
+      P[<<map_1035@111:1>@114:0>]((-1 + <f_map_1294@116:0>):int,<f_map_1294@116:2>:int), (
+      <f_map_1294@116:0> <> 0) |- P[<f_map_1294@116:2>](<f_map_1294@116:0>:int,
+                                                        <f_map_1294@116:2>:int)
+      
+      P[<map_1035@111:0>](<map_1035@111:0>:int), ((<map_1035@111:0> = 0) && (<<map_1035@111:1>@114:0> = 0))
+      |- P[<<map_1035@111:1>@114:0>](<map_1035@111:0>:int,<<map_1035@111:1>@114:0>:int)
+      
+      P[<map_1035@108:0>]((1 + <map_1035@111:0>):int), ((1 + <map_1035@111:0>) <> 0)
+      |- P[<map_1035@111:0>](<map_1035@111:0>:int)
+      
+      P[<f_main_1295@106:2>](<f_main_1295@106:0>:int,<map_1035@108:0>:int)|- P[<map_1035@108:0>](<map_1035@108:0>:int)
+      
+      P[<main_1037@80:0>](<f_main_1295@106:0>:int),
+      P[<<zip_1032@82:2>@104:0>](<f_main_1295@106:0>:int,<f_main_1295@106:0>:int,<f_main_1295@106:2>:int)|- P[<f_main_1295@106:2>](
+      <f_main_1295@106:0>:int,<f_main_1295@106:2>:int)
+      
+      P[<zip_1032@82:1>](<zip_1032@82:0>:int,<zip_1032@82:1>:int),
+      P[<<br_zip_1301@85:3>@102:0>]((<zip_1032@82:1> = 0):bool,<zip_1032@82:0>:int,<zip_1032@82:1>:int,<<zip_1032@82:2>@104:0>:int),
+      (<zip_1032@82:0> <> 0)
+      |- P[<<zip_1032@82:2>@104:0>](<zip_1032@82:0>:int,<zip_1032@82:1>:int,
+                                    <<zip_1032@82:2>@104:0>:int)
+      
+      P[<br_zip_1301@85:2>](<br_zip_1301@85:0>:bool,<br_zip_1301@85:1>:int,<br_zip_1301@85:2>:int),
+      P[<<f_zip_1293@98:2>@100:0>](<br_zip_1301@85:1>:int,<br_zip_1301@85:2>:int,<<br_zip_1301@85:3>@102:0>:int),
+      (not <br_zip_1301@85:0>)
+      |- P[<<br_zip_1301@85:3>@102:0>](<br_zip_1301@85:0>:bool,<br_zip_1301@85:1>:int,
+                                       <br_zip_1301@85:2>:int,<<br_zip_1301@85:3>@102:0>:int)
+      
+      P[<f_zip_1293@98:3>](<f_zip_1293@98:0>:int,<f_zip_1293@98:1>:int,(
+                           -1 + <<f_zip_1293@98:2>@100:0>):int)|- P[<<f_zip_1293@98:2>@100:0>](
+      <f_zip_1293@98:0>:int,<f_zip_1293@98:1>:int,<<f_zip_1293@98:2>@100:0>:int)
+      
+      P[<br_zip_1301@85:2>](false:bool,<f_zip_1293@98:0>:int,<f_zip_1293@98:1>:int),
+      P[<<zip_1032@88:2>@96:0>]((-1 + <f_zip_1293@98:0>):int,(-1 + <f_zip_1293@98:1>):int,<f_zip_1293@98:3>:int)|- P[<f_zip_1293@98:3>](
+      <f_zip_1293@98:0>:int,<f_zip_1293@98:1>:int,<f_zip_1293@98:3>:int)
+      
+      P[<zip_1032@88:1>](<zip_1032@88:0>:int,<zip_1032@88:1>:int),
+      P[<<br_zip_1299@91:3>@94:0>]((<zip_1032@88:1> = 0):bool,<zip_1032@88:0>:int,<zip_1032@88:1>:int,<<zip_1032@88:2>@96:0>:int),
+      (<zip_1032@88:0> = 0)
+      |- P[<<zip_1032@88:2>@96:0>](<zip_1032@88:0>:int,<zip_1032@88:1>:int,
+                                   <<zip_1032@88:2>@96:0>:int)
+      
+      P[<br_zip_1299@91:2>](<br_zip_1299@91:0>:bool,<br_zip_1299@91:1>:int,<br_zip_1299@91:2>:int),
+      ((<<br_zip_1299@91:3>@94:0> = 0) && <br_zip_1299@91:0>)
+      |- P[<<br_zip_1299@91:3>@94:0>](<br_zip_1299@91:0>:bool,<br_zip_1299@91:1>:int,
+                                      <br_zip_1299@91:2>:int,<<br_zip_1299@91:3>@94:0>:int)
+      
+      P[<zip_1032@88:1>](<br_zip_1299@91:1>:int,<br_zip_1299@91:2>:int),
+      ((<br_zip_1299@91:1> = 0) && (<br_zip_1299@91:0> = (<br_zip_1299@91:2> = 0)))
+      |- P[<br_zip_1299@91:2>](<br_zip_1299@91:0>:bool,<br_zip_1299@91:1>:int,
+                               <br_zip_1299@91:2>:int)
+      
+      P[<br_zip_1301@85:2>](false:bool,(1 + <zip_1032@88:0>):int,(1 + <zip_1032@88:1>):int)|- P[<zip_1032@88:1>](
+      <zip_1032@88:0>:int,<zip_1032@88:1>:int)
+      
+      P[<zip_1032@82:1>](<br_zip_1301@85:1>:int,<br_zip_1301@85:2>:int),
+      ((<br_zip_1301@85:1> <> 0) && (<br_zip_1301@85:0> = (<br_zip_1301@85:2> = 0)))
+      |- P[<br_zip_1301@85:2>](<br_zip_1301@85:0>:bool,<br_zip_1301@85:1>:int,
+                               <br_zip_1301@85:2>:int)
+      
+      P[<main_1037@80:0>](<zip_1032@82:1>:int), (<zip_1032@82:1> = <zip_1032@82:0>)
+      |- P[<zip_1032@82:1>](<zip_1032@82:0>:int,<zip_1032@82:1>:int)
+      
+      P[<f_1297@78:0>](<main_1037@80:0>:int)|- P[<main_1037@80:0>](<main_1037@80:0>:int)
+      
+      |- P[<f_1297@78:0>](<f_1297@78:0>:int)
+    call trees:
+      <main_1292@75>
+        <f_1297@78>
+          <main_1037@80>
+            <zip_1032@82>
+              <br_zip_1301@85>
+                <zip_1032@88>
+                  <br_zip_1299@91>
+                  </<br_zip_1299@91:3>@94>
+                </<zip_1032@88:2>@96>
+                <f_zip_1293@98>
+                </<f_zip_1293@98:2>@100>
+              </<br_zip_1301@85:3>@102>
+            </<zip_1032@82:2>@104>
+            <f_main_1295@106>
+              <map_1035@108>
+                <map_1035@111>
+                </<map_1035@111:1>@114>
+                <f_map_1294@116>
+                </<f_map_1294@116:1>@118>
+              </<map_1035@108:1>@120>
+              <f_main_1296@122>
+                <fail_1303@125>
+    inlined horn clauses:
+      P[<fail_1303@125:0>](<fail_1303@125:0>:bool)|- bot
+      
+      P[<<zip_1032@82:2>@104:0>](<f_main_1296@122:0>:int,<f_main_1296@122:0>:int,<f_main_1296@122:1>:int),
+      P[<<map_1035@108:1>@120:0>](<f_main_1296@122:1>:int,<f_main_1296@122:3>:int),
+      ((<f_main_1296@122:3> < <f_main_1296@122:0>) && <fail_1303@125:0>)
+      |- P[<fail_1303@125:0>](<fail_1303@125:0>:bool)
+      
+      P[<map_1035@108:0>](<map_1035@108:0>:int),
+      P[<<map_1035@111:1>@114:0>]((-1 + <map_1035@108:0>):int,(-1 + <<map_1035@108:1>@120:0>):int),
+      (<map_1035@108:0> <> 0) |- P[<<map_1035@108:1>@120:0>](<map_1035@108:0>:int,
+                                                             <<map_1035@108:1>@120:0>:int)
+      
+      P[<map_1035@111:0>](<map_1035@111:0>:int), ((<map_1035@111:0> = 0) && (<<map_1035@111:1>@114:0> = 0))
+      |- P[<<map_1035@111:1>@114:0>](<map_1035@111:0>:int,<<map_1035@111:1>@114:0>:int)
+      
+      P[<map_1035@108:0>]((1 + <map_1035@111:0>):int), ((1 + <map_1035@111:0>) <> 0)
+      |- P[<map_1035@111:0>](<map_1035@111:0>:int)
+      
+      P[<<zip_1032@82:2>@104:0>](<f_main_1295@106:0>:int,<f_main_1295@106:0>:int,<map_1035@108:0>:int)|- P[<map_1035@108:0>](
+      <map_1035@108:0>:int)
+      
+      P[<zip_1032@82:1>](<zip_1032@82:0>:int,<zip_1032@82:1>:int),
+      P[<<zip_1032@88:2>@96:0>]((-1 + <zip_1032@82:0>):int,(-1 + <zip_1032@82:1>):int,(
+                                -1 + <<zip_1032@82:2>@104:0>):int), (
+      (<zip_1032@82:0> <> 0) && (<zip_1032@82:1> <> 0))
+      |- P[<<zip_1032@82:2>@104:0>](<zip_1032@82:0>:int,<zip_1032@82:1>:int,
+                                    <<zip_1032@82:2>@104:0>:int)
+      
+      P[<zip_1032@88:1>](<zip_1032@88:0>:int,<zip_1032@88:1>:int),
+      ((<<zip_1032@88:2>@96:0> = 0) && ((<zip_1032@88:0> = 0) && (<zip_1032@88:1> = 0)))
+      |- P[<<zip_1032@88:2>@96:0>](<zip_1032@88:0>:int,<zip_1032@88:1>:int,
+                                   <<zip_1032@88:2>@96:0>:int)
+      
+      P[<zip_1032@82:1>]((1 + <zip_1032@88:0>):int,(1 + <zip_1032@88:1>):int),
+      (((1 + <zip_1032@88:0>) <> 0) && ((1 + <zip_1032@88:1>) <> 0))
+      |- P[<zip_1032@88:1>](<zip_1032@88:0>:int,<zip_1032@88:1>:int)
+      
+       (<zip_1032@82:1> = <zip_1032@82:0>) |- P[<zip_1032@82:1>](<zip_1032@82:0>:int,
+                                                                 <zip_1032@82:1>:int)
+    begin ParamSubstInfer.infer(11754)[3]
+      
+    end ParamSubstInfer.infer(11754)[3] (0.067990 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(11756)[3]
+      
+    end RefTypeInfer.elim_coeffs(11756)[3] (0.002000 sec.)
+    begin YhornInterface.solve(12193)[3]
+      begin HcSolver.solve_ub(12194)[4]
+        encoded:
+          P[<fail_1303@125:0>](<fail_1303@125:0>:int)|- bot
+          
+          P[<<zip_1032@82:2>@104:0>](<f_main_1296@122:0>:int,<f_main_1296@122:0>:int,<f_main_1296@122:1>:int),
+          P[<<map_1035@108:1>@120:0>](<f_main_1296@122:1>:int,<f_main_1296@122:3>:int),
+          ((<f_main_1296@122:3> < <f_main_1296@122:0>) && (<fail_1303@125:0> = 1))
+          |- P[<fail_1303@125:0>](<fail_1303@125:0>:int)
+          
+          P[<map_1035@108:0>](<map_1035@108:0>:int),
+          P[<<map_1035@111:1>@114:0>]((-1 + <map_1035@108:0>):int,(-1 + <<map_1035@108:1>@120:0>):int),
+          (<map_1035@108:0> <> 0) |- P[<<map_1035@108:1>@120:0>](<map_1035@108:0>:int,
+                                                                 <<map_1035@108:1>@120:0>:int)
+          
+          P[<map_1035@111:0>](<map_1035@111:0>:int), ((<map_1035@111:0> = 0) && (<<map_1035@111:1>@114:0> = 0))
+          |- P[<<map_1035@111:1>@114:0>](<map_1035@111:0>:int,<<map_1035@111:1>@114:0>:int)
+          
+          P[<map_1035@108:0>]((1 + <map_1035@111:0>):int), ((1 + <map_1035@111:0>) <> 0)
+          |- P[<map_1035@111:0>](<map_1035@111:0>:int)
+          
+          P[<<zip_1032@82:2>@104:0>](<f_main_1295@106:0>:int,<f_main_1295@106:0>:int,<map_1035@108:0>:int)|- P[<map_1035@108:0>](
+          <map_1035@108:0>:int)
+          
+          P[<zip_1032@82:1>](<zip_1032@82:0>:int,<zip_1032@82:1>:int),
+          P[<<zip_1032@88:2>@96:0>]((-1 + <zip_1032@82:0>):int,(-1 + <zip_1032@82:1>):int,(
+                                    -1 + <<zip_1032@82:2>@104:0>):int),
+          ((<zip_1032@82:0> <> 0) && (<zip_1032@82:1> <> 0))
+          |- P[<<zip_1032@82:2>@104:0>](<zip_1032@82:0>:int,<zip_1032@82:1>:int,
+                                        <<zip_1032@82:2>@104:0>:int)
+          
+          P[<zip_1032@88:1>](<zip_1032@88:0>:int,<zip_1032@88:1>:int),
+          ((<<zip_1032@88:2>@96:0> = 0) && ((<zip_1032@88:0> = 0) && (<zip_1032@88:1> = 0)))
+          |- P[<<zip_1032@88:2>@96:0>](<zip_1032@88:0>:int,<zip_1032@88:1>:int,
+                                       <<zip_1032@88:2>@96:0>:int)
+          
+          P[<zip_1032@82:1>]((1 + <zip_1032@88:0>):int,(1 + <zip_1032@88:1>):int),
+          (((1 + <zip_1032@88:0>) <> 0) && ((1 + <zip_1032@88:1>) <> 0))
+          |- P[<zip_1032@88:1>](<zip_1032@88:0>:int,<zip_1032@88:1>:int)
+          
+           (<zip_1032@82:1> = <zip_1032@82:0>) |- P[<zip_1032@82:1>](<zip_1032@82:0>:int,
+                                                                    <zip_1032@82:1>:int)
+        input to Yhorn:
+          P[<fail_1303@125:0>](<fail_1303@125:0>:int)|- bot
+          
+          P[<<zip_1032@82:2>@104:0>](<f_main_1296@122:0>:int,<f_main_1296@122:0>:int,<f_main_1296@122:1>:int),
+          P[<<map_1035@108:1>@120:0>](<f_main_1296@122:1>:int,<f_main_1296@122:3>:int),
+          ((<f_main_1296@122:3> < <f_main_1296@122:0>) && (<fail_1303@125:0> = 1))
+          |- P[<fail_1303@125:0>](<fail_1303@125:0>:int)
+          
+          P[<map_1035@108:0>](<map_1035@108:0>:int),
+          P[<<map_1035@111:1>@114:0>](var67:int,var68:int),
+          (((1 + var68) = <<map_1035@108:1>@120:0>) && (((1 + var67) = <map_1035@108:0>) && (<map_1035@108:0> <> 0)))
+          |- P[<<map_1035@108:1>@120:0>](<map_1035@108:0>:int,<<map_1035@108:1>@120:0>:int)
+          
+          P[<map_1035@111:0>](<map_1035@111:0>:int), ((<<map_1035@111:1>@114:0> = 0) && (<map_1035@111:0> = 0))
+          |- P[<<map_1035@111:1>@114:0>](<map_1035@111:0>:int,<<map_1035@111:1>@114:0>:int)
+          
+          P[<map_1035@108:0>](var69:int), ((var69 = (1 + <map_1035@111:0>)) && ((1 + <map_1035@111:0>) <> 0))
+          |- P[<map_1035@111:0>](<map_1035@111:0>:int)
+          
+          P[<<zip_1032@82:2>@104:0>](<f_main_1295@106:0>:int,<f_main_1295@106:0>:int,<map_1035@108:0>:int)|- P[<map_1035@108:0>](
+          <map_1035@108:0>:int)
+          
+          P[<zip_1032@82:1>](<zip_1032@82:0>:int,<zip_1032@82:1>:int),
+          P[<<zip_1032@88:2>@96:0>](var70:int,var71:int,var72:int),
+          (((1 + var72) = <<zip_1032@82:2>@104:0>) &&
+           (((1 + var71) = <zip_1032@82:1>) &&
+            (((1 + var70) = <zip_1032@82:0>) && ((<zip_1032@82:1> <> 0) && (<zip_1032@82:0> <> 0)))))
+          |- P[<<zip_1032@82:2>@104:0>](<zip_1032@82:0>:int,<zip_1032@82:1>:int,
+                                        <<zip_1032@82:2>@104:0>:int)
+          
+          P[<zip_1032@88:1>](<zip_1032@88:0>:int,<zip_1032@88:1>:int),
+          ((<zip_1032@88:1> = 0) && ((<zip_1032@88:0> = 0) && (<<zip_1032@88:2>@96:0> = 0)))
+          |- P[<<zip_1032@88:2>@96:0>](<zip_1032@88:0>:int,<zip_1032@88:1>:int,
+                                       <<zip_1032@88:2>@96:0>:int)
+          
+          P[<zip_1032@82:1>](var73:int,var74:int),
+          ((var74 = (1 + <zip_1032@88:1>)) &&
+           ((var73 = (1 + <zip_1032@88:0>)) && (((1 + <zip_1032@88:1>) <> 0) && ((1 + <zip_1032@88:0>) <> 0))))
+          |- P[<zip_1032@88:1>](<zip_1032@88:0>:int,<zip_1032@88:1>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1303_sep_125_sep_0($568)) -> 1=0.
+(($568-1=0) & ($569-$570<0)) & (v_sep_map_1035_sep_108_sep_1_sep_120_sep_0($571,$569)) & (v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0($570,$570,$571)) -> v_sep_fail_1303_sep_125_sep_0($568).
+(($572<>0) & (-$572+$573+1=0) & ($574-$575+1=0)) & (v_sep_map_1035_sep_111_sep_1_sep_114_sep_0($573,$574)) & (v_sep_map_1035_sep_108_sep_0($572)) -> v_sep_map_1035_sep_108_sep_1_sep_120_sep_0($572,$575).
+(($576=0) & ($577=0)) & (v_sep_map_1035_sep_111_sep_0($576)) -> v_sep_map_1035_sep_111_sep_1_sep_114_sep_0($576,$577).
+(($576+1<>0) & (-$576+$578-1=0)) & (v_sep_map_1035_sep_108_sep_0($578)) -> v_sep_map_1035_sep_111_sep_0($576).
+(0=0) & (v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0($579,$579,$572)) -> v_sep_map_1035_sep_108_sep_0($572).
+(($580<>0) & ($581<>0) & (-$580+$582+1=0) & (-$581+$583+1=0) & ($584-$585+1=0)) & (v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0($582,$583,$584)) & (v_sep_zip_1032_sep_82_sep_1($580,$581)) -> v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0($580,$581,$585).
+(($586=0) & ($587=0) & ($588=0)) & (v_sep_zip_1032_sep_88_sep_1($587,$588)) -> v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0($587,$588,$586).
+(($587+1<>0) & ($588+1<>0) & (-$587+$589-1=0) & (-$588+$590-1=0)) & (v_sep_zip_1032_sep_82_sep_1($589,$590)) -> v_sep_zip_1032_sep_88_sep_1($587,$588).
+-$580+$581=0 -> v_sep_zip_1032_sep_82_sep_1($580,$581).
+
+
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: X
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: X
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: X
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+.........................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: X
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: X
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: X
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+....
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: X
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: X
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: X
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: X
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: X
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: X
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+...................Split conj [46] 0.330949
+(Reconstrcut: 15 **)
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: X
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: X
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+............................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: X
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: X
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+....
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: X
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: X
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: X
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: X
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+...................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: X
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: X
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+.................................Split conj [51] 0.44993
+(Reconstrcut: 8 **)
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: X
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+..........
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: X
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+....
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: X
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: X
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+....................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: X
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+..................................Split conj [53] 0.779881
+(Reconstrcut: 15 ****)
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+....
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+.....................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+...................................Split conj [59] 0.949854
+(Reconstrcut: 23 ****)
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+................................................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+....
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+.....................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: X
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+...........................................Split conj [74] 1.357793
+(Reconstrcut: 12 **)
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: (X) & (X)
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+..............
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: (X) & (X)
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+....
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: (X) & (X)
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: (X) & (X)
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+.....................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: (X) & (X)
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+.............................................Split conj [77] 1.562761
+(Reconstrcut: 16 **)
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: (X) & (X)
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: (X) & (X)
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+....
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: (X) & (X)
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: (X) & (X)
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+.....................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: (X) & (X)
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: X
+.............................................Split conj [79] 1.778729
+(Reconstrcut: 53 ********************)
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: (X) & (X)
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+...............................................................................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: (X) & (X)
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+....
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: (X) & (X)
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: (X) & (X)
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+........................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: (X) & (X)
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+................................................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: (X) & (X)
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+...........................................................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: (X) & (X)
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+...........................................................................
+v_sep_fail_1303_sep_125_sep_0: X
+v_sep_map_1035_sep_108_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_108_sep_1_sep_120_sep_0: X
+v_sep_map_1035_sep_111_sep_0: (X) & (X)
+v_sep_map_1035_sep_111_sep_1_sep_114_sep_0: (X) & (X)
+v_sep_zip_1032_sep_82_sep_1: X
+v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_88_sep_1: X
+v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0: (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X) & (X)
+...................................................................................(0=0) & (v_sep_fail_1303_sep_125_sep_0($568)) -> 1=0.
+(($568-1=0) & ($569-$570<0)) & (v_sep_map_1035_sep_108_sep_1_sep_120_sep_0($571,$569)) & (v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0($570,$570,$571)) -> v_sep_fail_1303_sep_125_sep_0($568).
+(($572<>0) & (-$572+$573+1=0) & ($574-$575+1=0)) & (v_sep_map_1035_sep_111_sep_1_sep_114_sep_0($573,$574)) & (v_sep_map_1035_sep_108_sep_0($572)) -> v_sep_map_1035_sep_108_sep_1_sep_120_sep_0($572,$575).
+(($576=0) & ($577=0)) & (v_sep_map_1035_sep_111_sep_0($576)) -> v_sep_map_1035_sep_111_sep_1_sep_114_sep_0($576,$577).
+(($576+1<>0) & (-$576+$578-1=0)) & (v_sep_map_1035_sep_108_sep_0($578)) -> v_sep_map_1035_sep_111_sep_0($576).
+(0=0) & (v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0($579,$579,$572)) -> v_sep_map_1035_sep_108_sep_0($572).
+(($580<>0) & ($581<>0) & (-$580+$582+1=0) & (-$581+$583+1=0) & ($584-$585+1=0)) & (v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0($582,$583,$584)) & (v_sep_zip_1032_sep_82_sep_1($580,$581)) -> v_sep_zip_1032_sep_82_sep_2_sep_104_sep_0($580,$581,$585).
+(($586=0) & ($587=0) & ($588=0)) & (v_sep_zip_1032_sep_88_sep_1($587,$588)) -> v_sep_zip_1032_sep_88_sep_2_sep_96_sep_0($587,$588,$586).
+(($587+1<>0) & ($588+1<>0) & (-$587+$589-1=0) & (-$588+$590-1=0)) & (v_sep_zip_1032_sep_82_sep_1($589,$590)) -> v_sep_zip_1032_sep_88_sep_1($587,$588).
+-$580+$581=0 -> v_sep_zip_1032_sep_82_sep_1($580,$581).
+
+           (<zip_1032@82:1> = <zip_1032@82:0>) |- P[<zip_1032@82:1>](<zip_1032@82:0>:int,
+                                                                    <zip_1032@82:1>:int)
+        solution:
+          P[<fail_1303@125:0>]($591:bool) = false
+          P[<map_1035@108:0>]($611:int) = true
+          P[<<map_1035@108:1>@120:0>]($594:int,$596:int) = (1 <= $596)
+          P[<map_1035@111:0>]($614:int) = true
+          P[<<map_1035@111:1>@114:0>]($606:int,$608:int) = (0 <= $608)
+          P[<zip_1032@82:1>]($624:int,$626:int) = true
+          P[<<zip_1032@82:2>@104:0>]($599:int,$601:int,$603:int) = ($599 <= 1)
+          P[<zip_1032@88:1>]($629:int,$631:int) = true
+          P[<<zip_1032@88:2>@96:0>]($617:int,$619:int,$621:int) = ($617 <= 0)
+        
+      end HcSolver.solve_ub(12194)[4] (1.806725 sec.)
+      begin HcSolver.check_validity(12958)[4]
+        input:
+          P[<fail_1303@125:0>](<fail_1303@125:0>:bool)|- bot
+          
+          P[<<zip_1032@82:2>@104:0>](<f_main_1296@122:0>:int,<f_main_1296@122:0>:int,<f_main_1296@122:1>:int),
+          P[<<map_1035@108:1>@120:0>](<f_main_1296@122:1>:int,<f_main_1296@122:3>:int),
+          ((<f_main_1296@122:3> < <f_main_1296@122:0>) && <fail_1303@125:0>)
+          |- P[<fail_1303@125:0>](<fail_1303@125:0>:bool)
+          
+          P[<map_1035@108:0>](<map_1035@108:0>:int),
+          P[<<map_1035@111:1>@114:0>]((-1 + <map_1035@108:0>):int,(-1 + <<map_1035@108:1>@120:0>):int),
+          (<map_1035@108:0> <> 0) |- P[<<map_1035@108:1>@120:0>](<map_1035@108:0>:int,
+                                                                 <<map_1035@108:1>@120:0>:int)
+          
+          P[<map_1035@111:0>](<map_1035@111:0>:int), ((<map_1035@111:0> = 0) && (<<map_1035@111:1>@114:0> = 0))
+          |- P[<<map_1035@111:1>@114:0>](<map_1035@111:0>:int,<<map_1035@111:1>@114:0>:int)
+          
+          P[<map_1035@108:0>]((1 + <map_1035@111:0>):int), ((1 + <map_1035@111:0>) <> 0)
+          |- P[<map_1035@111:0>](<map_1035@111:0>:int)
+          
+          P[<<zip_1032@82:2>@104:0>](<f_main_1295@106:0>:int,<f_main_1295@106:0>:int,<map_1035@108:0>:int)|- P[<map_1035@108:0>](
+          <map_1035@108:0>:int)
+          
+          P[<zip_1032@82:1>](<zip_1032@82:0>:int,<zip_1032@82:1>:int),
+          P[<<zip_1032@88:2>@96:0>]((-1 + <zip_1032@82:0>):int,(-1 + <zip_1032@82:1>):int,(
+                                    -1 + <<zip_1032@82:2>@104:0>):int),
+          ((<zip_1032@82:0> <> 0) && (<zip_1032@82:1> <> 0))
+          |- P[<<zip_1032@82:2>@104:0>](<zip_1032@82:0>:int,<zip_1032@82:1>:int,
+                                        <<zip_1032@82:2>@104:0>:int)
+          
+          P[<zip_1032@88:1>](<zip_1032@88:0>:int,<zip_1032@88:1>:int),
+          ((<<zip_1032@88:2>@96:0> = 0) && ((<zip_1032@88:0> = 0) && (<zip_1032@88:1> = 0)))
+          |- P[<<zip_1032@88:2>@96:0>](<zip_1032@88:0>:int,<zip_1032@88:1>:int,
+                                       <<zip_1032@88:2>@96:0>:int)
+          
+          P[<zip_1032@82:1>]((1 + <zip_1032@88:0>):int,(1 + <zip_1032@88:1>):int),
+          (((1 + <zip_1032@88:0>) <> 0) && ((1 + <zip_1032@88:1>) <> 0))
+          |- P[<zip_1032@88:1>](<zip_1032@88:0>:int,<zip_1032@88:1>:int)
+          
+           (<zip_1032@82:1> = <zip_1032@82:0>) |- P[<zip_1032@82:1>](<zip_1032@82:0>:int,
+                                                                    <zip_1032@82:1>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(12958)[4] (0.020997 sec.)
+      solution:
+        P[<fail_1303@125:0>]($591:bool) = false
+        P[<map_1035@108:0>]($611:int) = true
+        P[<<map_1035@108:1>@120:0>]($594:int,$596:int) = (1 <= $596)
+        P[<map_1035@111:0>]($614:int) = true
+        P[<<map_1035@111:1>@114:0>]($606:int,$608:int) = (0 <= $608)
+        P[<zip_1032@82:1>]($624:int,$626:int) = true
+        P[<<zip_1032@82:2>@104:0>]($599:int,$601:int,$603:int) = ($599 <= 1)
+        P[<zip_1032@88:1>]($629:int,$631:int) = true
+        P[<<zip_1032@88:2>@96:0>]($617:int,$619:int,$621:int) = ($617 <= 0)
+    end YhornInterface.solve(12193)[3] (1.827722 sec.)
+    
+  end RefTypeInfer.infer_etrs(8324)[2] (1.916709 sec.)
+  refinement types:
+    main_1292: X
+    f_1297: v1:int -> X
+    main_1037: v1:int -> (v2:unit -> X) -> X
+    zip_1032: v1:int -> v2:int -> (v3:{v3:int | (v1 <= 1)} -> X) -> X
+    br_zip_1301: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    zip_1032: v1:int -> v2:int -> (v3:{v3:int | (v1 <= 0)} -> X) -> X
+    br_zip_1299: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    f_zip_1293: v1:int -> v2:int -> (v3:int -> X) -> v5:int -> X
+    f_main_1295: v1:int -> (v2:unit -> X) -> v4:int -> X
+    map_1035: v1:int -> (v2:{v2:int | (1 <= v2)} -> X) -> X
+    map_1035: v1:int -> (v2:{v2:int | (0 <= v2)} -> X) -> X
+    f_map_1294: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_main_1296: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1303: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1298: var85:int -> var84:unit -> X
+    loop_1079: var89:unit -> (var88:int -> X) -> X
+  abstraction types:
+    main_1292: X
+    f_1297: v1:int -> X
+    main_1037: v1:int -> (v2:unit -> X) -> X
+    zip_1032: var90:int -> var91:int -> (var92:int[var92 -> (var90 <= 1),
+                                                   var92 -> (var90 <= 0)] -> X) -> X
+    br_zip_1301: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    br_zip_1299: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    f_zip_1293: v1:int -> v2:int -> (v3:int -> X) -> v5:int -> X
+    f_main_1295: v1:int -> (v2:unit -> X) -> v4:int -> X
+    map_1035: var95:int -> (var96:int[var96 -> (1 <= var96),
+                                      var96 -> (0 <= var96)] -> X) -> X
+    f_map_1294: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_main_1296: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1303: v1:bool -> (v2:unit -> X) -> X
+    f_1298: var85:int -> var84:unit -> X
+    loop_1079: var89:unit -> (var88:int -> X) -> X
+  
+end AbsTypeInfer.refine(8323)[1] (1.918709 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 1; 0; 0; 0; 0; 1; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 3)::
+Main: main_1292
+  main_1292 -> (rand_int f_1297)
+  br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 when b_1300 -> (k_zip_1132 0)
+  br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 when (not b_1300) -> (loop_1079 () k_zip_1132)
+  br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 when b_1302 -> (loop_1079 () k_zip_1132)
+  br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 when (not b_1302) ->
+      (zip_1032 (x_1033 - 1) (y_1034 - 1) (f_zip_1293 x_1033 y_1034 k_zip_1132))
+  f_1297 x_1267 -> (main_1037 x_1267 (f_1298 x_1267))
+  f_1298 x_1267 x_1264 -> end
+  f_main_1295 n_1038 k_main_1225 x_1250 -> (map_1035 x_1250 (f_main_1296 n_1038 x_1250 k_main_1225))
+  f_main_1296 n_1038 x_1250 k_main_1225 x_1228 when (x_1228 >= n_1038) -> (k_main_1225 ())
+  f_main_1296 n_1038 x_1250 k_main_1225 x_1228 when (not (x_1228 >= n_1038)) -> (fail_1303 true k_main_1225)
+  f_map_1294 x_1036 k_map_1193 x_1197 -> (k_map_1193 (1 + x_1197))
+  f_zip_1293 x_1033 y_1034 k_zip_1132 x_1160 -> (k_zip_1132 (1 + x_1160))
+  fail_1303 b k -> {fail} => (k ())
+  loop_1079 x_1031 k_loop_1105 -> (loop_1079 x_1031 k_loop_1105)
+  main_1037 n_1038 k_main_1225 -> (zip_1032 n_1038 n_1038 (f_main_1295 n_1038 k_main_1225))
+  map_1035 x_1036 k_map_1193 when (x_1036 = 0) -> (k_map_1193 0)
+  map_1035 x_1036 k_map_1193 when (not (x_1036 = 0)) -> (map_1035 (x_1036 - 1) (f_map_1294 x_1036 k_map_1193))
+  zip_1032 x_1033 y_1034 k_zip_1132 when (x_1033 = 0) -> (br_zip_1299 (y_1034 = 0) x_1033 y_1034 k_zip_1132)
+  zip_1032 x_1033 y_1034 k_zip_1132 when (not (x_1033 = 0)) -> (br_zip_1301 (y_1034 = 0) x_1033 y_1034 k_zip_1132)
+Types:
+  main_1292 : X
+  fail_1303 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  loop_1079 : (unit -> (int -> X) -> X)
+  map_1035 : (x_1:int[x_1 >= 1] -> (x_3:int[x_3 >= 1; x_1 <= -1; x_3 >= 0] -> X) -> X)
+  zip_1032 : (x_1:int -> int -> (x_4:int[x_1 <= 1; x_4 >= 0; x_4 >= 1; x_1 <= 0] -> X) -> X)
+  
+(3-1) Abstracting ... DONE!
+
+(3-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1292 ... --> 
+  f_1297 ... --> 
+  main_1037 ... --> 
+  zip_1032 [2/2] ... --> 
+  br_zip_1301 [2/2] ... --> 
+  zip_1032 [2/2] ... --> 
+  br_zip_1301 [2/2] ... --> 
+  zip_1032 [1/2] ... --> 
+  br_zip_1299 [1/2] ... --> 
+  f_zip_1293 ... --> 
+  f_zip_1293 ... --> 
+  f_main_1295 ... --> 
+  map_1035 [2/2] ... --> 
+  map_1035 [1/2] ... --> 
+  f_map_1294 ... --> 
+  f_main_1296 [2/2] ... --> 
+  fail_1303 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 1; 1; 1; 0; 0; 0; 0; 0; 1; 0; 0; 1; 0
+
+(3-3) Checking counter-example ... DONE!
+
+(3-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(15276)[1]
+  program:
+    main_1292  | true = ((Random.int 0) f_1297)
+    br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 | b_1300 = (k_zip_1132 0)
+    br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 | (not b_1300) = (loop_1079 ()
+                                                                    k_zip_1132)
+    br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 | b_1302 = (loop_1079 ()
+                                                                    k_zip_1132)
+    br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 | (not b_1302) = (zip_1032
+                                                                    (
+                                                                    x_1033 - 1)
+                                                                    (
+                                                                    y_1034 - 1)
+                                                                    (
+                                                                    f_zip_1293 x_1033
+                                                                    y_1034
+                                                                    k_zip_1132))
+    f_1297 x_1267 | true = (main_1037 x_1267
+                                      (f_1298 x_1267))
+    f_1298 x_1267 x_1264 | true = end
+    f_main_1295 n_1038 k_main_1225 x_1250 | true = (map_1035 x_1250
+                                                             (f_main_1296 n_1038
+                                                                    x_1250
+                                                                    k_main_1225))
+    f_main_1296 n_1038 x_1250 k_main_1225 x_1228 | (x_1228 >= n_1038) = (
+    k_main_1225 ())
+    f_main_1296 n_1038 x_1250 k_main_1225 x_1228 | (not (x_1228 >= n_1038)) = (
+    fail_1303 true
+              k_main_1225)
+    f_map_1294 x_1036 k_map_1193 x_1197 | true = (k_map_1193 (1 + x_1197))
+    f_zip_1293 x_1033 y_1034 k_zip_1132 x_1160 | true = (k_zip_1132 (
+                                                                    1 + x_1160))
+    fail_1303 b k | true = (fail ())
+    loop_1079 x_1031 k_loop_1105 | true = (loop_1079 x_1031
+                                                     k_loop_1105)
+    main_1037 n_1038 k_main_1225 | true = (zip_1032 n_1038
+                                                    n_1038
+                                                    (f_main_1295 n_1038
+                                                                 k_main_1225))
+    map_1035 x_1036 k_map_1193 | (x_1036 = 0) = (k_map_1193 0)
+    map_1035 x_1036 k_map_1193 | (not (x_1036 = 0)) = (map_1035 (x_1036 - 1)
+                                                                (f_map_1294 x_1036
+                                                                    k_map_1193))
+    zip_1032 x_1033 y_1034 k_zip_1132 | (x_1033 = 0) = (br_zip_1299 (
+                                                                    y_1034 = 0)
+                                                                    x_1033
+                                                                    y_1034
+                                                                    k_zip_1132)
+    zip_1032 x_1033 y_1034 k_zip_1132 | (not (x_1033 = 0)) = (br_zip_1301 (
+                                                                    y_1034 = 0)
+                                                                    x_1033
+                                                                    y_1034
+                                                                    k_zip_1132)
+    main_1292:X
+    br_zip_1299:bool -> int -> int -> (int -> X) -> X
+    br_zip_1301:bool -> int -> int -> (int -> X) -> X
+    f_1297:int -> X
+    f_1298:int -> unit -> X
+    f_main_1295:int -> (unit -> X) -> int -> X
+    f_main_1296:int -> int -> (unit -> X) -> int -> X
+    f_map_1294:int -> (int -> X) -> int -> X
+    f_zip_1293:int -> int -> (int -> X) -> int -> X
+    fail_1303:bool -> (unit -> X) -> X
+    loop_1079:unit -> (int -> X) -> X
+    main_1037:int -> (unit -> X) -> X
+    map_1035:int -> (int -> X) -> X
+    zip_1032:int -> int -> (int -> X) -> X
+  inlined functions: br_zip_1299,br_zip_1301,f_1297,f_1298,f_main_1295,f_main_1296,f_map_1294,f_zip_1293,main_1037
+  counterexample: 0:0:0:1:1:1:1:0:0:0:0:0:1:0:0:1:0
+  error traces:
+    [true.nop(<f_1297@131:0> = var99)
+     [true.(<main_1037@133:0> = <f_1297@131:0>)
+      [true.((<zip_1032@135:0> = <main_1037@133:0>) && (<zip_1032@135:1> = <main_1037@133:0>))
+       [(not (<zip_1032@135:0> = 0)).
+        ((<br_zip_1301@138:0> = (<zip_1032@135:1> = 0)) &&
+         ((<br_zip_1301@138:1> = <zip_1032@135:0>) && (<br_zip_1301@138:2> = <zip_1032@135:1>)))
+        [(not <br_zip_1301@138:0>).
+         ((<zip_1032@141:0> = (<br_zip_1301@138:1> - 1)) && (<zip_1032@141:1> = (<br_zip_1301@138:2> - 1)))
+         [(not (<zip_1032@141:0> = 0)).
+          ((<br_zip_1301@144:0> = (<zip_1032@141:1> = 0)) &&
+           ((<br_zip_1301@144:1> = <zip_1032@141:0>) && (<br_zip_1301@144:2> = <zip_1032@141:1>)))
+          [(not <br_zip_1301@144:0>).
+           ((<zip_1032@147:0> = (<br_zip_1301@144:1> - 1)) && (<zip_1032@147:1> = (<br_zip_1301@144:2> - 1)))
+           [(<zip_1032@147:0> = 0).
+            ((<br_zip_1299@150:0> = (<zip_1032@147:1> = 0)) &&
+             ((<br_zip_1299@150:1> = <zip_1032@147:0>) && (<br_zip_1299@150:2> = <zip_1032@147:1>)))
+            [<br_zip_1299@150:0>.(<<br_zip_1299@150:3>@153:0> = 0)
+             [true.(<<zip_1032@147:2>@155:0> = <<br_zip_1299@150:3>@153:0>)
+              [true.
+               ((<f_zip_1293@157:0> = <br_zip_1301@144:1>) &&
+                ((<f_zip_1293@157:1> = <br_zip_1301@144:2>) && (<f_zip_1293@157:3> = <<zip_1032@147:2>@155:0>)))
+               [true.(<<f_zip_1293@157:2>@159:0> = (1 + <f_zip_1293@157:3>))
+                [true.(<<br_zip_1301@144:3>@161:0> = <<f_zip_1293@157:2>@159:0>)
+                 [true.(<<zip_1032@141:2>@163:0> = <<br_zip_1301@144:3>@161:0>)
+                  [true.
+                   ((<f_zip_1293@165:0> = <br_zip_1301@138:1>) &&
+                    ((<f_zip_1293@165:1> = <br_zip_1301@138:2>) && (<f_zip_1293@165:3> = <<zip_1032@141:2>@163:0>)))
+                   [true.(<<f_zip_1293@165:2>@167:0> = (1 + <f_zip_1293@165:3>))
+                    [true.(<<br_zip_1301@138:3>@169:0> = <<f_zip_1293@165:2>@167:0>)
+                     [true.(<<zip_1032@135:2>@171:0> = <<br_zip_1301@138:3>@169:0>)
+                      [true.
+                       ((<f_main_1295@173:0> = <main_1037@133:0>) && (<f_main_1295@173:2> = <<zip_1032@135:2>@171:0>))
+                       [true.(<map_1035@175:0> = <f_main_1295@173:2>)
+                        [(not (<map_1035@175:0> = 0)).(<map_1035@178:0> = (<map_1035@175:0> - 1))
+                         [(<map_1035@178:0> = 0).(<<map_1035@178:1>@181:0> = 0)
+                          [true.
+                           ((<f_map_1294@183:0> = <map_1035@175:0>) && (<f_map_1294@183:2> = <<map_1035@178:1>@181:0>))
+                           [true.(<<f_map_1294@183:1>@185:0> = (1 + <f_map_1294@183:2>))
+                            [true.(<<map_1035@175:1>@187:0> = <<f_map_1294@183:1>@185:0>)
+                             [true.
+                              ((<f_main_1296@189:0> = <f_main_1295@173:0>) &&
+                               ((<f_main_1296@189:1> = <f_main_1295@173:2>) &&
+                                (<f_main_1296@189:3> = <<map_1035@175:1>@187:0>)))
+                              [(not (<f_main_1296@189:3> >= <f_main_1296@189:0>)).(<fail_1303@192:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(15277)[2]
+    horn clauses:
+      P[<fail_1303@192:0>](<fail_1303@192:0>:bool)|- bot
+      
+      P[<f_main_1296@189:3>](<f_main_1296@189:0>:int,<f_main_1296@189:1>:int,<f_main_1296@189:3>:int),
+      ((<f_main_1296@189:3> < <f_main_1296@189:0>) && <fail_1303@192:0>)
+      |- P[<fail_1303@192:0>](<fail_1303@192:0>:bool)
+      
+      P[<f_main_1295@173:2>](<f_main_1296@189:0>:int,<f_main_1296@189:1>:int),
+      P[<<map_1035@175:1>@187:0>](<f_main_1296@189:1>:int,<f_main_1296@189:3>:int)|- P[<f_main_1296@189:3>](
+      <f_main_1296@189:0>:int,<f_main_1296@189:1>:int,<f_main_1296@189:3>:int)
+      
+      P[<map_1035@175:0>](<map_1035@175:0>:int),
+      P[<<f_map_1294@183:1>@185:0>](<map_1035@175:0>:int,<<map_1035@175:1>@187:0>:int), (
+      <map_1035@175:0> <> 0) |- P[<<map_1035@175:1>@187:0>](<map_1035@175:0>:int,
+                                                            <<map_1035@175:1>@187:0>:int)
+      
+      P[<f_map_1294@183:2>](<f_map_1294@183:0>:int,(-1 + <<f_map_1294@183:1>@185:0>):int)|- P[<<f_map_1294@183:1>@185:0>](
+      <f_map_1294@183:0>:int,<<f_map_1294@183:1>@185:0>:int)
+      
+      P[<map_1035@175:0>](<f_map_1294@183:0>:int),
+      P[<<map_1035@178:1>@181:0>]((-1 + <f_map_1294@183:0>):int,<f_map_1294@183:2>:int), (
+      <f_map_1294@183:0> <> 0) |- P[<f_map_1294@183:2>](<f_map_1294@183:0>:int,
+                                                        <f_map_1294@183:2>:int)
+      
+      P[<map_1035@178:0>](<map_1035@178:0>:int), ((<map_1035@178:0> = 0) && (<<map_1035@178:1>@181:0> = 0))
+      |- P[<<map_1035@178:1>@181:0>](<map_1035@178:0>:int,<<map_1035@178:1>@181:0>:int)
+      
+      P[<map_1035@175:0>]((1 + <map_1035@178:0>):int), ((1 + <map_1035@178:0>) <> 0)
+      |- P[<map_1035@178:0>](<map_1035@178:0>:int)
+      
+      P[<f_main_1295@173:2>](<f_main_1295@173:0>:int,<map_1035@175:0>:int)|- P[<map_1035@175:0>](<map_1035@175:0>:int)
+      
+      P[<main_1037@133:0>](<f_main_1295@173:0>:int),
+      P[<<zip_1032@135:2>@171:0>](<f_main_1295@173:0>:int,<f_main_1295@173:0>:int,<f_main_1295@173:2>:int)|- P[<f_main_1295@173:2>](
+      <f_main_1295@173:0>:int,<f_main_1295@173:2>:int)
+      
+      P[<zip_1032@135:1>](<zip_1032@135:0>:int,<zip_1032@135:1>:int),
+      P[<<br_zip_1301@138:3>@169:0>]((<zip_1032@135:1> = 0):bool,<zip_1032@135:0>:int,<zip_1032@135:1>:int,<<zip_1032@135:2>@171:0>:int),
+      (<zip_1032@135:0> <> 0)
+      |- P[<<zip_1032@135:2>@171:0>](<zip_1032@135:0>:int,<zip_1032@135:1>:int,
+                                     <<zip_1032@135:2>@171:0>:int)
+      
+      P[<br_zip_1301@138:2>](<br_zip_1301@138:0>:bool,<br_zip_1301@138:1>:int,<br_zip_1301@138:2>:int),
+      P[<<f_zip_1293@165:2>@167:0>](<br_zip_1301@138:1>:int,<br_zip_1301@138:2>:int,<<br_zip_1301@138:3>@169:0>:int),
+      (not <br_zip_1301@138:0>)
+      |- P[<<br_zip_1301@138:3>@169:0>](<br_zip_1301@138:0>:bool,<br_zip_1301@138:1>:int,
+                                        <br_zip_1301@138:2>:int,<<br_zip_1301@138:3>@169:0>:int)
+      
+      P[<f_zip_1293@165:3>](<f_zip_1293@165:0>:int,<f_zip_1293@165:1>:int,(
+                            -1 + <<f_zip_1293@165:2>@167:0>):int)|- P[<<f_zip_1293@165:2>@167:0>](
+      <f_zip_1293@165:0>:int,<f_zip_1293@165:1>:int,<<f_zip_1293@165:2>@167:0>:int)
+      
+      P[<br_zip_1301@138:2>](false:bool,<f_zip_1293@165:0>:int,<f_zip_1293@165:1>:int),
+      P[<<zip_1032@141:2>@163:0>]((-1 + <f_zip_1293@165:0>):int,(-1 + <f_zip_1293@165:1>):int,<f_zip_1293@165:3>:int)|- P[<f_zip_1293@165:3>](
+      <f_zip_1293@165:0>:int,<f_zip_1293@165:1>:int,<f_zip_1293@165:3>:int)
+      
+      P[<zip_1032@141:1>](<zip_1032@141:0>:int,<zip_1032@141:1>:int),
+      P[<<br_zip_1301@144:3>@161:0>]((<zip_1032@141:1> = 0):bool,<zip_1032@141:0>:int,<zip_1032@141:1>:int,<<zip_1032@141:2>@163:0>:int),
+      (<zip_1032@141:0> <> 0)
+      |- P[<<zip_1032@141:2>@163:0>](<zip_1032@141:0>:int,<zip_1032@141:1>:int,
+                                     <<zip_1032@141:2>@163:0>:int)
+      
+      P[<br_zip_1301@144:2>](<br_zip_1301@144:0>:bool,<br_zip_1301@144:1>:int,<br_zip_1301@144:2>:int),
+      P[<<f_zip_1293@157:2>@159:0>](<br_zip_1301@144:1>:int,<br_zip_1301@144:2>:int,<<br_zip_1301@144:3>@161:0>:int),
+      (not <br_zip_1301@144:0>)
+      |- P[<<br_zip_1301@144:3>@161:0>](<br_zip_1301@144:0>:bool,<br_zip_1301@144:1>:int,
+                                        <br_zip_1301@144:2>:int,<<br_zip_1301@144:3>@161:0>:int)
+      
+      P[<f_zip_1293@157:3>](<f_zip_1293@157:0>:int,<f_zip_1293@157:1>:int,(
+                            -1 + <<f_zip_1293@157:2>@159:0>):int)|- P[<<f_zip_1293@157:2>@159:0>](
+      <f_zip_1293@157:0>:int,<f_zip_1293@157:1>:int,<<f_zip_1293@157:2>@159:0>:int)
+      
+      P[<br_zip_1301@144:2>](false:bool,<f_zip_1293@157:0>:int,<f_zip_1293@157:1>:int),
+      P[<<zip_1032@147:2>@155:0>]((-1 + <f_zip_1293@157:0>):int,(-1 + <f_zip_1293@157:1>):int,<f_zip_1293@157:3>:int)|- P[<f_zip_1293@157:3>](
+      <f_zip_1293@157:0>:int,<f_zip_1293@157:1>:int,<f_zip_1293@157:3>:int)
+      
+      P[<zip_1032@147:1>](<zip_1032@147:0>:int,<zip_1032@147:1>:int),
+      P[<<br_zip_1299@150:3>@153:0>]((<zip_1032@147:1> = 0):bool,<zip_1032@147:0>:int,<zip_1032@147:1>:int,<<zip_1032@147:2>@155:0>:int),
+      (<zip_1032@147:0> = 0)
+      |- P[<<zip_1032@147:2>@155:0>](<zip_1032@147:0>:int,<zip_1032@147:1>:int,
+                                     <<zip_1032@147:2>@155:0>:int)
+      
+      P[<br_zip_1299@150:2>](<br_zip_1299@150:0>:bool,<br_zip_1299@150:1>:int,<br_zip_1299@150:2>:int),
+      ((<<br_zip_1299@150:3>@153:0> = 0) && <br_zip_1299@150:0>)
+      |- P[<<br_zip_1299@150:3>@153:0>](<br_zip_1299@150:0>:bool,<br_zip_1299@150:1>:int,
+                                        <br_zip_1299@150:2>:int,<<br_zip_1299@150:3>@153:0>:int)
+      
+      P[<zip_1032@147:1>](<br_zip_1299@150:1>:int,<br_zip_1299@150:2>:int),
+      ((<br_zip_1299@150:1> = 0) && (<br_zip_1299@150:0> = (<br_zip_1299@150:2> = 0)))
+      |- P[<br_zip_1299@150:2>](<br_zip_1299@150:0>:bool,<br_zip_1299@150:1>:int,
+                                <br_zip_1299@150:2>:int)
+      
+      P[<br_zip_1301@144:2>](false:bool,(1 + <zip_1032@147:0>):int,(1 + <zip_1032@147:1>):int)|- P[<zip_1032@147:1>](
+      <zip_1032@147:0>:int,<zip_1032@147:1>:int)
+      
+      P[<zip_1032@141:1>](<br_zip_1301@144:1>:int,<br_zip_1301@144:2>:int),
+      ((<br_zip_1301@144:1> <> 0) && (<br_zip_1301@144:0> = (<br_zip_1301@144:2> = 0)))
+      |- P[<br_zip_1301@144:2>](<br_zip_1301@144:0>:bool,<br_zip_1301@144:1>:int,
+                                <br_zip_1301@144:2>:int)
+      
+      P[<br_zip_1301@138:2>](false:bool,(1 + <zip_1032@141:0>):int,(1 + <zip_1032@141:1>):int)|- P[<zip_1032@141:1>](
+      <zip_1032@141:0>:int,<zip_1032@141:1>:int)
+      
+      P[<zip_1032@135:1>](<br_zip_1301@138:1>:int,<br_zip_1301@138:2>:int),
+      ((<br_zip_1301@138:1> <> 0) && (<br_zip_1301@138:0> = (<br_zip_1301@138:2> = 0)))
+      |- P[<br_zip_1301@138:2>](<br_zip_1301@138:0>:bool,<br_zip_1301@138:1>:int,
+                                <br_zip_1301@138:2>:int)
+      
+      P[<main_1037@133:0>](<zip_1032@135:1>:int), (<zip_1032@135:1> = <zip_1032@135:0>)
+      |- P[<zip_1032@135:1>](<zip_1032@135:0>:int,<zip_1032@135:1>:int)
+      
+      P[<f_1297@131:0>](<main_1037@133:0>:int)|- P[<main_1037@133:0>](<main_1037@133:0>:int)
+      
+      |- P[<f_1297@131:0>](<f_1297@131:0>:int)
+    call trees:
+      <main_1292@128>
+        <f_1297@131>
+          <main_1037@133>
+            <zip_1032@135>
+              <br_zip_1301@138>
+                <zip_1032@141>
+                  <br_zip_1301@144>
+                    <zip_1032@147>
+                      <br_zip_1299@150>
+                      </<br_zip_1299@150:3>@153>
+                    </<zip_1032@147:2>@155>
+                    <f_zip_1293@157>
+                    </<f_zip_1293@157:2>@159>
+                  </<br_zip_1301@144:3>@161>
+                </<zip_1032@141:2>@163>
+                <f_zip_1293@165>
+                </<f_zip_1293@165:2>@167>
+              </<br_zip_1301@138:3>@169>
+            </<zip_1032@135:2>@171>
+            <f_main_1295@173>
+              <map_1035@175>
+                <map_1035@178>
+                </<map_1035@178:1>@181>
+                <f_map_1294@183>
+                </<f_map_1294@183:1>@185>
+              </<map_1035@175:1>@187>
+              <f_main_1296@189>
+                <fail_1303@192>
+    inlined horn clauses:
+      P[<fail_1303@192:0>](<fail_1303@192:0>:bool)|- bot
+      
+      P[<<zip_1032@135:2>@171:0>](<f_main_1296@189:0>:int,<f_main_1296@189:0>:int,<f_main_1296@189:1>:int),
+      P[<<map_1035@175:1>@187:0>](<f_main_1296@189:1>:int,<f_main_1296@189:3>:int),
+      ((<f_main_1296@189:3> < <f_main_1296@189:0>) && <fail_1303@192:0>)
+      |- P[<fail_1303@192:0>](<fail_1303@192:0>:bool)
+      
+      P[<map_1035@175:0>](<map_1035@175:0>:int),
+      P[<<map_1035@178:1>@181:0>]((-1 + <map_1035@175:0>):int,(-1 + <<map_1035@175:1>@187:0>):int),
+      (<map_1035@175:0> <> 0) |- P[<<map_1035@175:1>@187:0>](<map_1035@175:0>:int,
+                                                             <<map_1035@175:1>@187:0>:int)
+      
+      P[<map_1035@178:0>](<map_1035@178:0>:int), ((<map_1035@178:0> = 0) && (<<map_1035@178:1>@181:0> = 0))
+      |- P[<<map_1035@178:1>@181:0>](<map_1035@178:0>:int,<<map_1035@178:1>@181:0>:int)
+      
+      P[<map_1035@175:0>]((1 + <map_1035@178:0>):int), ((1 + <map_1035@178:0>) <> 0)
+      |- P[<map_1035@178:0>](<map_1035@178:0>:int)
+      
+      P[<<zip_1032@135:2>@171:0>](<f_main_1295@173:0>:int,<f_main_1295@173:0>:int,<map_1035@175:0>:int)|- P[<map_1035@175:0>](
+      <map_1035@175:0>:int)
+      
+      P[<zip_1032@135:1>](<zip_1032@135:0>:int,<zip_1032@135:1>:int),
+      P[<<zip_1032@141:2>@163:0>]((-1 + <zip_1032@135:0>):int,(-1 + <zip_1032@135:1>):int,(
+                                  -1 + <<zip_1032@135:2>@171:0>):int),
+      ((<zip_1032@135:0> <> 0) && (<zip_1032@135:1> <> 0))
+      |- P[<<zip_1032@135:2>@171:0>](<zip_1032@135:0>:int,<zip_1032@135:1>:int,
+                                     <<zip_1032@135:2>@171:0>:int)
+      
+      P[<zip_1032@141:1>](<zip_1032@141:0>:int,<zip_1032@141:1>:int),
+      P[<<zip_1032@147:2>@155:0>]((-1 + <zip_1032@141:0>):int,(-1 + <zip_1032@141:1>):int,(
+                                  -1 + <<zip_1032@141:2>@163:0>):int),
+      ((<zip_1032@141:0> <> 0) && (<zip_1032@141:1> <> 0))
+      |- P[<<zip_1032@141:2>@163:0>](<zip_1032@141:0>:int,<zip_1032@141:1>:int,
+                                     <<zip_1032@141:2>@163:0>:int)
+      
+      P[<zip_1032@147:1>](<zip_1032@147:0>:int,<zip_1032@147:1>:int),
+      ((<<zip_1032@147:2>@155:0> = 0) && ((<zip_1032@147:0> = 0) && (<zip_1032@147:1> = 0)))
+      |- P[<<zip_1032@147:2>@155:0>](<zip_1032@147:0>:int,<zip_1032@147:1>:int,
+                                     <<zip_1032@147:2>@155:0>:int)
+      
+      P[<zip_1032@141:1>]((1 + <zip_1032@147:0>):int,(1 + <zip_1032@147:1>):int),
+      (((1 + <zip_1032@147:0>) <> 0) && ((1 + <zip_1032@147:1>) <> 0))
+      |- P[<zip_1032@147:1>](<zip_1032@147:0>:int,<zip_1032@147:1>:int)
+      
+      P[<zip_1032@135:1>]((1 + <zip_1032@141:0>):int,(1 + <zip_1032@141:1>):int),
+      (((1 + <zip_1032@141:0>) <> 0) && ((1 + <zip_1032@141:1>) <> 0))
+      |- P[<zip_1032@141:1>](<zip_1032@141:0>:int,<zip_1032@141:1>:int)
+      
+       (<zip_1032@135:1> = <zip_1032@135:0>) |- P[<zip_1032@135:1>](<zip_1032@135:0>:int,
+                                                                    <zip_1032@135:1>:int)
+    begin ParamSubstInfer.infer(20074)[3]
+      
+    end ParamSubstInfer.infer(20074)[3] (0.106984 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(20076)[3]
+      
+    end RefTypeInfer.elim_coeffs(20076)[3] (0.001999 sec.)
+    begin YhornInterface.solve(20655)[3]
+      begin HcSolver.solve_ub(20656)[4]
+        encoded:
+          P[<fail_1303@192:0>](<fail_1303@192:0>:int)|- bot
+          
+          P[<<zip_1032@135:2>@171:0>](<f_main_1296@189:0>:int,<f_main_1296@189:0>:int,<f_main_1296@189:1>:int),
+          P[<<map_1035@175:1>@187:0>](<f_main_1296@189:1>:int,<f_main_1296@189:3>:int),
+          ((<f_main_1296@189:3> < <f_main_1296@189:0>) && (<fail_1303@192:0> = 1))
+          |- P[<fail_1303@192:0>](<fail_1303@192:0>:int)
+          
+          P[<map_1035@175:0>](<map_1035@175:0>:int),
+          P[<<map_1035@178:1>@181:0>]((-1 + <map_1035@175:0>):int,(-1 + <<map_1035@175:1>@187:0>):int),
+          (<map_1035@175:0> <> 0) |- P[<<map_1035@175:1>@187:0>](<map_1035@175:0>:int,
+                                                                 <<map_1035@175:1>@187:0>:int)
+          
+          P[<map_1035@178:0>](<map_1035@178:0>:int), ((<map_1035@178:0> = 0) && (<<map_1035@178:1>@181:0> = 0))
+          |- P[<<map_1035@178:1>@181:0>](<map_1035@178:0>:int,<<map_1035@178:1>@181:0>:int)
+          
+          P[<map_1035@175:0>]((1 + <map_1035@178:0>):int), ((1 + <map_1035@178:0>) <> 0)
+          |- P[<map_1035@178:0>](<map_1035@178:0>:int)
+          
+          P[<<zip_1032@135:2>@171:0>](<f_main_1295@173:0>:int,<f_main_1295@173:0>:int,<map_1035@175:0>:int)|- P[<map_1035@175:0>](
+          <map_1035@175:0>:int)
+          
+          P[<zip_1032@135:1>](<zip_1032@135:0>:int,<zip_1032@135:1>:int),
+          P[<<zip_1032@141:2>@163:0>]((-1 + <zip_1032@135:0>):int,(-1 + <zip_1032@135:1>):int,(
+                                      -1 + <<zip_1032@135:2>@171:0>):int),
+          ((<zip_1032@135:0> <> 0) && (<zip_1032@135:1> <> 0))
+          |- P[<<zip_1032@135:2>@171:0>](<zip_1032@135:0>:int,<zip_1032@135:1>:int,
+                                         <<zip_1032@135:2>@171:0>:int)
+          
+          P[<zip_1032@141:1>](<zip_1032@141:0>:int,<zip_1032@141:1>:int),
+          P[<<zip_1032@147:2>@155:0>]((-1 + <zip_1032@141:0>):int,(-1 + <zip_1032@141:1>):int,(
+                                      -1 + <<zip_1032@141:2>@163:0>):int),
+          ((<zip_1032@141:0> <> 0) && (<zip_1032@141:1> <> 0))
+          |- P[<<zip_1032@141:2>@163:0>](<zip_1032@141:0>:int,<zip_1032@141:1>:int,
+                                         <<zip_1032@141:2>@163:0>:int)
+          
+          P[<zip_1032@147:1>](<zip_1032@147:0>:int,<zip_1032@147:1>:int),
+          ((<<zip_1032@147:2>@155:0> = 0) && ((<zip_1032@147:0> = 0) && (<zip_1032@147:1> = 0)))
+          |- P[<<zip_1032@147:2>@155:0>](<zip_1032@147:0>:int,<zip_1032@147:1>:int,
+                                         <<zip_1032@147:2>@155:0>:int)
+          
+          P[<zip_1032@141:1>]((1 + <zip_1032@147:0>):int,(1 + <zip_1032@147:1>):int),
+          (((1 + <zip_1032@147:0>) <> 0) && ((1 + <zip_1032@147:1>) <> 0))
+          |- P[<zip_1032@147:1>](<zip_1032@147:0>:int,<zip_1032@147:1>:int)
+          
+          P[<zip_1032@135:1>]((1 + <zip_1032@141:0>):int,(1 + <zip_1032@141:1>):int),
+          (((1 + <zip_1032@141:0>) <> 0) && ((1 + <zip_1032@141:1>) <> 0))
+          |- P[<zip_1032@141:1>](<zip_1032@141:0>:int,<zip_1032@141:1>:int)
+          
+           (<zip_1032@135:1> = <zip_1032@135:0>) |- P[<zip_1032@135:1>](<zip_1032@135:0>:int,
+                                                                    <zip_1032@135:1>:int)
+        input to Yhorn:
+          P[<fail_1303@192:0>](<fail_1303@192:0>:int)|- bot
+          
+          P[<<zip_1032@135:2>@171:0>](<f_main_1296@189:0>:int,<f_main_1296@189:0>:int,<f_main_1296@189:1>:int),
+          P[<<map_1035@175:1>@187:0>](<f_main_1296@189:1>:int,<f_main_1296@189:3>:int),
+          ((<f_main_1296@189:3> < <f_main_1296@189:0>) && (<fail_1303@192:0> = 1))
+          |- P[<fail_1303@192:0>](<fail_1303@192:0>:int)
+          
+          P[<map_1035@175:0>](<map_1035@175:0>:int),
+          P[<<map_1035@178:1>@181:0>](var100:int,var101:int),
+          (((1 + var101) = <<map_1035@175:1>@187:0>) && (((1 + var100) = <map_1035@175:0>) && (<map_1035@175:0> <> 0)))
+          |- P[<<map_1035@175:1>@187:0>](<map_1035@175:0>:int,<<map_1035@175:1>@187:0>:int)
+          
+          P[<map_1035@178:0>](<map_1035@178:0>:int), ((<<map_1035@178:1>@181:0> = 0) && (<map_1035@178:0> = 0))
+          |- P[<<map_1035@178:1>@181:0>](<map_1035@178:0>:int,<<map_1035@178:1>@181:0>:int)
+          
+          P[<map_1035@175:0>](var102:int), ((var102 = (1 + <map_1035@178:0>)) && ((1 + <map_1035@178:0>) <> 0))
+          |- P[<map_1035@178:0>](<map_1035@178:0>:int)
+          
+          P[<<zip_1032@135:2>@171:0>](<f_main_1295@173:0>:int,<f_main_1295@173:0>:int,<map_1035@175:0>:int)|- P[<map_1035@175:0>](
+          <map_1035@175:0>:int)
+          
+          P[<zip_1032@135:1>](<zip_1032@135:0>:int,<zip_1032@135:1>:int),
+          P[<<zip_1032@141:2>@163:0>](var103:int,var104:int,var105:int),
+          (((1 + var105) = <<zip_1032@135:2>@171:0>) &&
+           (((1 + var104) = <zip_1032@135:1>) &&
+            (((1 + var103) = <zip_1032@135:0>) && ((<zip_1032@135:1> <> 0) && (<zip_1032@135:0> <> 0)))))
+          |- P[<<zip_1032@135:2>@171:0>](<zip_1032@135:0>:int,<zip_1032@135:1>:int,
+                                         <<zip_1032@135:2>@171:0>:int)
+          
+          P[<zip_1032@141:1>](<zip_1032@141:0>:int,<zip_1032@141:1>:int),
+          P[<<zip_1032@147:2>@155:0>](var106:int,var107:int,var108:int),
+          (((1 + var108) = <<zip_1032@141:2>@163:0>) &&
+           (((1 + var107) = <zip_1032@141:1>) &&
+            (((1 + var106) = <zip_1032@141:0>) && ((<zip_1032@141:1> <> 0) && (<zip_1032@141:0> <> 0)))))
+          |- P[<<zip_1032@141:2>@163:0>](<zip_1032@141:0>:int,<zip_1032@141:1>:int,
+                                         <<zip_1032@141:2>@163:0>:int)
+          
+          P[<zip_1032@147:1>](<zip_1032@147:0>:int,<zip_1032@147:1>:int),
+          ((<zip_1032@147:1> = 0) && ((<zip_1032@147:0> = 0) && (<<zip_1032@147:2>@155:0> = 0)))
+          |- P[<<zip_1032@147:2>@155:0>](<zip_1032@147:0>:int,<zip_1032@147:1>:int,
+                                         <<zip_1032@147:2>@155:0>:int)
+          
+          P[<zip_1032@141:1>](var109:int,var110:int),
+          ((var110 = (1 + <zip_1032@147:1>)) &&
+           ((var109 = (1 + <zip_1032@147:0>)) && (((1 + <zip_1032@147:1>) <> 0) && ((1 + <zip_1032@147:0>) <> 0))))
+          |- P[<zip_1032@147:1>](<zip_1032@147:0>:int,<zip_1032@147:1>:int)
+          
+          P[<zip_1032@135:1>](var111:int,var112:int),
+          ((var112 = (1 + <zip_1032@141:1>)) &&
+           ((var111 = (1 + <zip_1032@141:0>)) && (((1 + <zip_1032@141:1>) <> 0) && ((1 + <zip_1032@141:0>) <> 0))))
+          |- P[<zip_1032@141:1>](<zip_1032@141:0>:int,<zip_1032@141:1>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1303_sep_192_sep_0($9841)) -> 1=0.
+(($9841-1=0) & ($9842-$9843<0)) & (v_sep_map_1035_sep_175_sep_1_sep_187_sep_0($9844,$9842)) & (v_sep_zip_1032_sep_135_sep_2_sep_171_sep_0($9843,$9843,$9844)) -> v_sep_fail_1303_sep_192_sep_0($9841).
+(($9845<>0) & (-$9845+$9846+1=0) & ($9847-$9848+1=0)) & (v_sep_map_1035_sep_178_sep_1_sep_181_sep_0($9846,$9847)) & (v_sep_map_1035_sep_175_sep_0($9845)) -> v_sep_map_1035_sep_175_sep_1_sep_187_sep_0($9845,$9848).
+(($9849=0) & ($9850=0)) & (v_sep_map_1035_sep_178_sep_0($9849)) -> v_sep_map_1035_sep_178_sep_1_sep_181_sep_0($9849,$9850).
+(($9849+1<>0) & (-$9849+$9851-1=0)) & (v_sep_map_1035_sep_175_sep_0($9851)) -> v_sep_map_1035_sep_178_sep_0($9849).
+(0=0) & (v_sep_zip_1032_sep_135_sep_2_sep_171_sep_0($9852,$9852,$9845)) -> v_sep_map_1035_sep_175_sep_0($9845).
+(($9853<>0) & ($9854<>0) & (-$9853+$9855+1=0) & (-$9854+$9856+1=0) & ($9857-$9858+1=0)) & (v_sep_zip_1032_sep_141_sep_2_sep_163_sep_0($9855,$9856,$9857)) & (v_sep_zip_1032_sep_135_sep_1($9853,$9854)) -> v_sep_zip_1032_sep_135_sep_2_sep_171_sep_0($9853,$9854,$9858).
+(($9859<>0) & ($9860<>0) & (-$9859+$9861+1=0) & (-$9860+$9862+1=0) & ($9863-$9864+1=0)) & (v_sep_zip_1032_sep_147_sep_2_sep_155_sep_0($9861,$9862,$9863)) & (v_sep_zip_1032_sep_141_sep_1($9859,$9860)) -> v_sep_zip_1032_sep_141_sep_2_sep_163_sep_0($9859,$9860,$9864).
+(($9865=0) & ($9866=0) & ($9867=0)) & (v_sep_zip_1032_sep_147_sep_1($9866,$9867)) -> v_sep_zip_1032_sep_147_sep_2_sep_155_sep_0($9866,$9867,$9865).
+(($9866+1<>0) & ($9867+1<>0) & (-$9866+$9868-1=0) & (-$9867+$9869-1=0)) & (v_sep_zip_1032_sep_141_sep_1($9868,$9869)) -> v_sep_zip_1032_sep_147_sep_1($9866,$9867).
+(($9859+1<>0) & ($9860+1<>0) & (-$9859+$9870-1=0) & (-$9860+$9871-1=0)) & (v_sep_zip_1032_sep_135_sep_1($9870,$9871)) -> v_sep_zip_1032_sep_141_sep_1($9859,$9860).
+-$9853+$9854=0 -> v_sep_zip_1032_sep_135_sep_1($9853,$9854).
+
+
+v_sep_fail_1303_sep_192_sep_0: X
+v_sep_map_1035_sep_175_sep_0: X
+v_sep_map_1035_sep_175_sep_1_sep_187_sep_0: X
+v_sep_map_1035_sep_178_sep_0: X
+v_sep_map_1035_sep_178_sep_1_sep_181_sep_0: X
+v_sep_zip_1032_sep_135_sep_1: X
+v_sep_zip_1032_sep_135_sep_2_sep_171_sep_0: X
+v_sep_zip_1032_sep_141_sep_1: X
+v_sep_zip_1032_sep_141_sep_2_sep_163_sep_0: X
+v_sep_zip_1032_sep_147_sep_1: X
+v_sep_zip_1032_sep_147_sep_2_sep_155_sep_0: X
+.....................................
+v_sep_fail_1303_sep_192_sep_0: X
+v_sep_map_1035_sep_175_sep_0: X
+v_sep_map_1035_sep_175_sep_1_sep_187_sep_0: X
+v_sep_map_1035_sep_178_sep_0: X
+v_sep_map_1035_sep_178_sep_1_sep_181_sep_0: X
+v_sep_zip_1032_sep_135_sep_1: X
+v_sep_zip_1032_sep_135_sep_2_sep_171_sep_0: X
+v_sep_zip_1032_sep_141_sep_1: X
+v_sep_zip_1032_sep_141_sep_2_sep_163_sep_0: X
+v_sep_zip_1032_sep_147_sep_1: X
+v_sep_zip_1032_sep_147_sep_2_sep_155_sep_0: X
+....
+v_sep_fail_1303_sep_192_sep_0: X
+v_sep_map_1035_sep_175_sep_0: X
+v_sep_map_1035_sep_175_sep_1_sep_187_sep_0: X
+v_sep_map_1035_sep_178_sep_0: X
+v_sep_map_1035_sep_178_sep_1_sep_181_sep_0: X
+v_sep_zip_1032_sep_135_sep_1: X
+v_sep_zip_1032_sep_135_sep_2_sep_171_sep_0: X
+v_sep_zip_1032_sep_141_sep_1: X
+v_sep_zip_1032_sep_141_sep_2_sep_163_sep_0: X
+v_sep_zip_1032_sep_147_sep_1: X
+v_sep_zip_1032_sep_147_sep_2_sep_155_sep_0: X
+................
+v_sep_fail_1303_sep_192_sep_0: X
+v_sep_map_1035_sep_175_sep_0: X
+v_sep_map_1035_sep_175_sep_1_sep_187_sep_0: X
+v_sep_map_1035_sep_178_sep_0: X
+v_sep_map_1035_sep_178_sep_1_sep_181_sep_0: X
+v_sep_zip_1032_sep_135_sep_1: X
+v_sep_zip_1032_sep_135_sep_2_sep_171_sep_0: X
+v_sep_zip_1032_sep_141_sep_1: X
+v_sep_zip_1032_sep_141_sep_2_sep_163_sep_0: X
+v_sep_zip_1032_sep_147_sep_1: X
+v_sep_zip_1032_sep_147_sep_2_sep_155_sep_0: X
+..........................
+v_sep_fail_1303_sep_192_sep_0: X
+v_sep_map_1035_sep_175_sep_0: X
+v_sep_map_1035_sep_175_sep_1_sep_187_sep_0: X
+v_sep_map_1035_sep_178_sep_0: X
+v_sep_map_1035_sep_178_sep_1_sep_181_sep_0: X
+v_sep_zip_1032_sep_135_sep_1: X
+v_sep_zip_1032_sep_135_sep_2_sep_171_sep_0: X
+v_sep_zip_1032_sep_141_sep_1: X
+v_sep_zip_1032_sep_141_sep_2_sep_163_sep_0: X
+v_sep_zip_1032_sep_147_sep_1: X
+v_sep_zip_1032_sep_147_sep_2_sep_155_sep_0: X
+.................................
+v_sep_fail_1303_sep_192_sep_0: X
+v_sep_map_1035_sep_175_sep_0: X
+v_sep_map_1035_sep_175_sep_1_sep_187_sep_0: X
+v_sep_map_1035_sep_178_sep_0: X
+v_sep_map_1035_sep_178_sep_1_sep_181_sep_0: X
+v_sep_zip_1032_sep_135_sep_1: X
+v_sep_zip_1032_sep_135_sep_2_sep_171_sep_0: X
+v_sep_zip_1032_sep_141_sep_1: X
+v_sep_zip_1032_sep_141_sep_2_sep_163_sep_0: X
+v_sep_zip_1032_sep_147_sep_1: X
+v_sep_zip_1032_sep_147_sep_2_sep_155_sep_0: X
+.....................................(0=0) & (v_sep_fail_1303_sep_192_sep_0($9841)) -> 1=0.
+(($9841-1=0) & ($9842-$9843<0)) & (v_sep_map_1035_sep_175_sep_1_sep_187_sep_0($9844,$9842)) & (v_sep_zip_1032_sep_135_sep_2_sep_171_sep_0($9843,$9843,$9844)) -> v_sep_fail_1303_sep_192_sep_0($9841).
+(($9845<>0) & (-$9845+$9846+1=0) & ($9847-$9848+1=0)) & (v_sep_map_1035_sep_178_sep_1_sep_181_sep_0($9846,$9847)) & (v_sep_map_1035_sep_175_sep_0($9845)) -> v_sep_map_1035_sep_175_sep_1_sep_187_sep_0($9845,$9848).
+(($9849=0) & ($9850=0)) & (v_sep_map_1035_sep_178_sep_0($9849)) -> v_sep_map_1035_sep_178_sep_1_sep_181_sep_0($9849,$9850).
+(($9849+1<>0) & (-$9849+$9851-1=0)) & (v_sep_map_1035_sep_175_sep_0($9851)) -> v_sep_map_1035_sep_178_sep_0($9849).
+(0=0) & (v_sep_zip_1032_sep_135_sep_2_sep_171_sep_0($9852,$9852,$9845)) -> v_sep_map_1035_sep_175_sep_0($9845).
+(($9853<>0) & ($9854<>0) & (-$9853+$9855+1=0) & (-$9854+$9856+1=0) & ($9857-$9858+1=0)) & (v_sep_zip_1032_sep_141_sep_2_sep_163_sep_0($9855,$9856,$9857)) & (v_sep_zip_1032_sep_135_sep_1($9853,$9854)) -> v_sep_zip_1032_sep_135_sep_2_sep_171_sep_0($9853,$9854,$9858).
+(($9859<>0) & ($9860<>0) & (-$9859+$9861+1=0) & (-$9860+$9862+1=0) & ($9863-$9864+1=0)) & (v_sep_zip_1032_sep_147_sep_2_sep_155_sep_0($9861,$9862,$9863)) & (v_sep_zip_1032_sep_141_sep_1($9859,$9860)) -> v_sep_zip_1032_sep_141_sep_2_sep_163_sep_0($9859,$9860,$9864).
+(($9865=0) & ($9866=0) & ($9867=0)) & (v_sep_zip_1032_sep_147_sep_1($9866,$9867)) -> v_sep_zip_1032_sep_147_sep_2_sep_155_sep_0($9866,$9867,$9865).
+(($9866+1<>0) & ($9867+1<>0) & (-$9866+$9868-1=0) & (-$9867+$9869-1=0)) & (v_sep_zip_1032_sep_141_sep_1($9868,$9869)) -> v_sep_zip_1032_sep_147_sep_1($9866,$9867).
+(($9859+1<>0) & ($9860+1<>0) & (-$9859+$9870-1=0) & (-$9860+$9871-1=0)) & (v_sep_zip_1032_sep_135_sep_1($9870,$9871)) -> v_sep_zip_1032_sep_141_sep_1($9859,$9860).
+-$9853+$9854=0 -> v_sep_zip_1032_sep_135_sep_1($9853,$9854).
+
+           (<zip_1032@135:1> = <zip_1032@135:0>) |- P[<zip_1032@135:1>](<zip_1032@135:0>:int,
+                                                                    <zip_1032@135:1>:int)
+        solution:
+          P[<fail_1303@192:0>]($9872:bool) = false
+          P[<map_1035@175:0>]($9892:int) = (2 <= $9892)
+          P[<<map_1035@175:1>@187:0>]($9875:int,$9877:int) = ((1 + $9875) <= 0)
+          P[<map_1035@178:0>]($9895:int) = (1 <= $9895)
+          P[<<map_1035@178:1>@181:0>]($9887:int,$9889:int) = ((1 + (2 * $9887)) <= 0)
+          P[<zip_1032@135:1>]($9905:int,$9907:int) = true
+          P[<<zip_1032@135:2>@171:0>]($9880:int,$9882:int,$9884:int) = (2 <= $9884)
+          P[<zip_1032@141:1>]($9917:int,$9919:int) = true
+          P[<<zip_1032@141:2>@163:0>]($9898:int,$9900:int,$9902:int) = (1 <= $9902)
+          P[<zip_1032@147:1>]($9922:int,$9924:int) = true
+          P[<<zip_1032@147:2>@155:0>]($9910:int,$9912:int,$9914:int) = (0 <= $9914)
+        
+      end HcSolver.solve_ub(20656)[4] (7.878803 sec.)
+      begin HcSolver.check_validity(21739)[4]
+        input:
+          P[<fail_1303@192:0>](<fail_1303@192:0>:bool)|- bot
+          
+          P[<<zip_1032@135:2>@171:0>](<f_main_1296@189:0>:int,<f_main_1296@189:0>:int,<f_main_1296@189:1>:int),
+          P[<<map_1035@175:1>@187:0>](<f_main_1296@189:1>:int,<f_main_1296@189:3>:int),
+          ((<f_main_1296@189:3> < <f_main_1296@189:0>) && <fail_1303@192:0>)
+          |- P[<fail_1303@192:0>](<fail_1303@192:0>:bool)
+          
+          P[<map_1035@175:0>](<map_1035@175:0>:int),
+          P[<<map_1035@178:1>@181:0>]((-1 + <map_1035@175:0>):int,(-1 + <<map_1035@175:1>@187:0>):int),
+          (<map_1035@175:0> <> 0) |- P[<<map_1035@175:1>@187:0>](<map_1035@175:0>:int,
+                                                                 <<map_1035@175:1>@187:0>:int)
+          
+          P[<map_1035@178:0>](<map_1035@178:0>:int), ((<map_1035@178:0> = 0) && (<<map_1035@178:1>@181:0> = 0))
+          |- P[<<map_1035@178:1>@181:0>](<map_1035@178:0>:int,<<map_1035@178:1>@181:0>:int)
+          
+          P[<map_1035@175:0>]((1 + <map_1035@178:0>):int), ((1 + <map_1035@178:0>) <> 0)
+          |- P[<map_1035@178:0>](<map_1035@178:0>:int)
+          
+          P[<<zip_1032@135:2>@171:0>](<f_main_1295@173:0>:int,<f_main_1295@173:0>:int,<map_1035@175:0>:int)|- P[<map_1035@175:0>](
+          <map_1035@175:0>:int)
+          
+          P[<zip_1032@135:1>](<zip_1032@135:0>:int,<zip_1032@135:1>:int),
+          P[<<zip_1032@141:2>@163:0>]((-1 + <zip_1032@135:0>):int,(-1 + <zip_1032@135:1>):int,(
+                                      -1 + <<zip_1032@135:2>@171:0>):int),
+          ((<zip_1032@135:0> <> 0) && (<zip_1032@135:1> <> 0))
+          |- P[<<zip_1032@135:2>@171:0>](<zip_1032@135:0>:int,<zip_1032@135:1>:int,
+                                         <<zip_1032@135:2>@171:0>:int)
+          
+          P[<zip_1032@141:1>](<zip_1032@141:0>:int,<zip_1032@141:1>:int),
+          P[<<zip_1032@147:2>@155:0>]((-1 + <zip_1032@141:0>):int,(-1 + <zip_1032@141:1>):int,(
+                                      -1 + <<zip_1032@141:2>@163:0>):int),
+          ((<zip_1032@141:0> <> 0) && (<zip_1032@141:1> <> 0))
+          |- P[<<zip_1032@141:2>@163:0>](<zip_1032@141:0>:int,<zip_1032@141:1>:int,
+                                         <<zip_1032@141:2>@163:0>:int)
+          
+          P[<zip_1032@147:1>](<zip_1032@147:0>:int,<zip_1032@147:1>:int),
+          ((<<zip_1032@147:2>@155:0> = 0) && ((<zip_1032@147:0> = 0) && (<zip_1032@147:1> = 0)))
+          |- P[<<zip_1032@147:2>@155:0>](<zip_1032@147:0>:int,<zip_1032@147:1>:int,
+                                         <<zip_1032@147:2>@155:0>:int)
+          
+          P[<zip_1032@141:1>]((1 + <zip_1032@147:0>):int,(1 + <zip_1032@147:1>):int),
+          (((1 + <zip_1032@147:0>) <> 0) && ((1 + <zip_1032@147:1>) <> 0))
+          |- P[<zip_1032@147:1>](<zip_1032@147:0>:int,<zip_1032@147:1>:int)
+          
+          P[<zip_1032@135:1>]((1 + <zip_1032@141:0>):int,(1 + <zip_1032@141:1>):int),
+          (((1 + <zip_1032@141:0>) <> 0) && ((1 + <zip_1032@141:1>) <> 0))
+          |- P[<zip_1032@141:1>](<zip_1032@141:0>:int,<zip_1032@141:1>:int)
+          
+           (<zip_1032@135:1> = <zip_1032@135:0>) |- P[<zip_1032@135:1>](<zip_1032@135:0>:int,
+                                                                    <zip_1032@135:1>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(21739)[4] (0.007998 sec.)
+      solution:
+        P[<fail_1303@192:0>]($9872:bool) = false
+        P[<map_1035@175:0>]($9892:int) = (2 <= $9892)
+        P[<<map_1035@175:1>@187:0>]($9875:int,$9877:int) = ((1 + $9875) <= 0)
+        P[<map_1035@178:0>]($9895:int) = (1 <= $9895)
+        P[<<map_1035@178:1>@181:0>]($9887:int,$9889:int) = ((1 + (2 * $9887)) <= 0)
+        P[<zip_1032@135:1>]($9905:int,$9907:int) = true
+        P[<<zip_1032@135:2>@171:0>]($9880:int,$9882:int,$9884:int) = (2 <= $9884)
+        P[<zip_1032@141:1>]($9917:int,$9919:int) = true
+        P[<<zip_1032@141:2>@163:0>]($9898:int,$9900:int,$9902:int) = (1 <= $9902)
+        P[<zip_1032@147:1>]($9922:int,$9924:int) = true
+        P[<<zip_1032@147:2>@155:0>]($9910:int,$9912:int,$9914:int) = (0 <= $9914)
+    end YhornInterface.solve(20655)[3] (7.886801 sec.)
+    
+  end RefTypeInfer.infer_etrs(15277)[2] (8.014781 sec.)
+  refinement types:
+    main_1292: X
+    f_1297: v1:int -> X
+    main_1037: v1:int -> (v2:unit -> X) -> X
+    zip_1032: v1:int -> v2:int -> (v3:{v3:int | (2 <= v3)} -> X) -> X
+    br_zip_1301: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    zip_1032: v1:int -> v2:int -> (v3:{v3:int | (1 <= v3)} -> X) -> X
+    br_zip_1301: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    zip_1032: v1:int -> v2:int -> (v3:{v3:int | (0 <= v3)} -> X) -> X
+    br_zip_1299: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    f_zip_1293: v1:int -> v2:int -> (v3:int -> X) -> v5:int -> X
+    f_zip_1293: v1:int -> v2:int -> (v3:int -> X) -> v5:int -> X
+    f_main_1295: v1:int -> (v2:unit -> X) -> v4:int -> X
+    map_1035: v1:{v1:int | (2 <= v1)} -> (v2:{v2:int | ((1 + v1) <= 0)} -> X) -> X
+    map_1035: v1:{v1:int | (1 <= v1)} -> (v2:{v2:int | ((1 + (2 * v1)) <= 0)} -> X) -> X
+    f_map_1294: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_main_1296: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1303: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1298: var123:int -> var122:unit -> X
+    loop_1079: var127:unit -> (var126:int -> X) -> X
+  abstraction types:
+    main_1292: X
+    f_1297: v1:int -> X
+    main_1037: v1:int -> (v2:unit -> X) -> X
+    zip_1032: var133:int ->
+              var134:int ->
+              (var135:int[var135 -> (2 <= var135),
+                          var135 -> (1 <= var135),
+                          var135 -> (0 <= var135)] -> X) -> X
+    br_zip_1301: var138:bool -> var139:int -> var140:int -> (var141:int -> X) -> X
+    br_zip_1299: v1:bool -> v2:int -> v3:int -> (v4:int -> X) -> X
+    f_zip_1293: var144:int -> var145:int -> (var146:int -> X) -> var148:int -> X
+    f_main_1295: v1:int -> (v2:unit -> X) -> v4:int -> X
+    map_1035: var150:int[var150 -> (2 <= var150),
+                         var150 -> (1 <= var150)] ->
+              (var151:int[var151 -> ((1 + var150) <= 0),
+                          var151 -> ((1 + (2 * var150)) <= 0)] -> X) -> X
+    f_map_1294: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_main_1296: v1:int -> v2:int -> (v3:unit -> X) -> v5:int -> X
+    fail_1303: v1:bool -> (v2:unit -> X) -> X
+    f_1298: var123:int -> var122:unit -> X
+    loop_1079: var127:unit -> (var126:int -> X) -> X
+  
+end AbsTypeInfer.refine(15276)[1] (8.018781 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 1; 1; 1; 0; 0; 0; 0; 0; 1; 0
+
+Program with abstraction types (CEGAR-cycle 4)::
+Main: main_1292
+  main_1292 -> (rand_int f_1297)
+  br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 when b_1300 -> (k_zip_1132 0)
+  br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 when (not b_1300) -> (loop_1079 () k_zip_1132)
+  br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 when b_1302 -> (loop_1079 () k_zip_1132)
+  br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 when (not b_1302) ->
+      (zip_1032 (x_1033 - 1) (y_1034 - 1) (f_zip_1293 x_1033 y_1034 k_zip_1132))
+  f_1297 x_1267 -> (main_1037 x_1267 (f_1298 x_1267))
+  f_1298 x_1267 x_1264 -> end
+  f_main_1295 n_1038 k_main_1225 x_1250 -> (map_1035 x_1250 (f_main_1296 n_1038 x_1250 k_main_1225))
+  f_main_1296 n_1038 x_1250 k_main_1225 x_1228 when (x_1228 >= n_1038) -> (k_main_1225 ())
+  f_main_1296 n_1038 x_1250 k_main_1225 x_1228 when (not (x_1228 >= n_1038)) -> (fail_1303 true k_main_1225)
+  f_map_1294 x_1036 k_map_1193 x_1197 -> (k_map_1193 (1 + x_1197))
+  f_zip_1293 x_1033 y_1034 k_zip_1132 x_1160 -> (k_zip_1132 (1 + x_1160))
+  fail_1303 b k -> {fail} => (k ())
+  loop_1079 x_1031 k_loop_1105 -> (loop_1079 x_1031 k_loop_1105)
+  main_1037 n_1038 k_main_1225 -> (zip_1032 n_1038 n_1038 (f_main_1295 n_1038 k_main_1225))
+  map_1035 x_1036 k_map_1193 when (x_1036 = 0) -> (k_map_1193 0)
+  map_1035 x_1036 k_map_1193 when (not (x_1036 = 0)) -> (map_1035 (x_1036 - 1) (f_map_1294 x_1036 k_map_1193))
+  zip_1032 x_1033 y_1034 k_zip_1132 when (x_1033 = 0) -> (br_zip_1299 (y_1034 = 0) x_1033 y_1034 k_zip_1132)
+  zip_1032 x_1033 y_1034 k_zip_1132 when (not (x_1033 = 0)) -> (br_zip_1301 (y_1034 = 0) x_1033 y_1034 k_zip_1132)
+Types:
+  main_1292 : X
+  fail_1303 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  loop_1079 : (unit -> (int -> X) -> X)
+  map_1035 : (x_1:int[x_1 >= 2; x_1 >= 1] -> (x_3:int[x_3 >= 1; x_1 <= -1; x_3 >= 0] -> X) -> X)
+  zip_1032 : (x_1:int -> int -> (x_4:int[x_4 >= 2; x_1 <= 1; x_4 >= 0; x_4 >= 1; x_1 <= 0] -> X) -> X)
+  
+(4-1) Abstracting ... DONE!
+
+(4-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1292 ... --> 
+  f_1297 ... --> 
+  main_1037 ... --> 
+  zip_1032 [2/2] ... --> 
+  br_zip_1301 [2/2] ... --> 
+  zip_1032 [2/2] ... --> 
+  br_zip_1301 [2/2] ... --> 
+  zip_1032 [1/2] ... --> 
+  br_zip_1299 [1/2] ... --> 
+  f_zip_1293 ... --> 
+  f_zip_1293 ... --> 
+  f_main_1295 ... --> 
+  map_1035 [2/2] ... --> 
+  map_1035 [2/2] ... --> 
+  map_1035 [1/2] ... --> 
+  f_map_1294 ... --> 
+  f_map_1294 ... --> 
+  f_main_1296 [2/2] ... --> 
+  fail_1303 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 1; 1; 1; 0; 0; 0; 0; 0; 1; 1; 0; 0; 0; 1; 0
+
+(4-3) Checking counter-example ... DONE!
+
+(4-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(24982)[1]
+  program:
+    main_1292  | true = ((Random.int 0) f_1297)
+    br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 | b_1300 = (k_zip_1132 0)
+    br_zip_1299 b_1300 x_1033 y_1034 k_zip_1132 | (not b_1300) = (loop_1079 ()
+                                                                    k_zip_1132)
+    br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 | b_1302 = (loop_1079 ()
+                                                                    k_zip_1132)
+    br_zip_1301 b_1302 x_1033 y_1034 k_zip_1132 | (not b_1302) = (zip_1032
+                                                                    (
+                                                                    x_1033 - 1)
+                                                                    (
+                                                                    y_1034 - 1)
+                                                                    (
+                                                                    f_zip_1293 x_1033
+                                                                    y_1034
+                                                                    k_zip_1132))
+    f_1297 x_1267 | true = (main_1037 x_1267
+                                      (f_1298 x_1267))
+    f_1298 x_1267 x_1264 | true = end
+    f_main_1295 n_1038 k_main_1225 x_1250 | true = (map_1035 x_1250
+                                                             (f_main_1296 n_1038
+                                                                    x_1250
+                                                                    k_main_1225))
+    f_main_1296 n_1038 x_1250 k_main_1225 x_1228 | (x_1228 >= n_1038) = (
+    k_main_1225 ())
+    f_main_1296 n_1038 x_1250 k_main_1225 x_1228 | (not (x_1228 >= n_1038)) = (
+    fail_1303 true
+              k_main_1225)
+    f_map_1294 x_1036 k_map_1193 x_1197 | true = (k_map_1193 (1 + x_1197))
+    f_zip_1293 x_1033 y_1034 k_zip_1132 x_1160 | true = (k_zip_1132 (
+                                                                    1 + x_1160))
+    fail_1303 b k | true = (fail ())
+    loop_1079 x_1031 k_loop_1105 | true = (loop_1079 x_1031
+                                                     k_loop_1105)
+    main_1037 n_1038 k_main_1225 | true = (zip_1032 n_1038
+                                                    n_1038
+                                                    (f_main_1295 n_1038
+                                                                 k_main_1225))
+    map_1035 x_1036 k_map_1193 | (x_1036 = 0) = (k_map_1193 0)
+    map_1035 x_1036 k_map_1193 | (not (x_1036 = 0)) = (map_1035 (x_1036 - 1)
+                                                                (f_map_1294 x_1036
+                                                                    k_map_1193))
+    zip_1032 x_1033 y_1034 k_zip_1132 | (x_1033 = 0) = (br_zip_1299 (
+                                                                    y_1034 = 0)
+                                                                    x_1033
+                                                                    y_1034
+                                                                    k_zip_1132)
+    zip_1032 x_1033 y_1034 k_zip_1132 | (not (x_1033 = 0)) = (br_zip_1301 (
+                                                                    y_1034 = 0)
+                                                                    x_1033
+                                                                    y_1034
+                                                                    k_zip_1132)
+    main_1292:X
+    br_zip_1299:bool -> int -> int -> (int -> X) -> X
+    br_zip_1301:bool -> int -> int -> (int -> X) -> X
+    f_1297:int -> X
+    f_1298:int -> unit -> X
+    f_main_1295:int -> (unit -> X) -> int -> X
+    f_main_1296:int -> int -> (unit -> X) -> int -> X
+    f_map_1294:int -> (int -> X) -> int -> X
+    f_zip_1293:int -> int -> (int -> X) -> int -> X
+    fail_1303:bool -> (unit -> X) -> X
+    loop_1079:unit -> (int -> X) -> X
+    main_1037:int -> (unit -> X) -> X
+    map_1035:int -> (int -> X) -> X
+    zip_1032:int -> int -> (int -> X) -> X
+  inlined functions: br_zip_1299,br_zip_1301,f_1297,f_1298,f_main_1295,f_main_1296,f_map_1294,f_zip_1293,main_1037
+  counterexample: 0:0:0:1:1:1:1:0:0:0:0:0:1:1:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1297@198:0> = var154)
+     [true.(<main_1037@200:0> = <f_1297@198:0>)
+      [true.((<zip_1032@202:0> = <main_1037@200:0>) && (<zip_1032@202:1> = <main_1037@200:0>))
+       [(not (<zip_1032@202:0> = 0)).
+        ((<br_zip_1301@205:0> = (<zip_1032@202:1> = 0)) &&
+         ((<br_zip_1301@205:1> = <zip_1032@202:0>) && (<br_zip_1301@205:2> = <zip_1032@202:1>)))
+        [(not <br_zip_1301@205:0>).
+         ((<zip_1032@208:0> = (<br_zip_1301@205:1> - 1)) && (<zip_1032@208:1> = (<br_zip_1301@205:2> - 1)))
+         [(not (<zip_1032@208:0> = 0)).
+          ((<br_zip_1301@211:0> = (<zip_1032@208:1> = 0)) &&
+           ((<br_zip_1301@211:1> = <zip_1032@208:0>) && (<br_zip_1301@211:2> = <zip_1032@208:1>)))
+          [(not <br_zip_1301@211:0>).
+           ((<zip_1032@214:0> = (<br_zip_1301@211:1> - 1)) && (<zip_1032@214:1> = (<br_zip_1301@211:2> - 1)))
+           [(<zip_1032@214:0> = 0).
+            ((<br_zip_1299@217:0> = (<zip_1032@214:1> = 0)) &&
+             ((<br_zip_1299@217:1> = <zip_1032@214:0>) && (<br_zip_1299@217:2> = <zip_1032@214:1>)))
+            [<br_zip_1299@217:0>.(<<br_zip_1299@217:3>@220:0> = 0)
+             [true.(<<zip_1032@214:2>@222:0> = <<br_zip_1299@217:3>@220:0>)
+              [true.
+               ((<f_zip_1293@224:0> = <br_zip_1301@211:1>) &&
+                ((<f_zip_1293@224:1> = <br_zip_1301@211:2>) && (<f_zip_1293@224:3> = <<zip_1032@214:2>@222:0>)))
+               [true.(<<f_zip_1293@224:2>@226:0> = (1 + <f_zip_1293@224:3>))
+                [true.(<<br_zip_1301@211:3>@228:0> = <<f_zip_1293@224:2>@226:0>)
+                 [true.(<<zip_1032@208:2>@230:0> = <<br_zip_1301@211:3>@228:0>)
+                  [true.
+                   ((<f_zip_1293@232:0> = <br_zip_1301@205:1>) &&
+                    ((<f_zip_1293@232:1> = <br_zip_1301@205:2>) && (<f_zip_1293@232:3> = <<zip_1032@208:2>@230:0>)))
+                   [true.(<<f_zip_1293@232:2>@234:0> = (1 + <f_zip_1293@232:3>))
+                    [true.(<<br_zip_1301@205:3>@236:0> = <<f_zip_1293@232:2>@234:0>)
+                     [true.(<<zip_1032@202:2>@238:0> = <<br_zip_1301@205:3>@236:0>)
+                      [true.
+                       ((<f_main_1295@240:0> = <main_1037@200:0>) && (<f_main_1295@240:2> = <<zip_1032@202:2>@238:0>))
+                       [true.(<map_1035@242:0> = <f_main_1295@240:2>)
+                        [(not (<map_1035@242:0> = 0)).(<map_1035@245:0> = (<map_1035@242:0> - 1))
+                         [(not (<map_1035@245:0> = 0)).(<map_1035@248:0> = (<map_1035@245:0> - 1))
+                          [(<map_1035@248:0> = 0).(<<map_1035@248:1>@251:0> = 0)
+                           [true.
+                            ((<f_map_1294@253:0> = <map_1035@245:0>) && (<f_map_1294@253:2> = <<map_1035@248:1>@251:0>))
+                            [true.(<<f_map_1294@253:1>@255:0> = (1 + <f_map_1294@253:2>))
+                             [true.(<<map_1035@245:1>@257:0> = <<f_map_1294@253:1>@255:0>)
+                              [true.
+                               ((<f_map_1294@259:0> = <map_1035@242:0>) &&
+                                (<f_map_1294@259:2> = <<map_1035@245:1>@257:0>))
+                               [true.(<<f_map_1294@259:1>@261:0> = (1 + <f_map_1294@259:2>))
+                                [true.(<<map_1035@242:1>@263:0> = <<f_map_1294@259:1>@261:0>)
+                                 [true.
+                                  ((<f_main_1296@265:0> = <f_main_1295@240:0>) &&
+                                   ((<f_main_1296@265:1> = <f_main_1295@240:2>) &&
+                                    (<f_main_1296@265:3> = <<map_1035@242:1>@263:0>)))
+                                  [(not (<f_main_1296@265:3> >= <f_main_1296@265:0>)).(
+                                   <fail_1303@268:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(24983)[2]
+    horn clauses:
+      P[<fail_1303@268:0>](<fail_1303@268:0>:bool)|- bot
+      
+      P[<f_main_1296@265:3>](<f_main_1296@265:0>:int,<f_main_1296@265:1>:int,<f_main_1296@265:3>:int),
+      ((<f_main_1296@265:3> < <f_main_1296@265:0>) && <fail_1303@268:0>)
+      |- P[<fail_1303@268:0>](<fail_1303@268:0>:bool)
+      
+      P[<f_main_1295@240:2>](<f_main_1296@265:0>:int,<f_main_1296@265:1>:int),
+      P[<<map_1035@242:1>@263:0>](<f_main_1296@265:1>:int,<f_main_1296@265:3>:int)|- P[<f_main_1296@265:3>](
+      <f_main_1296@265:0>:int,<f_main_1296@265:1>:int,<f_main_1296@265:3>:int)
+      
+      P[<map_1035@242:0>](<map_1035@242:0>:int),
+      P[<<f_map_1294@259:1>@261:0>](<map_1035@242:0>:int,<<map_1035@242:1>@263:0>:int), (
+      <map_1035@242:0> <> 0) |- P[<<map_1035@242:1>@263:0>](<map_1035@242:0>:int,
+                                                            <<map_1035@242:1>@263:0>:int)
+      
+      P[<f_map_1294@259:2>](<f_map_1294@259:0>:int,(-1 + <<f_map_1294@259:1>@261:0>):int)|- P[<<f_map_1294@259:1>@261:0>](
+      <f_map_1294@259:0>:int,<<f_map_1294@259:1>@261:0>:int)
+      
+      P[<map_1035@242:0>](<f_map_1294@259:0>:int),
+      P[<<map_1035@245:1>@257:0>]((-1 + <f_map_1294@259:0>):int,<f_map_1294@259:2>:int), (
+      <f_map_1294@259:0> <> 0) |- P[<f_map_1294@259:2>](<f_map_1294@259:0>:int,
+                                                        <f_map_1294@259:2>:int)
+      
+      P[<map_1035@245:0>](<map_1035@245:0>:int),
+      P[<<f_map_1294@253:1>@255:0>](<map_1035@245:0>:int,<<map_1035@245:1>@257:0>:int), (
+      <map_1035@245:0> <> 0) |- P[<<map_1035@245:1>@257:0>](<map_1035@245:0>:int,
+                                                            <<map_1035@245:1>@257:0>:int)
+      
+      P[<f_map_1294@253:2>](<f_map_1294@253:0>:int,(-1 + <<f_map_1294@253:1>@255:0>):int)|- P[<<f_map_1294@253:1>@255:0>](
+      <f_map_1294@253:0>:int,<<f_map_1294@253:1>@255:0>:int)
+      
+      P[<map_1035@245:0>](<f_map_1294@253:0>:int),
+      P[<<map_1035@248:1>@251:0>]((-1 + <f_map_1294@253:0>):int,<f_map_1294@253:2>:int), (
+      <f_map_1294@253:0> <> 0) |- P[<f_map_1294@253:2>](<f_map_1294@253:0>:int,
+                                                        <f_map_1294@253:2>:int)
+      
+      P[<map_1035@248:0>](<map_1035@248:0>:int), ((<map_1035@248:0> = 0) && (<<map_1035@248:1>@251:0> = 0))
+      |- P[<<map_1035@248:1>@251:0>](<map_1035@248:0>:int,<<map_1035@248:1>@251:0>:int)
+      
+      P[<map_1035@245:0>]((1 + <map_1035@248:0>):int), ((1 + <map_1035@248:0>) <> 0)
+      |- P[<map_1035@248:0>](<map_1035@248:0>:int)
+      
+      P[<map_1035@242:0>]((1 + <map_1035@245:0>):int), ((1 + <map_1035@245:0>) <> 0)
+      |- P[<map_1035@245:0>](<map_1035@245:0>:int)
+      
+      P[<f_main_1295@240:2>](<f_main_1295@240:0>:int,<map_1035@242:0>:int)|- P[<map_1035@242:0>](<map_1035@242:0>:int)
+      
+      P[<main_1037@200:0>](<f_main_1295@240:0>:int),
+      P[<<zip_1032@202:2>@238:0>](<f_main_1295@240:0>:int,<f_main_1295@240:0>:int,<f_main_1295@240:2>:int)|- P[<f_main_1295@240:2>](
+      <f_main_1295@240:0>:int,<f_main_1295@240:2>:int)
+      
+      P[<zip_1032@202:1>](<zip_1032@202:0>:int,<zip_1032@202:1>:int),
+      P[<<br_zip_1301@205:3>@236:0>]((<zip_1032@202:1> = 0):bool,<zip_1032@202:0>:int,<zip_1032@202:1>:int,<<zip_1032@202:2>@238:0>:int),
+      (<zip_1032@202:0> <> 0)
+      |- P[<<zip_1032@202:2>@238:0>](<zip_1032@202:0>:int,<zip_1032@202:1>:int,
+                                     <<zip_1032@202:2>@238:0>:int)
+      
+      P[<br_zip_1301@205:2>](<br_zip_1301@205:0>:bool,<br_zip_1301@205:1>:int,<br_zip_1301@205:2>:int),
+      P[<<f_zip_1293@232:2>@234:0>](<br_zip_1301@205:1>:int,<br_zip_1301@205:2>:int,<<br_zip_1301@205:3>@236:0>:int),
+      (not <br_zip_1301@205:0>)
+      |- P[<<br_zip_1301@205:3>@236:0>](<br_zip_1301@205:0>:bool,<br_zip_1301@205:1>:int,
+                                        <br_zip_1301@205:2>:int,<<br_zip_1301@205:3>@236:0>:int)
+      
+      P[<f_zip_1293@232:3>](<f_zip_1293@232:0>:int,<f_zip_1293@232:1>:int,(
+                            -1 + <<f_zip_1293@232:2>@234:0>):int)|- P[<<f_zip_1293@232:2>@234:0>](
+      <f_zip_1293@232:0>:int,<f_zip_1293@232:1>:int,<<f_zip_1293@232:2>@234:0>:int)
+      
+      P[<br_zip_1301@205:2>](false:bool,<f_zip_1293@232:0>:int,<f_zip_1293@232:1>:int),
+      P[<<zip_1032@208:2>@230:0>]((-1 + <f_zip_1293@232:0>):int,(-1 + <f_zip_1293@232:1>):int,<f_zip_1293@232:3>:int)|- P[<f_zip_1293@232:3>](
+      <f_zip_1293@232:0>:int,<f_zip_1293@232:1>:int,<f_zip_1293@232:3>:int)
+      
+      P[<zip_1032@208:1>](<zip_1032@208:0>:int,<zip_1032@208:1>:int),
+      P[<<br_zip_1301@211:3>@228:0>]((<zip_1032@208:1> = 0):bool,<zip_1032@208:0>:int,<zip_1032@208:1>:int,<<zip_1032@208:2>@230:0>:int),
+      (<zip_1032@208:0> <> 0)
+      |- P[<<zip_1032@208:2>@230:0>](<zip_1032@208:0>:int,<zip_1032@208:1>:int,
+                                     <<zip_1032@208:2>@230:0>:int)
+      
+      P[<br_zip_1301@211:2>](<br_zip_1301@211:0>:bool,<br_zip_1301@211:1>:int,<br_zip_1301@211:2>:int),
+      P[<<f_zip_1293@224:2>@226:0>](<br_zip_1301@211:1>:int,<br_zip_1301@211:2>:int,<<br_zip_1301@211:3>@228:0>:int),
+      (not <br_zip_1301@211:0>)
+      |- P[<<br_zip_1301@211:3>@228:0>](<br_zip_1301@211:0>:bool,<br_zip_1301@211:1>:int,
+                                        <br_zip_1301@211:2>:int,<<br_zip_1301@211:3>@228:0>:int)
+      
+      P[<f_zip_1293@224:3>](<f_zip_1293@224:0>:int,<f_zip_1293@224:1>:int,(
+                            -1 + <<f_zip_1293@224:2>@226:0>):int)|- P[<<f_zip_1293@224:2>@226:0>](
+      <f_zip_1293@224:0>:int,<f_zip_1293@224:1>:int,<<f_zip_1293@224:2>@226:0>:int)
+      
+      P[<br_zip_1301@211:2>](false:bool,<f_zip_1293@224:0>:int,<f_zip_1293@224:1>:int),
+      P[<<zip_1032@214:2>@222:0>]((-1 + <f_zip_1293@224:0>):int,(-1 + <f_zip_1293@224:1>):int,<f_zip_1293@224:3>:int)|- P[<f_zip_1293@224:3>](
+      <f_zip_1293@224:0>:int,<f_zip_1293@224:1>:int,<f_zip_1293@224:3>:int)
+      
+      P[<zip_1032@214:1>](<zip_1032@214:0>:int,<zip_1032@214:1>:int),
+      P[<<br_zip_1299@217:3>@220:0>]((<zip_1032@214:1> = 0):bool,<zip_1032@214:0>:int,<zip_1032@214:1>:int,<<zip_1032@214:2>@222:0>:int),
+      (<zip_1032@214:0> = 0)
+      |- P[<<zip_1032@214:2>@222:0>](<zip_1032@214:0>:int,<zip_1032@214:1>:int,
+                                     <<zip_1032@214:2>@222:0>:int)
+      
+      P[<br_zip_1299@217:2>](<br_zip_1299@217:0>:bool,<br_zip_1299@217:1>:int,<br_zip_1299@217:2>:int),
+      ((<<br_zip_1299@217:3>@220:0> = 0) && <br_zip_1299@217:0>)
+      |- P[<<br_zip_1299@217:3>@220:0>](<br_zip_1299@217:0>:bool,<br_zip_1299@217:1>:int,
+                                        <br_zip_1299@217:2>:int,<<br_zip_1299@217:3>@220:0>:int)
+      
+      P[<zip_1032@214:1>](<br_zip_1299@217:1>:int,<br_zip_1299@217:2>:int),
+      ((<br_zip_1299@217:1> = 0) && (<br_zip_1299@217:0> = (<br_zip_1299@217:2> = 0)))
+      |- P[<br_zip_1299@217:2>](<br_zip_1299@217:0>:bool,<br_zip_1299@217:1>:int,
+                                <br_zip_1299@217:2>:int)
+      
+      P[<br_zip_1301@211:2>](false:bool,(1 + <zip_1032@214:0>):int,(1 + <zip_1032@214:1>):int)|- P[<zip_1032@214:1>](
+      <zip_1032@214:0>:int,<zip_1032@214:1>:int)
+      
+      P[<zip_1032@208:1>](<br_zip_1301@211:1>:int,<br_zip_1301@211:2>:int),
+      ((<br_zip_1301@211:1> <> 0) && (<br_zip_1301@211:0> = (<br_zip_1301@211:2> = 0)))
+      |- P[<br_zip_1301@211:2>](<br_zip_1301@211:0>:bool,<br_zip_1301@211:1>:int,
+                                <br_zip_1301@211:2>:int)
+      
+      P[<br_zip_1301@205:2>](false:bool,(1 + <zip_1032@208:0>):int,(1 + <zip_1032@208:1>):int)|- P[<zip_1032@208:1>](
+      <zip_1032@208:0>:int,<zip_1032@208:1>:int)
+      
+      P[<zip_1032@202:1>](<br_zip_1301@205:1>:int,<br_zip_1301@205:2>:int),
+      ((<br_zip_1301@205:1> <> 0) && (<br_zip_1301@205:0> = (<br_zip_1301@205:2> = 0)))
+      |- P[<br_zip_1301@205:2>](<br_zip_1301@205:0>:bool,<br_zip_1301@205:1>:int,
+                                <br_zip_1301@205:2>:int)
+      
+      P[<main_1037@200:0>](<zip_1032@202:1>:int), (<zip_1032@202:1> = <zip_1032@202:0>)
+      |- P[<zip_1032@202:1>](<zip_1032@202:0>:int,<zip_1032@202:1>:int)
+      
+      P[<f_1297@198:0>](<main_1037@200:0>:int)|- P[<main_1037@200:0>](<main_1037@200:0>:int)
+      
+      |- P[<f_1297@198:0>](<f_1297@198:0>:int)
+    call trees:
+      <main_1292@195>
+        <f_1297@198>
+          <main_1037@200>
+            <zip_1032@202>
+              <br_zip_1301@205>
+                <zip_1032@208>
+                  <br_zip_1301@211>
+                    <zip_1032@214>
+                      <br_zip_1299@217>
+                      </<br_zip_1299@217:3>@220>
+                    </<zip_1032@214:2>@222>
+                    <f_zip_1293@224>
+                    </<f_zip_1293@224:2>@226>
+                  </<br_zip_1301@211:3>@228>
+                </<zip_1032@208:2>@230>
+                <f_zip_1293@232>
+                </<f_zip_1293@232:2>@234>
+              </<br_zip_1301@205:3>@236>
+            </<zip_1032@202:2>@238>
+            <f_main_1295@240>
+              <map_1035@242>
+                <map_1035@245>
+                  <map_1035@248>
+                  </<map_1035@248:1>@251>
+                  <f_map_1294@253>
+                  </<f_map_1294@253:1>@255>
+                </<map_1035@245:1>@257>
+                <f_map_1294@259>
+                </<f_map_1294@259:1>@261>
+              </<map_1035@242:1>@263>
+              <f_main_1296@265>
+                <fail_1303@268>
+    inlined horn clauses:
+      P[<fail_1303@268:0>](<fail_1303@268:0>:bool)|- bot
+      
+      P[<<zip_1032@202:2>@238:0>](<f_main_1296@265:0>:int,<f_main_1296@265:0>:int,<f_main_1296@265:1>:int),
+      P[<<map_1035@242:1>@263:0>](<f_main_1296@265:1>:int,<f_main_1296@265:3>:int),
+      ((<f_main_1296@265:3> < <f_main_1296@265:0>) && <fail_1303@268:0>)
+      |- P[<fail_1303@268:0>](<fail_1303@268:0>:bool)
+      
+      P[<map_1035@242:0>](<map_1035@242:0>:int),
+      P[<<map_1035@245:1>@257:0>]((-1 + <map_1035@242:0>):int,(-1 + <<map_1035@242:1>@263:0>):int),
+      (<map_1035@242:0> <> 0) |- P[<<map_1035@242:1>@263:0>](<map_1035@242:0>:int,
+                                                             <<map_1035@242:1>@263:0>:int)
+      
+      P[<map_1035@245:0>](<map_1035@245:0>:int),
+      P[<<map_1035@248:1>@251:0>]((-1 + <map_1035@245:0>):int,(-1 + <<map_1035@245:1>@257:0>):int),
+      (<map_1035@245:0> <> 0) |- P[<<map_1035@245:1>@257:0>](<map_1035@245:0>:int,
+                                                             <<map_1035@245:1>@257:0>:int)
+      
+      P[<map_1035@248:0>](<map_1035@248:0>:int), ((<map_1035@248:0> = 0) && (<<map_1035@248:1>@251:0> = 0))
+      |- P[<<map_1035@248:1>@251:0>](<map_1035@248:0>:int,<<map_1035@248:1>@251:0>:int)
+      
+      P[<map_1035@245:0>]((1 + <map_1035@248:0>):int), ((1 + <map_1035@248:0>) <> 0)
+      |- P[<map_1035@248:0>](<map_1035@248:0>:int)
+      
+      P[<map_1035@242:0>]((1 + <map_1035@245:0>):int), ((1 + <map_1035@245:0>) <> 0)
+      |- P[<map_1035@245:0>](<map_1035@245:0>:int)
+      
+      P[<<zip_1032@202:2>@238:0>](<f_main_1295@240:0>:int,<f_main_1295@240:0>:int,<map_1035@242:0>:int)|- P[<map_1035@242:0>](
+      <map_1035@242:0>:int)
+      
+      P[<zip_1032@202:1>](<zip_1032@202:0>:int,<zip_1032@202:1>:int),
+      P[<<zip_1032@208:2>@230:0>]((-1 + <zip_1032@202:0>):int,(-1 + <zip_1032@202:1>):int,(
+                                  -1 + <<zip_1032@202:2>@238:0>):int),
+      ((<zip_1032@202:0> <> 0) && (<zip_1032@202:1> <> 0))
+      |- P[<<zip_1032@202:2>@238:0>](<zip_1032@202:0>:int,<zip_1032@202:1>:int,
+                                     <<zip_1032@202:2>@238:0>:int)
+      
+      P[<zip_1032@208:1>](<zip_1032@208:0>:int,<zip_1032@208:1>:int),
+      P[<<zip_1032@214:2>@222:0>]((-1 + <zip_1032@208:0>):int,(-1 + <zip_1032@208:1>):int,(
+                                  -1 + <<zip_1032@208:2>@230:0>):int),
+      ((<zip_1032@208:0> <> 0) && (<zip_1032@208:1> <> 0))
+      |- P[<<zip_1032@208:2>@230:0>](<zip_1032@208:0>:int,<zip_1032@208:1>:int,
+                                     <<zip_1032@208:2>@230:0>:int)
+      
+      P[<zip_1032@214:1>](<zip_1032@214:0>:int,<zip_1032@214:1>:int),
+      ((<<zip_1032@214:2>@222:0> = 0) && ((<zip_1032@214:0> = 0) && (<zip_1032@214:1> = 0)))
+      |- P[<<zip_1032@214:2>@222:0>](<zip_1032@214:0>:int,<zip_1032@214:1>:int,
+                                     <<zip_1032@214:2>@222:0>:int)
+      
+      P[<zip_1032@208:1>]((1 + <zip_1032@214:0>):int,(1 + <zip_1032@214:1>):int),
+      (((1 + <zip_1032@214:0>) <> 0) && ((1 + <zip_1032@214:1>) <> 0))
+      |- P[<zip_1032@214:1>](<zip_1032@214:0>:int,<zip_1032@214:1>:int)
+      
+      P[<zip_1032@202:1>]((1 + <zip_1032@208:0>):int,(1 + <zip_1032@208:1>):int),
+      (((1 + <zip_1032@208:0>) <> 0) && ((1 + <zip_1032@208:1>) <> 0))
+      |- P[<zip_1032@208:1>](<zip_1032@208:0>:int,<zip_1032@208:1>:int)
+      
+       (<zip_1032@202:1> = <zip_1032@202:0>) |- P[<zip_1032@202:1>](<zip_1032@202:0>:int,
+                                                                    <zip_1032@202:1>:int)
+    begin ParamSubstInfer.infer(30293)[3]
+      
+    end ParamSubstInfer.infer(30293)[3] (0.161976 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(30295)[3]
+      
+    end RefTypeInfer.elim_coeffs(30295)[3] (0.003000 sec.)
+    begin YhornInterface.solve(30928)[3]
+      begin HcSolver.solve_ub(30929)[4]
+        encoded:
+          P[<fail_1303@268:0>](<fail_1303@268:0>:int)|- bot
+          
+          P[<<zip_1032@202:2>@238:0>](<f_main_1296@265:0>:int,<f_main_1296@265:0>:int,<f_main_1296@265:1>:int),
+          P[<<map_1035@242:1>@263:0>](<f_main_1296@265:1>:int,<f_main_1296@265:3>:int),
+          ((<f_main_1296@265:3> < <f_main_1296@265:0>) && (<fail_1303@268:0> = 1))
+          |- P[<fail_1303@268:0>](<fail_1303@268:0>:int)
+          
+          P[<map_1035@242:0>](<map_1035@242:0>:int),
+          P[<<map_1035@245:1>@257:0>]((-1 + <map_1035@242:0>):int,(-1 + <<map_1035@242:1>@263:0>):int),
+          (<map_1035@242:0> <> 0) |- P[<<map_1035@242:1>@263:0>](<map_1035@242:0>:int,
+                                                                 <<map_1035@242:1>@263:0>:int)
+          
+          P[<map_1035@245:0>](<map_1035@245:0>:int),
+          P[<<map_1035@248:1>@251:0>]((-1 + <map_1035@245:0>):int,(-1 + <<map_1035@245:1>@257:0>):int),
+          (<map_1035@245:0> <> 0) |- P[<<map_1035@245:1>@257:0>](<map_1035@245:0>:int,
+                                                                 <<map_1035@245:1>@257:0>:int)
+          
+          P[<map_1035@248:0>](<map_1035@248:0>:int), ((<map_1035@248:0> = 0) && (<<map_1035@248:1>@251:0> = 0))
+          |- P[<<map_1035@248:1>@251:0>](<map_1035@248:0>:int,<<map_1035@248:1>@251:0>:int)
+          
+          P[<map_1035@245:0>]((1 + <map_1035@248:0>):int), ((1 + <map_1035@248:0>) <> 0)
+          |- P[<map_1035@248:0>](<map_1035@248:0>:int)
+          
+          P[<map_1035@242:0>]((1 + <map_1035@245:0>):int), ((1 + <map_1035@245:0>) <> 0)
+          |- P[<map_1035@245:0>](<map_1035@245:0>:int)
+          
+          P[<<zip_1032@202:2>@238:0>](<f_main_1295@240:0>:int,<f_main_1295@240:0>:int,<map_1035@242:0>:int)|- P[<map_1035@242:0>](
+          <map_1035@242:0>:int)
+          
+          P[<zip_1032@202:1>](<zip_1032@202:0>:int,<zip_1032@202:1>:int),
+          P[<<zip_1032@208:2>@230:0>]((-1 + <zip_1032@202:0>):int,(-1 + <zip_1032@202:1>):int,(
+                                      -1 + <<zip_1032@202:2>@238:0>):int),
+          ((<zip_1032@202:0> <> 0) && (<zip_1032@202:1> <> 0))
+          |- P[<<zip_1032@202:2>@238:0>](<zip_1032@202:0>:int,<zip_1032@202:1>:int,
+                                         <<zip_1032@202:2>@238:0>:int)
+          
+          P[<zip_1032@208:1>](<zip_1032@208:0>:int,<zip_1032@208:1>:int),
+          P[<<zip_1032@214:2>@222:0>]((-1 + <zip_1032@208:0>):int,(-1 + <zip_1032@208:1>):int,(
+                                      -1 + <<zip_1032@208:2>@230:0>):int),
+          ((<zip_1032@208:0> <> 0) && (<zip_1032@208:1> <> 0))
+          |- P[<<zip_1032@208:2>@230:0>](<zip_1032@208:0>:int,<zip_1032@208:1>:int,
+                                         <<zip_1032@208:2>@230:0>:int)
+          
+          P[<zip_1032@214:1>](<zip_1032@214:0>:int,<zip_1032@214:1>:int),
+          ((<<zip_1032@214:2>@222:0> = 0) && ((<zip_1032@214:0> = 0) && (<zip_1032@214:1> = 0)))
+          |- P[<<zip_1032@214:2>@222:0>](<zip_1032@214:0>:int,<zip_1032@214:1>:int,
+                                         <<zip_1032@214:2>@222:0>:int)
+          
+          P[<zip_1032@208:1>]((1 + <zip_1032@214:0>):int,(1 + <zip_1032@214:1>):int),
+          (((1 + <zip_1032@214:0>) <> 0) && ((1 + <zip_1032@214:1>) <> 0))
+          |- P[<zip_1032@214:1>](<zip_1032@214:0>:int,<zip_1032@214:1>:int)
+          
+          P[<zip_1032@202:1>]((1 + <zip_1032@208:0>):int,(1 + <zip_1032@208:1>):int),
+          (((1 + <zip_1032@208:0>) <> 0) && ((1 + <zip_1032@208:1>) <> 0))
+          |- P[<zip_1032@208:1>](<zip_1032@208:0>:int,<zip_1032@208:1>:int)
+          
+           (<zip_1032@202:1> = <zip_1032@202:0>) |- P[<zip_1032@202:1>](<zip_1032@202:0>:int,
+                                                                    <zip_1032@202:1>:int)
+        input to Yhorn:
+          P[<fail_1303@268:0>](<fail_1303@268:0>:int)|- bot
+          
+          P[<<zip_1032@202:2>@238:0>](<f_main_1296@265:0>:int,<f_main_1296@265:0>:int,<f_main_1296@265:1>:int),
+          P[<<map_1035@242:1>@263:0>](<f_main_1296@265:1>:int,<f_main_1296@265:3>:int),
+          ((<f_main_1296@265:3> < <f_main_1296@265:0>) && (<fail_1303@268:0> = 1))
+          |- P[<fail_1303@268:0>](<fail_1303@268:0>:int)
+          
+          P[<map_1035@242:0>](<map_1035@242:0>:int),
+          P[<<map_1035@245:1>@257:0>](var155:int,var156:int),
+          (((1 + var156) = <<map_1035@242:1>@263:0>) && (((1 + var155) = <map_1035@242:0>) && (<map_1035@242:0> <> 0)))
+          |- P[<<map_1035@242:1>@263:0>](<map_1035@242:0>:int,<<map_1035@242:1>@263:0>:int)
+          
+          P[<map_1035@245:0>](<map_1035@245:0>:int),
+          P[<<map_1035@248:1>@251:0>](var157:int,var158:int),
+          (((1 + var158) = <<map_1035@245:1>@257:0>) && (((1 + var157) = <map_1035@245:0>) && (<map_1035@245:0> <> 0)))
+          |- P[<<map_1035@245:1>@257:0>](<map_1035@245:0>:int,<<map_1035@245:1>@257:0>:int)
+          
+          P[<map_1035@248:0>](<map_1035@248:0>:int), ((<<map_1035@248:1>@251:0> = 0) && (<map_1035@248:0> = 0))
+          |- P[<<map_1035@248:1>@251:0>](<map_1035@248:0>:int,<<map_1035@248:1>@251:0>:int)
+          
+          P[<map_1035@245:0>](var159:int), ((var159 = (1 + <map_1035@248:0>)) && ((1 + <map_1035@248:0>) <> 0))
+          |- P[<map_1035@248:0>](<map_1035@248:0>:int)
+          
+          P[<map_1035@242:0>](var160:int), ((var160 = (1 + <map_1035@245:0>)) && ((1 + <map_1035@245:0>) <> 0))
+          |- P[<map_1035@245:0>](<map_1035@245:0>:int)
+          
+          P[<<zip_1032@202:2>@238:0>](<f_main_1295@240:0>:int,<f_main_1295@240:0>:int,<map_1035@242:0>:int)|- P[<map_1035@242:0>](
+          <map_1035@242:0>:int)
+          
+          P[<zip_1032@202:1>](<zip_1032@202:0>:int,<zip_1032@202:1>:int),
+          P[<<zip_1032@208:2>@230:0>](var161:int,var162:int,var163:int),
+          (((1 + var163) = <<zip_1032@202:2>@238:0>) &&
+           (((1 + var162) = <zip_1032@202:1>) &&
+            (((1 + var161) = <zip_1032@202:0>) && ((<zip_1032@202:1> <> 0) && (<zip_1032@202:0> <> 0)))))
+          |- P[<<zip_1032@202:2>@238:0>](<zip_1032@202:0>:int,<zip_1032@202:1>:int,
+                                         <<zip_1032@202:2>@238:0>:int)
+          
+          P[<zip_1032@208:1>](<zip_1032@208:0>:int,<zip_1032@208:1>:int),
+          P[<<zip_1032@214:2>@222:0>](var164:int,var165:int,var166:int),
+          (((1 + var166) = <<zip_1032@208:2>@230:0>) &&
+           (((1 + var165) = <zip_1032@208:1>) &&
+            (((1 + var164) = <zip_1032@208:0>) && ((<zip_1032@208:1> <> 0) && (<zip_1032@208:0> <> 0)))))
+          |- P[<<zip_1032@208:2>@230:0>](<zip_1032@208:0>:int,<zip_1032@208:1>:int,
+                                         <<zip_1032@208:2>@230:0>:int)
+          
+          P[<zip_1032@214:1>](<zip_1032@214:0>:int,<zip_1032@214:1>:int),
+          ((<zip_1032@214:1> = 0) && ((<zip_1032@214:0> = 0) && (<<zip_1032@214:2>@222:0> = 0)))
+          |- P[<<zip_1032@214:2>@222:0>](<zip_1032@214:0>:int,<zip_1032@214:1>:int,
+                                         <<zip_1032@214:2>@222:0>:int)
+          
+          P[<zip_1032@208:1>](var167:int,var168:int),
+          ((var168 = (1 + <zip_1032@214:1>)) &&
+           ((var167 = (1 + <zip_1032@214:0>)) && (((1 + <zip_1032@214:1>) <> 0) && ((1 + <zip_1032@214:0>) <> 0))))
+          |- P[<zip_1032@214:1>](<zip_1032@214:0>:int,<zip_1032@214:1>:int)
+          
+          P[<zip_1032@202:1>](var169:int,var170:int),
+          ((var170 = (1 + <zip_1032@208:1>)) &&
+           ((var169 = (1 + <zip_1032@208:0>)) && (((1 + <zip_1032@208:1>) <> 0) && ((1 + <zip_1032@208:0>) <> 0))))
+          |- P[<zip_1032@208:1>](<zip_1032@208:0>:int,<zip_1032@208:1>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1303_sep_268_sep_0($10569)) -> 1=0.
+(($10569-1=0) & ($10570-$10571<0)) & (v_sep_map_1035_sep_242_sep_1_sep_263_sep_0($10572,$10570)) & (v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0($10571,$10571,$10572)) -> v_sep_fail_1303_sep_268_sep_0($10569).
+(($10573<>0) & (-$10573+$10574+1=0) & ($10575-$10576+1=0)) & (v_sep_map_1035_sep_245_sep_1_sep_257_sep_0($10574,$10575)) & (v_sep_map_1035_sep_242_sep_0($10573)) -> v_sep_map_1035_sep_242_sep_1_sep_263_sep_0($10573,$10576).
+(($10577<>0) & (-$10577+$10578+1=0) & ($10579-$10580+1=0)) & (v_sep_map_1035_sep_248_sep_1_sep_251_sep_0($10578,$10579)) & (v_sep_map_1035_sep_245_sep_0($10577)) -> v_sep_map_1035_sep_245_sep_1_sep_257_sep_0($10577,$10580).
+(($10581=0) & ($10582=0)) & (v_sep_map_1035_sep_248_sep_0($10581)) -> v_sep_map_1035_sep_248_sep_1_sep_251_sep_0($10581,$10582).
+(($10581+1<>0) & (-$10581+$10583-1=0)) & (v_sep_map_1035_sep_245_sep_0($10583)) -> v_sep_map_1035_sep_248_sep_0($10581).
+(($10577+1<>0) & (-$10577+$10584-1=0)) & (v_sep_map_1035_sep_242_sep_0($10584)) -> v_sep_map_1035_sep_245_sep_0($10577).
+(0=0) & (v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0($10585,$10585,$10573)) -> v_sep_map_1035_sep_242_sep_0($10573).
+(($10586<>0) & ($10587<>0) & (-$10586+$10588+1=0) & (-$10587+$10589+1=0) & ($10590-$10591+1=0)) & (v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0($10588,$10589,$10590)) & (v_sep_zip_1032_sep_202_sep_1($10586,$10587)) -> v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0($10586,$10587,$10591).
+(($10592<>0) & ($10593<>0) & (-$10592+$10594+1=0) & (-$10593+$10595+1=0) & ($10596-$10597+1=0)) & (v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0($10594,$10595,$10596)) & (v_sep_zip_1032_sep_208_sep_1($10592,$10593)) -> v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0($10592,$10593,$10597).
+(($10598=0) & ($10599=0) & ($10600=0)) & (v_sep_zip_1032_sep_214_sep_1($10599,$10600)) -> v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0($10599,$10600,$10598).
+(($10599+1<>0) & ($10600+1<>0) & (-$10599+$10601-1=0) & (-$10600+$10602-1=0)) & (v_sep_zip_1032_sep_208_sep_1($10601,$10602)) -> v_sep_zip_1032_sep_214_sep_1($10599,$10600).
+(($10592+1<>0) & ($10593+1<>0) & (-$10592+$10603-1=0) & (-$10593+$10604-1=0)) & (v_sep_zip_1032_sep_202_sep_1($10603,$10604)) -> v_sep_zip_1032_sep_208_sep_1($10592,$10593).
+-$10586+$10587=0 -> v_sep_zip_1032_sep_202_sep_1($10586,$10587).
+
+
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: X
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: X
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: X
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+...........................................
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: X
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: X
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: X
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+....
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: X
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: X
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: X
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+................
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: X
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: X
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: X
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+.............................Split conj [74] 10.38242
+(Reconstrcut: 21 **)
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: X
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: X
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: (X) & (X)
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+..................................
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: X
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: X
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: (X) & (X)
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+....
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: X
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: X
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: (X) & (X)
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+................
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: X
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: X
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: (X) & (X)
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+.............................
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: X
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: X
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: (X) & (X)
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+.............................................Split conj [79] 12.272134
+(Reconstrcut: 8 **)
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: X
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: (X) & (X)
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: (X) & (X)
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+................
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: X
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: (X) & (X)
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: (X) & (X)
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+....
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: X
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: (X) & (X)
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: (X) & (X)
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+................
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: X
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: (X) & (X)
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: (X) & (X)
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+.................................
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: X
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: (X) & (X)
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: (X) & (X)
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+.................................................Split conj [82] 16.432501
+(Reconstrcut: 22 ****)
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: (X) & (X)
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: (X) & (X)
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+.........................
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: (X) & (X)
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: (X) & (X)
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+....
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: (X) & (X)
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: (X) & (X)
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+................
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: (X) & (X)
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: (X) & (X)
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+..................................
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: (X) & (X)
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: (X) & (X)
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+..................................................Split conj [88] 17.22738
+(Reconstrcut: 30 ****)
+v_sep_fail_1303_sep_268_sep_0: X
+v_sep_map_1035_sep_242_sep_0: (X) & (X) & (X) & (X)
+v_sep_map_1035_sep_242_sep_1_sep_263_sep_0: X
+v_sep_map_1035_sep_245_sep_0: X
+v_sep_map_1035_sep_245_sep_1_sep_257_sep_0: (X) & (X)
+v_sep_map_1035_sep_248_sep_0: X
+v_sep_map_1035_sep_248_sep_1_sep_251_sep_0: X
+v_sep_zip_1032_sep_202_sep_1: X
+v_sep_zip_1032_sep_202_sep_2_sep_238_sep_0: (X) & (X) & (X) & (X) & (X)
+v_sep_zip_1032_sep_208_sep_1: X
+v_sep_zip_1032_sep_208_sep_2_sep_230_sep_0: X
+v_sep_zip_1032_sep_214_sep_1: X
+v_sep_zip_1032_sep_214_sep_2_sep_222_sep_0: X
+.........................................................
+           (<zip_1032@202:1> = <zip_1032@202:0>) |- P[<zip_1032@202:1>](<zip_1032@202:0>:int,
+                                                                    <zip_1032@202:1>:int)
+        
+      end HcSolver.solve_ub(30929)[4] (18.899127 sec.)
+      
+    end YhornInterface.solve(30928)[3] (18.899127 sec.)
+    
+  end RefTypeInfer.infer_etrs(24983)[2] (19.083100 sec.)
+  

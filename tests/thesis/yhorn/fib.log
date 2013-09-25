@@ -1,0 +1,1536 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn fib.ml
+
+parsed::
+ let rec fib_1030 n_1031 = if n_1031 < 2 then
+                             1
+                           else
+                             fib_1030 (n_1031 - 1) + fib_1030 (n_1031 - 2) 
+ in
+ let main_1032 n_1033 = if n_1033 <= fib_1030 n_1033 then
+                          ()
+                        else
+                          {fail} () 
+ in
+   ()
+
+set_target::
+ let rec fib_1030 n_1031 = if n_1031 < 2 then
+                             1
+                           else
+                             fib_1030 (n_1031 - 1) + fib_1030 (n_1031 - 2) 
+ in
+ let main_1032 n_1033 = if n_1033 <= fib_1030 n_1033 then
+                          ()
+                        else
+                          {fail} () 
+ in
+ let main_1051 = let arg1_1050 = rand_int () 
+                 in
+                   main_1032 arg1_1050 
+ in
+   ()
+
+CPS::
+ let rec fib_1030 (n_1031:int) (k_fib_1076:(int -> X)) =
+   if n_1031 < 2 then
+     k_fib_1076 1
+   else
+     fib_1030 (n_1031 - 1) (fun x_1079 -> fib_1030 (n_1031 - 2) (fun x_1080 -> k_fib_1076 (x_1079 + x_1080))) 
+ in
+ let main_1032 (n_1033:int) (k_main_1118:(unit -> X)) =
+   fib_1030 n_1033 (fun x_1122 -> (if n_1033 <= x_1122 then
+                                     k_main_1118 ()
+                                   else
+                                     {|fail|} () k_main_1118)) 
+ in
+   rand_int_cps () (fun x_1149 -> main_1032 x_1149 (fun x_1146 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1174
+  main_1174 -> (rand_int f_1178)
+  f_1178 x_1149 -> (main_1032 x_1149 (f_1179 x_1149))
+  f_1179 x_1149 x_1146 -> end
+  f_fib_1175 n_1031 k_fib_1076 x_1079 -> (fib_1030 (n_1031 - 2) (f_fib_1176 n_1031 x_1079 k_fib_1076))
+  f_fib_1176 n_1031 x_1079 k_fib_1076 x_1080 -> (k_fib_1076 (x_1079 + x_1080))
+  f_main_1177 n_1033 k_main_1118 x_1122 when (n_1033 <= x_1122) -> (k_main_1118 ())
+  f_main_1177 n_1033 k_main_1118 x_1122 when (not (n_1033 <= x_1122)) -> (fail_1180 true k_main_1118)
+  fail_1180 b k -> {fail} => (k ())
+  fib_1030 n_1031 k_fib_1076 when (n_1031 < 2) -> (k_fib_1076 1)
+  fib_1030 n_1031 k_fib_1076 when (not (n_1031 < 2)) -> (fib_1030 (n_1031 - 1) (f_fib_1175 n_1031 k_fib_1076))
+  main_1032 n_1033 k_main_1118 -> (fib_1030 n_1033 (f_main_1177 n_1033 k_main_1118))
+Types:
+  main_1174 : X
+  fail_1180 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  fib_1030 : (int -> (int -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1174 ... --> 
+  f_1178 ... --> 
+  main_1032 ... --> 
+  fib_1030 [1/2] ... --> 
+  f_main_1177 [2/2] ... --> 
+  fail_1180 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(98)[1]
+  program:
+    main_1174  | true = ((Random.int 0) f_1178)
+    f_1178 x_1149 | true = (main_1032 x_1149
+                                      (f_1179 x_1149))
+    f_1179 x_1149 x_1146 | true = end
+    f_fib_1175 n_1031 k_fib_1076 x_1079 | true = (fib_1030 (n_1031 - 2)
+                                                           (f_fib_1176 n_1031
+                                                                    x_1079
+                                                                    k_fib_1076))
+    f_fib_1176 n_1031 x_1079 k_fib_1076 x_1080 | true = (k_fib_1076 (
+                                                                    x_1079 + x_1080))
+    f_main_1177 n_1033 k_main_1118 x_1122 | (n_1033 <= x_1122) = (k_main_1118 ())
+    f_main_1177 n_1033 k_main_1118 x_1122 | (not (n_1033 <= x_1122)) = (
+    fail_1180 true
+              k_main_1118)
+    fail_1180 b k | true = (fail ())
+    fib_1030 n_1031 k_fib_1076 | (n_1031 < 2) = (k_fib_1076 1)
+    fib_1030 n_1031 k_fib_1076 | (not (n_1031 < 2)) = (fib_1030 (n_1031 - 1)
+                                                                (f_fib_1175 n_1031
+                                                                    k_fib_1076))
+    main_1032 n_1033 k_main_1118 | true = (fib_1030 n_1033
+                                                    (f_main_1177 n_1033
+                                                                 k_main_1118))
+    main_1174:X
+    f_1178:int -> X
+    f_1179:int -> unit -> X
+    f_fib_1175:int -> (int -> X) -> int -> X
+    f_fib_1176:int -> int -> (int -> X) -> int -> X
+    f_main_1177:int -> (unit -> X) -> int -> X
+    fail_1180:bool -> (unit -> X) -> X
+    fib_1030:int -> (int -> X) -> X
+    main_1032:int -> (unit -> X) -> X
+  inlined functions: f_1178,f_1179,f_fib_1175,f_fib_1176,f_main_1177,main_1032
+  counterexample: 0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1178@4:0> = var2)
+     [true.(<main_1032@6:0> = <f_1178@4:0>)
+      [true.(<fib_1030@8:0> = <main_1032@6:0>)
+       [(<fib_1030@8:0> < 2).(<<fib_1030@8:1>@11:0> = 1)
+        [true.((<f_main_1177@13:0> = <main_1032@6:0>) && (<f_main_1177@13:2> = <<fib_1030@8:1>@11:0>))
+         [(not (<f_main_1177@13:0> <= <f_main_1177@13:2>)).(<fail_1180@16:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(99)[2]
+    horn clauses:
+      P[<fail_1180@16:0>](<fail_1180@16:0>:bool)|- bot
+      
+      P[<f_main_1177@13:2>](<f_main_1177@13:0>:int,<f_main_1177@13:2>:int),
+      ((<f_main_1177@13:0> > <f_main_1177@13:2>) && <fail_1180@16:0>) |- P[<fail_1180@16:0>](
+      <fail_1180@16:0>:bool)
+      
+      P[<main_1032@6:0>](<f_main_1177@13:0>:int),
+      P[<<fib_1030@8:1>@11:0>](<f_main_1177@13:0>:int,<f_main_1177@13:2>:int)|- P[<f_main_1177@13:2>](
+      <f_main_1177@13:0>:int,<f_main_1177@13:2>:int)
+      
+      P[<fib_1030@8:0>](<fib_1030@8:0>:int), ((<<fib_1030@8:1>@11:0> = 1) && (<fib_1030@8:0> < 2))
+      |- P[<<fib_1030@8:1>@11:0>](<fib_1030@8:0>:int,<<fib_1030@8:1>@11:0>:int)
+      
+      P[<main_1032@6:0>](<fib_1030@8:0>:int)|- P[<fib_1030@8:0>](<fib_1030@8:0>:int)
+      
+      P[<f_1178@4:0>](<main_1032@6:0>:int)|- P[<main_1032@6:0>](<main_1032@6:0>:int)
+      
+      |- P[<f_1178@4:0>](<f_1178@4:0>:int)
+    call trees:
+      <main_1174@1>
+        <f_1178@4>
+          <main_1032@6>
+            <fib_1030@8>
+            </<fib_1030@8:1>@11>
+            <f_main_1177@13>
+              <fail_1180@16>
+    inlined horn clauses:
+      P[<fail_1180@16:0>](<fail_1180@16:0>:bool)|- bot
+      
+      P[<<fib_1030@8:1>@11:0>](<f_main_1177@13:0>:int,<f_main_1177@13:2>:int),
+      ((<f_main_1177@13:0> > <f_main_1177@13:2>) && <fail_1180@16:0>) |- P[<fail_1180@16:0>](
+      <fail_1180@16:0>:bool)
+      
+      P[<fib_1030@8:0>](<fib_1030@8:0>:int), ((<<fib_1030@8:1>@11:0> = 1) && (<fib_1030@8:0> < 2))
+      |- P[<<fib_1030@8:1>@11:0>](<fib_1030@8:0>:int,<<fib_1030@8:1>@11:0>:int)
+      
+      |- P[<fib_1030@8:0>](<fib_1030@8:0>:int)
+    begin ParamSubstInfer.infer(978)[3]
+      
+    end ParamSubstInfer.infer(978)[3] (0.012998 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(980)[3]
+      
+    end RefTypeInfer.elim_coeffs(980)[3] (0.000000 sec.)
+    begin YhornInterface.solve(1155)[3]
+      begin HcSolver.solve_ub(1156)[4]
+        encoded:
+          P[<fail_1180@16:0>](<fail_1180@16:0>:int)|- bot
+          
+          P[<<fib_1030@8:1>@11:0>](<f_main_1177@13:0>:int,<f_main_1177@13:2>:int),
+          ((<f_main_1177@13:0> > <f_main_1177@13:2>) && (<fail_1180@16:0> = 1))
+          |- P[<fail_1180@16:0>](<fail_1180@16:0>:int)
+          
+          P[<fib_1030@8:0>](<fib_1030@8:0>:int), ((<<fib_1030@8:1>@11:0> = 1) && (<fib_1030@8:0> < 2))
+          |- P[<<fib_1030@8:1>@11:0>](<fib_1030@8:0>:int,<<fib_1030@8:1>@11:0>:int)
+          
+          |- P[<fib_1030@8:0>](<fib_1030@8:0>:int)
+        input to Yhorn:
+          P[<fail_1180@16:0>](<fail_1180@16:0>:int)|- bot
+          
+          P[<<fib_1030@8:1>@11:0>](<f_main_1177@13:0>:int,<f_main_1177@13:2>:int),
+          ((<f_main_1177@13:0> > <f_main_1177@13:2>) && (<fail_1180@16:0> = 1))
+          |- P[<fail_1180@16:0>](<fail_1180@16:0>:int)
+          
+          P[<fib_1030@8:0>](<fib_1030@8:0>:int), ((<fib_1030@8:0> < 2) && (<<fib_1030@8:1>@11:0> = 1))
+          |- P[<<fib_1030@8:1>@11:0>](<fib_1030@8:0>:int,<<fib_1030@8:1>@11:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1180_sep_16_sep_0($6)) -> 1=0.
+(($6-1=0) & ($7-$8>0)) & (v_sep_fib_1030_sep_8_sep_1_sep_11_sep_0($7,$8)) -> v_sep_fail_1180_sep_16_sep_0($6).
+(($9-1=0) & ($10-2<0)) & (v_sep_fib_1030_sep_8_sep_0($10)) -> v_sep_fib_1030_sep_8_sep_1_sep_11_sep_0($10,$9).
+0=0 -> v_sep_fib_1030_sep_8_sep_0($10).
+
+
+v_sep_fail_1180_sep_16_sep_0: X
+v_sep_fib_1030_sep_8_sep_0: X
+v_sep_fib_1030_sep_8_sep_1_sep_11_sep_0: X
+....
+v_sep_fail_1180_sep_16_sep_0: X
+v_sep_fib_1030_sep_8_sep_0: X
+v_sep_fib_1030_sep_8_sep_1_sep_11_sep_0: X
+...
+v_sep_fail_1180_sep_16_sep_0: X
+v_sep_fib_1030_sep_8_sep_0: X
+v_sep_fib_1030_sep_8_sep_1_sep_11_sep_0: X
+....
+v_sep_fail_1180_sep_16_sep_0: X
+v_sep_fib_1030_sep_8_sep_0: X
+v_sep_fib_1030_sep_8_sep_1_sep_11_sep_0: X
+....(0=0) & (v_sep_fail_1180_sep_16_sep_0($6)) -> 1=0.
+(($6-1=0) & ($7-$8>0)) & (v_sep_fib_1030_sep_8_sep_1_sep_11_sep_0($7,$8)) -> v_sep_fail_1180_sep_16_sep_0($6).
+(($9-1=0) & ($10-2<0)) & (v_sep_fib_1030_sep_8_sep_0($10)) -> v_sep_fib_1030_sep_8_sep_1_sep_11_sep_0($10,$9).
+0=0 -> v_sep_fib_1030_sep_8_sep_0($10).
+
+          |- P[<fib_1030@8:0>](<fib_1030@8:0>:int)
+        solution:
+          P[<fail_1180@16:0>]($11:bool) = false
+          P[<fib_1030@8:0>]($19:int) = true
+          P[<<fib_1030@8:1>@11:0>]($14:int,$16:int) = ($14 <= $16)
+        
+      end HcSolver.solve_ub(1156)[4] (0.005999 sec.)
+      begin HcSolver.check_validity(1279)[4]
+        input:
+          P[<fail_1180@16:0>](<fail_1180@16:0>:bool)|- bot
+          
+          P[<<fib_1030@8:1>@11:0>](<f_main_1177@13:0>:int,<f_main_1177@13:2>:int),
+          ((<f_main_1177@13:0> > <f_main_1177@13:2>) && <fail_1180@16:0>) |- P[<fail_1180@16:0>](
+          <fail_1180@16:0>:bool)
+          
+          P[<fib_1030@8:0>](<fib_1030@8:0>:int), ((<<fib_1030@8:1>@11:0> = 1) && (<fib_1030@8:0> < 2))
+          |- P[<<fib_1030@8:1>@11:0>](<fib_1030@8:0>:int,<<fib_1030@8:1>@11:0>:int)
+          
+          |- P[<fib_1030@8:0>](<fib_1030@8:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(1279)[4] (0.001000 sec.)
+      solution:
+        P[<fail_1180@16:0>]($11:bool) = false
+        P[<fib_1030@8:0>]($19:int) = true
+        P[<<fib_1030@8:1>@11:0>]($14:int,$16:int) = ($14 <= $16)
+    end YhornInterface.solve(1155)[3] (0.006999 sec.)
+    
+  end RefTypeInfer.infer_etrs(99)[2] (0.022996 sec.)
+  refinement types:
+    main_1174: X
+    f_1178: v1:int -> X
+    main_1032: v1:int -> (v2:unit -> X) -> X
+    fib_1030: v1:int -> (v2:{v2:int | (v1 <= v2)} -> X) -> X
+    f_main_1177: v1:int -> (v2:unit -> X) -> v4:int -> X
+    fail_1180: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1179: var11:int -> var10:unit -> X
+    f_fib_1175: var16:int -> (var15:int -> X) -> var13:int -> X
+    f_fib_1176: var22:int -> var21:int -> (var20:int -> X) -> var18:int -> X
+  abstraction types:
+    main_1174: X
+    f_1178: v1:int -> X
+    main_1032: v1:int -> (v2:unit -> X) -> X
+    fib_1030: v1:int -> (v2:int[v2 -> (v1 <= v2)] -> X) -> X
+    f_main_1177: v1:int -> (v2:unit -> X) -> v4:int -> X
+    fail_1180: v1:bool -> (v2:unit -> X) -> X
+    f_1179: var11:int -> var10:unit -> X
+    f_fib_1175: var16:int -> (var15:int -> X) -> var13:int -> X
+    f_fib_1176: var22:int -> var21:int -> (var20:int -> X) -> var18:int -> X
+  
+end AbsTypeInfer.refine(98)[1] (0.023996 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1174
+  main_1174 -> (rand_int f_1178)
+  f_1178 x_1149 -> (main_1032 x_1149 (f_1179 x_1149))
+  f_1179 x_1149 x_1146 -> end
+  f_fib_1175 n_1031 k_fib_1076 x_1079 -> (fib_1030 (n_1031 - 2) (f_fib_1176 n_1031 x_1079 k_fib_1076))
+  f_fib_1176 n_1031 x_1079 k_fib_1076 x_1080 -> (k_fib_1076 (x_1079 + x_1080))
+  f_main_1177 n_1033 k_main_1118 x_1122 when (n_1033 <= x_1122) -> (k_main_1118 ())
+  f_main_1177 n_1033 k_main_1118 x_1122 when (not (n_1033 <= x_1122)) -> (fail_1180 true k_main_1118)
+  fail_1180 b k -> {fail} => (k ())
+  fib_1030 n_1031 k_fib_1076 when (n_1031 < 2) -> (k_fib_1076 1)
+  fib_1030 n_1031 k_fib_1076 when (not (n_1031 < 2)) -> (fib_1030 (n_1031 - 1) (f_fib_1175 n_1031 k_fib_1076))
+  main_1032 n_1033 k_main_1118 -> (fib_1030 n_1033 (f_main_1177 n_1033 k_main_1118))
+Types:
+  main_1174 : X
+  fail_1180 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  fib_1030 : (x_1:int -> (x_3:int[x_1 <= x_3] -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1174 ... --> 
+  f_1178 ... --> 
+  main_1032 ... --> 
+  fib_1030 [2/2] ... --> 
+  fib_1030 [1/2] ... --> 
+  f_fib_1175 ... --> 
+  fib_1030 [1/2] ... --> 
+  f_fib_1176 ... --> 
+  f_main_1177 [2/2] ... --> 
+  fail_1180 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 0; 0; 0; 0; 1; 0
+
+(1-3) Checking counter-example ... DONE!
+
+(1-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(1820)[1]
+  program:
+    main_1174  | true = ((Random.int 0) f_1178)
+    f_1178 x_1149 | true = (main_1032 x_1149
+                                      (f_1179 x_1149))
+    f_1179 x_1149 x_1146 | true = end
+    f_fib_1175 n_1031 k_fib_1076 x_1079 | true = (fib_1030 (n_1031 - 2)
+                                                           (f_fib_1176 n_1031
+                                                                    x_1079
+                                                                    k_fib_1076))
+    f_fib_1176 n_1031 x_1079 k_fib_1076 x_1080 | true = (k_fib_1076 (
+                                                                    x_1079 + x_1080))
+    f_main_1177 n_1033 k_main_1118 x_1122 | (n_1033 <= x_1122) = (k_main_1118 ())
+    f_main_1177 n_1033 k_main_1118 x_1122 | (not (n_1033 <= x_1122)) = (
+    fail_1180 true
+              k_main_1118)
+    fail_1180 b k | true = (fail ())
+    fib_1030 n_1031 k_fib_1076 | (n_1031 < 2) = (k_fib_1076 1)
+    fib_1030 n_1031 k_fib_1076 | (not (n_1031 < 2)) = (fib_1030 (n_1031 - 1)
+                                                                (f_fib_1175 n_1031
+                                                                    k_fib_1076))
+    main_1032 n_1033 k_main_1118 | true = (fib_1030 n_1033
+                                                    (f_main_1177 n_1033
+                                                                 k_main_1118))
+    main_1174:X
+    f_1178:int -> X
+    f_1179:int -> unit -> X
+    f_fib_1175:int -> (int -> X) -> int -> X
+    f_fib_1176:int -> int -> (int -> X) -> int -> X
+    f_main_1177:int -> (unit -> X) -> int -> X
+    fail_1180:bool -> (unit -> X) -> X
+    fib_1030:int -> (int -> X) -> X
+    main_1032:int -> (unit -> X) -> X
+  inlined functions: f_1178,f_1179,f_fib_1175,f_fib_1176,f_main_1177,main_1032
+  counterexample: 0:0:0:1:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1178@22:0> = var23)
+     [true.(<main_1032@24:0> = <f_1178@22:0>)
+      [true.(<fib_1030@26:0> = <main_1032@24:0>)
+       [(not (<fib_1030@26:0> < 2)).(<fib_1030@29:0> = (<fib_1030@26:0> - 1))
+        [(<fib_1030@29:0> < 2).(<<fib_1030@29:1>@32:0> = 1)
+         [true.((<f_fib_1175@34:0> = <fib_1030@26:0>) && (<f_fib_1175@34:2> = <<fib_1030@29:1>@32:0>))
+          [true.(<fib_1030@36:0> = (<f_fib_1175@34:0> - 2))
+           [(<fib_1030@36:0> < 2).(<<fib_1030@36:1>@39:0> = 1)
+            [true.
+             ((<f_fib_1176@41:0> = <f_fib_1175@34:0>) &&
+              ((<f_fib_1176@41:1> = <f_fib_1175@34:2>) && (<f_fib_1176@41:3> = <<fib_1030@36:1>@39:0>)))
+             [true.(<<f_fib_1176@41:2>@43:0> = (<f_fib_1176@41:1> + <f_fib_1176@41:3>))
+              [true.(<<f_fib_1175@34:1>@45:0> = <<f_fib_1176@41:2>@43:0>)
+               [true.(<<fib_1030@26:1>@47:0> = <<f_fib_1175@34:1>@45:0>)
+                [true.((<f_main_1177@49:0> = <main_1032@24:0>) && (<f_main_1177@49:2> = <<fib_1030@26:1>@47:0>))
+                 [(not (<f_main_1177@49:0> <= <f_main_1177@49:2>)).(<fail_1180@52:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(1821)[2]
+    horn clauses:
+      P[<fail_1180@52:0>](<fail_1180@52:0>:bool)|- bot
+      
+      P[<f_main_1177@49:2>](<f_main_1177@49:0>:int,<f_main_1177@49:2>:int),
+      ((<f_main_1177@49:0> > <f_main_1177@49:2>) && <fail_1180@52:0>) |- P[<fail_1180@52:0>](
+      <fail_1180@52:0>:bool)
+      
+      P[<main_1032@24:0>](<f_main_1177@49:0>:int),
+      P[<<fib_1030@26:1>@47:0>](<f_main_1177@49:0>:int,<f_main_1177@49:2>:int)|- P[<f_main_1177@49:2>](
+      <f_main_1177@49:0>:int,<f_main_1177@49:2>:int)
+      
+      P[<fib_1030@26:0>](<fib_1030@26:0>:int),
+      P[<<f_fib_1175@34:1>@45:0>](<fib_1030@26:0>:int,<<fib_1030@26:1>@47:0>:int), (
+      <fib_1030@26:0> >= 2) |- P[<<fib_1030@26:1>@47:0>](<fib_1030@26:0>:int,
+                                                         <<fib_1030@26:1>@47:0>:int)
+      
+      P[<f_fib_1175@34:2>](<f_fib_1175@34:0>:int,<f_fib_1176@41:1>:int),
+      P[<<f_fib_1176@41:2>@43:0>](<f_fib_1175@34:0>:int,<f_fib_1176@41:1>:int,<<f_fib_1175@34:1>@45:0>:int)|- P[<<f_fib_1175@34:1>@45:0>](
+      <f_fib_1175@34:0>:int,<<f_fib_1175@34:1>@45:0>:int)
+      
+      P[<f_fib_1176@41:3>](<f_fib_1176@41:0>:int,<f_fib_1176@41:1>:int,(
+                           <<f_fib_1176@41:2>@43:0> + (-1 * <f_fib_1176@41:1>)):int)|- P[<<f_fib_1176@41:2>@43:0>](
+      <f_fib_1176@41:0>:int,<f_fib_1176@41:1>:int,<<f_fib_1176@41:2>@43:0>:int)
+      
+      P[<f_fib_1175@34:2>](<f_fib_1176@41:0>:int,<f_fib_1176@41:1>:int),
+      P[<<fib_1030@36:1>@39:0>]((-2 + <f_fib_1176@41:0>):int,<f_fib_1176@41:3>:int)|- P[<f_fib_1176@41:3>](
+      <f_fib_1176@41:0>:int,<f_fib_1176@41:1>:int,<f_fib_1176@41:3>:int)
+      
+      P[<fib_1030@36:0>](<fib_1030@36:0>:int), ((<<fib_1030@36:1>@39:0> = 1) && (<fib_1030@36:0> < 2))
+      |- P[<<fib_1030@36:1>@39:0>](<fib_1030@36:0>:int,<<fib_1030@36:1>@39:0>:int)
+      
+      P[<f_fib_1175@34:2>]((2 + <fib_1030@36:0>):int,<f_fib_1175@34:2>:int)|- P[<fib_1030@36:0>](<fib_1030@36:0>:int)
+      
+      P[<fib_1030@26:0>](<f_fib_1175@34:0>:int),
+      P[<<fib_1030@29:1>@32:0>]((-1 + <f_fib_1175@34:0>):int,<f_fib_1175@34:2>:int), (
+      <f_fib_1175@34:0> >= 2) |- P[<f_fib_1175@34:2>](<f_fib_1175@34:0>:int,
+                                                      <f_fib_1175@34:2>:int)
+      
+      P[<fib_1030@29:0>](<fib_1030@29:0>:int), ((<<fib_1030@29:1>@32:0> = 1) && (<fib_1030@29:0> < 2))
+      |- P[<<fib_1030@29:1>@32:0>](<fib_1030@29:0>:int,<<fib_1030@29:1>@32:0>:int)
+      
+      P[<fib_1030@26:0>]((1 + <fib_1030@29:0>):int), (<fib_1030@29:0> >= 1) |- P[<fib_1030@29:0>](<fib_1030@29:0>:int)
+      
+      P[<main_1032@24:0>](<fib_1030@26:0>:int)|- P[<fib_1030@26:0>](<fib_1030@26:0>:int)
+      
+      P[<f_1178@22:0>](<main_1032@24:0>:int)|- P[<main_1032@24:0>](<main_1032@24:0>:int)
+      
+      |- P[<f_1178@22:0>](<f_1178@22:0>:int)
+    call trees:
+      <main_1174@19>
+        <f_1178@22>
+          <main_1032@24>
+            <fib_1030@26>
+              <fib_1030@29>
+              </<fib_1030@29:1>@32>
+              <f_fib_1175@34>
+                <fib_1030@36>
+                </<fib_1030@36:1>@39>
+                <f_fib_1176@41>
+                </<f_fib_1176@41:2>@43>
+              </<f_fib_1175@34:1>@45>
+            </<fib_1030@26:1>@47>
+            <f_main_1177@49>
+              <fail_1180@52>
+    inlined horn clauses:
+      P[<fail_1180@52:0>](<fail_1180@52:0>:bool)|- bot
+      
+      P[<<fib_1030@26:1>@47:0>](<f_main_1177@49:0>:int,<f_main_1177@49:2>:int),
+      ((<f_main_1177@49:0> > <f_main_1177@49:2>) && <fail_1180@52:0>) |- P[<fail_1180@52:0>](
+      <fail_1180@52:0>:bool)
+      
+      P[<fib_1030@26:0>](<fib_1030@26:0>:int),
+      P[<<fib_1030@29:1>@32:0>]((-1 + <fib_1030@26:0>):int,var24:int),
+      P[<<fib_1030@36:1>@39:0>]((-2 + <fib_1030@26:0>):int,(<<fib_1030@26:1>@47:0> + (-1 * var24)):int),
+      (<fib_1030@26:0> >= 2) |- P[<<fib_1030@26:1>@47:0>](<fib_1030@26:0>:int,
+                                                          <<fib_1030@26:1>@47:0>:int)
+      
+      P[<fib_1030@36:0>](<fib_1030@36:0>:int), ((<<fib_1030@36:1>@39:0> = 1) && (<fib_1030@36:0> < 2))
+      |- P[<<fib_1030@36:1>@39:0>](<fib_1030@36:0>:int,<<fib_1030@36:1>@39:0>:int)
+      
+      P[<fib_1030@26:0>]((2 + <fib_1030@36:0>):int),
+      P[<<fib_1030@29:1>@32:0>]((1 + <fib_1030@36:0>):int,<f_fib_1175@34:2>:int), (
+      <fib_1030@36:0> >= 0) |- P[<fib_1030@36:0>](<fib_1030@36:0>:int)
+      
+      P[<fib_1030@29:0>](<fib_1030@29:0>:int), ((<<fib_1030@29:1>@32:0> = 1) && (<fib_1030@29:0> < 2))
+      |- P[<<fib_1030@29:1>@32:0>](<fib_1030@29:0>:int,<<fib_1030@29:1>@32:0>:int)
+      
+      P[<fib_1030@26:0>]((1 + <fib_1030@29:0>):int), (<fib_1030@29:0> >= 1) |- P[<fib_1030@29:0>](<fib_1030@29:0>:int)
+      
+      |- P[<fib_1030@26:0>](<fib_1030@26:0>:int)
+    begin ParamSubstInfer.infer(3825)[3]
+      
+    end ParamSubstInfer.infer(3825)[3] (0.044993 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(3827)[3]
+      
+    end RefTypeInfer.elim_coeffs(3827)[3] (0.001000 sec.)
+    begin YhornInterface.solve(4156)[3]
+      begin HcSolver.solve_ub(4157)[4]
+        encoded:
+          P[<fail_1180@52:0>](<fail_1180@52:0>:int)|- bot
+          
+          P[<<fib_1030@26:1>@47:0>](<f_main_1177@49:0>:int,<f_main_1177@49:2>:int),
+          ((<f_main_1177@49:0> > <f_main_1177@49:2>) && (<fail_1180@52:0> = 1))
+          |- P[<fail_1180@52:0>](<fail_1180@52:0>:int)
+          
+          P[<fib_1030@26:0>](<fib_1030@26:0>:int),
+          P[<<fib_1030@29:1>@32:0>]((-1 + <fib_1030@26:0>):int,var24:int),
+          P[<<fib_1030@36:1>@39:0>]((-2 + <fib_1030@26:0>):int,(<<fib_1030@26:1>@47:0> + (-1 * var24)):int),
+          (<fib_1030@26:0> >= 2) |- P[<<fib_1030@26:1>@47:0>](<fib_1030@26:0>:int,
+                                                              <<fib_1030@26:1>@47:0>:int)
+          
+          P[<fib_1030@36:0>](<fib_1030@36:0>:int), ((<<fib_1030@36:1>@39:0> = 1) && (<fib_1030@36:0> < 2))
+          |- P[<<fib_1030@36:1>@39:0>](<fib_1030@36:0>:int,<<fib_1030@36:1>@39:0>:int)
+          
+          P[<fib_1030@26:0>]((2 + <fib_1030@36:0>):int),
+          P[<<fib_1030@29:1>@32:0>]((1 + <fib_1030@36:0>):int,<f_fib_1175@34:2>:int), (
+          <fib_1030@36:0> >= 0) |- P[<fib_1030@36:0>](<fib_1030@36:0>:int)
+          
+          P[<fib_1030@29:0>](<fib_1030@29:0>:int), ((<<fib_1030@29:1>@32:0> = 1) && (<fib_1030@29:0> < 2))
+          |- P[<<fib_1030@29:1>@32:0>](<fib_1030@29:0>:int,<<fib_1030@29:1>@32:0>:int)
+          
+          P[<fib_1030@26:0>]((1 + <fib_1030@29:0>):int), (<fib_1030@29:0> >= 1)
+          |- P[<fib_1030@29:0>](<fib_1030@29:0>:int)
+          
+          |- P[<fib_1030@26:0>](<fib_1030@26:0>:int)
+        input to Yhorn:
+          P[<fail_1180@52:0>](<fail_1180@52:0>:int)|- bot
+          
+          P[<<fib_1030@26:1>@47:0>](<f_main_1177@49:0>:int,<f_main_1177@49:2>:int),
+          ((<f_main_1177@49:0> > <f_main_1177@49:2>) && (<fail_1180@52:0> = 1))
+          |- P[<fail_1180@52:0>](<fail_1180@52:0>:int)
+          
+          P[<fib_1030@26:0>](<fib_1030@26:0>:int),
+          P[<<fib_1030@29:1>@32:0>](var25:int,var24:int),
+          P[<<fib_1030@36:1>@39:0>](var26:int,var27:int),
+          (((var27 + var24) = <<fib_1030@26:1>@47:0>) &&
+           (((2 + var26) = <fib_1030@26:0>) && (((1 + var25) = <fib_1030@26:0>) && (<fib_1030@26:0> >= 2))))
+          |- P[<<fib_1030@26:1>@47:0>](<fib_1030@26:0>:int,<<fib_1030@26:1>@47:0>:int)
+          
+          P[<fib_1030@36:0>](<fib_1030@36:0>:int), ((<fib_1030@36:0> < 2) && (<<fib_1030@36:1>@39:0> = 1))
+          |- P[<<fib_1030@36:1>@39:0>](<fib_1030@36:0>:int,<<fib_1030@36:1>@39:0>:int)
+          
+          P[<fib_1030@26:0>](var28:int),
+          P[<<fib_1030@29:1>@32:0>](var29:int,<f_fib_1175@34:2>:int),
+          ((var29 = (1 + <fib_1030@36:0>)) && ((var28 = (2 + <fib_1030@36:0>)) && (<fib_1030@36:0> >= 0)))
+          |- P[<fib_1030@36:0>](<fib_1030@36:0>:int)
+          
+          P[<fib_1030@29:0>](<fib_1030@29:0>:int), ((<fib_1030@29:0> < 2) && (<<fib_1030@29:1>@32:0> = 1))
+          |- P[<<fib_1030@29:1>@32:0>](<fib_1030@29:0>:int,<<fib_1030@29:1>@32:0>:int)
+          
+          P[<fib_1030@26:0>](var30:int), ((var30 = (1 + <fib_1030@29:0>)) && (<fib_1030@29:0> >= 1))
+          |- P[<fib_1030@29:0>](<fib_1030@29:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1180_sep_52_sep_0($74)) -> 1=0.
+(($74-1=0) & ($75-$76>0)) & (v_sep_fib_1030_sep_26_sep_1_sep_47_sep_0($75,$76)) -> v_sep_fail_1180_sep_52_sep_0($74).
+(($77-2>=0) & (-$77+$78+1=0) & (-$77+$79+2=0) & ($80+$81-$82=0)) & (v_sep_fib_1030_sep_36_sep_1_sep_39_sep_0($79,$80)) & (v_sep_fib_1030_sep_29_sep_1_sep_32_sep_0($78,$81)) & (v_sep_fib_1030_sep_26_sep_0($77)) -> v_sep_fib_1030_sep_26_sep_1_sep_47_sep_0($77,$82).
+(($83-1=0) & ($84-2<0)) & (v_sep_fib_1030_sep_36_sep_0($84)) -> v_sep_fib_1030_sep_36_sep_1_sep_39_sep_0($84,$83).
+(($84>=0) & (-$84+$85-2=0) & (-$84+$86-1=0)) & (v_sep_fib_1030_sep_29_sep_1_sep_32_sep_0($86,$87)) & (v_sep_fib_1030_sep_26_sep_0($85)) -> v_sep_fib_1030_sep_36_sep_0($84).
+(($88-1=0) & ($89-2<0)) & (v_sep_fib_1030_sep_29_sep_0($89)) -> v_sep_fib_1030_sep_29_sep_1_sep_32_sep_0($89,$88).
+(($89-1>=0) & (-$89+$90-1=0)) & (v_sep_fib_1030_sep_26_sep_0($90)) -> v_sep_fib_1030_sep_29_sep_0($89).
+0=0 -> v_sep_fib_1030_sep_26_sep_0($77).
+
+
+v_sep_fail_1180_sep_52_sep_0: X
+v_sep_fib_1030_sep_26_sep_0: X
+v_sep_fib_1030_sep_26_sep_1_sep_47_sep_0: X
+v_sep_fib_1030_sep_29_sep_0: X
+v_sep_fib_1030_sep_29_sep_1_sep_32_sep_0: X
+v_sep_fib_1030_sep_36_sep_0: X
+v_sep_fib_1030_sep_36_sep_1_sep_39_sep_0: X
+...........
+v_sep_fail_1180_sep_52_sep_0: X
+v_sep_fib_1030_sep_26_sep_0: X
+v_sep_fib_1030_sep_26_sep_1_sep_47_sep_0: X
+v_sep_fib_1030_sep_29_sep_0: X
+v_sep_fib_1030_sep_29_sep_1_sep_32_sep_0: X
+v_sep_fib_1030_sep_36_sep_0: X
+v_sep_fib_1030_sep_36_sep_1_sep_39_sep_0: X
+...
+v_sep_fail_1180_sep_52_sep_0: X
+v_sep_fib_1030_sep_26_sep_0: X
+v_sep_fib_1030_sep_26_sep_1_sep_47_sep_0: X
+v_sep_fib_1030_sep_29_sep_0: X
+v_sep_fib_1030_sep_29_sep_1_sep_32_sep_0: X
+v_sep_fib_1030_sep_36_sep_0: X
+v_sep_fib_1030_sep_36_sep_1_sep_39_sep_0: X
+......
+v_sep_fail_1180_sep_52_sep_0: X
+v_sep_fib_1030_sep_26_sep_0: X
+v_sep_fib_1030_sep_26_sep_1_sep_47_sep_0: X
+v_sep_fib_1030_sep_29_sep_0: X
+v_sep_fib_1030_sep_29_sep_1_sep_32_sep_0: X
+v_sep_fib_1030_sep_36_sep_0: X
+v_sep_fib_1030_sep_36_sep_1_sep_39_sep_0: X
+........
+v_sep_fail_1180_sep_52_sep_0: X
+v_sep_fib_1030_sep_26_sep_0: X
+v_sep_fib_1030_sep_26_sep_1_sep_47_sep_0: X
+v_sep_fib_1030_sep_29_sep_0: X
+v_sep_fib_1030_sep_29_sep_1_sep_32_sep_0: X
+v_sep_fib_1030_sep_36_sep_0: X
+v_sep_fib_1030_sep_36_sep_1_sep_39_sep_0: X
+...........Split conj [24] 0.211967
+(Reconstrcut: 11 **)
+v_sep_fail_1180_sep_52_sep_0: X
+v_sep_fib_1030_sep_26_sep_0: X
+v_sep_fib_1030_sep_26_sep_1_sep_47_sep_0: X
+v_sep_fib_1030_sep_29_sep_0: X
+v_sep_fib_1030_sep_29_sep_1_sep_32_sep_0: (X) & (X)
+v_sep_fib_1030_sep_36_sep_0: X
+v_sep_fib_1030_sep_36_sep_1_sep_39_sep_0: X
+...........
+v_sep_fail_1180_sep_52_sep_0: X
+v_sep_fib_1030_sep_26_sep_0: X
+v_sep_fib_1030_sep_26_sep_1_sep_47_sep_0: X
+v_sep_fib_1030_sep_29_sep_0: X
+v_sep_fib_1030_sep_29_sep_1_sep_32_sep_0: (X) & (X)
+v_sep_fib_1030_sep_36_sep_0: X
+v_sep_fib_1030_sep_36_sep_1_sep_39_sep_0: X
+...
+v_sep_fail_1180_sep_52_sep_0: X
+v_sep_fib_1030_sep_26_sep_0: X
+v_sep_fib_1030_sep_26_sep_1_sep_47_sep_0: X
+v_sep_fib_1030_sep_29_sep_0: X
+v_sep_fib_1030_sep_29_sep_1_sep_32_sep_0: (X) & (X)
+v_sep_fib_1030_sep_36_sep_0: X
+v_sep_fib_1030_sep_36_sep_1_sep_39_sep_0: X
+......
+v_sep_fail_1180_sep_52_sep_0: X
+v_sep_fib_1030_sep_26_sep_0: X
+v_sep_fib_1030_sep_26_sep_1_sep_47_sep_0: X
+v_sep_fib_1030_sep_29_sep_0: X
+v_sep_fib_1030_sep_29_sep_1_sep_32_sep_0: (X) & (X)
+v_sep_fib_1030_sep_36_sep_0: X
+v_sep_fib_1030_sep_36_sep_1_sep_39_sep_0: X
+........
+v_sep_fail_1180_sep_52_sep_0: X
+v_sep_fib_1030_sep_26_sep_0: X
+v_sep_fib_1030_sep_26_sep_1_sep_47_sep_0: X
+v_sep_fib_1030_sep_29_sep_0: X
+v_sep_fib_1030_sep_29_sep_1_sep_32_sep_0: (X) & (X)
+v_sep_fib_1030_sep_36_sep_0: X
+v_sep_fib_1030_sep_36_sep_1_sep_39_sep_0: X
+...........
+v_sep_fail_1180_sep_52_sep_0: X
+v_sep_fib_1030_sep_26_sep_0: X
+v_sep_fib_1030_sep_26_sep_1_sep_47_sep_0: X
+v_sep_fib_1030_sep_29_sep_0: X
+v_sep_fib_1030_sep_29_sep_1_sep_32_sep_0: (X) & (X)
+v_sep_fib_1030_sep_36_sep_0: X
+v_sep_fib_1030_sep_36_sep_1_sep_39_sep_0: X
+............(0=0) & (v_sep_fail_1180_sep_52_sep_0($74)) -> 1=0.
+(($74-1=0) & ($75-$76>0)) & (v_sep_fib_1030_sep_26_sep_1_sep_47_sep_0($75,$76)) -> v_sep_fail_1180_sep_52_sep_0($74).
+(($77-2>=0) & (-$77+$78+1=0) & (-$77+$79+2=0) & ($80+$81-$82=0)) & (v_sep_fib_1030_sep_36_sep_1_sep_39_sep_0($79,$80)) & (v_sep_fib_1030_sep_29_sep_1_sep_32_sep_0($78,$81)) & (v_sep_fib_1030_sep_26_sep_0($77)) -> v_sep_fib_1030_sep_26_sep_1_sep_47_sep_0($77,$82).
+(($83-1=0) & ($84-2<0)) & (v_sep_fib_1030_sep_36_sep_0($84)) -> v_sep_fib_1030_sep_36_sep_1_sep_39_sep_0($84,$83).
+(($84>=0) & (-$84+$85-2=0) & (-$84+$86-1=0)) & (v_sep_fib_1030_sep_29_sep_1_sep_32_sep_0($86,$87)) & (v_sep_fib_1030_sep_26_sep_0($85)) -> v_sep_fib_1030_sep_36_sep_0($84).
+(($88-1=0) & ($89-2<0)) & (v_sep_fib_1030_sep_29_sep_0($89)) -> v_sep_fib_1030_sep_29_sep_1_sep_32_sep_0($89,$88).
+(($89-1>=0) & (-$89+$90-1=0)) & (v_sep_fib_1030_sep_26_sep_0($90)) -> v_sep_fib_1030_sep_29_sep_0($89).
+0=0 -> v_sep_fib_1030_sep_26_sep_0($77).
+
+          |- P[<fib_1030@26:0>](<fib_1030@26:0>:int)
+        solution:
+          P[<fail_1180@52:0>]($91:bool) = false
+          P[<fib_1030@26:0>]($109:int) = true
+          P[<<fib_1030@26:1>@47:0>]($94:int,$96:int) = ($94 <= $96)
+          P[<fib_1030@29:0>]($115:int) = true
+          P[<<fib_1030@29:1>@32:0>]($104:int,$106:int) = ((1 <= $106) && ($104 <= 1))
+          P[<fib_1030@36:0>]($112:int) = ($112 <= 0)
+          P[<<fib_1030@36:1>@39:0>]($99:int,$101:int) = ((1 + $99) <= $101)
+        
+      end HcSolver.solve_ub(4157)[4] (0.037994 sec.)
+      begin HcSolver.check_validity(4673)[4]
+        input:
+          P[<fail_1180@52:0>](<fail_1180@52:0>:bool)|- bot
+          
+          P[<<fib_1030@26:1>@47:0>](<f_main_1177@49:0>:int,<f_main_1177@49:2>:int),
+          ((<f_main_1177@49:0> > <f_main_1177@49:2>) && <fail_1180@52:0>) |- P[<fail_1180@52:0>](
+          <fail_1180@52:0>:bool)
+          
+          P[<fib_1030@26:0>](<fib_1030@26:0>:int),
+          P[<<fib_1030@29:1>@32:0>]((-1 + <fib_1030@26:0>):int,var24:int),
+          P[<<fib_1030@36:1>@39:0>]((-2 + <fib_1030@26:0>):int,(<<fib_1030@26:1>@47:0> + (-1 * var24)):int),
+          (<fib_1030@26:0> >= 2) |- P[<<fib_1030@26:1>@47:0>](<fib_1030@26:0>:int,
+                                                              <<fib_1030@26:1>@47:0>:int)
+          
+          P[<fib_1030@36:0>](<fib_1030@36:0>:int), ((<<fib_1030@36:1>@39:0> = 1) && (<fib_1030@36:0> < 2))
+          |- P[<<fib_1030@36:1>@39:0>](<fib_1030@36:0>:int,<<fib_1030@36:1>@39:0>:int)
+          
+          P[<fib_1030@26:0>]((2 + <fib_1030@36:0>):int),
+          P[<<fib_1030@29:1>@32:0>]((1 + <fib_1030@36:0>):int,<f_fib_1175@34:2>:int), (
+          <fib_1030@36:0> >= 0) |- P[<fib_1030@36:0>](<fib_1030@36:0>:int)
+          
+          P[<fib_1030@29:0>](<fib_1030@29:0>:int), ((<<fib_1030@29:1>@32:0> = 1) && (<fib_1030@29:0> < 2))
+          |- P[<<fib_1030@29:1>@32:0>](<fib_1030@29:0>:int,<<fib_1030@29:1>@32:0>:int)
+          
+          P[<fib_1030@26:0>]((1 + <fib_1030@29:0>):int), (<fib_1030@29:0> >= 1)
+          |- P[<fib_1030@29:0>](<fib_1030@29:0>:int)
+          
+          |- P[<fib_1030@26:0>](<fib_1030@26:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(4673)[4] (0.003000 sec.)
+      solution:
+        P[<fail_1180@52:0>]($91:bool) = false
+        P[<fib_1030@26:0>]($109:int) = true
+        P[<<fib_1030@26:1>@47:0>]($94:int,$96:int) = ($94 <= $96)
+        P[<fib_1030@29:0>]($115:int) = true
+        P[<<fib_1030@29:1>@32:0>]($104:int,$106:int) = ((1 <= $106) && ($104 <= 1))
+        P[<fib_1030@36:0>]($112:int) = ($112 <= 0)
+        P[<<fib_1030@36:1>@39:0>]($99:int,$101:int) = ((1 + $99) <= $101)
+    end YhornInterface.solve(4156)[3] (0.041994 sec.)
+    
+  end RefTypeInfer.infer_etrs(1821)[2] (0.094986 sec.)
+  refinement types:
+    main_1174: X
+    f_1178: v1:int -> X
+    main_1032: v1:int -> (v2:unit -> X) -> X
+    fib_1030: v1:int -> (v2:{v2:int | (v1 <= v2)} -> X) -> X
+    fib_1030: v1:int -> (v2:{v2:int | ((1 <= v2) && (v1 <= 1))} -> X) -> X
+    f_fib_1175: v1:int -> (v2:int -> X) -> v4:int -> X
+    fib_1030: v1:{v1:int | (v1 <= 0)} -> (v2:{v2:int | ((1 + v1) <= v2)} -> X) -> X
+    f_fib_1176: v1:int -> v2:int -> (v3:int -> X) -> v5:int -> X
+    f_main_1177: v1:int -> (v2:unit -> X) -> v4:int -> X
+    fail_1180: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1179: var39:int -> var38:unit -> X
+  abstraction types:
+    main_1174: X
+    f_1178: v1:int -> X
+    main_1032: v1:int -> (v2:unit -> X) -> X
+    fib_1030: var44:int[var44 -> (var44 <= 0)] ->
+              (var45:int[var45 -> (var44 <= var45),
+                         var45 -> ((1 <= var45) && (var44 <= 1)),
+                         var45 -> ((1 + var44) <= var45)] -> X) -> X
+    f_fib_1175: v1:int -> (v2:int -> X) -> v4:int -> X
+    f_fib_1176: v1:int -> v2:int -> (v3:int -> X) -> v5:int -> X
+    f_main_1177: v1:int -> (v2:unit -> X) -> v4:int -> X
+    fail_1180: v1:bool -> (v2:unit -> X) -> X
+    f_1179: var39:int -> var38:unit -> X
+  
+end AbsTypeInfer.refine(1820)[1] (0.095986 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 0; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 2)::
+Main: main_1174
+  main_1174 -> (rand_int f_1178)
+  f_1178 x_1149 -> (main_1032 x_1149 (f_1179 x_1149))
+  f_1179 x_1149 x_1146 -> end
+  f_fib_1175 n_1031 k_fib_1076 x_1079 -> (fib_1030 (n_1031 - 2) (f_fib_1176 n_1031 x_1079 k_fib_1076))
+  f_fib_1176 n_1031 x_1079 k_fib_1076 x_1080 -> (k_fib_1076 (x_1079 + x_1080))
+  f_main_1177 n_1033 k_main_1118 x_1122 when (n_1033 <= x_1122) -> (k_main_1118 ())
+  f_main_1177 n_1033 k_main_1118 x_1122 when (not (n_1033 <= x_1122)) -> (fail_1180 true k_main_1118)
+  fail_1180 b k -> {fail} => (k ())
+  fib_1030 n_1031 k_fib_1076 when (n_1031 < 2) -> (k_fib_1076 1)
+  fib_1030 n_1031 k_fib_1076 when (not (n_1031 < 2)) -> (fib_1030 (n_1031 - 1) (f_fib_1175 n_1031 k_fib_1076))
+  main_1032 n_1033 k_main_1118 -> (fib_1030 n_1033 (f_main_1177 n_1033 k_main_1118))
+Types:
+  main_1174 : X
+  fail_1180 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  fib_1030 : (x_1:int[x_1 <= 0] -> (x_3:int[x_1 <= x_3 - 1; x_3 >= 1 && x_1 <= 1; x_1 <= x_3] -> X) -> X)
+  
+(2-1) Abstracting ... DONE!
+
+(2-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1174 ... --> 
+  f_1178 ... --> 
+  main_1032 ... --> 
+  fib_1030 [2/2] ... --> 
+  fib_1030 [2/2] ... --> 
+  fib_1030 [1/2] ... --> 
+  f_fib_1175 ... --> 
+  fib_1030 [1/2] ... --> 
+  f_fib_1176 ... --> 
+  f_fib_1175 ... --> 
+  fib_1030 [2/2] ... --> 
+  fib_1030 [1/2] ... --> 
+  f_fib_1175 ... --> 
+  fib_1030 [1/2] ... --> 
+  f_fib_1176 ... --> 
+  f_fib_1176 ... --> 
+  f_main_1177 [2/2] ... --> 
+  fail_1180 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 1; 0; 0; 0; 0; 0; 1; 0; 0; 0; 0; 0; 1; 0
+
+(2-3) Checking counter-example ... DONE!
+
+(2-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(7782)[1]
+  program:
+    main_1174  | true = ((Random.int 0) f_1178)
+    f_1178 x_1149 | true = (main_1032 x_1149
+                                      (f_1179 x_1149))
+    f_1179 x_1149 x_1146 | true = end
+    f_fib_1175 n_1031 k_fib_1076 x_1079 | true = (fib_1030 (n_1031 - 2)
+                                                           (f_fib_1176 n_1031
+                                                                    x_1079
+                                                                    k_fib_1076))
+    f_fib_1176 n_1031 x_1079 k_fib_1076 x_1080 | true = (k_fib_1076 (
+                                                                    x_1079 + x_1080))
+    f_main_1177 n_1033 k_main_1118 x_1122 | (n_1033 <= x_1122) = (k_main_1118 ())
+    f_main_1177 n_1033 k_main_1118 x_1122 | (not (n_1033 <= x_1122)) = (
+    fail_1180 true
+              k_main_1118)
+    fail_1180 b k | true = (fail ())
+    fib_1030 n_1031 k_fib_1076 | (n_1031 < 2) = (k_fib_1076 1)
+    fib_1030 n_1031 k_fib_1076 | (not (n_1031 < 2)) = (fib_1030 (n_1031 - 1)
+                                                                (f_fib_1175 n_1031
+                                                                    k_fib_1076))
+    main_1032 n_1033 k_main_1118 | true = (fib_1030 n_1033
+                                                    (f_main_1177 n_1033
+                                                                 k_main_1118))
+    main_1174:X
+    f_1178:int -> X
+    f_1179:int -> unit -> X
+    f_fib_1175:int -> (int -> X) -> int -> X
+    f_fib_1176:int -> int -> (int -> X) -> int -> X
+    f_main_1177:int -> (unit -> X) -> int -> X
+    fail_1180:bool -> (unit -> X) -> X
+    fib_1030:int -> (int -> X) -> X
+    main_1032:int -> (unit -> X) -> X
+  inlined functions: f_1178,f_1179,f_fib_1175,f_fib_1176,f_main_1177,main_1032
+  counterexample: 0:0:0:1:1:0:0:0:0:0:1:0:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1178@58:0> = var48)
+     [true.(<main_1032@60:0> = <f_1178@58:0>)
+      [true.(<fib_1030@62:0> = <main_1032@60:0>)
+       [(not (<fib_1030@62:0> < 2)).(<fib_1030@65:0> = (<fib_1030@62:0> - 1))
+        [(not (<fib_1030@65:0> < 2)).(<fib_1030@68:0> = (<fib_1030@65:0> - 1))
+         [(<fib_1030@68:0> < 2).(<<fib_1030@68:1>@71:0> = 1)
+          [true.((<f_fib_1175@73:0> = <fib_1030@65:0>) && (<f_fib_1175@73:2> = <<fib_1030@68:1>@71:0>))
+           [true.(<fib_1030@75:0> = (<f_fib_1175@73:0> - 2))
+            [(<fib_1030@75:0> < 2).(<<fib_1030@75:1>@78:0> = 1)
+             [true.
+              ((<f_fib_1176@80:0> = <f_fib_1175@73:0>) &&
+               ((<f_fib_1176@80:1> = <f_fib_1175@73:2>) && (<f_fib_1176@80:3> = <<fib_1030@75:1>@78:0>)))
+              [true.(<<f_fib_1176@80:2>@82:0> = (<f_fib_1176@80:1> + <f_fib_1176@80:3>))
+               [true.(<<f_fib_1175@73:1>@84:0> = <<f_fib_1176@80:2>@82:0>)
+                [true.(<<fib_1030@65:1>@86:0> = <<f_fib_1175@73:1>@84:0>)
+                 [true.((<f_fib_1175@88:0> = <fib_1030@62:0>) && (<f_fib_1175@88:2> = <<fib_1030@65:1>@86:0>))
+                  [true.(<fib_1030@90:0> = (<f_fib_1175@88:0> - 2))
+                   [(not (<fib_1030@90:0> < 2)).(<fib_1030@93:0> = (<fib_1030@90:0> - 1))
+                    [(<fib_1030@93:0> < 2).(<<fib_1030@93:1>@96:0> = 1)
+                     [true.((<f_fib_1175@98:0> = <fib_1030@90:0>) && (<f_fib_1175@98:2> = <<fib_1030@93:1>@96:0>))
+                      [true.(<fib_1030@100:0> = (<f_fib_1175@98:0> - 2))
+                       [(<fib_1030@100:0> < 2).(<<fib_1030@100:1>@103:0> = 1)
+                        [true.
+                         ((<f_fib_1176@105:0> = <f_fib_1175@98:0>) &&
+                          ((<f_fib_1176@105:1> = <f_fib_1175@98:2>) && (<f_fib_1176@105:3> = <<fib_1030@100:1>@103:0>)))
+                         [true.(<<f_fib_1176@105:2>@107:0> = (<f_fib_1176@105:1> + <f_fib_1176@105:3>))
+                          [true.(<<f_fib_1175@98:1>@109:0> = <<f_fib_1176@105:2>@107:0>)
+                           [true.(<<fib_1030@90:1>@111:0> = <<f_fib_1175@98:1>@109:0>)
+                            [true.
+                             ((<f_fib_1176@113:0> = <f_fib_1175@88:0>) &&
+                              ((<f_fib_1176@113:1> = <f_fib_1175@88:2>) &&
+                               (<f_fib_1176@113:3> = <<fib_1030@90:1>@111:0>)))
+                             [true.(<<f_fib_1176@113:2>@115:0> = (<f_fib_1176@113:1> + <f_fib_1176@113:3>))
+                              [true.(<<f_fib_1175@88:1>@117:0> = <<f_fib_1176@113:2>@115:0>)
+                               [true.(<<fib_1030@62:1>@119:0> = <<f_fib_1175@88:1>@117:0>)
+                                [true.
+                                 ((<f_main_1177@121:0> = <main_1032@60:0>) &&
+                                  (<f_main_1177@121:2> = <<fib_1030@62:1>@119:0>))
+                                 [(not (<f_main_1177@121:0> <= <f_main_1177@121:2>)).(
+                                  <fail_1180@124:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(7783)[2]
+    horn clauses:
+      P[<fail_1180@124:0>](<fail_1180@124:0>:bool)|- bot
+      
+      P[<f_main_1177@121:2>](<f_main_1177@121:0>:int,<f_main_1177@121:2>:int),
+      ((<f_main_1177@121:0> > <f_main_1177@121:2>) && <fail_1180@124:0>)
+      |- P[<fail_1180@124:0>](<fail_1180@124:0>:bool)
+      
+      P[<main_1032@60:0>](<f_main_1177@121:0>:int),
+      P[<<fib_1030@62:1>@119:0>](<f_main_1177@121:0>:int,<f_main_1177@121:2>:int)|- P[<f_main_1177@121:2>](
+      <f_main_1177@121:0>:int,<f_main_1177@121:2>:int)
+      
+      P[<fib_1030@62:0>](<fib_1030@62:0>:int),
+      P[<<f_fib_1175@88:1>@117:0>](<fib_1030@62:0>:int,<<fib_1030@62:1>@119:0>:int), (
+      <fib_1030@62:0> >= 2) |- P[<<fib_1030@62:1>@119:0>](<fib_1030@62:0>:int,
+                                                          <<fib_1030@62:1>@119:0>:int)
+      
+      P[<f_fib_1175@88:2>](<f_fib_1175@88:0>:int,<f_fib_1176@113:1>:int),
+      P[<<f_fib_1176@113:2>@115:0>](<f_fib_1175@88:0>:int,<f_fib_1176@113:1>:int,<<f_fib_1175@88:1>@117:0>:int)|- P[<<f_fib_1175@88:1>@117:0>](
+      <f_fib_1175@88:0>:int,<<f_fib_1175@88:1>@117:0>:int)
+      
+      P[<f_fib_1176@113:3>](<f_fib_1176@113:0>:int,<f_fib_1176@113:1>:int,(
+                            <<f_fib_1176@113:2>@115:0> + (-1 * <f_fib_1176@113:1>)):int)|- P[<<f_fib_1176@113:2>@115:0>](
+      <f_fib_1176@113:0>:int,<f_fib_1176@113:1>:int,<<f_fib_1176@113:2>@115:0>:int)
+      
+      P[<f_fib_1175@88:2>](<f_fib_1176@113:0>:int,<f_fib_1176@113:1>:int),
+      P[<<fib_1030@90:1>@111:0>]((-2 + <f_fib_1176@113:0>):int,<f_fib_1176@113:3>:int)|- P[<f_fib_1176@113:3>](
+      <f_fib_1176@113:0>:int,<f_fib_1176@113:1>:int,<f_fib_1176@113:3>:int)
+      
+      P[<fib_1030@90:0>](<fib_1030@90:0>:int),
+      P[<<f_fib_1175@98:1>@109:0>](<fib_1030@90:0>:int,<<fib_1030@90:1>@111:0>:int), (
+      <fib_1030@90:0> >= 2) |- P[<<fib_1030@90:1>@111:0>](<fib_1030@90:0>:int,
+                                                          <<fib_1030@90:1>@111:0>:int)
+      
+      P[<f_fib_1175@98:2>](<f_fib_1175@98:0>:int,<f_fib_1176@105:1>:int),
+      P[<<f_fib_1176@105:2>@107:0>](<f_fib_1175@98:0>:int,<f_fib_1176@105:1>:int,<<f_fib_1175@98:1>@109:0>:int)|- P[<<f_fib_1175@98:1>@109:0>](
+      <f_fib_1175@98:0>:int,<<f_fib_1175@98:1>@109:0>:int)
+      
+      P[<f_fib_1176@105:3>](<f_fib_1176@105:0>:int,<f_fib_1176@105:1>:int,(
+                            <<f_fib_1176@105:2>@107:0> + (-1 * <f_fib_1176@105:1>)):int)|- P[<<f_fib_1176@105:2>@107:0>](
+      <f_fib_1176@105:0>:int,<f_fib_1176@105:1>:int,<<f_fib_1176@105:2>@107:0>:int)
+      
+      P[<f_fib_1175@98:2>](<f_fib_1176@105:0>:int,<f_fib_1176@105:1>:int),
+      P[<<fib_1030@100:1>@103:0>]((-2 + <f_fib_1176@105:0>):int,<f_fib_1176@105:3>:int)|- P[<f_fib_1176@105:3>](
+      <f_fib_1176@105:0>:int,<f_fib_1176@105:1>:int,<f_fib_1176@105:3>:int)
+      
+      P[<fib_1030@100:0>](<fib_1030@100:0>:int), ((<<fib_1030@100:1>@103:0> = 1) && (<fib_1030@100:0> < 2))
+      |- P[<<fib_1030@100:1>@103:0>](<fib_1030@100:0>:int,<<fib_1030@100:1>@103:0>:int)
+      
+      P[<f_fib_1175@98:2>]((2 + <fib_1030@100:0>):int,<f_fib_1175@98:2>:int)|- P[<fib_1030@100:0>](
+      <fib_1030@100:0>:int)
+      
+      P[<fib_1030@90:0>](<f_fib_1175@98:0>:int),
+      P[<<fib_1030@93:1>@96:0>]((-1 + <f_fib_1175@98:0>):int,<f_fib_1175@98:2>:int), (
+      <f_fib_1175@98:0> >= 2) |- P[<f_fib_1175@98:2>](<f_fib_1175@98:0>:int,
+                                                      <f_fib_1175@98:2>:int)
+      
+      P[<fib_1030@93:0>](<fib_1030@93:0>:int), ((<<fib_1030@93:1>@96:0> = 1) && (<fib_1030@93:0> < 2))
+      |- P[<<fib_1030@93:1>@96:0>](<fib_1030@93:0>:int,<<fib_1030@93:1>@96:0>:int)
+      
+      P[<fib_1030@90:0>]((1 + <fib_1030@93:0>):int), (<fib_1030@93:0> >= 1) |- P[<fib_1030@93:0>](<fib_1030@93:0>:int)
+      
+      P[<f_fib_1175@88:2>]((2 + <fib_1030@90:0>):int,<f_fib_1175@88:2>:int)|- P[<fib_1030@90:0>](<fib_1030@90:0>:int)
+      
+      P[<fib_1030@62:0>](<f_fib_1175@88:0>:int),
+      P[<<fib_1030@65:1>@86:0>]((-1 + <f_fib_1175@88:0>):int,<f_fib_1175@88:2>:int), (
+      <f_fib_1175@88:0> >= 2) |- P[<f_fib_1175@88:2>](<f_fib_1175@88:0>:int,
+                                                      <f_fib_1175@88:2>:int)
+      
+      P[<fib_1030@65:0>](<fib_1030@65:0>:int),
+      P[<<f_fib_1175@73:1>@84:0>](<fib_1030@65:0>:int,<<fib_1030@65:1>@86:0>:int), (
+      <fib_1030@65:0> >= 2) |- P[<<fib_1030@65:1>@86:0>](<fib_1030@65:0>:int,
+                                                         <<fib_1030@65:1>@86:0>:int)
+      
+      P[<f_fib_1175@73:2>](<f_fib_1175@73:0>:int,<f_fib_1176@80:1>:int),
+      P[<<f_fib_1176@80:2>@82:0>](<f_fib_1175@73:0>:int,<f_fib_1176@80:1>:int,<<f_fib_1175@73:1>@84:0>:int)|- P[<<f_fib_1175@73:1>@84:0>](
+      <f_fib_1175@73:0>:int,<<f_fib_1175@73:1>@84:0>:int)
+      
+      P[<f_fib_1176@80:3>](<f_fib_1176@80:0>:int,<f_fib_1176@80:1>:int,(
+                           <<f_fib_1176@80:2>@82:0> + (-1 * <f_fib_1176@80:1>)):int)|- P[<<f_fib_1176@80:2>@82:0>](
+      <f_fib_1176@80:0>:int,<f_fib_1176@80:1>:int,<<f_fib_1176@80:2>@82:0>:int)
+      
+      P[<f_fib_1175@73:2>](<f_fib_1176@80:0>:int,<f_fib_1176@80:1>:int),
+      P[<<fib_1030@75:1>@78:0>]((-2 + <f_fib_1176@80:0>):int,<f_fib_1176@80:3>:int)|- P[<f_fib_1176@80:3>](
+      <f_fib_1176@80:0>:int,<f_fib_1176@80:1>:int,<f_fib_1176@80:3>:int)
+      
+      P[<fib_1030@75:0>](<fib_1030@75:0>:int), ((<<fib_1030@75:1>@78:0> = 1) && (<fib_1030@75:0> < 2))
+      |- P[<<fib_1030@75:1>@78:0>](<fib_1030@75:0>:int,<<fib_1030@75:1>@78:0>:int)
+      
+      P[<f_fib_1175@73:2>]((2 + <fib_1030@75:0>):int,<f_fib_1175@73:2>:int)|- P[<fib_1030@75:0>](<fib_1030@75:0>:int)
+      
+      P[<fib_1030@65:0>](<f_fib_1175@73:0>:int),
+      P[<<fib_1030@68:1>@71:0>]((-1 + <f_fib_1175@73:0>):int,<f_fib_1175@73:2>:int), (
+      <f_fib_1175@73:0> >= 2) |- P[<f_fib_1175@73:2>](<f_fib_1175@73:0>:int,
+                                                      <f_fib_1175@73:2>:int)
+      
+      P[<fib_1030@68:0>](<fib_1030@68:0>:int), ((<<fib_1030@68:1>@71:0> = 1) && (<fib_1030@68:0> < 2))
+      |- P[<<fib_1030@68:1>@71:0>](<fib_1030@68:0>:int,<<fib_1030@68:1>@71:0>:int)
+      
+      P[<fib_1030@65:0>]((1 + <fib_1030@68:0>):int), (<fib_1030@68:0> >= 1) |- P[<fib_1030@68:0>](<fib_1030@68:0>:int)
+      
+      P[<fib_1030@62:0>]((1 + <fib_1030@65:0>):int), (<fib_1030@65:0> >= 1) |- P[<fib_1030@65:0>](<fib_1030@65:0>:int)
+      
+      P[<main_1032@60:0>](<fib_1030@62:0>:int)|- P[<fib_1030@62:0>](<fib_1030@62:0>:int)
+      
+      P[<f_1178@58:0>](<main_1032@60:0>:int)|- P[<main_1032@60:0>](<main_1032@60:0>:int)
+      
+      |- P[<f_1178@58:0>](<f_1178@58:0>:int)
+    call trees:
+      <main_1174@55>
+        <f_1178@58>
+          <main_1032@60>
+            <fib_1030@62>
+              <fib_1030@65>
+                <fib_1030@68>
+                </<fib_1030@68:1>@71>
+                <f_fib_1175@73>
+                  <fib_1030@75>
+                  </<fib_1030@75:1>@78>
+                  <f_fib_1176@80>
+                  </<f_fib_1176@80:2>@82>
+                </<f_fib_1175@73:1>@84>
+              </<fib_1030@65:1>@86>
+              <f_fib_1175@88>
+                <fib_1030@90>
+                  <fib_1030@93>
+                  </<fib_1030@93:1>@96>
+                  <f_fib_1175@98>
+                    <fib_1030@100>
+                    </<fib_1030@100:1>@103>
+                    <f_fib_1176@105>
+                    </<f_fib_1176@105:2>@107>
+                  </<f_fib_1175@98:1>@109>
+                </<fib_1030@90:1>@111>
+                <f_fib_1176@113>
+                </<f_fib_1176@113:2>@115>
+              </<f_fib_1175@88:1>@117>
+            </<fib_1030@62:1>@119>
+            <f_main_1177@121>
+              <fail_1180@124>
+    inlined horn clauses:
+      P[<fail_1180@124:0>](<fail_1180@124:0>:bool)|- bot
+      
+      P[<<fib_1030@62:1>@119:0>](<f_main_1177@121:0>:int,<f_main_1177@121:2>:int),
+      ((<f_main_1177@121:0> > <f_main_1177@121:2>) && <fail_1180@124:0>)
+      |- P[<fail_1180@124:0>](<fail_1180@124:0>:bool)
+      
+      P[<fib_1030@62:0>](<fib_1030@62:0>:int),
+      P[<<fib_1030@65:1>@86:0>]((-1 + <fib_1030@62:0>):int,var49:int),
+      P[<<fib_1030@90:1>@111:0>]((-2 + <fib_1030@62:0>):int,(<<fib_1030@62:1>@119:0> + (-1 * var49)):int),
+      (<fib_1030@62:0> >= 2) |- P[<<fib_1030@62:1>@119:0>](<fib_1030@62:0>:int,
+                                                           <<fib_1030@62:1>@119:0>:int)
+      
+      P[<fib_1030@90:0>](<fib_1030@90:0>:int),
+      P[<<fib_1030@93:1>@96:0>]((-1 + <fib_1030@90:0>):int,var50:int),
+      P[<<fib_1030@100:1>@103:0>]((-2 + <fib_1030@90:0>):int,(<<fib_1030@90:1>@111:0> + (-1 * var50)):int),
+      (<fib_1030@90:0> >= 2) |- P[<<fib_1030@90:1>@111:0>](<fib_1030@90:0>:int,
+                                                           <<fib_1030@90:1>@111:0>:int)
+      
+      P[<fib_1030@100:0>](<fib_1030@100:0>:int), ((<<fib_1030@100:1>@103:0> = 1) && (<fib_1030@100:0> < 2))
+      |- P[<<fib_1030@100:1>@103:0>](<fib_1030@100:0>:int,<<fib_1030@100:1>@103:0>:int)
+      
+      P[<fib_1030@90:0>]((2 + <fib_1030@100:0>):int),
+      P[<<fib_1030@93:1>@96:0>]((1 + <fib_1030@100:0>):int,<f_fib_1175@98:2>:int), (
+      <fib_1030@100:0> >= 0) |- P[<fib_1030@100:0>](<fib_1030@100:0>:int)
+      
+      P[<fib_1030@93:0>](<fib_1030@93:0>:int), ((<<fib_1030@93:1>@96:0> = 1) && (<fib_1030@93:0> < 2))
+      |- P[<<fib_1030@93:1>@96:0>](<fib_1030@93:0>:int,<<fib_1030@93:1>@96:0>:int)
+      
+      P[<fib_1030@90:0>]((1 + <fib_1030@93:0>):int), (<fib_1030@93:0> >= 1) |- P[<fib_1030@93:0>](<fib_1030@93:0>:int)
+      
+      P[<fib_1030@62:0>]((2 + <fib_1030@90:0>):int),
+      P[<<fib_1030@65:1>@86:0>]((1 + <fib_1030@90:0>):int,<f_fib_1175@88:2>:int), (
+      <fib_1030@90:0> >= 0) |- P[<fib_1030@90:0>](<fib_1030@90:0>:int)
+      
+      P[<fib_1030@65:0>](<fib_1030@65:0>:int),
+      P[<<fib_1030@68:1>@71:0>]((-1 + <fib_1030@65:0>):int,var51:int),
+      P[<<fib_1030@75:1>@78:0>]((-2 + <fib_1030@65:0>):int,(<<fib_1030@65:1>@86:0> + (-1 * var51)):int),
+      (<fib_1030@65:0> >= 2) |- P[<<fib_1030@65:1>@86:0>](<fib_1030@65:0>:int,
+                                                          <<fib_1030@65:1>@86:0>:int)
+      
+      P[<fib_1030@75:0>](<fib_1030@75:0>:int), ((<<fib_1030@75:1>@78:0> = 1) && (<fib_1030@75:0> < 2))
+      |- P[<<fib_1030@75:1>@78:0>](<fib_1030@75:0>:int,<<fib_1030@75:1>@78:0>:int)
+      
+      P[<fib_1030@65:0>]((2 + <fib_1030@75:0>):int),
+      P[<<fib_1030@68:1>@71:0>]((1 + <fib_1030@75:0>):int,<f_fib_1175@73:2>:int), (
+      <fib_1030@75:0> >= 0) |- P[<fib_1030@75:0>](<fib_1030@75:0>:int)
+      
+      P[<fib_1030@68:0>](<fib_1030@68:0>:int), ((<<fib_1030@68:1>@71:0> = 1) && (<fib_1030@68:0> < 2))
+      |- P[<<fib_1030@68:1>@71:0>](<fib_1030@68:0>:int,<<fib_1030@68:1>@71:0>:int)
+      
+      P[<fib_1030@65:0>]((1 + <fib_1030@68:0>):int), (<fib_1030@68:0> >= 1) |- P[<fib_1030@68:0>](<fib_1030@68:0>:int)
+      
+      P[<fib_1030@62:0>]((1 + <fib_1030@65:0>):int), (<fib_1030@65:0> >= 1) |- P[<fib_1030@65:0>](<fib_1030@65:0>:int)
+      
+      |- P[<fib_1030@62:0>](<fib_1030@62:0>:int)
+    begin ParamSubstInfer.infer(12037)[3]
+      
+    end ParamSubstInfer.infer(12037)[3] (0.544917 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(12039)[3]
+      
+    end RefTypeInfer.elim_coeffs(12039)[3] (0.003000 sec.)
+    begin YhornInterface.solve(12676)[3]
+      begin HcSolver.solve_ub(12677)[4]
+        encoded:
+          P[<fail_1180@124:0>](<fail_1180@124:0>:int)|- bot
+          
+          P[<<fib_1030@62:1>@119:0>](<f_main_1177@121:0>:int,<f_main_1177@121:2>:int),
+          ((<f_main_1177@121:0> > <f_main_1177@121:2>) && (<fail_1180@124:0> = 1))
+          |- P[<fail_1180@124:0>](<fail_1180@124:0>:int)
+          
+          P[<fib_1030@62:0>](<fib_1030@62:0>:int),
+          P[<<fib_1030@65:1>@86:0>]((-1 + <fib_1030@62:0>):int,var49:int),
+          P[<<fib_1030@90:1>@111:0>]((-2 + <fib_1030@62:0>):int,(<<fib_1030@62:1>@119:0> + (-1 * var49)):int),
+          (<fib_1030@62:0> >= 2) |- P[<<fib_1030@62:1>@119:0>](<fib_1030@62:0>:int,
+                                                               <<fib_1030@62:1>@119:0>:int)
+          
+          P[<fib_1030@90:0>](<fib_1030@90:0>:int),
+          P[<<fib_1030@93:1>@96:0>]((-1 + <fib_1030@90:0>):int,var50:int),
+          P[<<fib_1030@100:1>@103:0>]((-2 + <fib_1030@90:0>):int,(<<fib_1030@90:1>@111:0> + (-1 * var50)):int),
+          (<fib_1030@90:0> >= 2) |- P[<<fib_1030@90:1>@111:0>](<fib_1030@90:0>:int,
+                                                               <<fib_1030@90:1>@111:0>:int)
+          
+          P[<fib_1030@100:0>](<fib_1030@100:0>:int), ((<<fib_1030@100:1>@103:0> = 1) && (<fib_1030@100:0> < 2))
+          |- P[<<fib_1030@100:1>@103:0>](<fib_1030@100:0>:int,<<fib_1030@100:1>@103:0>:int)
+          
+          P[<fib_1030@90:0>]((2 + <fib_1030@100:0>):int),
+          P[<<fib_1030@93:1>@96:0>]((1 + <fib_1030@100:0>):int,<f_fib_1175@98:2>:int), (
+          <fib_1030@100:0> >= 0) |- P[<fib_1030@100:0>](<fib_1030@100:0>:int)
+          
+          P[<fib_1030@93:0>](<fib_1030@93:0>:int), ((<<fib_1030@93:1>@96:0> = 1) && (<fib_1030@93:0> < 2))
+          |- P[<<fib_1030@93:1>@96:0>](<fib_1030@93:0>:int,<<fib_1030@93:1>@96:0>:int)
+          
+          P[<fib_1030@90:0>]((1 + <fib_1030@93:0>):int), (<fib_1030@93:0> >= 1)
+          |- P[<fib_1030@93:0>](<fib_1030@93:0>:int)
+          
+          P[<fib_1030@62:0>]((2 + <fib_1030@90:0>):int),
+          P[<<fib_1030@65:1>@86:0>]((1 + <fib_1030@90:0>):int,<f_fib_1175@88:2>:int), (
+          <fib_1030@90:0> >= 0) |- P[<fib_1030@90:0>](<fib_1030@90:0>:int)
+          
+          P[<fib_1030@65:0>](<fib_1030@65:0>:int),
+          P[<<fib_1030@68:1>@71:0>]((-1 + <fib_1030@65:0>):int,var51:int),
+          P[<<fib_1030@75:1>@78:0>]((-2 + <fib_1030@65:0>):int,(<<fib_1030@65:1>@86:0> + (-1 * var51)):int),
+          (<fib_1030@65:0> >= 2) |- P[<<fib_1030@65:1>@86:0>](<fib_1030@65:0>:int,
+                                                              <<fib_1030@65:1>@86:0>:int)
+          
+          P[<fib_1030@75:0>](<fib_1030@75:0>:int), ((<<fib_1030@75:1>@78:0> = 1) && (<fib_1030@75:0> < 2))
+          |- P[<<fib_1030@75:1>@78:0>](<fib_1030@75:0>:int,<<fib_1030@75:1>@78:0>:int)
+          
+          P[<fib_1030@65:0>]((2 + <fib_1030@75:0>):int),
+          P[<<fib_1030@68:1>@71:0>]((1 + <fib_1030@75:0>):int,<f_fib_1175@73:2>:int), (
+          <fib_1030@75:0> >= 0) |- P[<fib_1030@75:0>](<fib_1030@75:0>:int)
+          
+          P[<fib_1030@68:0>](<fib_1030@68:0>:int), ((<<fib_1030@68:1>@71:0> = 1) && (<fib_1030@68:0> < 2))
+          |- P[<<fib_1030@68:1>@71:0>](<fib_1030@68:0>:int,<<fib_1030@68:1>@71:0>:int)
+          
+          P[<fib_1030@65:0>]((1 + <fib_1030@68:0>):int), (<fib_1030@68:0> >= 1)
+          |- P[<fib_1030@68:0>](<fib_1030@68:0>:int)
+          
+          P[<fib_1030@62:0>]((1 + <fib_1030@65:0>):int), (<fib_1030@65:0> >= 1)
+          |- P[<fib_1030@65:0>](<fib_1030@65:0>:int)
+          
+          |- P[<fib_1030@62:0>](<fib_1030@62:0>:int)
+        input to Yhorn:
+          P[<fail_1180@124:0>](<fail_1180@124:0>:int)|- bot
+          
+          P[<<fib_1030@62:1>@119:0>](<f_main_1177@121:0>:int,<f_main_1177@121:2>:int),
+          ((<f_main_1177@121:0> > <f_main_1177@121:2>) && (<fail_1180@124:0> = 1))
+          |- P[<fail_1180@124:0>](<fail_1180@124:0>:int)
+          
+          P[<fib_1030@62:0>](<fib_1030@62:0>:int),
+          P[<<fib_1030@65:1>@86:0>](var52:int,var49:int),
+          P[<<fib_1030@90:1>@111:0>](var53:int,var54:int),
+          (((var54 + var49) = <<fib_1030@62:1>@119:0>) &&
+           (((2 + var53) = <fib_1030@62:0>) && (((1 + var52) = <fib_1030@62:0>) && (<fib_1030@62:0> >= 2))))
+          |- P[<<fib_1030@62:1>@119:0>](<fib_1030@62:0>:int,<<fib_1030@62:1>@119:0>:int)
+          
+          P[<fib_1030@90:0>](<fib_1030@90:0>:int),
+          P[<<fib_1030@93:1>@96:0>](var55:int,var50:int),
+          P[<<fib_1030@100:1>@103:0>](var56:int,var57:int),
+          (((var57 + var50) = <<fib_1030@90:1>@111:0>) &&
+           (((2 + var56) = <fib_1030@90:0>) && (((1 + var55) = <fib_1030@90:0>) && (<fib_1030@90:0> >= 2))))
+          |- P[<<fib_1030@90:1>@111:0>](<fib_1030@90:0>:int,<<fib_1030@90:1>@111:0>:int)
+          
+          P[<fib_1030@100:0>](<fib_1030@100:0>:int), ((<fib_1030@100:0> < 2) && (<<fib_1030@100:1>@103:0> = 1))
+          |- P[<<fib_1030@100:1>@103:0>](<fib_1030@100:0>:int,<<fib_1030@100:1>@103:0>:int)
+          
+          P[<fib_1030@90:0>](var58:int),
+          P[<<fib_1030@93:1>@96:0>](var59:int,<f_fib_1175@98:2>:int),
+          ((var59 = (1 + <fib_1030@100:0>)) && ((var58 = (2 + <fib_1030@100:0>)) && (<fib_1030@100:0> >= 0)))
+          |- P[<fib_1030@100:0>](<fib_1030@100:0>:int)
+          
+          P[<fib_1030@93:0>](<fib_1030@93:0>:int), ((<fib_1030@93:0> < 2) && (<<fib_1030@93:1>@96:0> = 1))
+          |- P[<<fib_1030@93:1>@96:0>](<fib_1030@93:0>:int,<<fib_1030@93:1>@96:0>:int)
+          
+          P[<fib_1030@90:0>](var60:int), ((var60 = (1 + <fib_1030@93:0>)) && (<fib_1030@93:0> >= 1))
+          |- P[<fib_1030@93:0>](<fib_1030@93:0>:int)
+          
+          P[<fib_1030@62:0>](var61:int),
+          P[<<fib_1030@65:1>@86:0>](var62:int,<f_fib_1175@88:2>:int),
+          ((var62 = (1 + <fib_1030@90:0>)) && ((var61 = (2 + <fib_1030@90:0>)) && (<fib_1030@90:0> >= 0)))
+          |- P[<fib_1030@90:0>](<fib_1030@90:0>:int)
+          
+          P[<fib_1030@65:0>](<fib_1030@65:0>:int),
+          P[<<fib_1030@68:1>@71:0>](var63:int,var51:int),
+          P[<<fib_1030@75:1>@78:0>](var64:int,var65:int),
+          (((var65 + var51) = <<fib_1030@65:1>@86:0>) &&
+           (((2 + var64) = <fib_1030@65:0>) && (((1 + var63) = <fib_1030@65:0>) && (<fib_1030@65:0> >= 2))))
+          |- P[<<fib_1030@65:1>@86:0>](<fib_1030@65:0>:int,<<fib_1030@65:1>@86:0>:int)
+          
+          P[<fib_1030@75:0>](<fib_1030@75:0>:int), ((<fib_1030@75:0> < 2) && (<<fib_1030@75:1>@78:0> = 1))
+          |- P[<<fib_1030@75:1>@78:0>](<fib_1030@75:0>:int,<<fib_1030@75:1>@78:0>:int)
+          
+          P[<fib_1030@65:0>](var66:int),
+          P[<<fib_1030@68:1>@71:0>](var67:int,<f_fib_1175@73:2>:int),
+          ((var67 = (1 + <fib_1030@75:0>)) && ((var66 = (2 + <fib_1030@75:0>)) && (<fib_1030@75:0> >= 0)))
+          |- P[<fib_1030@75:0>](<fib_1030@75:0>:int)
+          
+          P[<fib_1030@68:0>](<fib_1030@68:0>:int), ((<fib_1030@68:0> < 2) && (<<fib_1030@68:1>@71:0> = 1))
+          |- P[<<fib_1030@68:1>@71:0>](<fib_1030@68:0>:int,<<fib_1030@68:1>@71:0>:int)
+          
+          P[<fib_1030@65:0>](var68:int), ((var68 = (1 + <fib_1030@68:0>)) && (<fib_1030@68:0> >= 1))
+          |- P[<fib_1030@68:0>](<fib_1030@68:0>:int)
+          
+          P[<fib_1030@62:0>](var69:int), ((var69 = (1 + <fib_1030@65:0>)) && (<fib_1030@65:0> >= 1))
+          |- P[<fib_1030@65:0>](<fib_1030@65:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1180_sep_124_sep_0($414)) -> 1=0.
+(($414-1=0) & ($415-$416>0)) & (v_sep_fib_1030_sep_62_sep_1_sep_119_sep_0($415,$416)) -> v_sep_fail_1180_sep_124_sep_0($414).
+(($417-2>=0) & (-$417+$418+1=0) & (-$417+$419+2=0) & ($420+$421-$422=0)) & (v_sep_fib_1030_sep_90_sep_1_sep_111_sep_0($419,$420)) & (v_sep_fib_1030_sep_65_sep_1_sep_86_sep_0($418,$421)) & (v_sep_fib_1030_sep_62_sep_0($417)) -> v_sep_fib_1030_sep_62_sep_1_sep_119_sep_0($417,$422).
+(($423-2>=0) & (-$423+$424+1=0) & (-$423+$425+2=0) & ($426+$427-$428=0)) & (v_sep_fib_1030_sep_100_sep_1_sep_103_sep_0($425,$426)) & (v_sep_fib_1030_sep_93_sep_1_sep_96_sep_0($424,$427)) & (v_sep_fib_1030_sep_90_sep_0($423)) -> v_sep_fib_1030_sep_90_sep_1_sep_111_sep_0($423,$428).
+(($429-1=0) & ($430-2<0)) & (v_sep_fib_1030_sep_100_sep_0($430)) -> v_sep_fib_1030_sep_100_sep_1_sep_103_sep_0($430,$429).
+(($430>=0) & (-$430+$431-2=0) & (-$430+$432-1=0)) & (v_sep_fib_1030_sep_93_sep_1_sep_96_sep_0($432,$433)) & (v_sep_fib_1030_sep_90_sep_0($431)) -> v_sep_fib_1030_sep_100_sep_0($430).
+(($434-1=0) & ($435-2<0)) & (v_sep_fib_1030_sep_93_sep_0($435)) -> v_sep_fib_1030_sep_93_sep_1_sep_96_sep_0($435,$434).
+(($435-1>=0) & (-$435+$436-1=0)) & (v_sep_fib_1030_sep_90_sep_0($436)) -> v_sep_fib_1030_sep_93_sep_0($435).
+(($423>=0) & (-$423+$437-2=0) & (-$423+$438-1=0)) & (v_sep_fib_1030_sep_65_sep_1_sep_86_sep_0($438,$439)) & (v_sep_fib_1030_sep_62_sep_0($437)) -> v_sep_fib_1030_sep_90_sep_0($423).
+(($440-2>=0) & (-$440+$441+1=0) & (-$440+$442+2=0) & ($443+$444-$445=0)) & (v_sep_fib_1030_sep_75_sep_1_sep_78_sep_0($442,$443)) & (v_sep_fib_1030_sep_68_sep_1_sep_71_sep_0($441,$444)) & (v_sep_fib_1030_sep_65_sep_0($440)) -> v_sep_fib_1030_sep_65_sep_1_sep_86_sep_0($440,$445).
+(($446-1=0) & ($447-2<0)) & (v_sep_fib_1030_sep_75_sep_0($447)) -> v_sep_fib_1030_sep_75_sep_1_sep_78_sep_0($447,$446).
+(($447>=0) & (-$447+$448-2=0) & (-$447+$449-1=0)) & (v_sep_fib_1030_sep_68_sep_1_sep_71_sep_0($449,$450)) & (v_sep_fib_1030_sep_65_sep_0($448)) -> v_sep_fib_1030_sep_75_sep_0($447).
+(($451-1=0) & ($452-2<0)) & (v_sep_fib_1030_sep_68_sep_0($452)) -> v_sep_fib_1030_sep_68_sep_1_sep_71_sep_0($452,$451).
+(($452-1>=0) & (-$452+$453-1=0)) & (v_sep_fib_1030_sep_65_sep_0($453)) -> v_sep_fib_1030_sep_68_sep_0($452).
+(($440-1>=0) & (-$440+$454-1=0)) & (v_sep_fib_1030_sep_62_sep_0($454)) -> v_sep_fib_1030_sep_65_sep_0($440).
+0=0 -> v_sep_fib_1030_sep_62_sep_0($417).
+
+
+v_sep_fail_1180_sep_124_sep_0: X
+v_sep_fib_1030_sep_100_sep_0: X
+v_sep_fib_1030_sep_100_sep_1_sep_103_sep_0: X
+v_sep_fib_1030_sep_62_sep_0: X
+v_sep_fib_1030_sep_62_sep_1_sep_119_sep_0: X
+v_sep_fib_1030_sep_65_sep_0: X
+v_sep_fib_1030_sep_65_sep_1_sep_86_sep_0: X
+v_sep_fib_1030_sep_68_sep_0: X
+v_sep_fib_1030_sep_68_sep_1_sep_71_sep_0: X
+v_sep_fib_1030_sep_75_sep_0: X
+v_sep_fib_1030_sep_75_sep_1_sep_78_sep_0: X
+v_sep_fib_1030_sep_90_sep_0: X
+v_sep_fib_1030_sep_90_sep_1_sep_111_sep_0: X
+v_sep_fib_1030_sep_93_sep_0: X
+v_sep_fib_1030_sep_93_sep_1_sep_96_sep_0: X
+.........................
+v_sep_fail_1180_sep_124_sep_0: X
+v_sep_fib_1030_sep_100_sep_0: X
+v_sep_fib_1030_sep_100_sep_1_sep_103_sep_0: X
+v_sep_fib_1030_sep_62_sep_0: X
+v_sep_fib_1030_sep_62_sep_1_sep_119_sep_0: X
+v_sep_fib_1030_sep_65_sep_0: X
+v_sep_fib_1030_sep_65_sep_1_sep_86_sep_0: X
+v_sep_fib_1030_sep_68_sep_0: X
+v_sep_fib_1030_sep_68_sep_1_sep_71_sep_0: X
+v_sep_fib_1030_sep_75_sep_0: X
+v_sep_fib_1030_sep_75_sep_1_sep_78_sep_0: X
+v_sep_fib_1030_sep_90_sep_0: X
+v_sep_fib_1030_sep_90_sep_1_sep_111_sep_0: X
+v_sep_fib_1030_sep_93_sep_0: X
+v_sep_fib_1030_sep_93_sep_1_sep_96_sep_0: X
+...
+v_sep_fail_1180_sep_124_sep_0: X
+v_sep_fib_1030_sep_100_sep_0: X
+v_sep_fib_1030_sep_100_sep_1_sep_103_sep_0: X
+v_sep_fib_1030_sep_62_sep_0: X
+v_sep_fib_1030_sep_62_sep_1_sep_119_sep_0: X
+v_sep_fib_1030_sep_65_sep_0: X
+v_sep_fib_1030_sep_65_sep_1_sep_86_sep_0: X
+v_sep_fib_1030_sep_68_sep_0: X
+v_sep_fib_1030_sep_68_sep_1_sep_71_sep_0: X
+v_sep_fib_1030_sep_75_sep_0: X
+v_sep_fib_1030_sep_75_sep_1_sep_78_sep_0: X
+v_sep_fib_1030_sep_90_sep_0: X
+v_sep_fib_1030_sep_90_sep_1_sep_111_sep_0: X
+v_sep_fib_1030_sep_93_sep_0: X
+v_sep_fib_1030_sep_93_sep_1_sep_96_sep_0: X
+......
+v_sep_fail_1180_sep_124_sep_0: X
+v_sep_fib_1030_sep_100_sep_0: X
+v_sep_fib_1030_sep_100_sep_1_sep_103_sep_0: X
+v_sep_fib_1030_sep_62_sep_0: X
+v_sep_fib_1030_sep_62_sep_1_sep_119_sep_0: X
+v_sep_fib_1030_sep_65_sep_0: X
+v_sep_fib_1030_sep_65_sep_1_sep_86_sep_0: X
+v_sep_fib_1030_sep_68_sep_0: X
+v_sep_fib_1030_sep_68_sep_1_sep_71_sep_0: X
+v_sep_fib_1030_sep_75_sep_0: X
+v_sep_fib_1030_sep_75_sep_1_sep_78_sep_0: X
+v_sep_fib_1030_sep_90_sep_0: X
+v_sep_fib_1030_sep_90_sep_1_sep_111_sep_0: X
+v_sep_fib_1030_sep_93_sep_0: X
+v_sep_fib_1030_sep_93_sep_1_sep_96_sep_0: X
+............
+v_sep_fail_1180_sep_124_sep_0: X
+v_sep_fib_1030_sep_100_sep_0: X
+v_sep_fib_1030_sep_100_sep_1_sep_103_sep_0: X
+v_sep_fib_1030_sep_62_sep_0: X
+v_sep_fib_1030_sep_62_sep_1_sep_119_sep_0: X
+v_sep_fib_1030_sep_65_sep_0: X
+v_sep_fib_1030_sep_65_sep_1_sep_86_sep_0: X
+v_sep_fib_1030_sep_68_sep_0: X
+v_sep_fib_1030_sep_68_sep_1_sep_71_sep_0: X
+v_sep_fib_1030_sep_75_sep_0: X
+v_sep_fib_1030_sep_75_sep_1_sep_78_sep_0: X
+v_sep_fib_1030_sep_90_sep_0: X
+v_sep_fib_1030_sep_90_sep_1_sep_111_sep_0: X
+v_sep_fib_1030_sep_93_sep_0: X
+v_sep_fib_1030_sep_93_sep_1_sep_96_sep_0: X
+...................
+v_sep_fail_1180_sep_124_sep_0: X
+v_sep_fib_1030_sep_100_sep_0: X
+v_sep_fib_1030_sep_100_sep_1_sep_103_sep_0: X
+v_sep_fib_1030_sep_62_sep_0: X
+v_sep_fib_1030_sep_62_sep_1_sep_119_sep_0: X
+v_sep_fib_1030_sep_65_sep_0: X
+v_sep_fib_1030_sep_65_sep_1_sep_86_sep_0: X
+v_sep_fib_1030_sep_68_sep_0: X
+v_sep_fib_1030_sep_68_sep_1_sep_71_sep_0: X
+v_sep_fib_1030_sep_75_sep_0: X
+v_sep_fib_1030_sep_75_sep_1_sep_78_sep_0: X
+v_sep_fib_1030_sep_90_sep_0: X
+v_sep_fib_1030_sep_90_sep_1_sep_111_sep_0: X
+v_sep_fib_1030_sep_93_sep_0: X
+v_sep_fib_1030_sep_93_sep_1_sep_96_sep_0: X
+.........................(0=0) & (v_sep_fail_1180_sep_124_sep_0($414)) -> 1=0.
+(($414-1=0) & ($415-$416>0)) & (v_sep_fib_1030_sep_62_sep_1_sep_119_sep_0($415,$416)) -> v_sep_fail_1180_sep_124_sep_0($414).
+(($417-2>=0) & (-$417+$418+1=0) & (-$417+$419+2=0) & ($420+$421-$422=0)) & (v_sep_fib_1030_sep_90_sep_1_sep_111_sep_0($419,$420)) & (v_sep_fib_1030_sep_65_sep_1_sep_86_sep_0($418,$421)) & (v_sep_fib_1030_sep_62_sep_0($417)) -> v_sep_fib_1030_sep_62_sep_1_sep_119_sep_0($417,$422).
+(($423-2>=0) & (-$423+$424+1=0) & (-$423+$425+2=0) & ($426+$427-$428=0)) & (v_sep_fib_1030_sep_100_sep_1_sep_103_sep_0($425,$426)) & (v_sep_fib_1030_sep_93_sep_1_sep_96_sep_0($424,$427)) & (v_sep_fib_1030_sep_90_sep_0($423)) -> v_sep_fib_1030_sep_90_sep_1_sep_111_sep_0($423,$428).
+(($429-1=0) & ($430-2<0)) & (v_sep_fib_1030_sep_100_sep_0($430)) -> v_sep_fib_1030_sep_100_sep_1_sep_103_sep_0($430,$429).
+(($430>=0) & (-$430+$431-2=0) & (-$430+$432-1=0)) & (v_sep_fib_1030_sep_93_sep_1_sep_96_sep_0($432,$433)) & (v_sep_fib_1030_sep_90_sep_0($431)) -> v_sep_fib_1030_sep_100_sep_0($430).
+(($434-1=0) & ($435-2<0)) & (v_sep_fib_1030_sep_93_sep_0($435)) -> v_sep_fib_1030_sep_93_sep_1_sep_96_sep_0($435,$434).
+(($435-1>=0) & (-$435+$436-1=0)) & (v_sep_fib_1030_sep_90_sep_0($436)) -> v_sep_fib_1030_sep_93_sep_0($435).
+(($423>=0) & (-$423+$437-2=0) & (-$423+$438-1=0)) & (v_sep_fib_1030_sep_65_sep_1_sep_86_sep_0($438,$439)) & (v_sep_fib_1030_sep_62_sep_0($437)) -> v_sep_fib_1030_sep_90_sep_0($423).
+(($440-2>=0) & (-$440+$441+1=0) & (-$440+$442+2=0) & ($443+$444-$445=0)) & (v_sep_fib_1030_sep_75_sep_1_sep_78_sep_0($442,$443)) & (v_sep_fib_1030_sep_68_sep_1_sep_71_sep_0($441,$444)) & (v_sep_fib_1030_sep_65_sep_0($440)) -> v_sep_fib_1030_sep_65_sep_1_sep_86_sep_0($440,$445).
+(($446-1=0) & ($447-2<0)) & (v_sep_fib_1030_sep_75_sep_0($447)) -> v_sep_fib_1030_sep_75_sep_1_sep_78_sep_0($447,$446).
+(($447>=0) & (-$447+$448-2=0) & (-$447+$449-1=0)) & (v_sep_fib_1030_sep_68_sep_1_sep_71_sep_0($449,$450)) & (v_sep_fib_1030_sep_65_sep_0($448)) -> v_sep_fib_1030_sep_75_sep_0($447).
+(($451-1=0) & ($452-2<0)) & (v_sep_fib_1030_sep_68_sep_0($452)) -> v_sep_fib_1030_sep_68_sep_1_sep_71_sep_0($452,$451).
+(($452-1>=0) & (-$452+$453-1=0)) & (v_sep_fib_1030_sep_65_sep_0($453)) -> v_sep_fib_1030_sep_68_sep_0($452).
+(($440-1>=0) & (-$440+$454-1=0)) & (v_sep_fib_1030_sep_62_sep_0($454)) -> v_sep_fib_1030_sep_65_sep_0($440).
+0=0 -> v_sep_fib_1030_sep_62_sep_0($417).
+
+          |- P[<fib_1030@62:0>](<fib_1030@62:0>:int)
+        solution:
+          P[<fail_1180@124:0>]($455:bool) = false
+          P[<fib_1030@100:0>]($489:int) = (4 <= $489)
+          P[<<fib_1030@100:1>@103:0>]($476:int,$478:int) = (4 <= $476)
+          P[<fib_1030@62:0>]($473:int) = true
+          P[<<fib_1030@62:1>@119:0>]($458:int,$460:int) = false
+          P[<fib_1030@65:0>]($505:int) = true
+          P[<<fib_1030@65:1>@86:0>]($468:int,$470:int) = ($468 <= 2)
+          P[<fib_1030@68:0>]($511:int) = true
+          P[<<fib_1030@68:1>@71:0>]($500:int,$502:int) = ($500 <= 1)
+          P[<fib_1030@75:0>]($508:int) = ($508 <= 0)
+          P[<<fib_1030@75:1>@78:0>]($495:int,$497:int) = ($495 <= 0)
+          P[<fib_1030@90:0>]($486:int) = ($486 <= 1)
+          P[<<fib_1030@90:1>@111:0>]($463:int,$465:int) = (6 <= $463)
+          P[<fib_1030@93:0>]($492:int) = (5 <= (3 * $492))
+          P[<<fib_1030@93:1>@96:0>]($481:int,$483:int) = (5 <= (3 * $481))
+        
+      end HcSolver.solve_ub(12677)[4] (0.049992 sec.)
+      begin HcSolver.check_validity(13938)[4]
+        input:
+          P[<fail_1180@124:0>](<fail_1180@124:0>:bool)|- bot
+          
+          P[<<fib_1030@62:1>@119:0>](<f_main_1177@121:0>:int,<f_main_1177@121:2>:int),
+          ((<f_main_1177@121:0> > <f_main_1177@121:2>) && <fail_1180@124:0>)
+          |- P[<fail_1180@124:0>](<fail_1180@124:0>:bool)
+          
+          P[<fib_1030@62:0>](<fib_1030@62:0>:int),
+          P[<<fib_1030@65:1>@86:0>]((-1 + <fib_1030@62:0>):int,var49:int),
+          P[<<fib_1030@90:1>@111:0>]((-2 + <fib_1030@62:0>):int,(<<fib_1030@62:1>@119:0> + (-1 * var49)):int),
+          (<fib_1030@62:0> >= 2) |- P[<<fib_1030@62:1>@119:0>](<fib_1030@62:0>:int,
+                                                               <<fib_1030@62:1>@119:0>:int)
+          
+          P[<fib_1030@90:0>](<fib_1030@90:0>:int),
+          P[<<fib_1030@93:1>@96:0>]((-1 + <fib_1030@90:0>):int,var50:int),
+          P[<<fib_1030@100:1>@103:0>]((-2 + <fib_1030@90:0>):int,(<<fib_1030@90:1>@111:0> + (-1 * var50)):int),
+          (<fib_1030@90:0> >= 2) |- P[<<fib_1030@90:1>@111:0>](<fib_1030@90:0>:int,
+                                                               <<fib_1030@90:1>@111:0>:int)
+          
+          P[<fib_1030@100:0>](<fib_1030@100:0>:int), ((<<fib_1030@100:1>@103:0> = 1) && (<fib_1030@100:0> < 2))
+          |- P[<<fib_1030@100:1>@103:0>](<fib_1030@100:0>:int,<<fib_1030@100:1>@103:0>:int)
+          
+          P[<fib_1030@90:0>]((2 + <fib_1030@100:0>):int),
+          P[<<fib_1030@93:1>@96:0>]((1 + <fib_1030@100:0>):int,<f_fib_1175@98:2>:int), (
+          <fib_1030@100:0> >= 0) |- P[<fib_1030@100:0>](<fib_1030@100:0>:int)
+          
+          P[<fib_1030@93:0>](<fib_1030@93:0>:int), ((<<fib_1030@93:1>@96:0> = 1) && (<fib_1030@93:0> < 2))
+          |- P[<<fib_1030@93:1>@96:0>](<fib_1030@93:0>:int,<<fib_1030@93:1>@96:0>:int)
+          
+          P[<fib_1030@90:0>]((1 + <fib_1030@93:0>):int), (<fib_1030@93:0> >= 1)
+          |- P[<fib_1030@93:0>](<fib_1030@93:0>:int)
+          
+          P[<fib_1030@62:0>]((2 + <fib_1030@90:0>):int),
+          P[<<fib_1030@65:1>@86:0>]((1 + <fib_1030@90:0>):int,<f_fib_1175@88:2>:int), (
+          <fib_1030@90:0> >= 0) |- P[<fib_1030@90:0>](<fib_1030@90:0>:int)
+          
+          P[<fib_1030@65:0>](<fib_1030@65:0>:int),
+          P[<<fib_1030@68:1>@71:0>]((-1 + <fib_1030@65:0>):int,var51:int),
+          P[<<fib_1030@75:1>@78:0>]((-2 + <fib_1030@65:0>):int,(<<fib_1030@65:1>@86:0> + (-1 * var51)):int),
+          (<fib_1030@65:0> >= 2) |- P[<<fib_1030@65:1>@86:0>](<fib_1030@65:0>:int,
+                                                              <<fib_1030@65:1>@86:0>:int)
+          
+          P[<fib_1030@75:0>](<fib_1030@75:0>:int), ((<<fib_1030@75:1>@78:0> = 1) && (<fib_1030@75:0> < 2))
+          |- P[<<fib_1030@75:1>@78:0>](<fib_1030@75:0>:int,<<fib_1030@75:1>@78:0>:int)
+          
+          P[<fib_1030@65:0>]((2 + <fib_1030@75:0>):int),
+          P[<<fib_1030@68:1>@71:0>]((1 + <fib_1030@75:0>):int,<f_fib_1175@73:2>:int), (
+          <fib_1030@75:0> >= 0) |- P[<fib_1030@75:0>](<fib_1030@75:0>:int)
+          
+          P[<fib_1030@68:0>](<fib_1030@68:0>:int), ((<<fib_1030@68:1>@71:0> = 1) && (<fib_1030@68:0> < 2))
+          |- P[<<fib_1030@68:1>@71:0>](<fib_1030@68:0>:int,<<fib_1030@68:1>@71:0>:int)
+          
+          P[<fib_1030@65:0>]((1 + <fib_1030@68:0>):int), (<fib_1030@68:0> >= 1)
+          |- P[<fib_1030@68:0>](<fib_1030@68:0>:int)
+          
+          P[<fib_1030@62:0>]((1 + <fib_1030@65:0>):int), (<fib_1030@65:0> >= 1)
+          |- P[<fib_1030@65:0>](<fib_1030@65:0>:int)
+          
+          |- P[<fib_1030@62:0>](<fib_1030@62:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(13938)[4] (0.002999 sec.)
+      solution:
+        P[<fail_1180@124:0>]($455:bool) = false
+        P[<fib_1030@100:0>]($489:int) = (4 <= $489)
+        P[<<fib_1030@100:1>@103:0>]($476:int,$478:int) = (4 <= $476)
+        P[<fib_1030@62:0>]($473:int) = true
+        P[<<fib_1030@62:1>@119:0>]($458:int,$460:int) = false
+        P[<fib_1030@65:0>]($505:int) = true
+        P[<<fib_1030@65:1>@86:0>]($468:int,$470:int) = ($468 <= 2)
+        P[<fib_1030@68:0>]($511:int) = true
+        P[<<fib_1030@68:1>@71:0>]($500:int,$502:int) = ($500 <= 1)
+        P[<fib_1030@75:0>]($508:int) = ($508 <= 0)
+        P[<<fib_1030@75:1>@78:0>]($495:int,$497:int) = ($495 <= 0)
+        P[<fib_1030@90:0>]($486:int) = ($486 <= 1)
+        P[<<fib_1030@90:1>@111:0>]($463:int,$465:int) = (6 <= $463)
+        P[<fib_1030@93:0>]($492:int) = (5 <= (3 * $492))
+        P[<<fib_1030@93:1>@96:0>]($481:int,$483:int) = (5 <= (3 * $481))
+    end YhornInterface.solve(12676)[3] (0.052991 sec.)
+    
+  end RefTypeInfer.infer_etrs(7783)[2] (0.619905 sec.)
+  refinement types:
+    main_1174: X
+    f_1178: v1:int -> X
+    main_1032: v1:int -> (v2:unit -> X) -> X
+    fib_1030: v1:int -> (v2:{v2:int | false} -> X) -> X
+    fib_1030: v1:int -> (v2:{v2:int | (v1 <= 2)} -> X) -> X
+    fib_1030: v1:int -> (v2:{v2:int | (v1 <= 1)} -> X) -> X
+    f_fib_1175: v1:int -> (v2:int -> X) -> v4:int -> X
+    fib_1030: v1:{v1:int | (v1 <= 0)} -> (v2:{v2:int | (v1 <= 0)} -> X) -> X
+    f_fib_1176: v1:int -> v2:int -> (v3:int -> X) -> v5:int -> X
+    f_fib_1175: v1:int -> (v2:int -> X) -> v4:int -> X
+    fib_1030: v1:{v1:int | (v1 <= 1)} -> (v2:{v2:int | (6 <= v1)} -> X) -> X
+    fib_1030: v1:{v1:int | (5 <= (3 * v1))} -> (v2:{v2:int | (5 <= (3 * v1))} -> X) -> X
+    f_fib_1175: v1:int -> (v2:int -> X) -> v4:int -> X
+    fib_1030: v1:{v1:int | (4 <= v1)} -> (v2:{v2:int | (4 <= v1)} -> X) -> X
+    f_fib_1176: v1:int -> v2:int -> (v3:int -> X) -> v5:int -> X
+    f_fib_1176: v1:int -> v2:int -> (v3:int -> X) -> v5:int -> X
+    f_main_1177: v1:int -> (v2:unit -> X) -> v4:int -> X
+    fail_1180: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    f_1179: var78:int -> var77:unit -> X
+  abstraction types:
+    main_1174: X
+    f_1178: v1:int -> X
+    main_1032: v1:int -> (v2:unit -> X) -> X
+    fib_1030: var99:int[var99 -> (var99 <= 0),
+                        var99 -> (var99 <= 1),
+                        var99 -> (5 <= (3 * var99)),
+                        var99 -> (4 <= var99)] ->
+              (var100:int[var100 -> (var99 <= 2),
+                          var100 -> (var99 <= 1),
+                          var100 -> (var99 <= 0),
+                          var100 -> (6 <= var99),
+                          var100 -> (5 <= (3 * var99)),
+                          var100 -> (4 <= var99)] -> X) -> X
+    f_fib_1175: var108:int -> (var109:int -> X) -> var111:int -> X
+    f_fib_1176: var119:int -> var120:int -> (var121:int -> X) -> var123:int -> X
+    f_main_1177: v1:int -> (v2:unit -> X) -> v4:int -> X
+    fail_1180: v1:bool -> (v2:unit -> X) -> X
+    f_1179: var78:int -> var77:unit -> X
+  
+end AbsTypeInfer.refine(7782)[1] (0.624905 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 1; 0; 0; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 3)::
+Main: main_1174
+  main_1174 -> (rand_int f_1178)
+  f_1178 x_1149 -> (main_1032 x_1149 (f_1179 x_1149))
+  f_1179 x_1149 x_1146 -> end
+  f_fib_1175 n_1031 k_fib_1076 x_1079 -> (fib_1030 (n_1031 - 2) (f_fib_1176 n_1031 x_1079 k_fib_1076))
+  f_fib_1176 n_1031 x_1079 k_fib_1076 x_1080 -> (k_fib_1076 (x_1079 + x_1080))
+  f_main_1177 n_1033 k_main_1118 x_1122 when (n_1033 <= x_1122) -> (k_main_1118 ())
+  f_main_1177 n_1033 k_main_1118 x_1122 when (not (n_1033 <= x_1122)) -> (fail_1180 true k_main_1118)
+  fail_1180 b k -> {fail} => (k ())
+  fib_1030 n_1031 k_fib_1076 when (n_1031 < 2) -> (k_fib_1076 1)
+  fib_1030 n_1031 k_fib_1076 when (not (n_1031 < 2)) -> (fib_1030 (n_1031 - 1) (f_fib_1175 n_1031 k_fib_1076))
+  main_1032 n_1033 k_main_1118 -> (fib_1030 n_1033 (f_main_1177 n_1033 k_main_1118))
+Types:
+  main_1174 : X
+  fail_1180 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  fib_1030 : (x_1:int[x_1 >= 4; 3*x_1 >= 5; x_1 <= 1; x_1 <= 0] ->
+              (x_3:int[x_1 >= 4; 3*x_1 >= 5; x_1 >= 6; x_1 <= 0; x_1 <= 1; 
+                       x_1 <= 2; x_1 <= x_3 - 1; x_3 >= 1 && x_1 <= 1; 
+                       x_1 <= x_3] -> X) -> X)
+  
+(3-1) Abstracting ... DONE!
+
+(3-2) Checking HORS ... 

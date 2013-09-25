@@ -1,0 +1,142 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn twice-e.ml
+
+parsed::
+ let twice_1030 f_1031 x_1032 = f_1031 (f_1031 x_1032) 
+ in
+ let f_1033 x_1034 = 2 * x_1034 
+ in
+ let main_1035 n_1036 = if n_1036 >= 0 then
+                          if twice_1030 f_1033 n_1036 > n_1036 then
+                            ()
+                          else
+                            {fail} ()
+                        else
+                          () 
+ in
+   ()
+
+set_target::
+ let twice_1030 f_1031 x_1032 = f_1031 (f_1031 x_1032) 
+ in
+ let f_1033 x_1034 = 2 * x_1034 
+ in
+ let main_1035 n_1036 = if n_1036 >= 0 then
+                          if twice_1030 f_1033 n_1036 > n_1036 then
+                            ()
+                          else
+                            {fail} ()
+                        else
+                          () 
+ in
+ let main_1061 = let arg1_1060 = rand_int () 
+                 in
+                   main_1035 arg1_1060 
+ in
+   ()
+
+copy_poly::
+ let twice_1062 (f_1031:(int -> int)) (x_1032:int) = f_1031 (f_1031 x_1032) 
+ in
+ let f_1033 (x_1034:int) = 2 * x_1034 
+ in
+ let main_1035 (n_1036:int) =
+   if n_1036 >= 0 then
+     if twice_1062 f_1033 n_1036 > n_1036 then
+       ()
+     else
+       {fail} ()
+   else
+     () 
+ in
+ let main_1061 = let arg1_1060 = rand_int () 
+                 in
+                   main_1035 arg1_1060 
+ in
+   ()
+
+CPS::
+ let twice_1062 (f_1031:(int -> ((int -> X) -> X))) (x_1032:int) (k_twice_1102:(
+   int -> X)) = f_1031 x_1032 (fun x_1122 -> f_1031 x_1122 k_twice_1102) 
+ in
+ let f_1033 (x_1034:int) (k_f_1136:(int -> X)) = k_f_1136 (2 * x_1034) 
+ in
+ let main_1035 (n_1036:int) (k_main_1150:(unit -> X)) =
+   if n_1036 >= 0 then
+     twice_1062 f_1033 n_1036 (fun x_1153 -> (if x_1153 > n_1036 then
+                                                k_main_1150 ()
+                                              else
+                                                {|fail|} () k_main_1150))
+   else
+     k_main_1150 () 
+ in
+   rand_int_cps () (fun x_1192 -> main_1035 x_1192 (fun x_1189 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1217
+  main_1217 -> (rand_int f_1220)
+  f_1033 x_1034 k_f_1136 -> (k_f_1136 (2 * x_1034))
+  f_1220 x_1192 -> (main_1035 x_1192 (f_1221 x_1192))
+  f_1221 x_1192 x_1189 -> end
+  f_main_1219 n_1036 k_main_1150 x_1153 when (x_1153 > n_1036) -> (k_main_1150 ())
+  f_main_1219 n_1036 k_main_1150 x_1153 when (not (x_1153 > n_1036)) -> (fail_1222 true k_main_1150)
+  f_twice_1218 x_1032 f_1031 k_twice_1102 x_1122 -> (f_1031 x_1122 k_twice_1102)
+  fail_1222 b k -> {fail} => (k ())
+  main_1035 n_1036 k_main_1150 when (n_1036 >= 0) -> (twice_1062 f_1033 n_1036 (f_main_1219 n_1036 k_main_1150))
+  main_1035 n_1036 k_main_1150 when (not (n_1036 >= 0)) -> (k_main_1150 ())
+  twice_1062 f_1031 x_1032 k_twice_1102 -> (f_1031 x_1032 (f_twice_1218 x_1032 f_1031 k_twice_1102))
+Types:
+  main_1217 : X
+  fail_1222 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1217 ... --> 
+  f_1220 ... --> 
+  main_1035 [1/2] ... --> 
+  twice_1062 ... --> 
+  f_1033 ... --> 
+  f_twice_1218 ... --> 
+  f_1033 ... --> 
+  f_main_1219 [2/2] ... --> 
+  fail_1222 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... begin Cvc3Interface.solve(106)[1]
+  CVC3 input: PUSH;cnt22_v_sep_r_1275:INT;CHECKSAT (TRUE AND ((NOT ((2 * (2 * cnt22_v_sep_r_1275)) > cnt22_v_sep_r_1275)) AND (TRUE AND (TRUE AND (TRUE AND (TRUE AND ((cnt22_v_sep_r_1275 >= 0) AND (TRUE AND TRUE))))))));COUNTERMODEL;POP;
+  CVC3 output: CVC> Satisfiable.
+  CVC3 output: Current scope level is 9.
+  CVC3 output: %Satisfiable  Variable Assignment: % 
+  CVC3 output: ASSERT (cnt22_v_sep_r_1275 = 0);
+  CVC3 output: CVC> 
+  v_sep_r_1275 = 0
+  end Cvc3Interface.solve(106)[1] (0.003999 sec.)
+DONE!
+
+Unsafe!
+
+Input for main:
+  0
+Error trace:
+  main 0 ->
+    if true then ... ->
+    twice <fun> 0 ->
+      f 0 ->
+      f 0 ->
+    if false then ... ->
+    FAIL!
+
+cycles: 0
+total: 0.203 sec
+  abst: 0.002 sec
+  mc: 0.003 sec
+  refine: 0.005 sec
+    exparam: 0.000 sec

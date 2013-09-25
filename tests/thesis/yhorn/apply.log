@@ -1,0 +1,102 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn apply.ml
+
+parsed::
+ let apply_1030 f_1031 x_1032 = f_1031 x_1032 
+ in
+ let g_1033 y_1034 z_1035 = if y_1034 = z_1035 then
+                              ()
+                            else
+                              {fail} () 
+ in
+ let rec k_1036 n_1037 = let u_1065 = apply_1030 (g_1033 n_1037) n_1037 
+                         in
+                           k_1036 (n_1037 + 1) 
+ in
+ let main_1038 = k_1036 0 
+ in
+   ()
+
+set_target::
+ let apply_1030 f_1031 x_1032 = f_1031 x_1032 
+ in
+ let g_1033 y_1034 z_1035 = if y_1034 = z_1035 then
+                              ()
+                            else
+                              {fail} () 
+ in
+ let rec k_1036 n_1037 = let u_1065 = apply_1030 (g_1033 n_1037) n_1037 
+                         in
+                           k_1036 (n_1037 + 1) 
+ in
+ let main_1038 = k_1036 0 
+ in
+ let main_1067 = main_1038 
+ in
+   ()
+
+copy_poly::
+ let apply_1071 (f_1031:(int -> unit)) (x_1032:int) = f_1031 x_1032 
+ in
+ let g_1070 (y_1034:int) (z_1035:int) = if y_1034 = z_1035 then
+                                          ()
+                                        else
+                                          {fail} () 
+ in
+ let rec k_1069 (n_1037:int) = let u_1065 = apply_1071 (g_1070 n_1037) n_1037 
+                               in
+                                 k_1069 (n_1037 + 1) 
+ in
+ let main_1068 = k_1069 0 
+ in
+ let main_1067 = main_1068 
+ in
+   ()
+
+CPS::
+ let apply_1071 (f_1031:(int -> ((unit -> X) -> X))) (x_1032:int) (k_apply_1111:(
+   unit -> X)) = f_1031 x_1032 k_apply_1111 
+ in
+ let g_1070 (y_1034:int) (z_1035:int) (k_g_1138:(unit -> X)) =
+   if y_1034 = z_1035 then
+     k_g_1138 ()
+   else
+     {|fail|} () k_g_1138 
+ in
+ let rec k_1069 (n_1037:int) (k_k_1163:(unit -> X)) =
+   apply_1071 (g_1070 n_1037) n_1037 (fun x_1166 -> k_1069 (n_1037 + 1) k_k_1163) 
+ in
+   k_1069 0 (fun x_1197 -> end)
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1209
+  main_1209 -> (k_1069 0 f_1211)
+  apply_1071 f_1031 x_1032 k_apply_1111 -> (f_1031 x_1032 k_apply_1111)
+  f_1211 x_1197 -> end
+  f_k_1210 n_1037 k_k_1163 x_1166 -> (k_1069 (n_1037 + 1) k_k_1163)
+  fail_1212 b k -> {fail} => (k ())
+  g_1070 y_1034 z_1035 k_g_1138 when (y_1034 = z_1035) -> (k_g_1138 ())
+  g_1070 y_1034 z_1035 k_g_1138 when (not (y_1034 = z_1035)) -> (fail_1212 true k_g_1138)
+  k_1069 n_1037 k_k_1163 -> (apply_1071 (g_1070 n_1037) n_1037 (f_k_1210 n_1037 k_k_1163))
+Types:
+  main_1209 : X
+  fail_1212 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  k_1069 : (int -> (unit -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Safe!
+
+Refinement Types:
+  k: (int -> Bottom)
+
+cycles: 0
+total: 0.182 sec
+  abst: 0.000 sec
+  mc: 0.002 sec
+  refine: 0.000 sec
+    exparam: 0.000 sec

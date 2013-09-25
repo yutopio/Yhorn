@@ -1,0 +1,997 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn fact_notpos-e.ml
+
+parsed::
+ let rec fact_1031 n_1032 =
+   if n_1032 <= 0 then
+     raise NotPositive
+   else
+     try n_1032 * fact_1031 (n_1032 - 1) with fun e_1037 -> (match e_1037 with
+                                                               | NotPositive -> 1
+                                                               | _ -> raise e_1037) 
+ in
+ let main_1033 n_1034 =
+   try fact_1031 n_1034 with
+   fun e_1046 ->
+     (match e_1046 with
+        | NotPositive -> let u_1049 = if n_1034 < 0 then
+                                        ()
+                                      else
+                                        {fail} () 
+                         in
+                           0
+        | _ -> raise e_1046) 
+ in
+   ()
+
+set_target::
+ let rec fact_1031 n_1032 =
+   if n_1032 <= 0 then
+     raise NotPositive
+   else
+     try n_1032 * fact_1031 (n_1032 - 1) with fun e_1037 -> (match e_1037 with
+                                                               | NotPositive -> 1
+                                                               | _ -> raise e_1037) 
+ in
+ let main_1033 n_1034 =
+   try fact_1031 n_1034 with
+   fun e_1046 ->
+     (match e_1046 with
+        | NotPositive -> let u_1049 = if n_1034 < 0 then
+                                        ()
+                                      else
+                                        {fail} () 
+                         in
+                           0
+        | _ -> raise e_1046) 
+ in
+ let main_1052 = let arg1_1051 = rand_int () 
+                 in
+                   main_1033 arg1_1051 
+ in
+   ()
+
+abst_recdata::
+ let rec fact_1031 n_1032 =
+   if n_1032 <= 0 then
+     raise ((), fun path_1076 -> (match path_1076 with
+                                    | [] -> 1))
+   else
+     try n_1032 * fact_1031 (n_1032 - 1) with
+     fun e_1037 -> (match e_1037 with
+                      | f_1065 when (snd f_1065) [] = 1 -> 1
+                      | _ -> raise e_1037) 
+ in
+ let main_1033 n_1034 =
+   try fact_1031 n_1034 with
+   fun e_1046 ->
+     (match e_1046 with
+        | f_1089 when (snd f_1089) [] = 1 -> let u_1049 = if n_1034 < 0 then
+                                                            ()
+                                                          else
+                                                            {fail} () 
+                                             in
+                                               0
+        | _ -> raise e_1046) 
+ in
+ let main_1052 = let arg1_1051 = rand_int () 
+                 in
+                   main_1033 arg1_1051 
+ in
+   ()
+
+abst_list::
+ let rec fact_1031 (n_1032:int) =
+   if n_1032 <= 0 then
+     raise ((), fun path_1076 -> (if fst path_1076 = 0 then
+                                    1
+                                  else
+                                    _|_))
+   else
+     try n_1032 * fact_1031 (n_1032 - 1) with
+     fun e_1037 ->
+       (if let f_1065 = e_1037 
+           in
+             (snd f_1065) (0, fun x_1114 -> _|_) = 1 then
+          let f_1065 = e_1037 
+          in
+            1
+        else
+          raise e_1037) 
+ in
+ let main_1033 (n_1034:int) =
+   try fact_1031 n_1034 with
+   fun e_1046 ->
+     (if let f_1089 = e_1046 
+         in
+           (snd f_1089) (0, fun x_1145 -> _|_) = 1 then
+        let f_1089 = e_1046 
+        in
+        let u_1049 = if n_1034 < 0 then
+                       ()
+                     else
+                       {fail} () 
+        in
+          0
+      else
+        raise e_1046) 
+ in
+ let main_1052 = let arg1_1051 = rand_int () 
+                 in
+                   main_1033 arg1_1051 
+ in
+   ()
+
+CPS::
+ let h_1170 (e_1610:(unit * ((int * (int -> ((int -> X) -> X))) -> ((int -> X) -> X)))) = {fail} () 
+ in
+ let rec fact_1031
+   (n_1032:int) (k_fact_1188:(int -> X)) (h_1190:((unit * ((int * (int -> ((int -> X) -> X))) -> ((int -> X) -> X))) ->
+                                                  X)) =
+   (fun h_1377 ->
+      (if n_1032 <= 0 then
+         h_1377 ((), fun path_1076 -> fun k_fact_1216 -> (if fst path_1076 = 0 then
+                                                            k_fact_1216 1
+                                                          else
+                                                            _|_))
+       else
+         let h_1249 (e_1241:(unit * ((int * (int -> ((int -> X) -> X))) -> ((int -> X) -> X)))) =
+           (fun h_1370 ->
+              (snd e_1241) (0, fun x_1114 -> fun k_fact_1325 -> _|_)
+                (fun x_1306 -> (if x_1306 = 1 then
+                                  k_fact_1188 1
+                                else
+                                  h_1370 e_1241))) h_1377 
+         in
+           fact_1031 (n_1032 - 1) (fun x_1246 -> k_fact_1188 (n_1032 * x_1246)) h_1249)) h_1190 
+ in
+ let main_1033
+   (n_1034:int) (k_main_1401:(int -> X)) (h_1403:((unit * ((int * (int -> ((int -> X) -> X))) -> ((int -> X) -> X))) ->
+                                                  X)) =
+   let h_1436 (e_1418:(unit * ((int * (int -> ((int -> X) -> X))) -> ((int -> X) -> X)))) =
+     (fun h_1569 ->
+        (snd e_1418) (0, fun x_1145 -> fun k_main_1495 -> _|_)
+          (fun x_1476 ->
+             (if x_1476 = 1 then
+                let k_main_u_1551 (x_1541:unit) = k_main_1401 0 
+                in
+                  if n_1034 < 0 then
+                    k_main_u_1551 ()
+                  else
+                    {|fail|} () k_main_u_1551
+              else
+                h_1569 e_1418))) h_1403 
+   in
+     fact_1031 n_1034 k_main_1401 h_1436 
+ in
+   rand_int_cps () (fun x_1582 -> main_1033 x_1582 (fun x_1576 -> end) h_1170)
+
+remove_pair::
+ let h_1170 (e1_1610:unit) (e2_1610:(int -> ((int -> ((int -> X) -> X)) -> ((int -> X) -> X)))) = {fail} () 
+ in
+ let rec fact_1031
+   (n_1032:int) (k_fact_1188:(int -> X)) (h_1190:(unit ->
+                                                  ((int -> ((int -> ((int -> X) -> X)) -> ((int -> X) -> X))) -> X))) =
+   (fun h_1377 ->
+      (if n_1032 <= 0 then
+         h_1377 ()
+           (fun path1_1076 -> fun path2_1076 -> fun k_fact_1216 -> (if 
+                                                                    path1_1076 = 0 then
+                                                                      
+                                                                    k_fact_1216 1
+                                                                    else
+                                                                      
+                                                                    _|_))
+       else
+         let h_1249 (e1_1241:unit) (e2_1241:(int -> ((int -> ((int -> X) -> X)) -> ((int -> X) -> X)))) =
+           (fun h_1370 ->
+              e2_1241 0 (fun x_1114 -> fun k_fact_1325 -> _|_)
+                (fun x_1306 -> (if x_1306 = 1 then
+                                  k_fact_1188 1
+                                else
+                                  h_1370 e1_1241 e2_1241))) h_1377 
+         in
+           fact_1031 (n_1032 - 1) (fun x_1246 -> k_fact_1188 (n_1032 * x_1246)) h_1249)) h_1190 
+ in
+ let main_1033
+   (n_1034:int) (k_main_1401:(int -> X)) (h_1403:(unit ->
+                                                  ((int -> ((int -> ((int -> X) -> X)) -> ((int -> X) -> X))) -> X))) =
+   let h_1436 (e1_1418:unit) (e2_1418:(int -> ((int -> ((int -> X) -> X)) -> ((int -> X) -> X)))) =
+     (fun h_1569 ->
+        e2_1418 0 (fun x_1145 -> fun k_main_1495 -> _|_)
+          (fun x_1476 ->
+             (if x_1476 = 1 then
+                let k_main_u_1551 (x_1541:unit) = k_main_1401 0 
+                in
+                  if n_1034 < 0 then
+                    k_main_u_1551 ()
+                  else
+                    {|fail|} () k_main_u_1551
+              else
+                h_1569 e1_1418 e2_1418))) h_1403 
+   in
+     fact_1031 n_1034 k_main_1401 h_1436 
+ in
+   rand_int_cps () (fun x_1582 -> main_1033 x_1582 (fun x_1576 -> end) h_1170)
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1673
+  main_1673 -> (rand_int f_1683)
+  br_f_h_1686 b_1687 e1_1418 n_1034 e2_1418 h_1569 k_main_1401 x_1476 when b_1687 ->
+      (k_main_u_1551 e1_1418 n_1034 x_1476 k_main_1401 ())
+  br_f_h_1686 b_1687 e1_1418 n_1034 e2_1418 h_1569 k_main_1401 x_1476 when (
+      not b_1687) -> (fail_1688 true (k_main_u_1551 e1_1418 n_1034 x_1476 k_main_1401))
+  f_1683 x_1582 -> (main_1033 x_1582 (f_1684 x_1582) h_1170)
+  f_1684 x_1582 x_1576 -> end
+  f_fact_1674 n_1032 k_fact_1188 h_1377 when (n_1032 <= 0) -> (h_1377 () (f_fact_1675 n_1032))
+  f_fact_1674 n_1032 k_fact_1188 h_1377 when (not (n_1032 <= 0)) ->
+      (fact_1031 (n_1032 - 1) (f_fact_1679 n_1032 k_fact_1188) (h_1249 n_1032 h_1377 k_fact_1188))
+  f_fact_1675 n_1032 path1_1076 path2_1076 k_fact_1216 when (path1_1076 = 0) -> (k_fact_1216 1)
+  f_fact_1675 n_1032 path1_1076 path2_1076 k_fact_1216 when (not (path1_1076 = 0)) -> _|_
+  f_fact_1679 n_1032 k_fact_1188 x_1246 -> (k_fact_1188 (n_1032 * x_1246))
+  f_h_1676 e1_1241 n_1032 e2_1241 k_fact_1188 h_1370 ->
+      (e2_1241 0 (f_h_1677 e1_1241 n_1032) (f_h_1678 e1_1241 n_1032 e2_1241 h_1370 k_fact_1188))
+  f_h_1677 e1_1241 n_1032 x_1114 k_fact_1325 -> _|_
+  f_h_1678 e1_1241 n_1032 e2_1241 h_1370 k_fact_1188 x_1306 when (x_1306 = 1) -> (k_fact_1188 1)
+  f_h_1678 e1_1241 n_1032 e2_1241 h_1370 k_fact_1188 x_1306 when (not (x_1306 = 1)) -> (h_1370 e1_1241 e2_1241)
+  f_h_1680 e1_1418 n_1034 e2_1418 k_main_1401 h_1569 ->
+      (e2_1418 0 (f_h_1681 e1_1418 n_1034) (f_h_1682 e1_1418 n_1034 e2_1418 h_1569 k_main_1401))
+  f_h_1681 e1_1418 n_1034 x_1145 k_main_1495 -> _|_
+  f_h_1682 e1_1418 n_1034 e2_1418 h_1569 k_main_1401 x_1476 when (x_1476 = 1) ->
+      (br_f_h_1686 (n_1034 < 0) e1_1418 n_1034 e2_1418 h_1569 k_main_1401 x_1476)
+  f_h_1682 e1_1418 n_1034 e2_1418 h_1569 k_main_1401 x_1476 when (not (x_1476 = 1)) -> (h_1569 e1_1418 e2_1418)
+  fact_1031 n_1032 k_fact_1188 h_1190 -> (f_fact_1674 n_1032 k_fact_1188 h_1190)
+  fail_1688 b k -> {fail} => (k ())
+  h_1170 e1_1610 e2_1610 -> {fail} => (k_1685 ())
+  h_1249 n_1032 h_1377 k_fact_1188 e1_1241 e2_1241 -> (f_h_1676 e1_1241 n_1032 e2_1241 k_fact_1188 h_1377)
+  h_1436 n_1034 h_1403 k_main_1401 e1_1418 e2_1418 -> (f_h_1680 e1_1418 n_1034 e2_1418 k_main_1401 h_1403)
+  k_1685 u -> end
+  k_main_u_1551 e1_1418 n_1034 x_1476 k_main_1401 x_1541 -> (k_main_1401 0)
+  main_1033 n_1034 k_main_1401 h_1403 -> (fact_1031 n_1034 k_main_1401 (h_1436 n_1034 h_1403 k_main_1401))
+Types:
+  main_1673 : X
+  fact_1031 : (int -> (int -> X) -> (unit -> (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) -> X) -> X)
+  fail_1688 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  h_1170 : (unit -> (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1673 ... --> 
+  f_1683 ... --> 
+  main_1033 ... --> 
+  fact_1031 ... --> 
+  f_fact_1674 [1/2] ... --> 
+  h_1436 ... --> 
+  f_h_1680 ... --> 
+  f_fact_1675 [1/2] ... --> 
+  f_h_1682 [2/2] ... --> 
+  h_1170 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(155)[1]
+  program:
+    main_1673  | true = ((Random.int 0) f_1683)
+    br_f_h_1686 b_1687 e1_1418 n_1034 e2_1418 h_1569 k_main_1401 x_1476 | b_1687 = (
+    k_main_u_1551 e1_1418
+                  n_1034
+                  x_1476
+                  k_main_1401
+                  ())
+    br_f_h_1686 b_1687 e1_1418 n_1034 e2_1418 h_1569 k_main_1401 x_1476 | (
+    not b_1687) = (fail_1688 true
+                             (k_main_u_1551 e1_1418
+                                            n_1034
+                                            x_1476
+                                            k_main_1401))
+    f_1683 x_1582 | true = (main_1033 x_1582
+                                      (f_1684 x_1582)
+                                      h_1170)
+    f_1684 x_1582 x_1576 | true = end
+    f_fact_1674 n_1032 k_fact_1188 h_1377 | (n_1032 <= 0) = (h_1377 ()
+                                                                    (
+                                                                    f_fact_1675 n_1032))
+    f_fact_1674 n_1032 k_fact_1188 h_1377 | (not (n_1032 <= 0)) = (fact_1031
+                                                                    (
+                                                                    n_1032 - 1)
+                                                                    (
+                                                                    f_fact_1679 n_1032
+                                                                    k_fact_1188)
+                                                                    (
+                                                                    h_1249 n_1032
+                                                                    h_1377
+                                                                    k_fact_1188))
+    f_fact_1675 n_1032 path1_1076 path2_1076 k_fact_1216 | (path1_1076 = 0) = (
+    k_fact_1216 1)
+    f_fact_1675 n_1032 path1_1076 path2_1076 k_fact_1216 | (not (path1_1076 = 0)) = bot
+    f_fact_1679 n_1032 k_fact_1188 x_1246 | true = (k_fact_1188 (n_1032 * x_1246))
+    f_h_1676 e1_1241 n_1032 e2_1241 k_fact_1188 h_1370 | true = (e2_1241
+                                                                   0
+                                                                   (f_h_1677 e1_1241
+                                                                    n_1032)
+                                                                   (f_h_1678 e1_1241
+                                                                    n_1032
+                                                                    e2_1241
+                                                                    h_1370
+                                                                    k_fact_1188))
+    f_h_1677 e1_1241 n_1032 x_1114 k_fact_1325 | true = bot
+    f_h_1678 e1_1241 n_1032 e2_1241 h_1370 k_fact_1188 x_1306 | (x_1306 = 1) = (
+    k_fact_1188 1)
+    f_h_1678 e1_1241 n_1032 e2_1241 h_1370 k_fact_1188 x_1306 | (not (
+                                                                    x_1306 = 1)) = (
+    h_1370 e1_1241
+           e2_1241)
+    f_h_1680 e1_1418 n_1034 e2_1418 k_main_1401 h_1569 | true = (e2_1418
+                                                                   0
+                                                                   (f_h_1681 e1_1418
+                                                                    n_1034)
+                                                                   (f_h_1682 e1_1418
+                                                                    n_1034
+                                                                    e2_1418
+                                                                    h_1569
+                                                                    k_main_1401))
+    f_h_1681 e1_1418 n_1034 x_1145 k_main_1495 | true = bot
+    f_h_1682 e1_1418 n_1034 e2_1418 h_1569 k_main_1401 x_1476 | (x_1476 = 1) = (
+    br_f_h_1686 (n_1034 < 0)
+                e1_1418
+                n_1034
+                e2_1418
+                h_1569
+                k_main_1401
+                x_1476)
+    f_h_1682 e1_1418 n_1034 e2_1418 h_1569 k_main_1401 x_1476 | (not (
+                                                                    x_1476 = 1)) = (
+    h_1569 e1_1418
+           e2_1418)
+    fact_1031 n_1032 k_fact_1188 h_1190 | true = (f_fact_1674 n_1032
+                                                              k_fact_1188
+                                                              h_1190)
+    fail_1688 b k | true = (fail ())
+    h_1170 e1_1610 e2_1610 | true = (fail ())
+    h_1249 n_1032 h_1377 k_fact_1188 e1_1241 e2_1241 | true = (f_h_1676 e1_1241
+                                                                    n_1032
+                                                                    e2_1241
+                                                                    k_fact_1188
+                                                                    h_1377)
+    h_1436 n_1034 h_1403 k_main_1401 e1_1418 e2_1418 | true = (f_h_1680 e1_1418
+                                                                    n_1034
+                                                                    e2_1418
+                                                                    k_main_1401
+                                                                    h_1403)
+    k_1685 u | true = end
+    k_main_u_1551 e1_1418 n_1034 x_1476 k_main_1401 x_1541 | true = (
+    k_main_1401 0)
+    main_1033 n_1034 k_main_1401 h_1403 | true = (fact_1031 n_1034
+                                                            k_main_1401
+                                                            (h_1436 n_1034
+                                                                    h_1403
+                                                                    k_main_1401))
+    main_1673:X
+    br_f_h_1686:bool ->
+                unit ->
+                int ->
+                (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) ->
+                (unit -> (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) -> X) -> (int -> X) -> int -> X
+    f_1683:int -> X
+    f_1684:int -> int -> X
+    f_fact_1674:int -> (int -> X) -> (unit -> (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) -> X) -> X
+    f_fact_1675:int -> int -> (int -> (int -> X) -> X) -> (int -> X) -> X
+    f_fact_1679:int -> (int -> X) -> int -> X
+    f_h_1676:unit ->
+             int ->
+             (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) ->
+             (int -> X) -> (unit -> (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) -> X) -> X
+    f_h_1677:unit -> int -> int -> (int -> X) -> X
+    f_h_1678:unit ->
+             int ->
+             (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) ->
+             (unit -> (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) -> X) -> (int -> X) -> int -> X
+    f_h_1680:unit ->
+             int ->
+             (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) ->
+             (int -> X) -> (unit -> (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) -> X) -> X
+    f_h_1681:unit -> int -> int -> (int -> X) -> X
+    f_h_1682:unit ->
+             int ->
+             (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) ->
+             (unit -> (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) -> X) -> (int -> X) -> int -> X
+    fact_1031:int -> (int -> X) -> (unit -> (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) -> X) -> X
+    fail_1688:bool -> (unit -> X) -> X
+    h_1170:unit -> (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) -> X
+    h_1249:int ->
+           (unit -> (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) -> X) ->
+           (int -> X) -> unit -> (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) -> X
+    h_1436:int ->
+           (unit -> (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) -> X) ->
+           (int -> X) -> unit -> (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) -> X
+    k_1685:unit -> X
+    k_main_u_1551:unit -> int -> int -> (int -> X) -> unit -> X
+    main_1033:int -> (int -> X) -> (unit -> (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) -> X) -> X
+  inlined functions: br_f_h_1686,f_1683,f_1684,f_fact_1674,f_fact_1675,f_fact_1679,f_h_1676,f_h_1677,f_h_1678,f_h_1680,f_h_1681,f_h_1682,h_1249,h_1436,k_1685,k_main_u_1551,main_1033
+  counterexample: 0:0:0:0:0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1683@4:0> = var2)
+     [true.(<main_1033@6:0> = <f_1683@4:0>)
+      [true.(<fact_1031@8:0> = <main_1033@6:0>)
+       [true.(<f_fact_1674@10:0> = <fact_1031@8:0>)
+        [(<f_fact_1674@10:0> <= 0).(<<f_fact_1674@10:2>@13:0> = ())
+         [true.(<<fact_1031@8:2>@15:0> = <<f_fact_1674@10:2>@13:0>)
+          [true.((<h_1436@17:0> = <main_1033@6:0>) && (<h_1436@17:3> = <<fact_1031@8:2>@15:0>))
+           [true.((<f_h_1680@19:0> = <h_1436@17:3>) && (<f_h_1680@19:1> = <h_1436@17:0>))
+            [true.(<<f_h_1680@19:2>@21:0> = 0)
+             [true.(<<h_1436@17:4>@23:0> = <<f_h_1680@19:2>@21:0>)
+              [true.(<<<fact_1031@8:2>@15:1>@25:0> = <<h_1436@17:4>@23:0>)
+               [true.(<<<f_fact_1674@10:2>@13:1>@27:0> = <<<fact_1031@8:2>@15:1>@25:0>)
+                [true.
+                 ((<f_fact_1675@29:0> = <f_fact_1674@10:0>) && (<f_fact_1675@29:1> = <<<f_fact_1674@10:2>@13:1>@27:0>))
+                 [(<f_fact_1675@29:1> = 0).(<<f_fact_1675@29:3>@32:0> = 1)
+                  [true.(<<<<f_fact_1674@10:2>@13:1>@27:2>@34:0> = <<f_fact_1675@29:3>@32:0>)
+                   [true.(<<<<fact_1031@8:2>@15:1>@25:2>@36:0> = <<<<f_fact_1674@10:2>@13:1>@27:2>@34:0>)
+                    [true.(<<<h_1436@17:4>@23:2>@38:0> = <<<<fact_1031@8:2>@15:1>@25:2>@36:0>)
+                     [true.(<<<f_h_1680@19:2>@21:2>@40:0> = <<<h_1436@17:4>@23:2>@38:0>)
+                      [true.
+                       ((<f_h_1682@42:0> = <f_h_1680@19:0>) &&
+                        ((<f_h_1682@42:1> = <f_h_1680@19:1>) && (<f_h_1682@42:5> = <<<f_h_1680@19:2>@21:2>@40:0>)))
+                       [(not (<f_h_1682@42:5> = 1)).(<<f_h_1682@42:3>@45:0> = <f_h_1682@42:0>)
+                        [true.(<<f_h_1680@19:4>@47:0> = <<f_h_1682@42:3>@45:0>)
+                         [true.(<<h_1436@17:1>@49:0> = <<f_h_1680@19:4>@47:0>)
+                          [true.(<<main_1033@6:2>@51:0> = <<h_1436@17:1>@49:0>)
+                           [true.(<h_1170@53:0> = <<main_1033@6:2>@51:0>)[true.error
+  begin RefTypeInfer.infer_etrs(156)[2]
+    horn clauses:
+      P[<h_1170@53:0>](<h_1170@53:0>:unit)|- bot
+      
+      P[<f_1683@4:0>](<main_1033@6:0>:int),
+      P[<<main_1033@6:2>@51:0>](<main_1033@6:0>:int,<<main_1033@6:2>@51:0>:unit)|- P[<h_1170@53:0>](
+      <h_1170@53:0>:unit)
+      
+      P[<main_1033@6:0>](<main_1033@6:0>:int),
+      P[<<h_1436@17:1>@49:0>](<main_1033@6:0>:int,<<h_1436@17:1>@49:0>:unit)|- P[<<main_1033@6:2>@51:0>](
+      <main_1033@6:0>:int,<<main_1033@6:2>@51:0>:unit)
+      
+      P[<h_1436@17:3>](<h_1436@17:0>:int,<h_1436@17:3>:unit),
+      P[<<f_h_1680@19:4>@47:0>](<f_h_1680@19:0>:unit,<h_1436@17:0>:int,<<f_h_1680@19:4>@47:0>:unit)|- P[<<h_1436@17:1>@49:0>](
+      <h_1436@17:0>:int,<<h_1436@17:1>@49:0>:unit)
+      
+      P[<f_h_1680@19:1>](<f_h_1680@19:0>:unit,<f_h_1680@19:1>:int),
+      P[<<f_h_1682@42:3>@45:0>](<f_h_1682@42:0>:unit,<f_h_1680@19:1>:int,<<f_h_1682@42:3>@45:0>:unit)|- P[<<f_h_1680@19:4>@47:0>](
+      <f_h_1680@19:0>:unit,<f_h_1680@19:1>:int,<<f_h_1680@19:4>@47:0>:unit)
+      
+      P[<f_h_1682@42:5>](<f_h_1682@42:0>:unit,<f_h_1682@42:1>:int,<f_h_1682@42:5>:int), (
+      <f_h_1682@42:5> <> 1)
+      |- P[<<f_h_1682@42:3>@45:0>](<f_h_1682@42:0>:unit,<f_h_1682@42:1>:int,
+                                   <<f_h_1682@42:3>@45:0>:unit)
+      
+      P[<f_h_1680@19:1>](<f_h_1680@19:0>:unit,<f_h_1682@42:1>:int),
+      P[<<<f_h_1680@19:2>@21:2>@40:0>](<f_h_1680@19:0>:unit,<f_h_1682@42:1>:int,0:int,<f_h_1682@42:5>:int)|- P[<f_h_1682@42:5>](
+      <f_h_1682@42:0>:unit,<f_h_1682@42:1>:int,<f_h_1682@42:5>:int)
+      
+      P[<h_1436@17:3>](<f_h_1680@19:1>:int,<h_1436@17:3>:unit),
+      P[<<<h_1436@17:4>@23:2>@38:0>](<f_h_1680@19:1>:int,<h_1436@17:3>:unit,<<f_h_1680@19:2>@21:0>:int,<<<f_h_1680@19:2>@21:2>@40:0>:int),
+      P[<f_h_1680@19:1>](<f_h_1680@19:0>:unit,<f_h_1680@19:1>:int)|- P[<<<f_h_1680@19:2>@21:2>@40:0>](
+      <f_h_1680@19:0>:unit,<f_h_1680@19:1>:int,<<f_h_1680@19:2>@21:0>:int,
+      <<<f_h_1680@19:2>@21:2>@40:0>:int)
+      
+      P[<main_1033@6:0>](<h_1436@17:0>:int),
+      P[<<fact_1031@8:2>@15:0>](<h_1436@17:0>:int,<<fact_1031@8:2>@15:0>:unit),
+      P[<<<<fact_1031@8:2>@15:1>@25:2>@36:0>](<h_1436@17:0>:int,<<fact_1031@8:2>@15:0>:unit,<<h_1436@17:4>@23:0>:int,<<<h_1436@17:4>@23:2>@38:0>:int),
+      P[<h_1436@17:3>](<h_1436@17:0>:int,<h_1436@17:3>:unit)|- P[<<<h_1436@17:4>@23:2>@38:0>](
+      <h_1436@17:0>:int,<h_1436@17:3>:unit,<<h_1436@17:4>@23:0>:int,<<<h_1436@17:4>@23:2>@38:0>:int)
+      
+      P[<fact_1031@8:0>](<fact_1031@8:0>:int),
+      P[<<f_fact_1674@10:2>@13:0>](<fact_1031@8:0>:int,<<f_fact_1674@10:2>@13:0>:unit),
+      P[<<<<f_fact_1674@10:2>@13:1>@27:2>@34:0>](<fact_1031@8:0>:int,<<f_fact_1674@10:2>@13:0>:unit,<<<fact_1031@8:2>@15:1>@25:0>:int,<<<<fact_1031@8:2>@15:1>@25:2>@36:0>:int),
+      P[<<fact_1031@8:2>@15:0>](<fact_1031@8:0>:int,<<fact_1031@8:2>@15:0>:unit)|- P[<<<<fact_1031@8:2>@15:1>@25:2>@36:0>](
+      <fact_1031@8:0>:int,<<fact_1031@8:2>@15:0>:unit,<<<fact_1031@8:2>@15:1>@25:0>:int,
+      <<<<fact_1031@8:2>@15:1>@25:2>@36:0>:int)
+      
+      P[<f_fact_1674@10:0>](<f_fact_1674@10:0>:int),
+      P[<<f_fact_1675@29:3>@32:0>](<f_fact_1674@10:0>:int,<<<f_fact_1674@10:2>@13:1>@27:0>:int,<<<<f_fact_1674@10:2>@13:1>@27:2>@34:0>:int),
+      P[<<f_fact_1674@10:2>@13:0>](<f_fact_1674@10:0>:int,<<f_fact_1674@10:2>@13:0>:unit), (
+      <f_fact_1674@10:0> <= 0)
+      |- P[<<<<f_fact_1674@10:2>@13:1>@27:2>@34:0>](<f_fact_1674@10:0>:int,
+                                                    <<f_fact_1674@10:2>@13:0>:unit,
+                                                    <<<f_fact_1674@10:2>@13:1>@27:0>:int,
+                                                    <<<<f_fact_1674@10:2>@13:1>@27:2>@34:0>:int)
+      
+      P[<f_fact_1675@29:1>](<f_fact_1675@29:0>:int,<f_fact_1675@29:1>:int),
+      ((<f_fact_1675@29:1> = 0) && (<<f_fact_1675@29:3>@32:0> = 1))
+      |- P[<<f_fact_1675@29:3>@32:0>](<f_fact_1675@29:0>:int,<f_fact_1675@29:1>:int,
+                                      <<f_fact_1675@29:3>@32:0>:int)
+      
+      P[<f_fact_1674@10:0>](<f_fact_1675@29:0>:int),
+      P[<<<f_fact_1674@10:2>@13:1>@27:0>](<f_fact_1675@29:0>:int,<<f_fact_1674@10:2>@13:0>:unit,<f_fact_1675@29:1>:int),
+      (<f_fact_1675@29:0> <= 0) |- P[<f_fact_1675@29:1>](<f_fact_1675@29:0>:int,
+                                                         <f_fact_1675@29:1>:int)
+      
+      P[<fact_1031@8:0>](<f_fact_1674@10:0>:int),
+      P[<<<fact_1031@8:2>@15:1>@25:0>](<f_fact_1674@10:0>:int,<<fact_1031@8:2>@15:0>:unit,<<<f_fact_1674@10:2>@13:1>@27:0>:int),
+      P[<f_fact_1674@10:0>](<f_fact_1674@10:0>:int)|- P[<<<f_fact_1674@10:2>@13:1>@27:0>](
+      <f_fact_1674@10:0>:int,<<f_fact_1674@10:2>@13:0>:unit,<<<f_fact_1674@10:2>@13:1>@27:0>:int)
+      
+      P[<main_1033@6:0>](<fact_1031@8:0>:int),
+      P[<<h_1436@17:4>@23:0>](<fact_1031@8:0>:int,<h_1436@17:3>:unit,<<<fact_1031@8:2>@15:1>@25:0>:int),
+      P[<fact_1031@8:0>](<fact_1031@8:0>:int)|- P[<<<fact_1031@8:2>@15:1>@25:0>](
+      <fact_1031@8:0>:int,<<fact_1031@8:2>@15:0>:unit,<<<fact_1031@8:2>@15:1>@25:0>:int)
+      
+      P[<h_1436@17:3>](<h_1436@17:0>:int,<h_1436@17:3>:unit),
+      P[<<f_h_1680@19:2>@21:0>](<f_h_1680@19:0>:unit,<h_1436@17:0>:int,<<h_1436@17:4>@23:0>:int)|- P[<<h_1436@17:4>@23:0>](
+      <h_1436@17:0>:int,<h_1436@17:3>:unit,<<h_1436@17:4>@23:0>:int)
+      
+      P[<f_h_1680@19:1>](<f_h_1680@19:0>:unit,<f_h_1680@19:1>:int), (
+      <<f_h_1680@19:2>@21:0> = 0)
+      |- P[<<f_h_1680@19:2>@21:0>](<f_h_1680@19:0>:unit,<f_h_1680@19:1>:int,
+                                   <<f_h_1680@19:2>@21:0>:int)
+      
+      P[<h_1436@17:3>](<f_h_1680@19:1>:int,<h_1436@17:3>:unit)|- P[<f_h_1680@19:1>](
+      <f_h_1680@19:0>:unit,<f_h_1680@19:1>:int)
+      
+      P[<main_1033@6:0>](<h_1436@17:0>:int),
+      P[<<fact_1031@8:2>@15:0>](<h_1436@17:0>:int,<<fact_1031@8:2>@15:0>:unit)|- P[<h_1436@17:3>](
+      <h_1436@17:0>:int,<h_1436@17:3>:unit)
+      
+      P[<fact_1031@8:0>](<fact_1031@8:0>:int),
+      P[<<f_fact_1674@10:2>@13:0>](<fact_1031@8:0>:int,<<f_fact_1674@10:2>@13:0>:unit)|- P[<<fact_1031@8:2>@15:0>](
+      <fact_1031@8:0>:int,<<fact_1031@8:2>@15:0>:unit)
+      
+      P[<f_fact_1674@10:0>](<f_fact_1674@10:0>:int), (<f_fact_1674@10:0> <= 0)
+      |- P[<<f_fact_1674@10:2>@13:0>](<f_fact_1674@10:0>:int,<<f_fact_1674@10:2>@13:0>:unit)
+      
+      P[<fact_1031@8:0>](<f_fact_1674@10:0>:int)|- P[<f_fact_1674@10:0>](<f_fact_1674@10:0>:int)
+      
+      P[<main_1033@6:0>](<fact_1031@8:0>:int)|- P[<fact_1031@8:0>](<fact_1031@8:0>:int)
+      
+      P[<f_1683@4:0>](<main_1033@6:0>:int)|- P[<main_1033@6:0>](<main_1033@6:0>:int)
+      
+      |- P[<f_1683@4:0>](<f_1683@4:0>:int)
+    call trees:
+      <main_1673@1>
+        <f_1683@4>
+          <main_1033@6>
+            <fact_1031@8>
+              <f_fact_1674@10>
+              </<f_fact_1674@10:2>@13>
+            </<fact_1031@8:2>@15>
+            <h_1436@17>
+              <f_h_1680@19>
+              </<f_h_1680@19:2>@21>
+            </<h_1436@17:4>@23>
+            <<<fact_1031@8:2>@15:1>@25>
+              <<<f_fact_1674@10:2>@13:1>@27>
+                <f_fact_1675@29>
+                </<f_fact_1675@29:3>@32>
+              </<<<f_fact_1674@10:2>@13:1>@27:2>@34>
+            </<<<fact_1031@8:2>@15:1>@25:2>@36>
+            <<<h_1436@17:4>@23:2>@38>
+              <<<f_h_1680@19:2>@21:2>@40>
+                <f_h_1682@42>
+                </<f_h_1682@42:3>@45>
+              </<f_h_1680@19:4>@47>
+            </<h_1436@17:1>@49>
+          </<main_1033@6:2>@51>
+          <h_1170@53>
+    inlined horn clauses:
+      P[<h_1170@53:0>](<h_1170@53:0>:unit)|- bot
+      
+      P[<<fact_1031@8:2>@15:0>](<main_1033@6:0>:int,var25:unit),
+      P[<<<<fact_1031@8:2>@15:1>@25:2>@36:0>](<main_1033@6:0>:int,var25:unit,0:int,var26:int), (
+      var26 <> 1) |- P[<h_1170@53:0>](<h_1170@53:0>:unit)
+      
+      P[<<<fact_1031@8:2>@15:1>@25:0>](<fact_1031@8:0>:int,var27:unit,<<<fact_1031@8:2>@15:1>@25:0>:int),
+      P[<fact_1031@8:0>](<fact_1031@8:0>:int),
+      P[<<fact_1031@8:2>@15:0>](<fact_1031@8:0>:int,<<fact_1031@8:2>@15:0>:unit),
+      ((<<<fact_1031@8:2>@15:1>@25:0> = 0) && ((<<<<fact_1031@8:2>@15:1>@25:2>@36:0> = 1) && (<fact_1031@8:0> <= 0)))
+      |- P[<<<<fact_1031@8:2>@15:1>@25:2>@36:0>](<fact_1031@8:0>:int,
+                                                 <<fact_1031@8:2>@15:0>:unit,
+                                                 <<<fact_1031@8:2>@15:1>@25:0>:int,
+                                                 <<<<fact_1031@8:2>@15:1>@25:2>@36:0>:int)
+      
+      P[<<fact_1031@8:2>@15:0>](<fact_1031@8:0>:int,var28:unit),
+      P[<fact_1031@8:0>](<fact_1031@8:0>:int), (<<<fact_1031@8:2>@15:1>@25:0> = 0)
+      |- P[<<<fact_1031@8:2>@15:1>@25:0>](<fact_1031@8:0>:int,<<fact_1031@8:2>@15:0>:unit,
+                                          <<<fact_1031@8:2>@15:1>@25:0>:int)
+      
+      P[<fact_1031@8:0>](<fact_1031@8:0>:int), (<fact_1031@8:0> <= 0)
+      |- P[<<fact_1031@8:2>@15:0>](<fact_1031@8:0>:int,<<fact_1031@8:2>@15:0>:unit)
+      
+      |- P[<fact_1031@8:0>](<fact_1031@8:0>:int)
+    begin ParamSubstInfer.infer(2335)[3]
+      
+    end ParamSubstInfer.infer(2335)[3] (0.025995 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(2337)[3]
+      
+    end RefTypeInfer.elim_coeffs(2337)[3] (0.000000 sec.)
+    begin YhornInterface.solve(2544)[3]
+      begin HcSolver.solve_ub(2545)[4]
+        encoded:
+          P[<h_1170@53:0>](<h_1170@53:0>:unit)|- bot
+          
+          P[<<fact_1031@8:2>@15:0>](<main_1033@6:0>:int,var25:unit),
+          P[<<<<fact_1031@8:2>@15:1>@25:2>@36:0>](<main_1033@6:0>:int,var25:unit,0:int,var26:int), (
+          var26 <> 1) |- P[<h_1170@53:0>](<h_1170@53:0>:unit)
+          
+          P[<<<fact_1031@8:2>@15:1>@25:0>](<fact_1031@8:0>:int,var27:unit,<<<fact_1031@8:2>@15:1>@25:0>:int),
+          P[<fact_1031@8:0>](<fact_1031@8:0>:int),
+          P[<<fact_1031@8:2>@15:0>](<fact_1031@8:0>:int,<<fact_1031@8:2>@15:0>:unit),
+          ((<<<fact_1031@8:2>@15:1>@25:0> = 0) &&
+           ((<<<<fact_1031@8:2>@15:1>@25:2>@36:0> = 1) && (<fact_1031@8:0> <= 0)))
+          |- P[<<<<fact_1031@8:2>@15:1>@25:2>@36:0>](<fact_1031@8:0>:int,
+                                                     <<fact_1031@8:2>@15:0>:unit,
+                                                     <<<fact_1031@8:2>@15:1>@25:0>:int,
+                                                     <<<<fact_1031@8:2>@15:1>@25:2>@36:0>:int)
+          
+          P[<<fact_1031@8:2>@15:0>](<fact_1031@8:0>:int,var28:unit),
+          P[<fact_1031@8:0>](<fact_1031@8:0>:int), (<<<fact_1031@8:2>@15:1>@25:0> = 0)
+          |- P[<<<fact_1031@8:2>@15:1>@25:0>](<fact_1031@8:0>:int,<<fact_1031@8:2>@15:0>:unit,
+                                              <<<fact_1031@8:2>@15:1>@25:0>:int)
+          
+          P[<fact_1031@8:0>](<fact_1031@8:0>:int), (<fact_1031@8:0> <= 0)
+          |- P[<<fact_1031@8:2>@15:0>](<fact_1031@8:0>:int,<<fact_1031@8:2>@15:0>:unit)
+          
+          |- P[<fact_1031@8:0>](<fact_1031@8:0>:int)
+        input to Yhorn:
+          P[<h_1170@53:0>](<h_1170@53:0>:unit)|- bot
+          
+          P[<<fact_1031@8:2>@15:0>](<main_1033@6:0>:int,var25:unit),
+          P[<<<<fact_1031@8:2>@15:1>@25:2>@36:0>](<main_1033@6:0>:int,var25:unit,var29:int,var26:int),
+          ((var26 <> 1) && (var29 = 0)) |- P[<h_1170@53:0>](<h_1170@53:0>:unit)
+          
+          P[<<<fact_1031@8:2>@15:1>@25:0>](<fact_1031@8:0>:int,var27:unit,<<<fact_1031@8:2>@15:1>@25:0>:int),
+          P[<fact_1031@8:0>](<fact_1031@8:0>:int),
+          P[<<fact_1031@8:2>@15:0>](<fact_1031@8:0>:int,<<fact_1031@8:2>@15:0>:unit),
+          ((<fact_1031@8:0> <= 0) &&
+           ((<<<<fact_1031@8:2>@15:1>@25:2>@36:0> = 1) && (<<<fact_1031@8:2>@15:1>@25:0> = 0)))
+          |- P[<<<<fact_1031@8:2>@15:1>@25:2>@36:0>](<fact_1031@8:0>:int,
+                                                     <<fact_1031@8:2>@15:0>:unit,
+                                                     <<<fact_1031@8:2>@15:1>@25:0>:int,
+                                                     <<<<fact_1031@8:2>@15:1>@25:2>@36:0>:int)
+          
+          P[<<fact_1031@8:2>@15:0>](<fact_1031@8:0>:int,var28:unit),
+          P[<fact_1031@8:0>](<fact_1031@8:0>:int), (<<<fact_1031@8:2>@15:1>@25:0> = 0)
+          |- P[<<<fact_1031@8:2>@15:1>@25:0>](<fact_1031@8:0>:int,<<fact_1031@8:2>@15:0>:unit,
+                                              <<<fact_1031@8:2>@15:1>@25:0>:int)
+          
+          P[<fact_1031@8:0>](<fact_1031@8:0>:int), (<fact_1031@8:0> <= 0)
+          |- P[<<fact_1031@8:2>@15:0>](<fact_1031@8:0>:int,<<fact_1031@8:2>@15:0>:unit)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_h_1170_sep_53_sep_0($12)) -> 1=0.
+(($13=0) & ($14-1<>0)) & (v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_2_sep_36_sep_0($15,$16,$13,$14)) & (v_sep_fact_1031_sep_8_sep_2_sep_15_sep_0($15,$16)) -> v_sep_h_1170_sep_53_sep_0($12).
+(($17=0) & ($18-1=0) & ($19<=0)) & (v_sep_fact_1031_sep_8_sep_2_sep_15_sep_0($19,$20)) & (v_sep_fact_1031_sep_8_sep_0($19)) & (v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_0($19,$21,$17)) -> v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_2_sep_36_sep_0($19,$20,$17,$18).
+($17=0) & (v_sep_fact_1031_sep_8_sep_0($19)) & (v_sep_fact_1031_sep_8_sep_2_sep_15_sep_0($19,$22)) -> v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_0($19,$20,$17).
+($19<=0) & (v_sep_fact_1031_sep_8_sep_0($19)) -> v_sep_fact_1031_sep_8_sep_2_sep_15_sep_0($19,$20).
+0=0 -> v_sep_fact_1031_sep_8_sep_0($19).
+
+
+v_sep_fact_1031_sep_8_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_2_sep_36_sep_0: X
+v_sep_h_1170_sep_53_sep_0: X
+............Split disj [20] 0.237963
+Reconstrcut: 3 **)
+
+v_sep_fact_1031_sep_8_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_2_sep_36_sep_0: X
+v_sep_h_1170_sep_53_sep_0: (X) | (X)
+.......
+v_sep_fact_1031_sep_8_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_2_sep_36_sep_0: X
+v_sep_h_1170_sep_53_sep_0: (X) | (X)
+.......Split conj [22] 0.243962
+(Reconstrcut: 8 **)
+v_sep_fact_1031_sep_8_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_2_sep_36_sep_0: (X) & (X)
+v_sep_h_1170_sep_53_sep_0: (X) | (X)
+.............
+v_sep_fact_1031_sep_8_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_2_sep_36_sep_0: (X) & (X)
+v_sep_h_1170_sep_53_sep_0: (X) | (X)
+.......
+v_sep_fact_1031_sep_8_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_2_sep_36_sep_0: (X) & (X)
+v_sep_h_1170_sep_53_sep_0: (X) | (X)
+..............
+v_sep_fact_1031_sep_8_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_0: X
+v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_2_sep_36_sep_0: (X) & (X)
+v_sep_h_1170_sep_53_sep_0: (X) | (X)
+................(0=0) & (v_sep_h_1170_sep_53_sep_0($12)) -> 1=0.
+(($13=0) & ($14-1<>0)) & (v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_2_sep_36_sep_0($15,$16,$13,$14)) & (v_sep_fact_1031_sep_8_sep_2_sep_15_sep_0($15,$16)) -> v_sep_h_1170_sep_53_sep_0($12).
+(($17=0) & ($18-1=0) & ($19<=0)) & (v_sep_fact_1031_sep_8_sep_2_sep_15_sep_0($19,$20)) & (v_sep_fact_1031_sep_8_sep_0($19)) & (v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_0($19,$21,$17)) -> v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_2_sep_36_sep_0($19,$20,$17,$18).
+($17=0) & (v_sep_fact_1031_sep_8_sep_0($19)) & (v_sep_fact_1031_sep_8_sep_2_sep_15_sep_0($19,$22)) -> v_sep_fact_1031_sep_8_sep_2_sep_15_sep_1_sep_25_sep_0($19,$20,$17).
+($19<=0) & (v_sep_fact_1031_sep_8_sep_0($19)) -> v_sep_fact_1031_sep_8_sep_2_sep_15_sep_0($19,$20).
+0=0 -> v_sep_fact_1031_sep_8_sep_0($19).
+
+          |- P[<fact_1031@8:0>](<fact_1031@8:0>:int)
+        solution:
+          P[<fact_1031@8:0>]($40:int) = true
+          P[<<fact_1031@8:2>@15:0>]($35:int,$37:unit) = true
+          P[<<<fact_1031@8:2>@15:1>@25:0>]($43:int,$45:unit,$47:int) = true
+          P[<<<<fact_1031@8:2>@15:1>@25:2>@36:0>]($26:int,$28:unit,$30:int,$32:int) = ($32 = 1)
+          P[<h_1170@53:0>]($23:unit) = false
+        
+      end HcSolver.solve_ub(2545)[4] (0.030996 sec.)
+      begin HcSolver.check_validity(2705)[4]
+        input:
+          P[<h_1170@53:0>](<h_1170@53:0>:unit)|- bot
+          
+          P[<<fact_1031@8:2>@15:0>](<main_1033@6:0>:int,var25:unit),
+          P[<<<<fact_1031@8:2>@15:1>@25:2>@36:0>](<main_1033@6:0>:int,var25:unit,0:int,var26:int), (
+          var26 <> 1) |- P[<h_1170@53:0>](<h_1170@53:0>:unit)
+          
+          P[<<<fact_1031@8:2>@15:1>@25:0>](<fact_1031@8:0>:int,var27:unit,<<<fact_1031@8:2>@15:1>@25:0>:int),
+          P[<fact_1031@8:0>](<fact_1031@8:0>:int),
+          P[<<fact_1031@8:2>@15:0>](<fact_1031@8:0>:int,<<fact_1031@8:2>@15:0>:unit),
+          ((<<<fact_1031@8:2>@15:1>@25:0> = 0) &&
+           ((<<<<fact_1031@8:2>@15:1>@25:2>@36:0> = 1) && (<fact_1031@8:0> <= 0)))
+          |- P[<<<<fact_1031@8:2>@15:1>@25:2>@36:0>](<fact_1031@8:0>:int,
+                                                     <<fact_1031@8:2>@15:0>:unit,
+                                                     <<<fact_1031@8:2>@15:1>@25:0>:int,
+                                                     <<<<fact_1031@8:2>@15:1>@25:2>@36:0>:int)
+          
+          P[<<fact_1031@8:2>@15:0>](<fact_1031@8:0>:int,var28:unit),
+          P[<fact_1031@8:0>](<fact_1031@8:0>:int), (<<<fact_1031@8:2>@15:1>@25:0> = 0)
+          |- P[<<<fact_1031@8:2>@15:1>@25:0>](<fact_1031@8:0>:int,<<fact_1031@8:2>@15:0>:unit,
+                                              <<<fact_1031@8:2>@15:1>@25:0>:int)
+          
+          P[<fact_1031@8:0>](<fact_1031@8:0>:int), (<fact_1031@8:0> <= 0)
+          |- P[<<fact_1031@8:2>@15:0>](<fact_1031@8:0>:int,<<fact_1031@8:2>@15:0>:unit)
+          
+          |- P[<fact_1031@8:0>](<fact_1031@8:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(2705)[4] (0.003999 sec.)
+      solution:
+        P[<fact_1031@8:0>]($40:int) = true
+        P[<<fact_1031@8:2>@15:0>]($35:int,$37:unit) = true
+        P[<<<fact_1031@8:2>@15:1>@25:0>]($43:int,$45:unit,$47:int) = true
+        P[<<<<fact_1031@8:2>@15:1>@25:2>@36:0>]($26:int,$28:unit,$30:int,$32:int) = ($32 = 1)
+        P[<h_1170@53:0>]($23:unit) = false
+    end YhornInterface.solve(2544)[3] (0.034995 sec.)
+    
+  end RefTypeInfer.infer_etrs(156)[2] (0.076988 sec.)
+  refinement types:
+    main_1673: X
+    f_1683: v1:int -> X
+    main_1033: v1:int ->
+               (v2:int -> X) ->
+               (v4:unit -> (v5:int -> (v6:int -> (v7:int -> X) -> X) -> (v10:int -> X) -> X) -> X) -> X
+    fact_1031: v1:int ->
+               (v2:int -> X) ->
+               (v4:unit -> (v5:int -> (v6:int -> (v7:int -> X) -> X) -> (v10:{v10:int | (v10 = 1)} -> X) -> X) -> X) ->
+               X
+    f_fact_1674: v1:int ->
+                 (v2:int -> X) ->
+                 (v4:unit -> (v5:int -> (v6:int -> (v7:int -> X) -> X) -> (v10:int -> X) -> X) -> X) -> X
+    h_1436: v1:int ->
+            (v2:unit -> (v3:int -> (v4:int -> (v5:int -> X) -> X) -> (v8:int -> X) -> X) -> X) ->
+            (v12:int -> X) -> v14:unit -> (v15:int -> (v16:int -> (v17:int -> X) -> X) -> (v20:int -> X) -> X) -> X
+    f_h_1680: v1:unit ->
+              v2:int ->
+              (v3:int -> (v4:int -> (v5:int -> X) -> X) -> (v8:int -> X) -> X) ->
+              (v11:int -> X) ->
+              (v13:unit -> (v14:int -> (v15:int -> (v16:int -> X) -> X) -> (v19:int -> X) -> X) -> X) -> X
+    f_fact_1675: v1:int -> v2:int -> (v3:int -> (v4:int -> X) -> X) -> (v7:int -> X) -> X
+    f_h_1682: v1:unit ->
+              v2:int ->
+              (v3:int -> (v4:int -> (v5:int -> X) -> X) -> (v8:int -> X) -> X) ->
+              (v11:unit -> (v12:int -> (v13:int -> (v14:int -> X) -> X) -> (v17:int -> X) -> X) -> X) ->
+              (v21:int -> X) -> v23:int -> X
+    h_1170: v1:{v1:unit | false} -> (v2:int -> (v3:int -> (v4:int -> X) -> X) -> (v7:int -> X) -> X) -> X
+    br_f_h_1686: var134:bool ->
+                 var133:unit ->
+                 var132:int ->
+                 (var131:int -> (var130:int -> (var129:int -> X) -> X) -> (var126:int -> X) -> X) ->
+                 (var123:unit -> (var122:int -> (var121:int -> (var120:int -> X) -> X) -> (var117:int -> X) -> X) -> X)
+                 -> (var113:int -> X) -> var111:int -> X
+    f_1684: var137:int -> var136:int -> X
+    f_fact_1679: var142:int -> (var141:int -> X) -> var139:int -> X
+    f_h_1676: var165:unit ->
+              var164:int ->
+              (var163:int -> (var162:int -> (var161:int -> X) -> X) -> (var158:int -> X) -> X) ->
+              (var155:int -> X) ->
+              (var153:unit -> (var152:int -> (var151:int -> (var150:int -> X) -> X) -> (var147:int -> X) -> X) -> X) ->
+              X
+    f_h_1677: var171:unit -> var170:int -> var169:int -> (var168:int -> X) -> X
+    f_h_1678: var195:unit ->
+              var194:int ->
+              (var193:int -> (var192:int -> (var191:int -> X) -> X) -> (var188:int -> X) -> X) ->
+              (var185:unit -> (var184:int -> (var183:int -> (var182:int -> X) -> X) -> (var179:int -> X) -> X) -> X) ->
+              (var175:int -> X) -> var173:int -> X
+    f_h_1681: var201:unit -> var200:int -> var199:int -> (var198:int -> X) -> X
+    fail_1688: var205:bool -> (var204:unit -> X) -> X
+    h_1249: var228:int ->
+            (var227:unit -> (var226:int -> (var225:int -> (var224:int -> X) -> X) -> (var221:int -> X) -> X) -> X) ->
+            (var217:int -> X) ->
+            var215:unit -> (var214:int -> (var213:int -> (var212:int -> X) -> X) -> (var209:int -> X) -> X) -> X
+    k_1685: var230:unit -> X
+    k_main_u_1551: var237:unit -> var236:int -> var235:int -> (var234:int -> X) -> var232:unit -> X
+  abstraction types:
+    main_1673: X
+    f_1683: v1:int -> X
+    main_1033: v1:int ->
+               (v2:int -> X) ->
+               (v4:unit -> (v5:int -> (v6:int -> (v7:int -> X) -> X) -> (v10:int -> X) -> X) -> X) -> X
+    fact_1031: v1:int ->
+               (v2:int -> X) ->
+               (v4:unit -> (v5:int -> (v6:int -> (v7:int -> X) -> X) -> (v10:int[v10 -> (
+                                                                    v10 = 1)] -> X) -> X) -> X) -> X
+    f_fact_1674: v1:int ->
+                 (v2:int -> X) ->
+                 (v4:unit -> (v5:int -> (v6:int -> (v7:int -> X) -> X) -> (v10:int -> X) -> X) -> X) -> X
+    h_1436: v1:int ->
+            (v2:unit -> (v3:int -> (v4:int -> (v5:int -> X) -> X) -> (v8:int -> X) -> X) -> X) ->
+            (v12:int -> X) -> v14:unit -> (v15:int -> (v16:int -> (v17:int -> X) -> X) -> (v20:int -> X) -> X) -> X
+    f_h_1680: v1:unit ->
+              v2:int ->
+              (v3:int -> (v4:int -> (v5:int -> X) -> X) -> (v8:int -> X) -> X) ->
+              (v11:int -> X) ->
+              (v13:unit -> (v14:int -> (v15:int -> (v16:int -> X) -> X) -> (v19:int -> X) -> X) -> X) -> X
+    f_fact_1675: v1:int -> v2:int -> (v3:int -> (v4:int -> X) -> X) -> (v7:int -> X) -> X
+    f_h_1682: v1:unit ->
+              v2:int ->
+              (v3:int -> (v4:int -> (v5:int -> X) -> X) -> (v8:int -> X) -> X) ->
+              (v11:unit -> (v12:int -> (v13:int -> (v14:int -> X) -> X) -> (v17:int -> X) -> X) -> X) ->
+              (v21:int -> X) -> v23:int -> X
+    h_1170: v1:unit -> (v2:int -> (v3:int -> (v4:int -> X) -> X) -> (v7:int -> X) -> X) -> X
+    br_f_h_1686: var134:bool ->
+                 var133:unit ->
+                 var132:int ->
+                 (var131:int -> (var130:int -> (var129:int -> X) -> X) -> (var126:int -> X) -> X) ->
+                 (var123:unit -> (var122:int -> (var121:int -> (var120:int -> X) -> X) -> (var117:int -> X) -> X) -> X)
+                 -> (var113:int -> X) -> var111:int -> X
+    f_1684: var137:int -> var136:int -> X
+    f_fact_1679: var142:int -> (var141:int -> X) -> var139:int -> X
+    f_h_1676: var165:unit ->
+              var164:int ->
+              (var163:int -> (var162:int -> (var161:int -> X) -> X) -> (var158:int -> X) -> X) ->
+              (var155:int -> X) ->
+              (var153:unit -> (var152:int -> (var151:int -> (var150:int -> X) -> X) -> (var147:int -> X) -> X) -> X) ->
+              X
+    f_h_1677: var171:unit -> var170:int -> var169:int -> (var168:int -> X) -> X
+    f_h_1678: var195:unit ->
+              var194:int ->
+              (var193:int -> (var192:int -> (var191:int -> X) -> X) -> (var188:int -> X) -> X) ->
+              (var185:unit -> (var184:int -> (var183:int -> (var182:int -> X) -> X) -> (var179:int -> X) -> X) -> X) ->
+              (var175:int -> X) -> var173:int -> X
+    f_h_1681: var201:unit -> var200:int -> var199:int -> (var198:int -> X) -> X
+    fail_1688: var205:bool -> (var204:unit -> X) -> X
+    h_1249: var228:int ->
+            (var227:unit -> (var226:int -> (var225:int -> (var224:int -> X) -> X) -> (var221:int -> X) -> X) -> X) ->
+            (var217:int -> X) ->
+            var215:unit -> (var214:int -> (var213:int -> (var212:int -> X) -> X) -> (var209:int -> X) -> X) -> X
+    k_1685: var230:unit -> X
+    k_main_u_1551: var237:unit -> var236:int -> var235:int -> (var234:int -> X) -> var232:unit -> X
+  
+end AbsTypeInfer.refine(155)[1] (0.086987 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 0; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1673
+  main_1673 -> (rand_int f_1683)
+  br_f_h_1686 b_1687 e1_1418 n_1034 e2_1418 h_1569 k_main_1401 x_1476 when b_1687 ->
+      (k_main_u_1551 e1_1418 n_1034 x_1476 k_main_1401 ())
+  br_f_h_1686 b_1687 e1_1418 n_1034 e2_1418 h_1569 k_main_1401 x_1476 when (
+      not b_1687) -> (fail_1688 true (k_main_u_1551 e1_1418 n_1034 x_1476 k_main_1401))
+  f_1683 x_1582 -> (main_1033 x_1582 (f_1684 x_1582) h_1170)
+  f_1684 x_1582 x_1576 -> end
+  f_fact_1674 n_1032 k_fact_1188 h_1377 when (n_1032 <= 0) -> (h_1377 () (f_fact_1675 n_1032))
+  f_fact_1674 n_1032 k_fact_1188 h_1377 when (not (n_1032 <= 0)) ->
+      (fact_1031 (n_1032 - 1) (f_fact_1679 n_1032 k_fact_1188) (h_1249 n_1032 h_1377 k_fact_1188))
+  f_fact_1675 n_1032 path1_1076 path2_1076 k_fact_1216 when (path1_1076 = 0) -> (k_fact_1216 1)
+  f_fact_1675 n_1032 path1_1076 path2_1076 k_fact_1216 when (not (path1_1076 = 0)) -> _|_
+  f_fact_1679 n_1032 k_fact_1188 x_1246 -> (k_fact_1188 (n_1032 * x_1246))
+  f_h_1676 e1_1241 n_1032 e2_1241 k_fact_1188 h_1370 ->
+      (e2_1241 0 (f_h_1677 e1_1241 n_1032) (f_h_1678 e1_1241 n_1032 e2_1241 h_1370 k_fact_1188))
+  f_h_1677 e1_1241 n_1032 x_1114 k_fact_1325 -> _|_
+  f_h_1678 e1_1241 n_1032 e2_1241 h_1370 k_fact_1188 x_1306 when (x_1306 = 1) -> (k_fact_1188 1)
+  f_h_1678 e1_1241 n_1032 e2_1241 h_1370 k_fact_1188 x_1306 when (not (x_1306 = 1)) -> (h_1370 e1_1241 e2_1241)
+  f_h_1680 e1_1418 n_1034 e2_1418 k_main_1401 h_1569 ->
+      (e2_1418 0 (f_h_1681 e1_1418 n_1034) (f_h_1682 e1_1418 n_1034 e2_1418 h_1569 k_main_1401))
+  f_h_1681 e1_1418 n_1034 x_1145 k_main_1495 -> _|_
+  f_h_1682 e1_1418 n_1034 e2_1418 h_1569 k_main_1401 x_1476 when (x_1476 = 1) ->
+      (br_f_h_1686 (n_1034 < 0) e1_1418 n_1034 e2_1418 h_1569 k_main_1401 x_1476)
+  f_h_1682 e1_1418 n_1034 e2_1418 h_1569 k_main_1401 x_1476 when (not (x_1476 = 1)) -> (h_1569 e1_1418 e2_1418)
+  fact_1031 n_1032 k_fact_1188 h_1190 -> (f_fact_1674 n_1032 k_fact_1188 h_1190)
+  fail_1688 b k -> {fail} => (k ())
+  h_1170 e1_1610 e2_1610 -> {fail} => (k_1685 ())
+  h_1249 n_1032 h_1377 k_fact_1188 e1_1241 e2_1241 -> (f_h_1676 e1_1241 n_1032 e2_1241 k_fact_1188 h_1377)
+  h_1436 n_1034 h_1403 k_main_1401 e1_1418 e2_1418 -> (f_h_1680 e1_1418 n_1034 e2_1418 k_main_1401 h_1403)
+  k_1685 u -> end
+  k_main_u_1551 e1_1418 n_1034 x_1476 k_main_1401 x_1541 -> (k_main_1401 0)
+  main_1033 n_1034 k_main_1401 h_1403 -> (fact_1031 n_1034 k_main_1401 (h_1436 n_1034 h_1403 k_main_1401))
+Types:
+  main_1673 : X
+  fact_1031 : (int ->
+               (int -> X) -> (unit -> (int -> (int -> (int -> X) -> X) -> (x_16:int[x_16 = 1] -> X) -> X) -> X) -> X)
+  fail_1688 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  h_1170 : (unit -> (int -> (int -> (int -> X) -> X) -> (int -> X) -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1673 ... --> 
+  f_1683 ... --> 
+  main_1033 ... --> 
+  fact_1031 ... --> 
+  f_fact_1674 [1/2] ... --> 
+  h_1436 ... --> 
+  f_h_1680 ... --> 
+  f_fact_1675 [1/2] ... --> 
+  f_h_1682 [1/2] ... --> 
+  br_f_h_1686 [2/2] ... --> 
+  fail_1688 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 0; 0; 0; 1; 0
+
+(1-3) Checking counter-example ... begin Cvc3Interface.solve(3305)[1]
+  CVC3 input: PUSH;cnt40_v_sep_r_2804:INT;CHECKSAT (TRUE AND ((NOT (cnt40_v_sep_r_2804 < 0)) AND ((1 = 1) AND ((0 = 0) AND (TRUE AND (TRUE AND ((cnt40_v_sep_r_2804 <= 0) AND (TRUE AND (TRUE AND (TRUE AND TRUE))))))))));COUNTERMODEL;POP;
+  CVC3 output: CVC> Satisfiable.
+  CVC3 output: Current scope level is 9.
+  CVC3 output: %Satisfiable  Variable Assignment: % 
+  CVC3 output: ASSERT (cnt40_v_sep_r_2804 = 0);
+  CVC3 output: CVC> 
+  v_sep_r_2804 = 0
+  end Cvc3Interface.solve(3305)[1] (0.004999 sec.)
+DONE!
+
+Unsafe!
+
+Input for main:
+  0
+Error trace:
+  main 0 ->
+    fact 0 ->
+      if true then ... ->
+      if false then ... ->
+      FAIL!
+
+cycles: 1
+total: 0.345 sec
+  abst: 0.013 sec
+  mc: 0.012 sec
+  refine: 0.102 sec
+    exparam: 0.026 sec

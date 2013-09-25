@@ -1,0 +1,327 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn sum_intro.ml
+
+parsed::
+ let add_1030 x_1031 y_1032 = x_1031 + y_1032 
+ in
+ let rec sum_1033 n_1034 = if n_1034 <= 0 then
+                             0
+                           else
+                             add_1030 n_1034 (sum_1033 (n_1034 - 1)) 
+ in
+ let main_1035 n_1036 = if n_1036 <= sum_1033 n_1036 then
+                          ()
+                        else
+                          {fail} () 
+ in
+   ()
+
+set_target::
+ let add_1030 x_1031 y_1032 = x_1031 + y_1032 
+ in
+ let rec sum_1033 n_1034 = if n_1034 <= 0 then
+                             0
+                           else
+                             add_1030 n_1034 (sum_1033 (n_1034 - 1)) 
+ in
+ let main_1035 n_1036 = if n_1036 <= sum_1033 n_1036 then
+                          ()
+                        else
+                          {fail} () 
+ in
+ let main_1058 = let arg1_1057 = rand_int () 
+                 in
+                   main_1035 arg1_1057 
+ in
+   ()
+
+CPS::
+ let add_1030 (x_1031:int) (y_1032:int) (k_add_1086:(int -> X)) = k_add_1086 (x_1031 + y_1032) 
+ in
+ let rec sum_1033 (n_1034:int) (k_sum_1100:(int -> X)) =
+   if n_1034 <= 0 then
+     k_sum_1100 0
+   else
+     sum_1033 (n_1034 - 1) (fun x_1121 -> add_1030 n_1034 x_1121 k_sum_1100) 
+ in
+ let main_1035 (n_1036:int) (k_main_1139:(unit -> X)) =
+   sum_1033 n_1036 (fun x_1143 -> (if n_1036 <= x_1143 then
+                                     k_main_1139 ()
+                                   else
+                                     {|fail|} () k_main_1139)) 
+ in
+   rand_int_cps () (fun x_1170 -> main_1035 x_1170 (fun x_1167 -> end))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1195
+  main_1195 -> (rand_int f_1198)
+  add_1030 x_1031 y_1032 k_add_1086 -> (k_add_1086 (x_1031 + y_1032))
+  f_1198 x_1170 -> (main_1035 x_1170 (f_1199 x_1170))
+  f_1199 x_1170 x_1167 -> end
+  f_main_1197 n_1036 k_main_1139 x_1143 when (n_1036 <= x_1143) -> (k_main_1139 ())
+  f_main_1197 n_1036 k_main_1139 x_1143 when (not (n_1036 <= x_1143)) -> (fail_1200 true k_main_1139)
+  f_sum_1196 n_1034 k_sum_1100 x_1121 -> (add_1030 n_1034 x_1121 k_sum_1100)
+  fail_1200 b k -> {fail} => (k ())
+  main_1035 n_1036 k_main_1139 -> (sum_1033 n_1036 (f_main_1197 n_1036 k_main_1139))
+  sum_1033 n_1034 k_sum_1100 when (n_1034 <= 0) -> (k_sum_1100 0)
+  sum_1033 n_1034 k_sum_1100 when (not (n_1034 <= 0)) -> (sum_1033 (n_1034 - 1) (f_sum_1196 n_1034 k_sum_1100))
+Types:
+  main_1195 : X
+  fail_1200 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  sum_1033 : (int -> (int -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1195 ... --> 
+  f_1198 ... --> 
+  main_1035 ... --> 
+  sum_1033 [1/2] ... --> 
+  f_main_1197 [2/2] ... --> 
+  fail_1200 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(93)[1]
+  program:
+    main_1195  | true = ((Random.int 0) f_1198)
+    add_1030 x_1031 y_1032 k_add_1086 | true = (k_add_1086 (x_1031 + y_1032))
+    f_1198 x_1170 | true = (main_1035 x_1170
+                                      (f_1199 x_1170))
+    f_1199 x_1170 x_1167 | true = end
+    f_main_1197 n_1036 k_main_1139 x_1143 | (n_1036 <= x_1143) = (k_main_1139 ())
+    f_main_1197 n_1036 k_main_1139 x_1143 | (not (n_1036 <= x_1143)) = (
+    fail_1200 true
+              k_main_1139)
+    f_sum_1196 n_1034 k_sum_1100 x_1121 | true = (add_1030 n_1034
+                                                           x_1121
+                                                           k_sum_1100)
+    fail_1200 b k | true = (fail ())
+    main_1035 n_1036 k_main_1139 | true = (sum_1033 n_1036
+                                                    (f_main_1197 n_1036
+                                                                 k_main_1139))
+    sum_1033 n_1034 k_sum_1100 | (n_1034 <= 0) = (k_sum_1100 0)
+    sum_1033 n_1034 k_sum_1100 | (not (n_1034 <= 0)) = (sum_1033 (n_1034 - 1)
+                                                                 (f_sum_1196 n_1034
+                                                                    k_sum_1100))
+    main_1195:X
+    add_1030:int -> int -> (int -> X) -> X
+    f_1198:int -> X
+    f_1199:int -> unit -> X
+    f_main_1197:int -> (unit -> X) -> int -> X
+    f_sum_1196:int -> (int -> X) -> int -> X
+    fail_1200:bool -> (unit -> X) -> X
+    main_1035:int -> (unit -> X) -> X
+    sum_1033:int -> (int -> X) -> X
+  inlined functions: add_1030,f_1198,f_1199,f_main_1197,f_sum_1196,main_1035
+  counterexample: 0:0:0:0:1:0
+  error traces:
+    [true.nop(<f_1198@4:0> = var2)
+     [true.(<main_1035@6:0> = <f_1198@4:0>)
+      [true.(<sum_1033@8:0> = <main_1035@6:0>)
+       [(<sum_1033@8:0> <= 0).(<<sum_1033@8:1>@11:0> = 0)
+        [true.((<f_main_1197@13:0> = <main_1035@6:0>) && (<f_main_1197@13:2> = <<sum_1033@8:1>@11:0>))
+         [(not (<f_main_1197@13:0> <= <f_main_1197@13:2>)).(<fail_1200@16:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(94)[2]
+    horn clauses:
+      P[<fail_1200@16:0>](<fail_1200@16:0>:bool)|- bot
+      
+      P[<f_main_1197@13:2>](<f_main_1197@13:0>:int,<f_main_1197@13:2>:int),
+      ((<f_main_1197@13:0> > <f_main_1197@13:2>) && <fail_1200@16:0>) |- P[<fail_1200@16:0>](
+      <fail_1200@16:0>:bool)
+      
+      P[<main_1035@6:0>](<f_main_1197@13:0>:int),
+      P[<<sum_1033@8:1>@11:0>](<f_main_1197@13:0>:int,<f_main_1197@13:2>:int)|- P[<f_main_1197@13:2>](
+      <f_main_1197@13:0>:int,<f_main_1197@13:2>:int)
+      
+      P[<sum_1033@8:0>](<sum_1033@8:0>:int), ((<<sum_1033@8:1>@11:0> = 0) && (<sum_1033@8:0> <= 0))
+      |- P[<<sum_1033@8:1>@11:0>](<sum_1033@8:0>:int,<<sum_1033@8:1>@11:0>:int)
+      
+      P[<main_1035@6:0>](<sum_1033@8:0>:int)|- P[<sum_1033@8:0>](<sum_1033@8:0>:int)
+      
+      P[<f_1198@4:0>](<main_1035@6:0>:int)|- P[<main_1035@6:0>](<main_1035@6:0>:int)
+      
+      |- P[<f_1198@4:0>](<f_1198@4:0>:int)
+    call trees:
+      <main_1195@1>
+        <f_1198@4>
+          <main_1035@6>
+            <sum_1033@8>
+            </<sum_1033@8:1>@11>
+            <f_main_1197@13>
+              <fail_1200@16>
+    inlined horn clauses:
+      P[<fail_1200@16:0>](<fail_1200@16:0>:bool)|- bot
+      
+      P[<<sum_1033@8:1>@11:0>](<f_main_1197@13:0>:int,<f_main_1197@13:2>:int),
+      ((<f_main_1197@13:0> > <f_main_1197@13:2>) && <fail_1200@16:0>) |- P[<fail_1200@16:0>](
+      <fail_1200@16:0>:bool)
+      
+      P[<sum_1033@8:0>](<sum_1033@8:0>:int), ((<<sum_1033@8:1>@11:0> = 0) && (<sum_1033@8:0> <= 0))
+      |- P[<<sum_1033@8:1>@11:0>](<sum_1033@8:0>:int,<<sum_1033@8:1>@11:0>:int)
+      
+      |- P[<sum_1033@8:0>](<sum_1033@8:0>:int)
+    begin ParamSubstInfer.infer(893)[3]
+      
+    end ParamSubstInfer.infer(893)[3] (0.013998 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(895)[3]
+      
+    end RefTypeInfer.elim_coeffs(895)[3] (0.000000 sec.)
+    begin YhornInterface.solve(1050)[3]
+      begin HcSolver.solve_ub(1051)[4]
+        encoded:
+          P[<fail_1200@16:0>](<fail_1200@16:0>:int)|- bot
+          
+          P[<<sum_1033@8:1>@11:0>](<f_main_1197@13:0>:int,<f_main_1197@13:2>:int),
+          ((<f_main_1197@13:0> > <f_main_1197@13:2>) && (<fail_1200@16:0> = 1))
+          |- P[<fail_1200@16:0>](<fail_1200@16:0>:int)
+          
+          P[<sum_1033@8:0>](<sum_1033@8:0>:int), ((<<sum_1033@8:1>@11:0> = 0) && (<sum_1033@8:0> <= 0))
+          |- P[<<sum_1033@8:1>@11:0>](<sum_1033@8:0>:int,<<sum_1033@8:1>@11:0>:int)
+          
+          |- P[<sum_1033@8:0>](<sum_1033@8:0>:int)
+        input to Yhorn:
+          P[<fail_1200@16:0>](<fail_1200@16:0>:int)|- bot
+          
+          P[<<sum_1033@8:1>@11:0>](<f_main_1197@13:0>:int,<f_main_1197@13:2>:int),
+          ((<f_main_1197@13:0> > <f_main_1197@13:2>) && (<fail_1200@16:0> = 1))
+          |- P[<fail_1200@16:0>](<fail_1200@16:0>:int)
+          
+          P[<sum_1033@8:0>](<sum_1033@8:0>:int), ((<sum_1033@8:0> <= 0) && (<<sum_1033@8:1>@11:0> = 0))
+          |- P[<<sum_1033@8:1>@11:0>](<sum_1033@8:0>:int,<<sum_1033@8:1>@11:0>:int)
+          Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1200_sep_16_sep_0($6)) -> 1=0.
+(($6-1=0) & ($7-$8>0)) & (v_sep_sum_1033_sep_8_sep_1_sep_11_sep_0($7,$8)) -> v_sep_fail_1200_sep_16_sep_0($6).
+(($9=0) & ($10<=0)) & (v_sep_sum_1033_sep_8_sep_0($10)) -> v_sep_sum_1033_sep_8_sep_1_sep_11_sep_0($10,$9).
+0=0 -> v_sep_sum_1033_sep_8_sep_0($10).
+
+
+v_sep_fail_1200_sep_16_sep_0: X
+v_sep_sum_1033_sep_8_sep_0: X
+v_sep_sum_1033_sep_8_sep_1_sep_11_sep_0: X
+....
+v_sep_fail_1200_sep_16_sep_0: X
+v_sep_sum_1033_sep_8_sep_0: X
+v_sep_sum_1033_sep_8_sep_1_sep_11_sep_0: X
+...
+v_sep_fail_1200_sep_16_sep_0: X
+v_sep_sum_1033_sep_8_sep_0: X
+v_sep_sum_1033_sep_8_sep_1_sep_11_sep_0: X
+....
+v_sep_fail_1200_sep_16_sep_0: X
+v_sep_sum_1033_sep_8_sep_0: X
+v_sep_sum_1033_sep_8_sep_1_sep_11_sep_0: X
+....(0=0) & (v_sep_fail_1200_sep_16_sep_0($6)) -> 1=0.
+(($6-1=0) & ($7-$8>0)) & (v_sep_sum_1033_sep_8_sep_1_sep_11_sep_0($7,$8)) -> v_sep_fail_1200_sep_16_sep_0($6).
+(($9=0) & ($10<=0)) & (v_sep_sum_1033_sep_8_sep_0($10)) -> v_sep_sum_1033_sep_8_sep_1_sep_11_sep_0($10,$9).
+0=0 -> v_sep_sum_1033_sep_8_sep_0($10).
+
+          |- P[<sum_1033@8:0>](<sum_1033@8:0>:int)
+        solution:
+          P[<fail_1200@16:0>]($11:bool) = false
+          P[<sum_1033@8:0>]($19:int) = true
+          P[<<sum_1033@8:1>@11:0>]($14:int,$16:int) = ($14 <= $16)
+        
+      end HcSolver.solve_ub(1051)[4] (0.013998 sec.)
+      begin HcSolver.check_validity(1157)[4]
+        input:
+          P[<fail_1200@16:0>](<fail_1200@16:0>:bool)|- bot
+          
+          P[<<sum_1033@8:1>@11:0>](<f_main_1197@13:0>:int,<f_main_1197@13:2>:int),
+          ((<f_main_1197@13:0> > <f_main_1197@13:2>) && <fail_1200@16:0>) |- P[<fail_1200@16:0>](
+          <fail_1200@16:0>:bool)
+          
+          P[<sum_1033@8:0>](<sum_1033@8:0>:int), ((<<sum_1033@8:1>@11:0> = 0) && (<sum_1033@8:0> <= 0))
+          |- P[<<sum_1033@8:1>@11:0>](<sum_1033@8:0>:int,<<sum_1033@8:1>@11:0>:int)
+          
+          |- P[<sum_1033@8:0>](<sum_1033@8:0>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(1157)[4] (0.002000 sec.)
+      solution:
+        P[<fail_1200@16:0>]($11:bool) = false
+        P[<sum_1033@8:0>]($19:int) = true
+        P[<<sum_1033@8:1>@11:0>]($14:int,$16:int) = ($14 <= $16)
+    end YhornInterface.solve(1050)[3] (0.015998 sec.)
+    
+  end RefTypeInfer.infer_etrs(94)[2] (0.034995 sec.)
+  refinement types:
+    main_1195: X
+    f_1198: v1:int -> X
+    main_1035: v1:int -> (v2:unit -> X) -> X
+    sum_1033: v1:int -> (v2:{v2:int | (v1 <= v2)} -> X) -> X
+    f_main_1197: v1:int -> (v2:unit -> X) -> v4:int -> X
+    fail_1200: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    add_1030: var13:int -> var12:int -> (var11:int -> X) -> X
+    f_1199: var16:int -> var15:unit -> X
+    f_sum_1196: var21:int -> (var20:int -> X) -> var18:int -> X
+  abstraction types:
+    main_1195: X
+    f_1198: v1:int -> X
+    main_1035: v1:int -> (v2:unit -> X) -> X
+    sum_1033: v1:int -> (v2:int[v2 -> (v1 <= v2)] -> X) -> X
+    f_main_1197: v1:int -> (v2:unit -> X) -> v4:int -> X
+    fail_1200: v1:bool -> (v2:unit -> X) -> X
+    add_1030: var13:int -> var12:int -> (var11:int -> X) -> X
+    f_1199: var16:int -> var15:unit -> X
+    f_sum_1196: var21:int -> (var20:int -> X) -> var18:int -> X
+  
+end AbsTypeInfer.refine(93)[1] (0.036995 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 0; 1
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1195
+  main_1195 -> (rand_int f_1198)
+  add_1030 x_1031 y_1032 k_add_1086 -> (k_add_1086 (x_1031 + y_1032))
+  f_1198 x_1170 -> (main_1035 x_1170 (f_1199 x_1170))
+  f_1199 x_1170 x_1167 -> end
+  f_main_1197 n_1036 k_main_1139 x_1143 when (n_1036 <= x_1143) -> (k_main_1139 ())
+  f_main_1197 n_1036 k_main_1139 x_1143 when (not (n_1036 <= x_1143)) -> (fail_1200 true k_main_1139)
+  f_sum_1196 n_1034 k_sum_1100 x_1121 -> (add_1030 n_1034 x_1121 k_sum_1100)
+  fail_1200 b k -> {fail} => (k ())
+  main_1035 n_1036 k_main_1139 -> (sum_1033 n_1036 (f_main_1197 n_1036 k_main_1139))
+  sum_1033 n_1034 k_sum_1100 when (n_1034 <= 0) -> (k_sum_1100 0)
+  sum_1033 n_1034 k_sum_1100 when (not (n_1034 <= 0)) -> (sum_1033 (n_1034 - 1) (f_sum_1196 n_1034 k_sum_1100))
+Types:
+  main_1195 : X
+  fail_1200 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  sum_1033 : (x_1:int -> (x_3:int[x_1 <= x_3] -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Safe!
+
+Refinement Types:
+  sum: (x_1:int -> {x_2:int | x_1 <= x_2})
+
+cycles: 1
+total: 0.250 sec
+  abst: 0.005 sec
+  mc: 0.015 sec
+  refine: 0.040 sec
+    exparam: 0.014 sec

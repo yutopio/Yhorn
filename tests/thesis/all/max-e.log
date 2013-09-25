@@ -1,0 +1,189 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -gchi max-e.ml
+
+parsed::
+ let max_1030 max2_1031 x_1032 y_1033 z_1034 = max2_1031 (max2_1031 x_1032 y_1033) y_1033 
+ in
+ let f_1035 x_1036 y_1037 = if x_1036 >= y_1037 then
+                              x_1036
+                            else
+                              y_1037 
+ in
+ let main_1038 x_1039 y_1040 z_1041 =
+   let m_1042 = max_1030 f_1035 x_1039 y_1040 z_1041 
+   in
+     if f_1035 x_1039 m_1042 = m_1042 && (f_1035 y_1040 m_1042 = m_1042 && f_1035 z_1041 m_1042 = m_1042) then
+       ()
+     else
+       {fail} () 
+ in
+   ()
+
+set_target::
+ let max_1030 max2_1031 x_1032 y_1033 z_1034 = max2_1031 (max2_1031 x_1032 y_1033) y_1033 
+ in
+ let f_1035 x_1036 y_1037 = if x_1036 >= y_1037 then
+                              x_1036
+                            else
+                              y_1037 
+ in
+ let main_1038 x_1039 y_1040 z_1041 =
+   let m_1042 = max_1030 f_1035 x_1039 y_1040 z_1041 
+   in
+     if f_1035 x_1039 m_1042 = m_1042 && (f_1035 y_1040 m_1042 = m_1042 && f_1035 z_1041 m_1042 = m_1042) then
+       ()
+     else
+       {fail} () 
+ in
+ let main_1117 =
+   let arg1_1114 = rand_int () 
+   in
+   let arg2_1115 = rand_int () 
+   in
+   let arg3_1116 = rand_int () 
+   in
+     main_1038 arg1_1114 arg2_1115 arg3_1116 
+ in
+   ()
+
+CPS::
+ let max_1030
+   (max2_1031:(int -> (int -> ((int -> X) -> X)))) (x_1032:int) (y_1033:int) (z_1034:int) (k_max_1167:(
+   int -> X)) = max2_1031 x_1032 y_1033 (fun x_1193 -> max2_1031 x_1193 y_1033 k_max_1167) 
+ in
+ let f_1035 (x_1036:int) (y_1037:int) (k_f_1217:(int -> X)) =
+   if x_1036 >= y_1037 then
+     k_f_1217 x_1036
+   else
+     k_f_1217 y_1037 
+ in
+ let main_1038 (x_1039:int) (y_1040:int) (z_1041:int) (k_main_1241:(unit -> X)) =
+   max_1030 f_1035 x_1039 y_1040 z_1041
+     (fun x_1244 ->
+        (let k_main_1317 (b_1329:bool) = if b_1329 then
+                                           k_main_1241 ()
+                                         else
+                                           {|fail|} () k_main_1241 
+         in
+           f_1035 x_1039 x_1244
+             (fun x_1268 ->
+                (if x_1268 = x_1244 then
+                   f_1035 y_1040 x_1244
+                     (fun x_1283 ->
+                        (if x_1283 = x_1244 then
+                           f_1035 z_1041 x_1244 (fun x_1298 -> k_main_1317 (x_1298 = x_1244))
+                         else
+                           k_main_1317 false))
+                 else
+                   k_main_1317 false)))) 
+ in
+   rand_int_cps ()
+     (fun x_1335 ->
+        rand_int_cps ()
+          (fun x_1348 -> rand_int_cps () (fun x_1361 -> main_1038 x_1335 x_1348 x_1361 (fun x_1332 -> end))))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1394
+  main_1394 -> (rand_int f_1400)
+  f_1035 x_1036 y_1037 k_f_1217 when (x_1036 >= y_1037) -> (k_f_1217 x_1036)
+  f_1035 x_1036 y_1037 k_f_1217 when (not (x_1036 >= y_1037)) -> (k_f_1217 y_1037)
+  f_1400 x_1335 -> (rand_int (f_1401 x_1335))
+  f_1401 x_1335 x_1348 -> (rand_int (f_1402 x_1335 x_1348))
+  f_1402 x_1335 x_1348 x_1361 -> (main_1038 x_1335 x_1348 x_1361 (f_1403 x_1335 x_1348 x_1361))
+  f_1403 x_1335 x_1348 x_1361 x_1332 -> end
+  f_main_1396 x_1039 y_1040 z_1041 k_main_1241 x_1244 ->
+      (f_1035 x_1039 x_1244 (f_main_1397 x_1039 x_1244 y_1040 z_1041 k_main_1241))
+  f_main_1397 x_1039 x_1244 y_1040 z_1041 k_main_1241 x_1268 when (x_1268 = x_1244) ->
+      (f_1035 y_1040 x_1244 (f_main_1398 x_1039 x_1244 x_1268 y_1040 z_1041 k_main_1241))
+  f_main_1397 x_1039 x_1244 y_1040 z_1041 k_main_1241 x_1268 when (not (x_1268 = x_1244)) ->
+      (k_main_1317 x_1039 x_1244 y_1040 z_1041 k_main_1241 false)
+  f_main_1398 x_1039 x_1244 x_1268 y_1040 z_1041 k_main_1241 x_1283 when (
+      x_1283 = x_1244) -> (f_1035 z_1041 x_1244 (f_main_1399 x_1039 x_1244 x_1268 x_1283 y_1040 z_1041 k_main_1241))
+  f_main_1398 x_1039 x_1244 x_1268 y_1040 z_1041 k_main_1241 x_1283 when (
+      not (x_1283 = x_1244)) -> (k_main_1317 x_1039 x_1244 y_1040 z_1041 k_main_1241 false)
+  f_main_1399 x_1039 x_1244 x_1268 x_1283 y_1040 z_1041 k_main_1241 x_1298 ->
+      (k_main_1317 x_1039 x_1244 y_1040 z_1041 k_main_1241 (x_1298 = x_1244))
+  f_max_1395 x_1032 y_1033 z_1034 k_max_1167 max2_1031 x_1193 -> (max2_1031 x_1193 y_1033 k_max_1167)
+  fail_1404 b k -> {fail} => (k ())
+  k_main_1317 x_1039 x_1244 y_1040 z_1041 k_main_1241 b_1329 when b_1329 -> (k_main_1241 ())
+  k_main_1317 x_1039 x_1244 y_1040 z_1041 k_main_1241 b_1329 when (not b_1329) -> (fail_1404 true k_main_1241)
+  main_1038 x_1039 y_1040 z_1041 k_main_1241 ->
+      (max_1030 f_1035 x_1039 y_1040 z_1041 (f_main_1396 x_1039 y_1040 z_1041 k_main_1241))
+  max_1030 max2_1031 x_1032 y_1033 z_1034 k_max_1167 ->
+      (max2_1031 x_1032 y_1033 (f_max_1395 x_1032 y_1033 z_1034 k_max_1167 max2_1031))
+Types:
+  main_1394 : X
+  fail_1404 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  k_main_1317 : (int -> int -> int -> int -> (unit -> X) -> x_8:bool[x_8] -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1394 ... --> 
+  f_1400 ... --> 
+  f_1401 ... --> 
+  f_1402 ... --> 
+  main_1038 ... --> 
+  max_1030 ... --> 
+  f_1035 [1/2] ... --> 
+  f_max_1395 ... --> 
+  f_1035 [1/2] ... --> 
+  f_main_1396 ... --> 
+  f_1035 [1/2] ... --> 
+  f_main_1397 [1/2] ... --> 
+  f_1035 [1/2] ... --> 
+  f_main_1398 [1/2] ... --> 
+  f_1035 [1/2] ... --> 
+  f_main_1399 ... --> 
+  k_main_1317 [2/2] ... --> 
+  fail_1404 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 1; 0
+
+(0-3) Checking counter-example ... begin Cvc3Interface.solve(1037)[1]
+  CVC3 input: PUSH;cnt119_v_sep_r_1584:INT; cnt119_v_sep_r_1582:INT; cnt119_v_sep_r_1583:INT;CHECKSAT (TRUE AND ((NOT (cnt119_v_sep_r_1584 = cnt119_v_sep_r_1582)) AND (TRUE AND ((cnt119_v_sep_r_1584 >= cnt119_v_sep_r_1582) AND ((cnt119_v_sep_r_1583 = cnt119_v_sep_r_1582) AND ((cnt119_v_sep_r_1583 >= cnt119_v_sep_r_1582) AND ((cnt119_v_sep_r_1582 = cnt119_v_sep_r_1582) AND ((cnt119_v_sep_r_1582 >= cnt119_v_sep_r_1582) AND (TRUE AND ((cnt119_v_sep_r_1582 >= cnt119_v_sep_r_1583) AND (TRUE AND ((cnt119_v_sep_r_1582 >= cnt119_v_sep_r_1583) AND (TRUE AND (TRUE AND (TRUE AND (TRUE AND (TRUE AND TRUE)))))))))))))))));COUNTERMODEL;POP;
+  CVC3 output: CVC> Satisfiable.
+  CVC3 output: Current scope level is 9.
+  CVC3 output: %Satisfiable  Variable Assignment: % 
+  CVC3 output: ASSERT (cnt119_v_sep_r_1584 = 1);
+  CVC3 output: ASSERT (cnt119_v_sep_r_1582 = 0);
+  CVC3 output: ASSERT (cnt119_v_sep_r_1583 = 0);
+  CVC3 output: CVC> 
+  v_sep_r_1584 = 1
+  v_sep_r_1582 = 0
+  v_sep_r_1583 = 0
+  end Cvc3Interface.solve(1037)[1] (0.009998 sec.)
+DONE!
+
+Unsafe!
+
+Input for main:
+  0; 0; 1
+Error trace:
+  main 0 0 1 ->
+    max <fun> 0 0 1 ->
+      f 0 0 ->
+        if true then ... ->
+      f 0 0 ->
+        if true then ... ->
+    f 0 0 ->
+      if true then ... ->
+    f 0 0 ->
+      if true then ... ->
+    f 1 0 ->
+      if true then ... ->
+    if false then ... ->
+    FAIL!
+
+cycles: 0
+total: 0.336 sec
+  abst: 0.009 sec
+  mc: 0.003 sec
+  refine: 0.012 sec
+    exparam: 0.000 sec

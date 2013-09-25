@@ -1,0 +1,587 @@
+MoCHi: Model Checker for Higher-Order Programs
+  TRecS version: 1.30
+  OCaml version: 4.00.1
+  Command: ../mochi.opt -yhorn file1.ml
+
+parsed::
+ let open__1030 x_1031 = true 
+ in
+ let close_1032 fp_1033 = false 
+ in
+ let read_1034 fp_1035 = if fp_1035 then
+                           ()
+                         else
+                           {fail} () 
+ in
+ let rec read_n_1036 fp_1037 n_1038 m_1039 =
+   if n_1038 <= 0 then
+     if m_1039 > 0 then
+       close_1032 fp_1037
+     else
+       fp_1037
+   else
+     let u_1068 = if m_1039 > 0 then
+                    read_1034 fp_1037
+                  else
+                    () 
+     in
+       read_n_1036 fp_1037 (n_1038 - 1) m_1039 
+ in
+ let main_1040 n_1041 m_1042 =
+   let fp_1043 = if m_1042 > 0 then
+                   open__1030 ()
+                 else
+                   false 
+   in
+   let fp_1044 = read_n_1036 fp_1043 n_1041 m_1042 
+   in
+     if fp_1044 then
+       ()
+     else
+       {fail} () 
+ in
+   ()
+
+set_target::
+ let open__1030 x_1031 = true 
+ in
+ let close_1032 fp_1033 = false 
+ in
+ let read_1034 fp_1035 = if fp_1035 then
+                           ()
+                         else
+                           {fail} () 
+ in
+ let rec read_n_1036 fp_1037 n_1038 m_1039 =
+   if n_1038 <= 0 then
+     if m_1039 > 0 then
+       close_1032 fp_1037
+     else
+       fp_1037
+   else
+     let u_1068 = if m_1039 > 0 then
+                    read_1034 fp_1037
+                  else
+                    () 
+     in
+       read_n_1036 fp_1037 (n_1038 - 1) m_1039 
+ in
+ let main_1040 n_1041 m_1042 =
+   let fp_1043 = if m_1042 > 0 then
+                   open__1030 ()
+                 else
+                   false 
+   in
+   let fp_1044 = read_n_1036 fp_1043 n_1041 m_1042 
+   in
+     if fp_1044 then
+       ()
+     else
+       {fail} () 
+ in
+ let main_1085 = let arg1_1083 = rand_int () 
+                 in
+                 let arg2_1084 = rand_int () 
+                 in
+                   main_1040 arg1_1083 arg2_1084 
+ in
+   ()
+
+copy_poly::
+ let open__1087 (x_1031:unit) = true 
+ in
+ let close_1086 (fp_1033:bool) = false 
+ in
+ let read_1034 (fp_1035:bool) = if fp_1035 then
+                                  ()
+                                else
+                                  {fail} () 
+ in
+ let rec read_n_1036 (fp_1037:bool) (n_1038:int) (m_1039:int) =
+   if n_1038 <= 0 then
+     if m_1039 > 0 then
+       close_1086 fp_1037
+     else
+       fp_1037
+   else
+     let u_1068 = if m_1039 > 0 then
+                    read_1034 fp_1037
+                  else
+                    () 
+     in
+       read_n_1036 fp_1037 (n_1038 - 1) m_1039 
+ in
+ let main_1040 (n_1041:int) (m_1042:int) =
+   let fp_1043 = if m_1042 > 0 then
+                   open__1087 ()
+                 else
+                   false 
+   in
+   let fp_1044 = read_n_1036 fp_1043 n_1041 m_1042 
+   in
+     if fp_1044 then
+       ()
+     else
+       {fail} () 
+ in
+ let main_1085 = let arg1_1083 = rand_int () 
+                 in
+                 let arg2_1084 = rand_int () 
+                 in
+                   main_1040 arg1_1083 arg2_1084 
+ in
+   ()
+
+CPS::
+ let open__1087 (x_1031:unit) (k_open__1112:(bool -> X)) = k_open__1112 true 
+ in
+ let close_1086 (fp_1033:bool) (k_close_1126:(bool -> X)) = k_close_1126 false 
+ in
+ let read_1034 (fp_1035:bool) (k_read_1140:(unit -> X)) =
+   if fp_1035 then
+     k_read_1140 ()
+   else
+     {|fail|} () k_read_1140 
+ in
+ let rec read_n_1036 (fp_1037:bool) (n_1038:int) (m_1039:int) (k_read_n_1171:(
+   bool -> X)) =
+   if n_1038 <= 0 then
+     if m_1039 > 0 then
+       close_1086 fp_1037 k_read_n_1171
+     else
+       k_read_n_1171 fp_1037
+   else
+     let k_read_n_u_1201 (x_1188:unit) = read_n_1036 fp_1037 (n_1038 - 1) m_1039 k_read_n_1171 
+     in
+       if m_1039 > 0 then
+         read_1034 fp_1037 k_read_n_u_1201
+       else
+         k_read_n_u_1201 () 
+ in
+ let main_1040 (n_1041:int) (m_1042:int) (k_main_1235:(unit -> X)) =
+   let k_main_fp_1251 (x_1238:bool) =
+     read_n_1036 x_1238 n_1041 m_1042 (fun x_1255 -> (if x_1255 then
+                                                        k_main_1235 ()
+                                                      else
+                                                        {|fail|} () k_main_1235)) 
+   in
+     if m_1042 > 0 then
+       open__1087 () k_main_fp_1251
+     else
+       k_main_fp_1251 false 
+ in
+   rand_int_cps () (fun x_1284 -> rand_int_cps () (fun x_1297 -> main_1040 x_1284 x_1297 (fun x_1281 -> end)))
+
+Program with abstraction types (CEGAR-cycle 0)::
+Main: main_1326
+  main_1326 -> (rand_int f_1328)
+  br_read_n_1331 b_1332 fp_1037 n_1038 m_1039 k_read_n_1171 when b_1332 -> (close_1086 fp_1037 k_read_n_1171)
+  br_read_n_1331 b_1332 fp_1037 n_1038 m_1039 k_read_n_1171 when (not b_1332) -> (k_read_n_1171 fp_1037)
+  br_read_n_1333 b_1334 fp_1037 n_1038 m_1039 k_read_n_1171 when b_1334 ->
+      (read_1034 fp_1037 (k_read_n_u_1201 fp_1037 m_1039 n_1038 k_read_n_1171))
+  br_read_n_1333 b_1334 fp_1037 n_1038 m_1039 k_read_n_1171 when (not b_1334) ->
+      (k_read_n_u_1201 fp_1037 m_1039 n_1038 k_read_n_1171 ())
+  close_1086 fp_1033 k_close_1126 -> (k_close_1126 false)
+  f_1328 x_1284 -> (rand_int (f_1329 x_1284))
+  f_1329 x_1284 x_1297 -> (main_1040 x_1284 x_1297 (f_1330 x_1284 x_1297))
+  f_1330 x_1284 x_1297 x_1281 -> end
+  f_k_main_fp_1327 m_1042 n_1041 x_1238 k_main_1235 x_1255 when x_1255 -> (k_main_1235 ())
+  f_k_main_fp_1327 m_1042 n_1041 x_1238 k_main_1235 x_1255 when (not x_1255) -> (fail_1336 true k_main_1235)
+  fail_1335 b k -> {fail} => (k ())
+  fail_1336 b k -> {fail} => (k ())
+  k_main_fp_1251 m_1042 n_1041 k_main_1235 x_1238 ->
+      (read_n_1036 x_1238 n_1041 m_1042 (f_k_main_fp_1327 m_1042 n_1041 x_1238 k_main_1235))
+  k_read_n_u_1201 fp_1037 m_1039 n_1038 k_read_n_1171 x_1188 -> (read_n_1036 fp_1037 (n_1038 - 1) m_1039 k_read_n_1171)
+  main_1040 n_1041 m_1042 k_main_1235 when (m_1042 > 0) -> (open__1087 () (k_main_fp_1251 m_1042 n_1041 k_main_1235))
+  main_1040 n_1041 m_1042 k_main_1235 when (not (m_1042 > 0)) -> (k_main_fp_1251 m_1042 n_1041 k_main_1235 false)
+  open__1087 x_1031 k_open__1112 -> (k_open__1112 true)
+  read_1034 fp_1035 k_read_1140 when fp_1035 -> (k_read_1140 ())
+  read_1034 fp_1035 k_read_1140 when (not fp_1035) -> (fail_1335 true k_read_1140)
+  read_n_1036 fp_1037 n_1038 m_1039 k_read_n_1171 when (n_1038 <= 0) ->
+      (br_read_n_1331 (m_1039 > 0) fp_1037 n_1038 m_1039 k_read_n_1171)
+  read_n_1036 fp_1037 n_1038 m_1039 k_read_n_1171 when (not (n_1038 <= 0)) ->
+      (br_read_n_1333 (m_1039 > 0) fp_1037 n_1038 m_1039 k_read_n_1171)
+Types:
+  main_1326 : X
+  fail_1335 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  fail_1336 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  read_n_1036 : (x_1:bool[x_1] -> int -> int -> (x_5:bool[x_5] -> X) -> X)
+  
+(0-1) Abstracting ... DONE!
+
+(0-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1326 ... --> 
+  f_1328 ... --> 
+  f_1329 ... --> 
+  main_1040 [2/2] ... --> 
+  k_main_fp_1251 ... --> 
+  read_n_1036 [2/2] ... --> 
+  br_read_n_1333 [1/2] ... --> 
+  read_1034 [2/2] ... --> 
+  fail_1335 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 0; 1; 0; 1; 0
+
+(0-3) Checking counter-example ... DONE!
+
+(0-4) Discovering predicates ... 
+begin AbsTypeInfer.refine(417)[1]
+  program:
+    main_1326  | true = ((Random.int 0) f_1328)
+    br_read_n_1331 b_1332 fp_1037 n_1038 m_1039 k_read_n_1171 | b_1332 = (
+    close_1086 fp_1037
+               k_read_n_1171)
+    br_read_n_1331 b_1332 fp_1037 n_1038 m_1039 k_read_n_1171 | (not b_1332) = (
+    k_read_n_1171 fp_1037)
+    br_read_n_1333 b_1334 fp_1037 n_1038 m_1039 k_read_n_1171 | b_1334 = (
+    read_1034 fp_1037
+              (k_read_n_u_1201 fp_1037
+                               m_1039
+                               n_1038
+                               k_read_n_1171))
+    br_read_n_1333 b_1334 fp_1037 n_1038 m_1039 k_read_n_1171 | (not b_1334) = (
+    k_read_n_u_1201 fp_1037
+                    m_1039
+                    n_1038
+                    k_read_n_1171
+                    ())
+    close_1086 fp_1033 k_close_1126 | true = (k_close_1126 false)
+    f_1328 x_1284 | true = ((Random.int 0) (f_1329 x_1284))
+    f_1329 x_1284 x_1297 | true = (main_1040 x_1284
+                                             x_1297
+                                             (f_1330 x_1284
+                                                     x_1297))
+    f_1330 x_1284 x_1297 x_1281 | true = end
+    f_k_main_fp_1327 m_1042 n_1041 x_1238 k_main_1235 x_1255 | x_1255 = (
+    k_main_1235 ())
+    f_k_main_fp_1327 m_1042 n_1041 x_1238 k_main_1235 x_1255 | (not x_1255) = (
+    fail_1336 true
+              k_main_1235)
+    fail_1335 b k | true = (fail ())
+    fail_1336 b k | true = (fail ())
+    k_main_fp_1251 m_1042 n_1041 k_main_1235 x_1238 | true = (read_n_1036
+                                                                x_1238
+                                                                n_1041
+                                                                m_1042
+                                                                (f_k_main_fp_1327 m_1042
+                                                                    n_1041
+                                                                    x_1238
+                                                                    k_main_1235))
+    k_read_n_u_1201 fp_1037 m_1039 n_1038 k_read_n_1171 x_1188 | true = (
+    read_n_1036 fp_1037
+                (n_1038 - 1)
+                m_1039
+                k_read_n_1171)
+    main_1040 n_1041 m_1042 k_main_1235 | (m_1042 > 0) = (open__1087 ()
+                                                                    (k_main_fp_1251 m_1042
+                                                                    n_1041
+                                                                    k_main_1235))
+    main_1040 n_1041 m_1042 k_main_1235 | (not (m_1042 > 0)) = (k_main_fp_1251 m_1042
+                                                                    n_1041
+                                                                    k_main_1235
+                                                                    false)
+    open__1087 x_1031 k_open__1112 | true = (k_open__1112 true)
+    read_1034 fp_1035 k_read_1140 | fp_1035 = (k_read_1140 ())
+    read_1034 fp_1035 k_read_1140 | (not fp_1035) = (fail_1335 true
+                                                               k_read_1140)
+    read_n_1036 fp_1037 n_1038 m_1039 k_read_n_1171 | (n_1038 <= 0) = (
+    br_read_n_1331 (m_1039 > 0)
+                   fp_1037
+                   n_1038
+                   m_1039
+                   k_read_n_1171)
+    read_n_1036 fp_1037 n_1038 m_1039 k_read_n_1171 | (not (n_1038 <= 0)) = (
+    br_read_n_1333 (m_1039 > 0)
+                   fp_1037
+                   n_1038
+                   m_1039
+                   k_read_n_1171)
+    main_1326:X
+    br_read_n_1331:bool -> bool -> int -> int -> (bool -> X) -> X
+    br_read_n_1333:bool -> bool -> int -> int -> (bool -> X) -> X
+    close_1086:bool -> (bool -> X) -> X
+    f_1328:int -> X
+    f_1329:int -> int -> X
+    f_1330:int -> int -> unit -> X
+    f_k_main_fp_1327:int -> int -> bool -> (unit -> X) -> bool -> X
+    fail_1335:bool -> (unit -> X) -> X
+    fail_1336:bool -> (unit -> X) -> X
+    k_main_fp_1251:int -> int -> (unit -> X) -> bool -> X
+    k_read_n_u_1201:bool -> int -> int -> (bool -> X) -> unit -> X
+    main_1040:int -> int -> (unit -> X) -> X
+    open__1087:unit -> (bool -> X) -> X
+    read_1034:bool -> (unit -> X) -> X
+    read_n_1036:bool -> int -> int -> (bool -> X) -> X
+  inlined functions: br_read_n_1331,br_read_n_1333,close_1086,f_1328,f_1329,f_1330,f_k_main_fp_1327,k_main_fp_1251,k_read_n_u_1201,main_1040,open__1087,read_1034
+  counterexample: 0:0:0:1:0:1:0:1:0
+  error traces:
+    [true.nop(<f_1328@4:0> = var2)
+     [true.nop((<f_1329@7:0> = <f_1328@4:0>) && (<f_1329@7:1> = var3))
+      [true.((<main_1040@9:0> = <f_1329@7:0>) && (<main_1040@9:1> = <f_1329@7:1>))
+       [(not (<main_1040@9:1> > 0)).
+        ((<k_main_fp_1251@12:0> = <main_1040@9:1>) &&
+         ((<k_main_fp_1251@12:1> = <main_1040@9:0>) && (<k_main_fp_1251@12:3> = false)))
+        [true.
+         ((<read_n_1036@14:0> = <k_main_fp_1251@12:3>) &&
+          ((<read_n_1036@14:1> = <k_main_fp_1251@12:1>) && (<read_n_1036@14:2> = <k_main_fp_1251@12:0>)))
+         [(not (<read_n_1036@14:1> <= 0)).
+          ((<br_read_n_1333@17:0> = (<read_n_1036@14:2> > 0)) &&
+           ((<br_read_n_1333@17:1> = <read_n_1036@14:0>) &&
+            ((<br_read_n_1333@17:2> = <read_n_1036@14:1>) && (<br_read_n_1333@17:3> = <read_n_1036@14:2>))))
+          [<br_read_n_1333@17:0>.(<read_1034@20:0> = <br_read_n_1333@17:1>)
+           [(not <read_1034@20:0>).(<fail_1335@23:0> = true)[true.error
+  begin RefTypeInfer.infer_etrs(418)[2]
+    horn clauses:
+      P[<fail_1335@23:0>](<fail_1335@23:0>:bool)|- bot
+      
+      P[<read_1034@20:0>](false:bool), <fail_1335@23:0> |- P[<fail_1335@23:0>](<fail_1335@23:0>:bool)
+      
+      P[<br_read_n_1333@17:3>](true:bool,<read_1034@20:0>:bool,<br_read_n_1333@17:2>:int,<br_read_n_1333@17:3>:int)|- P[<read_1034@20:0>](
+      <read_1034@20:0>:bool)
+      
+      P[<read_n_1036@14:2>](<br_read_n_1333@17:1>:bool,<br_read_n_1333@17:2>:int,<br_read_n_1333@17:3>:int),
+      ((<br_read_n_1333@17:2> > 0) && (<br_read_n_1333@17:0> = (<br_read_n_1333@17:3> > 0)))
+      |- P[<br_read_n_1333@17:3>](<br_read_n_1333@17:0>:bool,<br_read_n_1333@17:1>:bool,
+                                  <br_read_n_1333@17:2>:int,<br_read_n_1333@17:3>:int)
+      
+      P[<k_main_fp_1251@12:3>](<read_n_1036@14:2>:int,<read_n_1036@14:1>:int,<read_n_1036@14:0>:bool)|- P[<read_n_1036@14:2>](
+      <read_n_1036@14:0>:bool,<read_n_1036@14:1>:int,<read_n_1036@14:2>:int)
+      
+      P[<main_1040@9:1>](<k_main_fp_1251@12:1>:int,<k_main_fp_1251@12:0>:int),
+      ((<k_main_fp_1251@12:0> <= 0) && (not <k_main_fp_1251@12:3>))
+      |- P[<k_main_fp_1251@12:3>](<k_main_fp_1251@12:0>:int,<k_main_fp_1251@12:1>:int,
+                                  <k_main_fp_1251@12:3>:bool)
+      
+      P[<f_1329@7:1>](<main_1040@9:0>:int,<main_1040@9:1>:int)|- P[<main_1040@9:1>](
+      <main_1040@9:0>:int,<main_1040@9:1>:int)
+      
+      P[<f_1328@4:0>](<f_1329@7:0>:int)|- P[<f_1329@7:1>](<f_1329@7:0>:int,
+                                                          <f_1329@7:1>:int)
+      
+      |- P[<f_1328@4:0>](<f_1328@4:0>:int)
+    call trees:
+      <main_1326@1>
+        <f_1328@4>
+          <f_1329@7>
+            <main_1040@9>
+              <k_main_fp_1251@12>
+                <read_n_1036@14>
+                  <br_read_n_1333@17>
+                    <read_1034@20>
+                      <fail_1335@23>
+    inlined horn clauses:
+      P[<fail_1335@23:0>](<fail_1335@23:0>:bool)|- bot
+      
+      P[<read_n_1036@14:2>](false:bool,var4:int,var5:int), ((var4 > 0) && ((var5 > 0) && <fail_1335@23:0>))
+      |- P[<fail_1335@23:0>](<fail_1335@23:0>:bool)
+      
+       ((<read_n_1036@14:2> <= 0) && (not <read_n_1036@14:0>))
+      |- P[<read_n_1036@14:2>](<read_n_1036@14:0>:bool,<read_n_1036@14:1>:int,
+                               <read_n_1036@14:2>:int)
+    begin ParamSubstInfer.infer(1547)[3]
+      
+    end ParamSubstInfer.infer(1547)[3] (0.062990 sec.)
+    inferred extra parameters:
+      
+    begin RefTypeInfer.elim_coeffs(1549)[3]
+      
+    end RefTypeInfer.elim_coeffs(1549)[3] (0.001000 sec.)
+    begin YhornInterface.solve(1716)[3]
+      begin HcSolver.solve_ub(1717)[4]
+        encoded:
+          P[<fail_1335@23:0>](<fail_1335@23:0>:int)|- bot
+          
+          P[<read_n_1036@14:2>](0:int,var4:int,var5:int), ((var4 > 0) && ((var5 > 0) && (<fail_1335@23:0> = 1)))
+          |- P[<fail_1335@23:0>](<fail_1335@23:0>:int)
+          
+           ((<read_n_1036@14:2> <= 0) && (not (<read_n_1036@14:0> = 1)))
+          |- P[<read_n_1036@14:2>](<read_n_1036@14:0>:int,<read_n_1036@14:1>:int,
+                                   <read_n_1036@14:2>:int)
+        input to Yhorn:
+          P[<fail_1335@23:0>](<fail_1335@23:0>:int)|- bot
+          
+          P[<read_n_1036@14:2>](var6:int,var4:int,var5:int),
+          ((var5 > 0) && ((var4 > 0) && ((var6 = 0) && (<fail_1335@23:0> = 1))))
+          |- P[<fail_1335@23:0>](<fail_1335@23:0>:int)
+          
+           ((<read_n_1036@14:0> <> 1) && (<read_n_1036@14:2> <= 0))
+          |- P[<read_n_1036@14:2>](<read_n_1036@14:0>:int,<read_n_1036@14:1>:int,
+                                   <read_n_1036@14:2>:int)Yhorn (Wed Sep 25 10:52:05 JST 2013)
+
+
+(0=0) & (v_sep_fail_1335_sep_23_sep_0($8)) -> 1=0.
+(($8-1=0) & ($9=0) & ($10>0) & ($11>0)) & (v_sep_read_n_1036_sep_14_sep_2($9,$10,$11)) -> v_sep_fail_1335_sep_23_sep_0($8).
+($12<=0) & ($13-1<>0) -> v_sep_read_n_1036_sep_14_sep_2($13,$14,$12).
+
+
+v_sep_fail_1335_sep_23_sep_0: X
+v_sep_read_n_1036_sep_14_sep_2: X
+...
+v_sep_fail_1335_sep_23_sep_0: X
+v_sep_read_n_1036_sep_14_sep_2: X
+...
+v_sep_fail_1335_sep_23_sep_0: X
+v_sep_read_n_1036_sep_14_sep_2: X
+...(0=0) & (v_sep_fail_1335_sep_23_sep_0($8)) -> 1=0.
+(($8-1=0) & ($9=0) & ($10>0) & ($11>0)) & (v_sep_read_n_1036_sep_14_sep_2($9,$10,$11)) -> v_sep_fail_1335_sep_23_sep_0($8).
+($12<=0) & ($13-1<>0) -> v_sep_read_n_1036_sep_14_sep_2($13,$14,$12).
+
+        solution:
+          P[<fail_1335@23:0>]($15:bool) = false
+          P[<read_n_1036@14:2>]($18:bool,$20:int,$22:int) = ($22 <= 0)
+        
+      end HcSolver.solve_ub(1717)[4] (0.012998 sec.)
+      begin HcSolver.check_validity(1889)[4]
+        input:
+          P[<fail_1335@23:0>](<fail_1335@23:0>:bool)|- bot
+          
+          P[<read_n_1036@14:2>](false:bool,var4:int,var5:int), ((var4 > 0) && ((var5 > 0) && <fail_1335@23:0>))
+          |- P[<fail_1335@23:0>](<fail_1335@23:0>:bool)
+          
+           ((<read_n_1036@14:2> <= 0) && (not <read_n_1036@14:0>))
+          |- P[<read_n_1036@14:2>](<read_n_1036@14:0>:bool,<read_n_1036@14:1>:int,
+                                   <read_n_1036@14:2>:int)
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        checking substituted Horn clause:
+           false |- bot
+        
+      end HcSolver.check_validity(1889)[4] (0.001000 sec.)
+      solution:
+        P[<fail_1335@23:0>]($15:bool) = false
+        P[<read_n_1036@14:2>]($18:bool,$20:int,$22:int) = ($22 <= 0)
+    end YhornInterface.solve(1716)[3] (0.013998 sec.)
+    
+  end RefTypeInfer.infer_etrs(418)[2] (0.082987 sec.)
+  refinement types:
+    main_1326: X
+    f_1328: v1:int -> X
+    f_1329: v1:int -> v2:int -> X
+    main_1040: v1:int -> v2:int -> (v3:unit -> X) -> X
+    k_main_fp_1251: v1:int -> v2:int -> (v3:unit -> X) -> v5:bool -> X
+    read_n_1036: v1:bool -> v2:int -> v3:{v3:int | (v3 <= 0)} -> (v4:bool -> X) -> X
+    br_read_n_1333: v1:bool -> v2:bool -> v3:int -> v4:int -> (v5:bool -> X) -> X
+    read_1034: v1:bool -> (v2:unit -> X) -> X
+    fail_1335: v1:{v1:bool | false} -> (v2:unit -> X) -> X
+    br_read_n_1331: var25:bool -> var24:bool -> var23:int -> var22:int -> (var21:bool -> X) -> X
+    close_1086: var29:bool -> (var28:bool -> X) -> X
+    f_1330: var33:int -> var32:int -> var31:unit -> X
+    f_k_main_fp_1327: var40:int -> var39:int -> var38:bool -> (var37:unit -> X) -> var35:bool -> X
+    fail_1336: var44:bool -> (var43:unit -> X) -> X
+    k_read_n_u_1201: var51:bool -> var50:int -> var49:int -> (var48:bool -> X) -> var46:unit -> X
+    open__1087: var55:unit -> (var54:bool -> X) -> X
+  abstraction types:
+    main_1326: X
+    f_1328: v1:int -> X
+    f_1329: v1:int -> v2:int -> X
+    main_1040: v1:int -> v2:int -> (v3:unit -> X) -> X
+    k_main_fp_1251: v1:int -> v2:int -> (v3:unit -> X) -> v5:bool -> X
+    read_n_1036: v1:bool -> v2:int -> v3:int[v3 -> (v3 <= 0)] -> (v4:bool -> X) -> X
+    br_read_n_1333: v1:bool -> v2:bool -> v3:int -> v4:int -> (v5:bool -> X) -> X
+    read_1034: v1:bool -> (v2:unit -> X) -> X
+    fail_1335: v1:bool -> (v2:unit -> X) -> X
+    br_read_n_1331: var25:bool -> var24:bool -> var23:int -> var22:int -> (var21:bool -> X) -> X
+    close_1086: var29:bool -> (var28:bool -> X) -> X
+    f_1330: var33:int -> var32:int -> var31:unit -> X
+    f_k_main_fp_1327: var40:int -> var39:int -> var38:bool -> (var37:unit -> X) -> var35:bool -> X
+    fail_1336: var44:bool -> (var43:unit -> X) -> X
+    k_read_n_u_1201: var51:bool -> var50:int -> var49:int -> (var48:bool -> X) -> var46:unit -> X
+    open__1087: var55:unit -> (var54:bool -> X) -> X
+  
+end AbsTypeInfer.refine(417)[1] (0.091986 sec.)
+DONE!
+
+Prefix of spurious counter-example::
+0; 0; 0; 1; 0; 1; 0
+
+Program with abstraction types (CEGAR-cycle 1)::
+Main: main_1326
+  main_1326 -> (rand_int f_1328)
+  br_read_n_1331 b_1332 fp_1037 n_1038 m_1039 k_read_n_1171 when b_1332 -> (close_1086 fp_1037 k_read_n_1171)
+  br_read_n_1331 b_1332 fp_1037 n_1038 m_1039 k_read_n_1171 when (not b_1332) -> (k_read_n_1171 fp_1037)
+  br_read_n_1333 b_1334 fp_1037 n_1038 m_1039 k_read_n_1171 when b_1334 ->
+      (read_1034 fp_1037 (k_read_n_u_1201 fp_1037 m_1039 n_1038 k_read_n_1171))
+  br_read_n_1333 b_1334 fp_1037 n_1038 m_1039 k_read_n_1171 when (not b_1334) ->
+      (k_read_n_u_1201 fp_1037 m_1039 n_1038 k_read_n_1171 ())
+  close_1086 fp_1033 k_close_1126 -> (k_close_1126 false)
+  f_1328 x_1284 -> (rand_int (f_1329 x_1284))
+  f_1329 x_1284 x_1297 -> (main_1040 x_1284 x_1297 (f_1330 x_1284 x_1297))
+  f_1330 x_1284 x_1297 x_1281 -> end
+  f_k_main_fp_1327 m_1042 n_1041 x_1238 k_main_1235 x_1255 when x_1255 -> (k_main_1235 ())
+  f_k_main_fp_1327 m_1042 n_1041 x_1238 k_main_1235 x_1255 when (not x_1255) -> (fail_1336 true k_main_1235)
+  fail_1335 b k -> {fail} => (k ())
+  fail_1336 b k -> {fail} => (k ())
+  k_main_fp_1251 m_1042 n_1041 k_main_1235 x_1238 ->
+      (read_n_1036 x_1238 n_1041 m_1042 (f_k_main_fp_1327 m_1042 n_1041 x_1238 k_main_1235))
+  k_read_n_u_1201 fp_1037 m_1039 n_1038 k_read_n_1171 x_1188 -> (read_n_1036 fp_1037 (n_1038 - 1) m_1039 k_read_n_1171)
+  main_1040 n_1041 m_1042 k_main_1235 when (m_1042 > 0) -> (open__1087 () (k_main_fp_1251 m_1042 n_1041 k_main_1235))
+  main_1040 n_1041 m_1042 k_main_1235 when (not (m_1042 > 0)) -> (k_main_fp_1251 m_1042 n_1041 k_main_1235 false)
+  open__1087 x_1031 k_open__1112 -> (k_open__1112 true)
+  read_1034 fp_1035 k_read_1140 when fp_1035 -> (k_read_1140 ())
+  read_1034 fp_1035 k_read_1140 when (not fp_1035) -> (fail_1335 true k_read_1140)
+  read_n_1036 fp_1037 n_1038 m_1039 k_read_n_1171 when (n_1038 <= 0) ->
+      (br_read_n_1331 (m_1039 > 0) fp_1037 n_1038 m_1039 k_read_n_1171)
+  read_n_1036 fp_1037 n_1038 m_1039 k_read_n_1171 when (not (n_1038 <= 0)) ->
+      (br_read_n_1333 (m_1039 > 0) fp_1037 n_1038 m_1039 k_read_n_1171)
+Types:
+  main_1326 : X
+  fail_1335 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  fail_1336 : (x_1:bool[x_1] -> (unit -> X) -> X)
+  read_n_1036 : (x_1:bool[x_1] -> int -> x_3:int[x_3 <= 0] -> (x_5:bool[x_5] -> X) -> X)
+  
+(1-1) Abstracting ... DONE!
+
+(1-2) Checking HORS ... DONE!
+
+Error trace::
+  main_1326 ... --> 
+  f_1328 ... --> 
+  f_1329 ... --> 
+  main_1040 [2/2] ... --> 
+  k_main_fp_1251 ... --> 
+  read_n_1036 [1/2] ... --> 
+  br_read_n_1331 [2/2] ... --> 
+  f_k_main_fp_1327 [2/2] ... --> 
+  fail_1336 ... --> fail -->
+  ERROR!
+
+Spurious counter-example::
+  0; 0; 0; 1; 0; 0; 1; 1; 0
+
+(1-3) Checking counter-example ... begin Cvc3Interface.solve(2601)[1]
+  CVC3 input: PUSH;cnt77_v_sep_r_1957:INT; cnt77_v_sep_r_1956:INT;CHECKSAT (TRUE AND ((NOT FALSE) AND ((NOT (cnt77_v_sep_r_1957 > 0)) AND ((cnt77_v_sep_r_1956 <= 0) AND (TRUE AND ((NOT (cnt77_v_sep_r_1957 > 0)) AND (TRUE AND (TRUE AND TRUE))))))));COUNTERMODEL;POP;
+  CVC3 output: CVC> Satisfiable.
+  CVC3 output: Current scope level is 9.
+  CVC3 output: %Satisfiable  Variable Assignment: % 
+  CVC3 output: ASSERT (cnt77_v_sep_r_1957 = 0);
+  CVC3 output: ASSERT (cnt77_v_sep_r_1956 = 0);
+  CVC3 output: CVC> 
+  v_sep_r_1957 = 0
+  v_sep_r_1956 = 0
+  end Cvc3Interface.solve(2601)[1] (0.004999 sec.)
+DONE!
+
+Unsafe!
+
+Input for main:
+  0; 0
+Error trace:
+  main 0 0 ->
+    if false then ... ->
+    read_n false 0 0 ->
+      if true then ... ->
+      if false then ... ->
+    FAIL!
+
+cycles: 1
+total: 0.401 sec
+  abst: 0.016 sec
+  mc: 0.012 sec
+  refine: 0.104 sec
+    exparam: 0.063 sec
