@@ -1,13 +1,13 @@
 
 PDF = $(wildcard *.pdf)
-XBB  = $(PDF:.pdf=.xbb)
+RET = $(PDF:.pdf=.eps)
 
-all: $(XBB)
+all: $(RET)
 
-clean:
-	-rm -f *.xbb
+.SUFFIXES: .pdf .ps .eps
 
-.SUFFIXES: .xbb .pdf
+.pdf.ps:
+	pdf2ps $<
 
-.pdf.xbb:
-	ebb -x $<
+.ps.eps:
+	ps2eps $<
