@@ -2,13 +2,13 @@
 \label{chap:experiment}
 
 We have incorporated our algorithm to the software model checker for
-higher-order programs (MoCHi) \cite{conf/pldi/KobayashiSU11}.  It is
+higher-order programs \textsc{MoCHi} \cite{conf/pldi/KobayashiSU11}.  It is
 specifically designed to verify the correctness of higher-order
 programs written in a small subset of ML.  This verification tool
 abstracts a given input program by inferring dependent types for
 higher-order programs \cite{conf/ppdp/UnnoK09}.
 
-We implemented our proposed algorithm into MoCHi by two steps.  First,
+We implemented our proposed algorithm into \textsc{MoCHi} by two steps.  First,
 we replace an existing theorem prover with our interpolating theorem
 prover as a sub-routine for solving Horn clauses in dependent typing.
 We used a method to obtain a common small interpolant across different
@@ -45,33 +45,22 @@ as an SMT solver to obtain unsatisfiable core of the constraints.
 
 \section{Interpolating theorem prover}
 
-There are some interpolating theorem provers known.
-\begin{itemize}
-\item \textsc{CSIsat} \cite{conf/cav/BeyerZM08} combines linear
-  arithmetic reasoning and SAT-based logical reasoning.
-\item \textsc{FOCI} \cite{website/foci} extracts an interpolant by the
-  proof-based method.
-\item \textsc{CLP-Prover} \cite{website/clp} generates an interpolant
- from constraints by linear arithmetic reasoning. It only supports
- conjunctive problems.
-\end{itemize}
-
-In our experiment, we compared the performance of our algorithm with
-CSIsat, that is mainly used as a sub procedure of MoCHi.  Note that
-CSIsat may return different interpolants for an interpolating problem
-because of the randomized algorithm.
-
-\paragraph{Comparison over simple interpolation}
-First, we compare by simply generating an interpolant without
-incorporating into MoCHi.  \textsc{Yint} represents our interpolating
-theorem prover.
+As an experiment of our interpolating algorithm, we compared the
+quality of resulting interpolants with
+ones that \testsc{CSIsat} \cite{conf/cav/BeyerZM08} generates.
+It combines linear arithmetic reasoning and SAT-based logical reasoning.
+\textsc{CSIsat} is mainly used as a sub procedure of current \textsc{MoCHi}.  Note that
+it may return different interpolants for an interpolating problem
+because of the randomized algorithm.  Results shown below
+are ones that are randomly chosen.
+\textsc{Yint} represents our interpolating algorithm.
 
 \begin{itemize}
 \item Disjunctive interpolation in $A$.
-\[\begin{array}{r l}
-\varphi_A & (x-1 \geq 0) \vee (x+1 \leq 0) \\
+\[\begin{array}{r c}
+\varphi_A : & (x-1 \geq 0) \vee (x+1 \leq 0) \\
 \hline
-\varphi_B & x=0
+\varphi_B : & x=0
 \end{array}\]
 The result for this:
 \[\begin{array}{l c}
@@ -79,10 +68,10 @@ The result for this:
 \text{\textsc{CSIsat}} & (-x \leq -1 \vee x \leq -1)
 \end{array}\]
 \item Disjunctive interpolation in $B$.
-\[\begin{array}{r l}
-\varphi_A & x=0 \\
+\[\begin{array}{r c}
+\varphi_A : & x=0 \\
 \hline
-\varphi_B & (x-1 \geq 0) \vee (x+1 \leq 0)
+\varphi_B : & (x-1 \geq 0) \vee (x+1 \leq 0)
 \end{array}\]
 \[\begin{array}{l c}
 \text{\textsc{Yint}} & -x=0 \\
@@ -90,25 +79,25 @@ The result for this:
 \end{array}\]
 \item Complex formula in $A$.
 % complicated disj
-\[\begin{array}{r l}
-\varphi_A & ((x-5<0) \wedge (-x<0)) \vee ((x<0) \wedge (-x-5<0)) \\
+\[\begin{array}{r c}
+\varphi_A : & ((x-5<0) \wedge (-x<0)) \vee ((x<0) \wedge (-x-5<0)) \\
 \hline
-\varphi_B & x=0
+\varphi_B : & x=0
 \end{array}\]
 \[\begin{array}{l c}
 \text{\textsc{Yint}} & (x+1 \leq 0) \vee (-x+1 \leq 0) \\
 \text{\textsc{CSIsat}} & (x < 0 \vee -x < 0)
 \end{array}\]
 \end{itemize}
-For those problems that are simple enough, Yint and CSIsat returns the
+For those problems that are simple enough, \textsc{Yint} and \textsc{CSIsat} returns the
 same results.
 
 Next we tried the problem that an equality interpolant exists.
 % equality
-\[\begin{array}{r l}
-\varphi_A & x=0 \\
+\[\begin{array}{r c}
+\varphi_A : & x=0 \\
 \hline
-\varphi_B & x-1=0
+\varphi_B : & x-1=0
 \end{array}\]
 \[\begin{array}{l c}
 \text{\textsc{Yint}} & x=0 \\
@@ -118,10 +107,10 @@ Next we tried the problem that an equality interpolant exists.
 \bigskip\centerline{}
 
 % quantifier
-\[\begin{array}{r l}
-\varphi_A & (y-z=0) \wedge (x-z=0) \\
+\[\begin{array}{r c}
+\varphi_A : & (y-z=0) \wedge (x-z=0) \\
 \hline
-\varphi_B & (-w+y+1 \leq 0) \wedge (-w+x \geq 0)
+\varphi_B : & (-w+y+1 \leq 0) \wedge (-w+x \geq 0)
 \end{array}\]
 \[\begin{array}{l c}
 \text{\textsc{Yint}} & x-y=0 \\
@@ -134,10 +123,10 @@ exists.
 Additionally, as the follwing results of \textsc{Yint} shows, if a
 simple interpolant exists for a given problem, our algorithm tries
 such result.
-\[\begin{array}{r l}
-\varphi_A & ((-y+1 \leq 0) \wedge (-x \leq 0)) \vee ((-y \leq 0) \wedge (-x+1 \leq 0)) \\
+\[\begin{array}{r c}
+\varphi_A : & ((-y+1 \leq 0) \wedge (-x \leq 0)) \vee ((-y \leq 0) \wedge (-x+1 \leq 0)) \\
 \hline
-\varphi_B & ((y+1<0) \wedge (x<0)) \vee ((y<0) \wedge (x+1<0))
+\varphi_B : & ((y+1<0) \wedge (x<0)) \vee ((y<0) \wedge (x+1<0))
 \end{array}\]
 \[\begin{array}{l c}
 \text{\textsc{Yint}} & -x \leq 0 \\
@@ -146,10 +135,10 @@ such result.
 
 \bigskip\centerline{}
 
-\[\begin{array}{r l}
-\varphi_A & (x-1=0) \vee (x+1=0) \\
+\[\begin{array}{r c}
+\varphi_A : & (x-1=0) \vee (x+1=0) \\
 \hline
-\varphi_B & (x-2=0) \vee (x=0) \vee (x+2=0)
+\varphi_B : & (x-2=0) \vee (x=0) \vee (x+2=0)
 \end{array}\]
 \[\begin{array}{l c}
 \text{\textsc{Yint}} & (-x-1=0) \vee (-x+1=0) \\
@@ -158,14 +147,12 @@ such result.
 
 Finally, we showed some test cases that may occur in practical interpolation.
 
-\[\begin{array}{r l}
+\[\begin{array}{r c}
 \multirow{2}{*}{$\varphi_A$}
 & ((x-y-1 \leq 0) \wedge (-x+y-2 \leq 0) \wedge (x+y-1 \leq 0) \wedge (-x-y-2 \leq 0)) \vee \\
 & ((x-y-2 \leq 0) \wedge (-x+y-1 \leq 0) \wedge (x+y-2 \leq 0) \wedge (-x-y-1 \leq 0)) \\
 \hline
-\multirow{2}{*}{$\varphi_B$}
-& ((x-y+1<0) \wedge (-x+y-2 \leq 0) \wedge (x+y-2 \leq 0) \wedge (-x-y+1<0)) \vee \\
-& ((x-y-2 \leq 0) \wedge (-x+y+1<0) \wedge (x+y+1<0) \wedge (-x-y-2 \leq 0))
+\varphi_B : & (x=0 \wedge y=2) \vee (x=0 \wedge y=-2)
 \end{array}\]
 \[\begin{array}{l c}
 \text{\textsc{Yint}} & (-x+17y-33 \leq 0) \wedge (x-17y-33 \leq 0) \\
@@ -174,7 +161,7 @@ Finally, we showed some test cases that may occur in practical interpolation.
 
 \bigskip\centerline{}
 
-\[\begin{array}{r l}
+\[\begin{array}{r c}
 \multirow{2}{*}{$\varphi_A$}
 & ((y+1=0) \wedge (x-1=0)) \vee ((y+1=0) \wedge (x+1=0)) \vee \\
 & ((y-1=0) \wedge (x+1=0)) \vee ((y-1=0) \wedge (x-1=0)) \\
@@ -197,7 +184,7 @@ Finally, we showed some test cases that may occur in practical interpolation.
 & \qquad (-x \leq -1 \vee x \leq -1)
 \end{align*}
 
-\[\begin{array}{r l}
+\[\begin{array}{r c}
 \varphi_A & (x=1 \wedge y=1) \vee (x=0 \wedge y=0) \\
 \hline
 \varphi_B & (x=1 \wedge y \neq 1) \vee (x=0 \wedge y \neq 0)
@@ -225,17 +212,17 @@ As an Horn clause solver we incorporated our Horn clause solver to MoCHi.
 \begin{center}
 \includegraphics[scale=.6]{figures/chart.png}
 \end{center}
-\caption{Result obtained from MoCHi with Horn clause solver CSIsat and
-Yhorn}
+\caption{Result obtained from \textsc{MoCHi} with Horn clause solver \textsc{CSIsat} and
+\textsc{Yhorn}}
 \end{figure}
 
-We obtained better result in some cases compared to the one we had in CSIsat.
+We obtained better result in some cases compared to the one we had in \textsc{CSIsat}.
 
 \begin{figure}
 \begin{center}
 \includegraphics[scale=.8]{figures/time.eps}
 \end{center}
-\caption{Time consumption ration of Yhorn compared to CSIsat}
+\caption{Time consumption ration of Yhorn compared to \textsc{CSIsat}}
 \end{figure}
 
 However we take a longer time for solving the same Horn clauses, which
