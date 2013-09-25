@@ -3,8 +3,8 @@
 Automated theorem proving plays an important role in the modern
 program verification.  Particularly in the context of verification
 with model checking techniques, an automated theorem prover is used to
-abstract an infinite set of program states into a finite one so that
-the model checker can virtually explore all possible program execution
+abstract a program with infinite states into a finite model so that a
+model checker can virtually explore all possible program execution
 paths.
 
 One of the most common methods of such abstraction is predicate
@@ -12,73 +12,70 @@ abstraction\cite{conf/cav/GrafS97} within CounterExample-Guided
 Abstraction Refinement (CEGAR) framework
 \cite{conf/cav/ClarkeGJLV00,conf/popl/BallR02,conf/popl/HenzingerJMS02}.
 An automated theorem prover finds appropriate predicates for every
-program location.  An execution states at those locations is then
-expressed by a Boolean valuation of the given predicates.  If the
-abstraction is too coarse and a model checker discovers an infeasible
-error execution path in an abstract system, the prover computes an
+program location.  Execution states at those locations are expressed
+by a Boolean valuation of the given predicates.  If the abstraction is
+too coarse and a model checker discovers an infeasible error execution
+path, also called a spurious counterexample, the prover computes an
 additional predicate at those program locations to refine the
-abstraction predicates.
+abstraction.
 
-In order to obtain an additional abstraction predicate at program
-locations along the infeasible counterexample, one class of automated
+In order to obtain an additional abstraction predicate at certain
+program location along the infeasible path, one class of automated
 theorem provers, called an interpolating theorem prover
 \cite{journals/tcs/McMillan05,conf/vmcai/RybalchenkoS07}, computes a
-separating predicate called an interpolant between two sets of
-constraints; the one consists of the constraints from the program
-entry point to the location, and the other consists of the constraints
-from the location to the program failure.  Those constraints include
-variable assignments and assertions to be satisfied originated from
-conditional branches.
+logical separation between two sets of formula; the one consists of
+constraints from the program entry point to the location, and the
+other consists of the constraints from the location to the program
+failure.  Those formulas are built from variable assignments and
+assertions to be satisfied originated from conditional branches.
 
-The computed predicate by an interpolating theorem prover is satisfied
-at the location under the execution in the concrete model along the
-discovered counterexample, and any execution paths which satisfies the
-predicate does not lead to the failure state.  After the refinement,
-the infeasible path is ruled out and no longer found by the model
-checker.
+The computed logical separator is satisfied at the location under the
+execution in the program along the discovered path, and any execution
+paths which satisfies the predicate does not lead to the failure
+state.  After the refinement, the counterexample is ruled out and the
+same infeasible path is no longer found by the model checker.
 
 However, existing interpolating theorem provers may return too complex
 a solution which is heavily affected by the constraints of the
 specific path.  It is not favorable in terms of the program
 verification because a complex predicate may not be sufficient to rule
-out similar spurious paths in programs with loops and recursion calls.
-This causes the model checker to discover spurious paths infinitely
-which pass the same program location by loops or recursion calls at
-different numbers of iteration, and the verification process does not
-to terminate.
+out resembling spurious paths in programs.  This causes the
+verification process not to terminate because the model checker
+infinitely discovers infeasible paths which pass the same program
+location by loops or recursion calls on the different number of
+iterations.
 
-To avoid this, it is desired to discover an invariant formula for the
-predicate abstraction.  Based on the hypothesis that program's
-invariants tend to be simple formulas, we propose a new interpolating
-algorithm which tries to minimize the number of conjunctions and
-disjunctions in a solution.  The predicate obtained by this algorithm
-may become similar to the invariant, and the number of trials in model
-checking may be reduced.
+Ideally it is desired to discover an invariant formula for the
+predicate abstraction.  We put a hypothesis that program invariants
+tend to be simple formulas, and we propose a new interpolating
+algorithm based on the hypothesis.  The algorithm tries to minimize
+the number of conjunctions and disjunctions in a solution.  The
+predicate obtained by this algorithm may become similar to the
+invariant. We expect the number of iterations for model checking to
+decrease as a result.
 
-Additionally, we extend our interpolating algorithm to solve a
-symmetric interpolation problem, in which the algorithm computes
-predicates at multiple program locations along a path at once.  This
-enables the abstraction predicates at multiple locations to be updated
-at the same computation.
+We also focus on solving constraint satisfaction problems over Horn
+clauses with unknown predicate variables.  As well as interpolation,
+Horn clause solving is another technique often used in program
+verification for capturing program behaviors.  By computing the
+solution for Horn clause problems, we obtain predicates that are true
+at specific program locations along specific paths.  Furthermore it
+may be possible to obtain predicates which are highly likely to be
+program invariants by computing same predicates inside loops and
+recursion calls on different iterations, or at the same location over
+multiple paths.  By the previous hypothesis, we propose a Horn clause
+solving algorithm which constructs as simple a solution as possible.
 
-Finally, we extend our algorithm to solve Horn clause solving
-problems.  It allows us to obtain predicates which are highly likely
-to be program invariants, by computing the same abstraction predicates
-inside loops and recursion calls on different iterations, and by
-unifying predicates at the same location over multiple paths.  The
-problems are generated by encoding constraints over execution paths
-with unknown predicates which describe functions' constraints between
-parameters and return values.
+TODO: Mention experiments
 
-The rest of the paper is structured as follows.
-Chapter~\ref{chap:interpolation} proposes a new interpolating
-algorithm to obtain simple solutions, and extends it to solve
-symmetric interpolation problems.  Chapter~\ref{chap:horn} describes a
-new Horn clause solving algorithm by extending the previous
+The rest of this thesis is structured as follows.
+Chapter~\ref{chap:interpolation} shows detailed usage of interpolation
+problems in program verification and proposes a new interpolating
+algorithm to obtain simple solutions.  Chapter~\ref{chap:horn}
+describes a Horn clause solving algorithm by extending the previous
 interpolating algorithm.  Chapter~\ref{chap:experiment} describes
 experiments and illustrates the result to confirm the effect of our
-proposed algorithm.  Chapter~\ref{chap:future} gives a discussion of
-our improvements and proposes further improvements to make.
-Chapter~\ref{chap:related} mentions related work done by others.
-Finally, Chapter~\ref{chap:conclusion} reviews the impact of our
-research and brings the conclusion.
+algorithms.  Chapter~\ref{chap:future} gives a discussion on further
+possibilities for improvements. Chapter~\ref{chap:related} mentions
+related work done by others.  Finally, Chapter~\ref{chap:conclusion}
+reviews the impact of our research and brings the conclusion.
