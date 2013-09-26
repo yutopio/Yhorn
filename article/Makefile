@@ -20,7 +20,6 @@ algo.dvi:
 	platex algo
 
 $(NAME).aux: $(NAME).tex
-	(cd figures; make)
 	platex $(NAME)
 
 $(NAME).bbl: $(NAME).aux biblio.bib
